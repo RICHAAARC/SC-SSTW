@@ -8,6 +8,10 @@ capture, public-only calibration, and state-constrained synchronization.
 
 ## Claim ceiling
 
+Current local Stage 1 authorization additionally permits isolated CPU saved-video
+observation/public-candidate engineering under docs/stage1_observation.md. This
+does not change method_readiness.yaml or establish any real-video scientific gate.
+
 All migrated interfaces, tests, protocols and runner outputs are synthetic_only.
 They do not establish performance on a VAE, DiT, Flow Matching, saved MP4,
 attacks, fixed false-positive rate, or a paper claim.
