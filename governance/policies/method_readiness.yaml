@@ -1,0 +1,8 @@
+project_stage: research_defined
+allowed_scope: synthetic_only
+active_method: affine_invariant_public_calibrated_state_synchronization
+forbidden_runtime_claims:
+  - real_video
+  - gpu
+  - fixed_fpr
+  - paper_ready

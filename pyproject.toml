@@ -1,0 +1,13 @@
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]
+addopts = ["-m", "(constraint or unit or quick) and not integration and not smoke and not slow and not formal"]
+markers = [
+    "unit: pure deterministic unit test",
+    "constraint: scope and contract test",
+    "quick: lightweight reproducible synthetic test",
+    "integration: default-excluded integration test",
+    "smoke: default-excluded runtime smoke test",
+    "slow: default-excluded slow test",
+    "formal: default-excluded formal evidence test",
+]
