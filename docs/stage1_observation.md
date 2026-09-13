@@ -52,9 +52,11 @@ person performing jumping jacks, an approximately fixed background and no obviou
 cut; this is not subject annotation or proof of the content assumption.
 
 The draft top-level proposal schema remains rejected by the runner. Its nested
-manifest now contains the actual proposed sample and is structurally executable;
-do not extract/run it until the sample role and complete proposed parameter set
-are confirmed and frozen. The selected sample is not an AISB positive. A single
+manifest contains the actual proposed sample but also an explicit `draft_only`
+field, which the runner rejects as unsupported. Neither layer is directly runnable.
+Only remove this guard when preparing a final manifest after the sample role and
+complete proposed parameter set are confirmed and frozen. The selected sample is
+not an AISB positive. A single
 development sample does not create an independent validation
 split; a validation sample must not be used for tuning. An ordinary saved video
 has no AISB alignment truth. Independent positive labels remain a separate
@@ -64,7 +66,7 @@ Before execution, freeze the one-row sample list and the chosen parameters in
 the final manifest; preserve every failure and never replace the sample, adjust
 parameters after seeing validation outcomes, or sweep to rescue the result.
 The proposed output is
-`/home/richar/projects/Video-WM/diagnostics/stage1-real-observation/s0-first-selected-video-run01`,
+`/home/richar/projects/Video-WM/diagnostics/真实视频公共观测/帧差加权质心-固定镜头单主体/run01`,
 outside Git and required to be fresh. Exceeding pixel/frame/time or encountering
 file/decode/dependency failure stops that sample as OPERATIONAL_BLOCKED and retains
 its partial records. All-invalid observations stop this construction as

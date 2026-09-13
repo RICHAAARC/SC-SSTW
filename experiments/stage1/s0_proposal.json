@@ -10,6 +10,7 @@
   "sample_source_record": "/home/richar/projects/Video-WM/datasets/UCF101/JumpingJack/sample_source.json",
   "sample_inspection": {"width": 320, "height": 240, "original_frame_count": 93, "original_frame_rate": "30000:1001", "duration_seconds": 3.1031, "visual_scope": "single indoor subject performing jumping jacks, approximately fixed background, no obvious cut; preliminary inspection only"},
   "proposed_manifest": {
+    "draft_only": true,
     "samples": [
       {
         "sample_id": "UCF101-JumpingJack-v_JumpingJack_g01_c01",
@@ -49,6 +50,6 @@
     "localization_accuracy": null,
     "true_public_alignment_coverage": "UNDETERMINED_WITHOUT_INDEPENDENT_POSITIVE_LABELS"
   },
-  "output_directory_proposal": "/home/richar/projects/Video-WM/diagnostics/stage1-real-observation/s0-first-selected-video-run01",
+  "output_directory_proposal": "/home/richar/projects/Video-WM/diagnostics/真实视频公共观测/帧差加权质心-固定镜头单主体/run01",
   "evidence_ceiling": "engineering_observation_and_candidate_freeze_only_no_real_alignment_claim"
 }
