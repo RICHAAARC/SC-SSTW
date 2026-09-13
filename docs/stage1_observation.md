@@ -6,6 +6,62 @@ template/missing model and final burst-versus-sequence semantics remain pending.
 No real video has been run by this change. Readiness remains research_defined;
 all tests here are CPU array fixtures with science_denominator=0.
 
+## S0 concrete proposal, awaiting sample and parameter confirmation
+
+The working branch is `dev/真实视频公共观测/帧差加权质心-固定镜头单主体`.
+The naming convention is `dev/<具体工作目标>/<当前方法-适用内容>`, without a stage number.
+The existing worktree directory stays `worktrees/Stage1-Public-Observation`.
+
+`experiments/stage1/s0_proposal.json` is the concrete S0 draft. The selected observer
+is confirmed; the following numerical and acquisition choices are proposals for
+this S0 freeze, not claims of user approval or scientifically validated thresholds:
+
+| Item | Proposed value and purpose |
+| --- | --- |
+| Input denominator | Target N=1 saved video; actual ID/path/split and denominator not yet frozen |
+| Sampling | 5 Hz; at most 300 output samples; no silent first-60-second prefix |
+| Decode budget | At most 2,073,600 pixels/frame; 60 seconds per ffprobe or ffmpeg process |
+| Pixel support | Absolute gray difference strictly above 12; support fraction in [0.0001, 0.5] |
+| Templates | Existing public six-point burst_alpha, burst_beta, burst_gamma, coordinates embedded in the draft |
+| Missing model | No deletion only, `missing_sets=[[]]`; no claim of deletion robustness |
+| Enumeration | 885 evaluations = 3 × (300 − 6 + 1); invalid windows still consume evaluations |
+| Retention | Global first 128 by the documented total ordering; engineering bound, not a validation-tuned choice |
+| Set meaning | Burst set plus disjoint half-open observed-interval compatibility; complete sequence set deferred |
+| Stability acceptance | On the same machine with identical tools, two independent decodes must have identical structure and all observation fields exactly equal; no cross-environment claim |
+
+These budgets bound the first entry exercise without inheriting a synthetic
+residual threshold. At most 300 frames permits 885 window/template evaluations;
+actual evaluated count is `3*max(0,n-5)`, before invalid-window exclusions and global
+retention. With 300 samples the required initially invalid frame excludes the
+first window for each template, so 885 is an enumeration bound, not a promise of
+885 scored candidates. A 128-candidate retained set may drop genuine alignments;
+without independent positive labels, pre/post-truncation coverage is unassessed.
+
+The draft is deliberately not runnable: its top-level proposal schema is rejected
+by the runner, and its nested manifest has an empty sample list and is also
+rejected. A final manifest may only be prepared after the saved absolute video
+path, stable sample ID, development/validation identity and proposed choices are
+settled. A single development sample does not create an independent validation
+split; a validation sample must not be used for tuning. An ordinary saved video
+has no AISB alignment truth. Independent positive labels remain a separate
+scientific prerequisite and are never inputs to public acquisition.
+
+Before execution, freeze the one-row sample list and the chosen parameters in
+the final manifest; preserve every failure and never replace the sample, adjust
+parameters after seeing validation outcomes, or sweep to rescue the result.
+The proposed output is
+`/home/richar/projects/Video-WM/diagnostics/stage1-real-observation/s0-first-selected-video-run01`,
+outside Git and required to be fresh. Exceeding pixel/frame/time or encountering
+file/decode/dependency failure stops that sample as OPERATIONAL_BLOCKED and retains
+its partial records. All-invalid observations stop this construction as
+NO_GO_THIS_CONSTRUCTION. Enumeration exhaustion retains evidence as an algorithm
+budget limitation and does not freeze a complete set. Exact repeat disagreement
+fails the proposed stability engineering acceptance; the current runner reports
+the comparison and does not convert it into a scientific terminal PASS/FAIL.
+Scientific AISB validity, 2-D support/degeneracy, localization and true alignment
+coverage thresholds remain unset; no S0 text makes them passed. This amendment
+does not run a video or increase readiness.
+
 ## Observer and decoding
 
 `runtime/stage1/observation.py` uses uint8 grayscale frames, weights
