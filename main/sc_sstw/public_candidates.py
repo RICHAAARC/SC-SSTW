@@ -103,7 +103,7 @@ def read_frozen_bursts(frozen: bytes):
         raise ValueError("budget/count mismatch")
     expected.update(before_count=before, dropped_count=before - len(candidates),
                     truncation_reason="global_budget" if before > len(candidates) else "none")
-    if payload != expected or canonical_bytes(payload) != frozen:
+    if canonical_bytes(expected) != frozen:
         raise ValueError("noncanonical or inconsistent frozen object")
     return tuple(candidates)
 

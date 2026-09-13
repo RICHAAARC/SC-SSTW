@@ -5,7 +5,7 @@ import tempfile
 import unittest
 
 from main.sc_sstw.aisb import make_double_redundant_templates
-from main.sc_sstw.public_candidates import PublicBurst, freeze_public_bursts, read_frozen_bursts, candidate_digest
+from main.sc_sstw.public_candidates import PublicBurst, freeze_public_bursts, read_frozen_bursts, candidate_digest, canonical_bytes
 from main.sc_sstw.public_scan import scan_public_q
 from runtime.stage1.observation import ObserverConfig, Observation, observe_frames, repeat_error
 from experiments.stage1.run_observation import run_manifest
@@ -47,6 +47,17 @@ class Stage1Engineering(unittest.TestCase):
             freeze_public_bursts([a, a], budget=2, enumeration_complete=True)
         with self.assertRaises(ValueError):
             freeze_public_bursts([a], budget=1, enumeration_complete=False)
+
+    def test_frozen_metadata_rejects_bool_integer_substitution(self):
+        candidates = [PublicBurst("a", 0, 6, 6, (), 0), PublicBurst("b", 0, 6, 6, (), 0)]
+        frozen = freeze_public_bursts(candidates, budget=1, enumeration_complete=True)
+        for field, replacement in (("after_count", True), ("dropped_count", True),
+                                   ("enumeration_complete", 1)):
+            with self.subTest(field=field):
+                payload = json.loads(frozen)
+                payload[field] = replacement
+                with self.assertRaises(ValueError):
+                    read_frozen_bursts(canonical_bytes(payload))
 
     def test_no_motion_nonfinite_and_repeat(self):
         config = ObserverConfig(1, 0.01, 0.5)
