@@ -1,0 +1,71 @@
+{
+  "protocol_id": "wan_local_temporal_warp_v1",
+  "model": {
+    "id": "Wan-AI/Wan2.1-T2V-1.3B-Diffusers",
+    "revision": "0fad780a534b6463e45facd96134c9f345acfa5b",
+    "diffusers": "0.35.2"
+  },
+  "generation": {
+    "prompt": "locked camera, a single matte white cube moving slowly across a dark plain table, stable lighting, no people, no cuts",
+    "negative_prompt": "text, watermark, logo, camera motion, cuts, multiple objects, flicker",
+    "seed": 1275,
+    "steps": 50,
+    "guidance": 5.0,
+    "height": 320,
+    "width": 512,
+    "frames": 49,
+    "fps": 8,
+    "max_sequence_length": 512
+  },
+  "observer": {
+    "sample_hz": 5,
+    "max_frames": 300,
+    "max_pixels": 2073600,
+    "timeout_seconds": 60,
+    "pixel_delta": 12,
+    "min_support_fraction": 0.0001,
+    "max_support_fraction": 0.5
+  },
+  "outputs": {
+    "OFF1": {},
+    "OFF2": {},
+    "X_PLUS": {},
+    "X_MINUS": {},
+    "Y_PLUS": {},
+    "Y_MINUS": {}
+  },
+  "budgets": {
+    "wall_seconds": 3600,
+    "transformer_calls": 150,
+    "vae_decodes": 6,
+    "mp4": 6,
+    "automatic_retries": 0
+  },
+  "constraints": {
+    "gpu_executed": false,
+    "science_denominator": 0,
+    "reference": "manual reviewed independent image outline; unresolved rows null",
+    "quality": "human review; RMSE descriptive only"
+  },
+  "intervention": {
+    "after_zero_based_step": 44,
+    "amplitude_latent_pixels": 1.0,
+    "curve": "(k-6)/6; k=0..12",
+    "mask_x": [
+      5,
+      8,
+      51,
+      54
+    ],
+    "mask_y": [
+      6,
+      9,
+      36,
+      39
+    ],
+    "interpolation": "bilinear",
+    "padding": "border",
+    "align_corners": true,
+    "scheduler_history": "deepcopy unchanged, not warped or reset"
+  }
+}
