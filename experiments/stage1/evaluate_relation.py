@@ -136,13 +136,21 @@ def evaluate_sample(observations, annotations, *, sample_id, position_definition
         if not observation["valid"] and observation["q"] is not None:
             raise ValueError("invalid q must be null, not filled")
         previous_p = rows[-1]["p"] if rows else None
+        alignment = entry.get("time_alignment_confirmed", True) if entry is not None else False
+        if type(alignment) is not bool:
+            raise ValueError("time_alignment_confirmed must be boolean")
+        pair_alignment = bool(index and alignment and rows[-1]["time_alignment_confirmed"])
         m = [(a + b) / 2 for a, b in zip(previous_p, p)] if previous_p is not None and p is not None else None
         m_uncertainty = (rows[-1]["normalized_uncertainty_radius"] + normalized_uncertainty) / 2 if m is not None else None
         role = "initial" if index == 0 else ("fit" if index % 2 == 0 else "heldout")
         reason = ("INITIAL_NO_MIDPOINT" if not index else "ANNOTATION_PAIR_MISSING" if m is None
+                  else "TIME_ALIGNMENT_UNCONFIRMED" if not pair_alignment
                   else "OBSERVER_INVALID" if q is None else "ELIGIBLE")
         rows.append({"sample_index": index, "time_seconds": time, "role": role,
-                     "p": p, "m": m, "q": q, "q_valid": observation["valid"],
+                     "p": p, "p_prev": previous_p, "m": m, "q": q, "q_valid": observation["valid"],
+                     "time_alignment_confirmed": alignment,
+                     "pair_time_alignment_confirmed": pair_alignment,
+                     "time_alignment_reason": entry.get("time_alignment_reason", "LEGACY_TIMESTAMP_CHECK_ONLY") if entry else "ANNOTATION_ROW_MISSING",
                      "p_pixel": p_pixel, "uncertainty_pixels": uncertainty,
                      "normalized_uncertainty_radius": normalized_uncertainty,
                      "m_uncertainty_radius": m_uncertainty,

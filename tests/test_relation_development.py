@@ -44,6 +44,24 @@ class RelationDevelopmentTests(unittest.TestCase):
         self.assertEqual(result["spread"]["fit_eligible_m"]["rank"], 1)
         self.assertIsNone(result["heldout_metrics"]["rmse"])
 
+    def test_unconfirmed_time_excludes_both_adjacent_pairs_without_reindexing(self):
+        observations, annotations = fixture(self.points)
+        annotations["rows"][4]["time_alignment_confirmed"] = False
+        result = evaluate(observations, annotations)
+        self.assertEqual(len(result["rows"]), 12)
+        for i in (4, 5):
+            row = result["rows"][i]
+            self.assertEqual(row["eligibility_reason"], "TIME_ALIGNMENT_UNCONFIRMED")
+            self.assertIsNotNone(row["p"])
+            self.assertIsNotNone(row["m"])
+            self.assertIsNone(row["squared_error"])
+        self.assertEqual(result["rows"][5]["p_prev"], self.points[4])
+        self.assertEqual(result["fit_indices"], [2, 6, 8, 10])
+        self.assertEqual(result["heldout_indices"], [1, 3, 7, 9, 11])
+        annotations["rows"][4]["time_alignment_confirmed"] = 1
+        with self.assertRaises(ValueError):
+            evaluate(observations, annotations)
+
     def test_valid_fraction_and_longest_gap_include_initial(self):
         observations, annotations = fixture(self.points)
         for index in (4, 5, 6, 9):
