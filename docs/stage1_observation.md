@@ -1,29 +1,29 @@
 # Stage 1 implementation protocol (engineering only)
 
 The current user selected **frame-difference weighted centroid, fixed camera,
-single subject**. A historical Drive sample and development role are proposed;
-their freeze, numerical thresholds,
-template/missing model and final burst-versus-sequence semantics remain pending.
-No real video has been run by this change. Readiness remains research_defined;
-all tests here are CPU array fixtures with science_denominator=0.
+single subject**. The user confirmed the complete S0 plan: one historical Drive
+development sample, numerical engineering parameters, public templates, no deletion
+and bounded burst-set semantics are frozen before CPU execution. Scientific AISB
+validity and alignment coverage remain undecided. Readiness remains research_defined;
+unit tests have science_denominator=0 and the real run is development engineering only.
 
-## S0 concrete proposal, awaiting sample and parameter confirmation
+## S0 user-confirmed freeze before execution
 
 The working branch is `dev/真实视频公共观测/帧差加权质心-固定镜头单主体`.
 The naming convention is `dev/<具体工作目标>/<当前方法-适用内容>`, without a stage number.
 The existing worktree directory stays `worktrees/Stage1-Public-Observation`.
 
-`experiments/stage1/s0_proposal.json` is the concrete S0 draft. The selected observer
-is confirmed; the following numerical and acquisition choices are proposals for
-this S0 freeze, not claims of user approval or scientifically validated thresholds:
+`experiments/stage1/s0_frozen.json` records the user-confirmed S0 freeze. The
+following choices are approved for this development engineering run, not
+scientifically validated thresholds:
 
-| Item | Proposed value and purpose |
+| Item | Frozen value and purpose |
 | --- | --- |
-| Input denominator | N=1 proposed historical UCF101 video with proposed development role; actual denominator not yet frozen |
+| Input denominator | N=1 historical UCF101 video, fixed development role and sample ID |
 | Sampling | 5 Hz; at most 300 output samples; no silent first-60-second prefix |
 | Decode budget | At most 2,073,600 pixels/frame; 60 seconds per ffprobe or ffmpeg process |
 | Pixel support | Absolute gray difference strictly above 12; support fraction in [0.0001, 0.5] |
-| Templates | Existing public six-point burst_alpha, burst_beta, burst_gamma, coordinates embedded in the draft |
+| Templates | Existing public six-point burst_alpha, burst_beta, burst_gamma, coordinates embedded in the frozen protocol |
 | Missing model | No deletion only, `missing_sets=[[]]`; no claim of deletion robustness |
 | Enumeration | 885 evaluations = 3 × (300 − 6 + 1); invalid windows still consume evaluations |
 | Retention | Global first 128 by the documented total ordering; engineering bound, not a validation-tuned choice |
@@ -44,39 +44,37 @@ from `Datasets/UCF101/raw/UCF-101.zip` (Drive file ID
 `1UgqetmsGMSttIRt8sbD45GICFF1zX1Nk`). The original AVI is locally available without
 transcoding or generation:
 `/home/richar/projects/Video-WM/datasets/UCF101/JumpingJack/v_JumpingJack_g01_c01.avi`.
-The proposed sample ID is `UCF101-JumpingJack-v_JumpingJack_g01_c01`, role
+The frozen sample ID is `UCF101-JumpingJack-v_JumpingJack_g01_c01`, role
 `development`, N=1. Its neighboring `sample_source.json` records the source.
 Preliminary ffprobe inspection reports 320×240, 93 original frames,
 30000/1001 fps and 3.1031 seconds. Nine-frame visual inspection suggests one indoor
 person performing jumping jacks, an approximately fixed background and no obvious
 cut; this is not subject annotation or proof of the content assumption.
 
-The draft top-level proposal schema remains rejected by the runner. Its nested
-manifest contains the actual proposed sample but also an explicit `draft_only`
-field, which the runner rejects as unsupported. Neither layer is directly runnable.
-Only remove this guard when preparing a final manifest after the sample role and
-complete proposed parameter set are confirmed and frozen. The selected sample is
-not an AISB positive. A single
+The protocol's `manifest` is copied to a standalone Git-external runner input before
+execution, after the protocol is committed. The former draft guard is removed
+under the user's complete S0 confirmation. The selected sample is not an AISB
+positive. A single
 development sample does not create an independent validation
 split; a validation sample must not be used for tuning. An ordinary saved video
 has no AISB alignment truth. Independent positive labels remain a separate
 scientific prerequisite and are never inputs to public acquisition.
 
-Before execution, freeze the one-row sample list and the chosen parameters in
-the final manifest; preserve every failure and never replace the sample, adjust
+The one-row sample list and chosen parameters are frozen in the final manifest
+before execution; preserve every failure and never replace the sample, adjust
 parameters after seeing validation outcomes, or sweep to rescue the result.
-The proposed output is
+The frozen output is
 `/home/richar/projects/Video-WM/diagnostics/真实视频公共观测/帧差加权质心-固定镜头单主体/run01`,
 outside Git and required to be fresh. Exceeding pixel/frame/time or encountering
 file/decode/dependency failure stops that sample as OPERATIONAL_BLOCKED and retains
 its partial records. All-invalid observations stop this construction as
 NO_GO_THIS_CONSTRUCTION. Enumeration exhaustion retains evidence as an algorithm
 budget limitation and does not freeze a complete set. Exact repeat disagreement
-fails the proposed stability engineering acceptance; the current runner reports
+fails the frozen stability engineering acceptance; the current runner reports
 the comparison and does not convert it into a scientific terminal PASS/FAIL.
 Scientific AISB validity, 2-D support/degeneracy, localization and true alignment
-coverage thresholds remain unset; no S0 text makes them passed. This amendment
-does not run a video or increase readiness.
+coverage thresholds remain unset; no S0 text makes them passed. Authorized local
+CPU execution does not increase scientific readiness.
 
 ## Observer and decoding
 
@@ -140,8 +138,8 @@ The default suite does not launch video, models, GPU or external services.
 After selecting a saved video and explicitly fixing parameters, run from the
 checkout: `python3 -m experiments.stage1.run_observation --manifest /absolute/input.json
 --output /absolute/fresh-directory-outside-git`. No output may overwrite a prior run.
-Manifest shape (numbers below are illustrative engineering values, not approved
-scientific thresholds; replace path and select every field before a real run):
+Manifest shape (numbers below are approved engineering values, not scientific
+thresholds; use the frozen complete manifest for the authorized run):
 
 ```json
 {"samples":[{"sample_id":"chosen-id","path":"/absolute/chosen-video.mp4","split":"development","content_category":"fixed-camera-single-subject"}],"observer":{"pixel_delta":12,"min_support_fraction":0.0001,"max_support_fraction":0.5},"decode":{"sample_hz":5,"max_frames":300,"max_pixels":2073600,"timeout_seconds":60}}
@@ -159,5 +157,5 @@ When supplied it sends the first complete observation array, including null inva
 positions, through scanning and freeze/readback. Canonical candidate files and their
 object-only digest accompany the per-window raw records. Without this configuration
 candidate_freeze is NOT_RUN. Evaluation exhaustion retains records and reports
-INCOMPLETE_ALGORITHM_BUDGET. Parameters remain pending for any real run. No generated
+INCOMPLETE_ALGORITHM_BUDGET. This S0 freezes parameters for its one development run. No generated
 video, owner/wrong-key loop or scientific promotion.
