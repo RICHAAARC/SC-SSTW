@@ -44,6 +44,20 @@ class RelationDevelopmentTests(unittest.TestCase):
         self.assertEqual(result["spread"]["fit_eligible_m"]["rank"], 1)
         self.assertIsNone(result["heldout_metrics"]["rmse"])
 
+    def test_valid_fraction_and_longest_gap_include_initial(self):
+        observations, annotations = fixture(self.points)
+        for index in (4, 5, 6, 9):
+            observations[index].update(q=None, valid=False, reason="NO_MOTION_SUPPORT")
+        result = evaluate(observations, annotations)
+        availability = result["observation_availability"]
+        self.assertEqual(availability["sample_count_including_initial"], 12)
+        self.assertEqual(availability["q_valid_count"], 7)
+        self.assertEqual(availability["q_valid_fraction"], 7 / 12)
+        self.assertEqual(availability["longest_consecutive_invalid_count"], 3)
+        initial_only = evaluate(*fixture(self.points))["observation_availability"]
+        self.assertEqual(initial_only["q_valid_fraction"], 11 / 12)
+        self.assertEqual(initial_only["longest_consecutive_invalid_count"], 1)
+
     def test_heldout_values_never_enter_fit_baseline_or_scale(self):
         observations, annotations = fixture(self.points)
         before = evaluate(observations, annotations)

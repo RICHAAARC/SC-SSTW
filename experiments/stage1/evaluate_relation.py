@@ -67,6 +67,17 @@ def squared_error(prediction, observed):
     return sum((a - b) ** 2 for a, b in zip(prediction, observed))
 
 
+def observation_availability(rows):
+    longest, current = 0, 0
+    for row in rows:
+        current = 0 if row["q_valid"] else current + 1
+        longest = max(longest, current)
+    valid_count = sum(row["q_valid"] for row in rows)
+    return {"sample_count_including_initial": len(rows), "q_valid_count": valid_count,
+            "q_valid_fraction": valid_count / len(rows) if rows else None,
+            "longest_consecutive_invalid_count": longest}
+
+
 def evaluate_sample(observations, annotations, *, sample_id, position_definition):
     if annotations["sample_id"] != sample_id or annotations["position_definition"] != position_definition:
         raise ValueError("annotation identity or position definition mismatch")
@@ -168,6 +179,7 @@ def evaluate_sample(observations, annotations, *, sample_id, position_definition
     return {"sample_id": sample_id, "terminal": "INPUT_RANK_INSUFFICIENT_FOR_2D_AFFINE" if model is None
             else "NO_ELIGIBLE_HELDOUT" if not heldout else "EVALUATED_DEVELOPMENT_NO_SCIENTIFIC_PASS",
             "rows": rows, "model": model, "baseline_fit_q_mean": baseline,
+            "observation_availability": observation_availability(rows),
             "fit_indices": [r["sample_index"] for r in fit_rows],
             "heldout_indices": [r["sample_index"] for r in heldout],
             "fixed_time_counts": {role: sum(r["role"] == role for r in rows) for role in ("initial", "fit", "heldout")},

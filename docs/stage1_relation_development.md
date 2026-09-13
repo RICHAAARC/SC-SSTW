@@ -6,8 +6,19 @@ decoded 5 Hz frame; q is the existing frame-difference centroid. A and b are one
 constant affine map per video. This is not a carrier, AISB positive or blind
 detector. Annotations enter only `experiments/stage1/evaluate_relation.py`, which
 does not import or invoke the observer. Main method code and the frozen observer
-parameters are unchanged. The anatomical/bounding-box definition of p must be
-chosen and frozen before annotation; no default is scientifically selected here.
+parameters are unchanged. For this authorized development diagnostic the operational
+position definition is `pelvis_center`, the image projection of the midpoint of
+the left and right hip, visually estimated by the annotator. This is the simplest
+operational choice made within the authorized scope, not a separately user-confirmed
+anatomical specification or precision ground truth. Each point retains its own
+subjective uncertainty radius.
+
+The first development intake retains three unavailable content slots and one
+in-place JumpingJack slot. That existing sample's observer result had already been
+seen in the earlier task, so its annotations are not claimed to be historically
+q-blind. The current annotation process uses only the exported actual sampled
+frames, without looking at q or revising points against q. It does not rerun the
+observer. New candidate screening may not use new q results to choose samples.
 
 ## Fixed sample and time denominators
 
@@ -25,6 +36,9 @@ positions and valid q. Do not shift, interpolate, search an offset, reindex or
 move heldout rows into fit. Report fixed and eligible counts separately. Since
 neighboring midpoints share p and video frames are correlated, heldout is an
 interleaved within-video prediction diagnostic, not independent validation.
+Report `q_valid_fraction` over every sampled row including t=0, and the longest
+consecutive invalid-row count on that same unfiltered sequence. Annotation gaps
+do not alter the q-validity denominator; fit eligibility is reported separately.
 
 ## Fit, baseline, normalization and uncertainty
 
