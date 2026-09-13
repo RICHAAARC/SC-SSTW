@@ -1,0 +1,71 @@
+{
+  "protocol_id": "wan_off_baseline_four_output_v1",
+  "model": {
+    "id": "Wan-AI/Wan2.1-T2V-1.3B-Diffusers",
+    "revision": "0fad780a534b6463e45facd96134c9f345acfa5b",
+    "diffusers": "0.35.2"
+  },
+  "generation": {
+    "prompt": "locked camera, a single matte white cube moving slowly across a dark plain table, stable lighting, no people, no cuts",
+    "negative_prompt": "text, watermark, logo, camera motion, cuts, multiple objects, flicker",
+    "seed": 1275,
+    "steps": 8,
+    "guidance": 5.0,
+    "height": 320,
+    "width": 512,
+    "frames": 49,
+    "fps": 8,
+    "max_sequence_length": 512
+  },
+  "observer": {
+    "sample_hz": 5,
+    "max_frames": 300,
+    "max_pixels": 2073600,
+    "timeout_seconds": 60,
+    "pixel_delta": 12,
+    "min_support_fraction": 0.0001,
+    "max_support_fraction": 0.5
+  },
+  "outputs": {
+    "M8": {
+      "path": "manual_fork",
+      "steps": 8,
+      "vae": "bf16",
+      "transformer_calls": 16
+    },
+    "P8": {
+      "path": "official_latent",
+      "steps": 8,
+      "vae": "bf16",
+      "transformer_calls": 16
+    },
+    "V8": {
+      "path": "redecode_P8",
+      "steps": 8,
+      "vae": "float32_checkpoint_reload",
+      "transformer_calls": 0
+    },
+    "P50": {
+      "path": "official_latent",
+      "steps": 50,
+      "vae": "float32_checkpoint_reload",
+      "transformer_calls": 100
+    }
+  },
+  "budgets": {
+    "wall_seconds": 3600,
+    "transformer_calls": 132,
+    "vae_decodes": 4,
+    "mp4": 4,
+    "automatic_retries": 0
+  },
+  "constraints": {
+    "shared_explicit_initial_latent": true,
+    "fresh_scheduler_from_same_config": true,
+    "interventions": false,
+    "amplitude_or_threshold_changes": false,
+    "quality_decision": "human_review_required_no_automated_sobel_threshold",
+    "science_denominator": 0,
+    "gpu_executed": false
+  }
+}
