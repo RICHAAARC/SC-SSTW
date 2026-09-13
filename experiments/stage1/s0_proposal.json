@@ -4,9 +4,20 @@
   "parameter_approval": "PROPOSED_FOR_S0_FREEZE_NOT_YET_CONFIRMED",
   "target_sample_count": 1,
   "frozen_sample_count": null,
-  "required_sample_decisions": ["absolute_saved_video_path", "sample_id", "development_or_validation"],
+  "required_sample_decisions": ["confirm_proposed_historical_drive_sample_and_development_role"],
+  "sample_selection_status": "PROPOSED_BEFORE_OBSERVER_RUN_NOT_FROZEN",
+  "sample_selection_basis": "Lexicographically first JumpingJack class member of user-authorized historical Datasets/UCF101/raw/UCF-101.zip; development entry only, not an AISB positive or subject annotation",
+  "sample_source_record": "/home/richar/projects/Video-WM/datasets/UCF101/JumpingJack/sample_source.json",
+  "sample_inspection": {"width": 320, "height": 240, "original_frame_count": 93, "original_frame_rate": "30000:1001", "duration_seconds": 3.1031, "visual_scope": "single indoor subject performing jumping jacks, approximately fixed background, no obvious cut; preliminary inspection only"},
   "proposed_manifest": {
-    "samples": [],
+    "samples": [
+      {
+        "sample_id": "UCF101-JumpingJack-v_JumpingJack_g01_c01",
+        "path": "/home/richar/projects/Video-WM/datasets/UCF101/JumpingJack/v_JumpingJack_g01_c01.avi",
+        "split": "development",
+        "content_category": "fixed-camera-single-subject-proposed"
+      }
+    ],
     "observer": {
       "pixel_delta": 12,
       "min_support_fraction": 0.0001,

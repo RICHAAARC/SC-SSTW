@@ -1,7 +1,8 @@
 # Stage 1 implementation protocol (engineering only)
 
 The current user selected **frame-difference weighted centroid, fixed camera,
-single subject**. Sample IDs, development/validation split, numerical thresholds,
+single subject**. A historical Drive sample and development role are proposed;
+their freeze, numerical thresholds,
 template/missing model and final burst-versus-sequence semantics remain pending.
 No real video has been run by this change. Readiness remains research_defined;
 all tests here are CPU array fixtures with science_denominator=0.
@@ -18,7 +19,7 @@ this S0 freeze, not claims of user approval or scientifically validated threshol
 
 | Item | Proposed value and purpose |
 | --- | --- |
-| Input denominator | Target N=1 saved video; actual ID/path/split and denominator not yet frozen |
+| Input denominator | N=1 proposed historical UCF101 video with proposed development role; actual denominator not yet frozen |
 | Sampling | 5 Hz; at most 300 output samples; no silent first-60-second prefix |
 | Decode budget | At most 2,073,600 pixels/frame; 60 seconds per ffprobe or ffmpeg process |
 | Pixel support | Absolute gray difference strictly above 12; support fraction in [0.0001, 0.5] |
@@ -37,11 +38,24 @@ first window for each template, so 885 is an enumeration bound, not a promise of
 885 scored candidates. A 128-candidate retained set may drop genuine alignments;
 without independent positive labels, pre/post-truncation coverage is unassessed.
 
-The draft is deliberately not runnable: its top-level proposal schema is rejected
-by the runner, and its nested manifest has an empty sample list and is also
-rejected. A final manifest may only be prepared after the saved absolute video
-path, stable sample ID, development/validation identity and proposed choices are
-settled. A single development sample does not create an independent validation
+The user authorized historical Google Drive Datasets as the sample source. Before
+running the observer, the lexicographically first JumpingJack member was selected
+from `Datasets/UCF101/raw/UCF-101.zip` (Drive file ID
+`1UgqetmsGMSttIRt8sbD45GICFF1zX1Nk`). The original AVI is locally available without
+transcoding or generation:
+`/home/richar/projects/Video-WM/datasets/UCF101/JumpingJack/v_JumpingJack_g01_c01.avi`.
+The proposed sample ID is `UCF101-JumpingJack-v_JumpingJack_g01_c01`, role
+`development`, N=1. Its neighboring `sample_source.json` records the source.
+Preliminary ffprobe inspection reports 320×240, 93 original frames,
+30000/1001 fps and 3.1031 seconds. Nine-frame visual inspection suggests one indoor
+person performing jumping jacks, an approximately fixed background and no obvious
+cut; this is not subject annotation or proof of the content assumption.
+
+The draft top-level proposal schema remains rejected by the runner. Its nested
+manifest now contains the actual proposed sample and is structurally executable;
+do not extract/run it until the sample role and complete proposed parameter set
+are confirmed and frozen. The selected sample is not an AISB positive. A single
+development sample does not create an independent validation
 split; a validation sample must not be used for tuning. An ordinary saved video
 has no AISB alignment truth. Independent positive labels remain a separate
 scientific prerequisite and are never inputs to public acquisition.
