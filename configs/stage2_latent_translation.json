@@ -1,0 +1,84 @@
+{
+  "protocol_id": "wan_latent_common_translation_v1",
+  "model": {
+    "id": "Wan-AI/Wan2.1-T2V-1.3B-Diffusers",
+    "revision": "0fad780a534b6463e45facd96134c9f345acfa5b",
+    "diffusers": "0.35.2"
+  },
+  "generation": {
+    "prompt": "locked camera, a single matte white cube moving slowly across a dark plain table, stable lighting, no people, no cuts",
+    "negative_prompt": "text, watermark, logo, camera motion, cuts, multiple objects, flicker",
+    "seed": 1275,
+    "steps": 8,
+    "guidance": 5.0,
+    "height": 320,
+    "width": 512,
+    "frames": 49,
+    "fps": 8,
+    "max_sequence_length": 512
+  },
+  "intervention": {
+    "after_scheduler_index": 5,
+    "remaining_indices": [
+      6,
+      7
+    ],
+    "delta_latent_pixel": 0.25,
+    "padding": "border",
+    "interpolation": "bilinear",
+    "align_corners": true,
+    "temporal_policy": "same_shift_every_frame",
+    "arms": {
+      "OFF1": [
+        0,
+        0
+      ],
+      "OFF2": [
+        0,
+        0
+      ],
+      "X_PLUS": [
+        0.25,
+        0
+      ],
+      "X_MINUS": [
+        -0.25,
+        0
+      ],
+      "Y_PLUS": [
+        0,
+        0.25
+      ],
+      "Y_MINUS": [
+        0,
+        -0.25
+      ]
+    }
+  },
+  "observer": {
+    "sample_hz": 5,
+    "max_frames": 300,
+    "max_pixels": 2073600,
+    "timeout_seconds": 60,
+    "pixel_delta": 12,
+    "min_support_fraction": 0.0001,
+    "max_support_fraction": 0.5
+  },
+  "engineering_budgets": {
+    "common_valid_fraction": 0.8,
+    "minimum_common_pairs": 10,
+    "minimum_singular_to_floor": 5.0,
+    "numeric_floor": 3.814697265625e-06,
+    "maximum_condition": 10.0,
+    "maximum_rgb_absolute_rmse": 0.05,
+    "gpu_wall_seconds": 3600,
+    "maximum_mp4": 6,
+    "maximum_transformer_calls": 36,
+    "maximum_vae_decodes": 6
+  },
+  "scope": {
+    "gpu_executed": false,
+    "science_denominator": 0,
+    "claim": "common spatial relocation primitive only; not temporal trajectory writing"
+  }
+}
