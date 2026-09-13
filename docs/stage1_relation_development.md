@@ -8,7 +8,8 @@ detector. Annotations enter only `experiments/stage1/evaluate_relation.py`, whic
 does not import or invoke the observer. Main method code and the frozen observer
 parameters are unchanged. For this authorized development diagnostic the operational
 position definition is `pelvis_center`, the image projection of the midpoint of
-the left and right hip, visually estimated by the annotator. This is the simplest
+the left and right hip, visually estimated point by point by the root assistant
+from the images, not a human expert's precision annotation. This is the simplest
 operational choice made within the authorized scope, not a separately user-confirmed
 anatomical specification or precision ground truth. Each point retains its own
 subjective uncertainty radius.
