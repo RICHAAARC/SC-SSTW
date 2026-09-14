@@ -25,6 +25,40 @@ def tiny_adapter(checkpointed=False):
 
 
 class CheckpointTests(unittest.TestCase):
+    def test_boundary_storage_views_deduplicated_and_released(self):
+        import gc, weakref
+        from runtime.public_statistic.checkpointing import BoundaryStorage
+        source=torch.arange(48,dtype=torch.float32).reshape(6,8)
+        views=[source[:,1:7:2],source.t()]
+        store=BoundaryStorage();packed=[store.pack(x) for x in views]
+        self.assertIs(packed[0][0],packed[1][0])
+        self.assertNotEqual(packed[0][0].data_ptr(),source.data_ptr())
+        ref=weakref.ref(packed[0][0]);store.copies.clear()
+        for x,p in zip(views,packed):
+            restored=store.unpack(p)
+            self.assertEqual(restored.stride(),x.stride())
+            self.assertEqual(restored.storage_offset(),x.storage_offset())
+            torch.testing.assert_close(restored,x,rtol=0,atol=0)
+        del packed,p
+        gc.collect();self.assertIsNone(ref())
+
+    def test_checkpoint_packs_inputs_only_and_releases_after_backward(self):
+        import gc, weakref
+        from unittest.mock import patch
+        from runtime.public_statistic.checkpointing import BoundaryStorage,checkpoint_call
+        refs=[];sizes=[];original=BoundaryStorage.pack
+        def capture(store,tensor):
+            packed=original(store,tensor);refs.append(weakref.ref(packed[0]));sizes.append(tensor.numel())
+            return packed
+        x=torch.randn(7,requires_grad=True)
+        ledger=CheckpointLedger(dict(transformer_block=0,vae_chunk=1))
+        with patch.object(BoundaryStorage,'pack',capture):
+            result=checkpoint_call(ledger,'vae_chunk',lambda x:(x.sin().repeat(20).cos()).sum(),x)
+        self.assertEqual(sizes,[0,7])  # checkpoint dummy and explicit input, no inner activations
+        grad=torch.autograd.grad(result,x)[0]
+        torch.testing.assert_close(grad,-20*x.cos()*x.sin().sin())
+        gc.collect();self.assertTrue(all(ref() is None for ref in refs))
+
     def test_native_decode_13_chunks_to49_gradient_and_cache_restore(self):
         torch.set_num_threads(1);torch.manual_seed(13)
         v=tiny_vae(True);z=torch.randn(1,2,13,2,2)*.1

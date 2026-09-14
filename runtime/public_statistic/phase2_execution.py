@@ -91,7 +91,7 @@ def load_wan(c, guard, *, torch=None, pipeline_class=None, vae_class=None, recor
     with torch.no_grad():
         cond, uncond = pipe.encode_prompt(prompt=g['prompt'], negative_prompt=g['negative_prompt'], do_classifier_free_guidance=True, num_videos_per_prompt=1, max_sequence_length=g['max_sequence_length'], device=device)
     cond, uncond = cond.to(torch.bfloat16), uncond.to(torch.bfloat16)
-    pipe.text_encoder.to('cpu'); pipe.text_encoder = None
+    pipe.text_encoder = None  # Release directly; do not make a discarded CPU copy.
     gc.collect(); torch.cuda.empty_cache(); guard.check()
     vae_kw = dict(subfolder='vae', torch_dtype=torch.float32)
     if model.get('revision'): vae_kw['revision'] = model['revision']
@@ -120,7 +120,7 @@ def load_wan(c, guard, *, torch=None, pipeline_class=None, vae_class=None, recor
         from runtime.public_statistic.checkpointing import CheckpointLedger
         ledger = CheckpointLedger(c['checkpoint_recomputation'], resource_check=guard.check)
     adapter = WanTerminalAdapter(pipe.transformer, vae, cond, uncond, guidance_scale=g['guidance'], torch=torch, resource_guard=guard, save_forecast_tensors_on_cpu=c.get("save_forecast_tensors_on_cpu", False), checkpoint_ledger=ledger)
-    if record: record(dict(checkpoint_recomputation_limits=ledger.limits if ledger else None, save_forecast_tensors_on_cpu=adapter.save_forecast_tensors_on_cpu, model=model, scheduler_class=type(pipe.scheduler).__name__, scheduler_config=dict(pipe.scheduler.config), timesteps=pipe.scheduler.timesteps.detach().cpu().tolist(), latent_shape=list(initial.shape), latent_dtype=str(initial.dtype), transformer_dtype=str(adapter.input_dtype()), transformer_first_parameter_dtype=str(next(pipe.transformer.parameters()).dtype), vae_dtype=str(next(vae.parameters()).dtype), offload=False, transformer_checkpointing=bool(getattr(pipe.transformer, 'is_gradient_checkpointing', False)), vae_checkpointing=bool(getattr(vae, 'is_gradient_checkpointing', False)), transformer_resolved_revision=getattr(pipe.transformer.config, '_commit_hash', None), vae_resolved_revision=getattr(vae.config, '_commit_hash', None)))
+    if record: record(dict(vae_checkpoint_boundary_storage='cpu' if ledger else None, checkpoint_recomputation_limits=ledger.limits if ledger else None, save_forecast_tensors_on_cpu=adapter.save_forecast_tensors_on_cpu, model=model, scheduler_class=type(pipe.scheduler).__name__, scheduler_config=dict(pipe.scheduler.config), timesteps=pipe.scheduler.timesteps.detach().cpu().tolist(), latent_shape=list(initial.shape), latent_dtype=str(initial.dtype), transformer_dtype=str(adapter.input_dtype()), transformer_first_parameter_dtype=str(next(pipe.transformer.parameters()).dtype), vae_dtype=str(next(vae.parameters()).dtype), offload=False, transformer_checkpointing=bool(getattr(pipe.transformer, 'is_gradient_checkpointing', False)), vae_checkpointing=bool(getattr(vae, 'is_gradient_checkpointing', False)), transformer_resolved_revision=getattr(pipe.transformer.config, '_commit_hash', None), vae_resolved_revision=getattr(vae.config, '_commit_hash', None)))
     return adapter, initial, SolverState(pipe.scheduler, 0)
 
 

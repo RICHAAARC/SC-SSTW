@@ -1,4 +1,4 @@
-"""Explicit bounded recomputation; no saved-activation transfer to host."""
+"""Segment recomputation with CPU storage for historical VAE boundary inputs."""
 
 
 class CheckpointLedger:
@@ -41,22 +41,64 @@ class CheckpointLedger:
         self.counts[name][phase]['completed'] += 1
 
 
+class BoundaryStorage:
+    """One checkpoint input pack; no global tensor pool or retained GPU storage."""
+    def __init__(self):
+        self.copies = {}
+
+    def pack(self, tensor):
+        import torch
+        storage = tensor.untyped_storage()
+        key = (tensor.device, storage.data_ptr(), storage.nbytes())
+        if key not in self.copies:
+            raw = torch.empty(0, dtype=torch.uint8, device=tensor.device).set_(storage, 0, (storage.nbytes(),), (1,))
+            self.copies[key] = raw.to(device='cpu', copy=True)
+        return (self.copies[key], tensor.device, tensor.dtype, tensor.storage_offset(), tuple(tensor.shape), tuple(tensor.stride()))
+
+    @staticmethod
+    def unpack(packed):
+        import torch
+        raw, device, dtype, offset, shape, stride = packed
+        import weakref
+        previous = getattr(raw, '_restored_view', lambda: None)()
+        storage = previous.untyped_storage() if previous is not None else raw.to(device=device).untyped_storage()
+        result = torch.empty(0, dtype=dtype, device=device).set_(storage, offset, shape, stride)
+        # Alias inputs restored together share a device allocation. Weak ownership
+        # lets replay inputs disappear immediately when autograd releases them.
+        raw._restored_view = weakref.ref(result)
+        return result
+
+
 def checkpoint_call(ledger, name, function, *args, boundary=None):
-    """A fresh wrapper per segment: replay always gets its own functional inputs."""
-    from torch.utils.checkpoint import checkpoint, set_checkpoint_early_stop
+    """Only explicit VAE inputs use CPU packing; inner activations use checkpoint."""
+    import torch
+    from contextlib import nullcontext
+    from torch.utils.checkpoint import checkpoint
     calls = 0
     def measured(*inputs):
         nonlocal calls
         phase = 'forward' if calls == 0 else 'recompute'
         calls += 1
         ledger.start(name, phase)
-        result = function(*inputs)
+        try:
+            result = function(*inputs)
+        except Exception as exc:
+            # Non-reentrant checkpoint stops once all requested tensors exist.
+            # This is successful partial replay, not a failed model invocation.
+            if phase == 'recompute' and type(exc).__name__ == '_StopRecomputationError':
+                ledger.finish(name, phase)
+            raise
         if boundary is not None:boundary(phase,result)
         ledger.finish(name, phase)
         return result
-    # Complete each replay, so the extra-work ledger counts whole block/chunk calls.
-    with set_checkpoint_early_stop(False):
-        return checkpoint(measured, *args, use_reentrant=False, preserve_rng_state=True)
+    store = BoundaryStorage() if name == 'vae_chunk' else None
+    context = torch.autograd.graph.saved_tensors_hooks(store.pack, store.unpack) if store else nullcontext()
+    try:
+        with context:
+            return checkpoint(measured, *args, use_reentrant=False, preserve_rng_state=True)
+    finally:
+        # Packed tuples are owned by autograd; the packer must not extend lifetime.
+        if store is not None:store.copies.clear()
 
 
 def enable_transformer_checkpointing(transformer, ledger):
