@@ -1,0 +1,40 @@
+{
+  "model": {
+    "id": "Wan-AI/Wan2.1-T2V-1.3B-Diffusers"
+  },
+  "generation": {
+    "prompt": "locked camera, a single matte white cube moving slowly across a dark plain table, stable lighting, no people, no cuts",
+    "negative_prompt": "text, watermark, logo, camera motion, cuts, multiple objects, flicker",
+    "seed": 1275,
+    "steps": 50,
+    "guidance": 5.0,
+    "height": 320,
+    "width": 512,
+    "frames": 49,
+    "fps": 8,
+    "max_sequence_length": 512
+  },
+  "feedback": {
+    "after_indices": [
+      47,
+      48
+    ],
+    "learning_rate": 10.0,
+    "per_update_fraction": 0.001,
+    "cumulative_fraction": 0.002,
+    "amplitude": 0.00784313725490196,
+    "quality_clip_rmse": 0.011764705882352941
+  },
+  "budget": {
+    "transformer_calls": 124,
+    "vae_calls": 7,
+    "backward_calls": 2,
+    "mp4": 3,
+    "saved_frames": 147,
+    "wall_seconds": 1800,
+    "allocator_gib": 22,
+    "host_rss_gib": 32
+  },
+  "automatic_retries": 0,
+  "claim": "One proposed engineering trial, not executed or authorized by this file; no scientific denominator"
+}

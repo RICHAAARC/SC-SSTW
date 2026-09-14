@@ -1,0 +1,53 @@
+{
+  "protocol_id": "public_luma_phase1_v2",
+  "statistic": "RGB_code_luma_DCT_half_cosine_zero_mean_unit_RMS",
+  "inputs": [
+    {
+      "id": "P50",
+      "path": "/home/richar/projects/Video-WM/diagnostics/阶段二-生成二维位置原语/p50_motion_audit/saved.mp4",
+      "width": 512,
+      "height": 320,
+      "source_fps": "8/1"
+    },
+    {
+      "id": "JumpingJack",
+      "path": "/home/richar/projects/Video-WM/datasets/UCF101/JumpingJack/v_JumpingJack_g01_c01.avi",
+      "width": 320,
+      "height": 240,
+      "source_fps": "30000/1001"
+    }
+  ],
+  "sample_hz": 8,
+  "frames": 16,
+  "segment_seconds": [
+    0,
+    2
+  ],
+  "arms": [
+    "OFF1",
+    "OFF2",
+    "X_PLUS",
+    "X_MINUS",
+    "Y_PLUS",
+    "Y_MINUS"
+  ],
+  "amplitude": 0.00784313725490196,
+  "quality_rms_budget": 0.011764705882352941,
+  "signed_minimum": 0.00392156862745098,
+  "crosstalk_maximum": 0.00196078431372549,
+  "minimum_passing_frames": 15,
+  "maximum_condition": 3,
+  "codec": {
+    "name": "libx264",
+    "crf": 18,
+    "pixel_format": "yuv420p",
+    "threads": 1
+  },
+  "wall_seconds": 600,
+  "automatic_retries": 0,
+  "science_denominator": 0,
+  "execution_authorization": "PROPOSAL_PENDING_SINGLE_USER_APPROVAL",
+  "phase2": "ADAPTER_AND_GPU_BUDGET_NOT_READY",
+  "minimum_gain": 0.5,
+  "vector_error_fraction": 0.25
+}
