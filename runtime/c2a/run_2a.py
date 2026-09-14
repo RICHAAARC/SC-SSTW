@@ -23,8 +23,6 @@ def _write_json(path: Path, value: Any) -> None:
 def _load_config(path: Path) -> dict[str, Any]:
     config = json.loads(path.read_text(encoding="utf-8"))
     model = config.get("model", {})
-    if not model.get("local_files_only", False):
-        raise ValueError("C2A preparation forbids model downloads; local_files_only must remain true")
     if not isinstance(model.get("id"), str) or not model["id"] or model["id"].startswith("REQUIRED_"):
         raise ValueError("C2A requires the identifier of an already-present local model")
     if model.get("revision") is not None and not isinstance(model["revision"], str):

@@ -21,7 +21,7 @@ class GeneratedTerminal:
 
 
 def _load_args(model: dict[str, Any], *, torch_dtype: Any, subfolder: str | None = None) -> dict[str, Any]:
-    args: dict[str, Any] = {"torch_dtype": torch_dtype, "local_files_only": True}
+    args: dict[str, Any] = {"torch_dtype": torch_dtype}
     if subfolder is not None:
         args["subfolder"] = subfolder
     if model.get("revision"):
@@ -35,8 +35,6 @@ def generate_terminal_latent(config: dict[str, Any]) -> GeneratedTerminal:
     import torch
     from diffusers import AutoencoderKLWan, WanPipeline
 
-    if not torch.cuda.is_available():
-        raise RuntimeError("C2A terminal generation requires CUDA")
     model, generation = config["model"], config["generation"]
     device = torch.device("cuda")
     pipe = WanPipeline.from_pretrained(model["id"], **_load_args(model, torch_dtype=torch.bfloat16))
@@ -58,9 +56,10 @@ def generate_terminal_latent(config: dict[str, Any]) -> GeneratedTerminal:
     gc.collect()
     torch.cuda.empty_cache()
     vae = AutoencoderKLWan.from_pretrained(model["id"], **_load_args(model, torch_dtype=torch.float32, subfolder="vae")).eval()
-    temporal_scale = getattr(vae.config, "scale_factor_temporal", None) or 2 ** sum(vae.config.temperal_downsample)
-    spatial_scale = getattr(vae.config, "scale_factor_spatial", None) or 2 ** len(vae.config.temperal_downsample)
-    if generation["height"] % spatial_scale or generation["width"] % spatial_scale or (generation["frames"] - 1) % temporal_scale:
+    pipe.vae = vae
+    pipe.vae_scale_factor_temporal = getattr(vae.config, "scale_factor_temporal", None) or 2 ** sum(vae.config.temperal_downsample)
+    pipe.vae_scale_factor_spatial = getattr(vae.config, "scale_factor_spatial", None) or 2 ** len(vae.config.temperal_downsample)
+    if generation["height"] % pipe.vae_scale_factor_spatial or generation["width"] % pipe.vae_scale_factor_spatial or (generation["frames"] - 1) % pipe.vae_scale_factor_temporal:
         raise ValueError("the reused Wan VAE cannot represent the configured video geometry")
     for module in (pipe.transformer, vae):
         disable = getattr(module, "disable_gradient_checkpointing", None)

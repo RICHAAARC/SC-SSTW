@@ -2,8 +2,7 @@
   "status": "PREPARED_NOT_RUN",
   "model": {
     "id": "Wan-AI/Wan2.1-T2V-1.3B-Diffusers",
-    "revision": null,
-    "local_files_only": true
+    "revision": null
   },
   "generation": {
     "role": "reused_public_statistic_terminal_generation_once_then_shared_six_arm_c2a",

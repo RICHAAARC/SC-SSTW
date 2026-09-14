@@ -53,8 +53,9 @@ thresholded response claim.
 The historical model/prompt/seed are selected as a fixed first interface
 configuration because they were the actual old entrypoint, not because their
 old scientific outcome transfers to C2. The revision is recorded when
-available but is not a version whitelist. `local_files_only` remains true, so
-this preparation cannot cause a model download.
+available but is not a version whitelist. The Colab setup follows the prior
+notebook's normal dependency and model-loading path; ordinary load failures
+are retained as run failures rather than converted into a separate preflight.
 
 `run_2a.py` calls this one terminal-generation adapter itself; it no longer
 requires a user-provided `.pt` latent. It records the actual scheduler and
