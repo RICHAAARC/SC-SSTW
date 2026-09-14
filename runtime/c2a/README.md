@@ -67,3 +67,17 @@ source-delivery channel. A future enabled six-arm run writes its arm videos,
 metrics, configuration and failure records directly to
 `MyDrive/Video-WM/C2A_2A/<UTC-run-id>/`; it never reuses an existing run
 directory.
+
+`run_second_axis_diagnostic.py` and
+`notebooks/c2a_second_axis_diagnostic_colab.ipynb` are a separate, fixed
+three-arm localization entry (`ZERO`, `PLUS_E2`, `MINUS_E2`). They create one
+new fixed terminal rather than claiming to recover the earlier one. For each
+arm they preserve the shared terminal, actual FP32-written 2x8x8 blocks for
+all ordinary groups, lossless pre-codec float RGB, pre-codec q, MP4, and
+post-MP4 q. Actual-write covariance is recomputed after FP32 `copy_` from the
+block that is decoded; the float64 transport identity remains separately
+labeled analytic metadata. The package writes only below
+`MyDrive/Video-WM/C2A_SecondAxis_Diagnostic/<UTC-run-id>/` and retains all
+three arm outcomes. Its declared work is one 100-forward terminal generation,
+three VAE decodes, and six VAE encodes; it does not perform a parameter scan,
+new fit, or 2B activity.

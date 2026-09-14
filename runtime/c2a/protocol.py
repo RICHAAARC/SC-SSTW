@@ -89,6 +89,33 @@ def _support(normalized_latent: Any, group: int, config: C2AConfig) -> Any:
     return normalized_latent[0, 0:2, group, rows, cols]
 
 
+def _covariance_and_q(block: Any) -> tuple[Any, Any]:
+    """Measure the empirical 2x2 covariance of an *actual* support block.
+
+    The block may be FP32 (as it is after ``copy_`` in the writer).  Values are
+    promoted only for the measurement; no analytic transport identity is used
+    as a substitute for this post-write calculation.
+    """
+
+    torch = _torch()
+    x = block.reshape(2, -1).to(dtype=torch.float64)
+    centered = x - x.mean(dim=1, keepdim=True)
+    covariance = centered @ centered.transpose(0, 1) / 64.0
+    if not bool(torch.isfinite(covariance).all()):
+        raise ValueError("NONFINITE_READ_COVARIANCE")
+    q = torch.stack(((covariance[0, 0] - covariance[1, 1]) / 2.0, covariance[0, 1]))
+    return covariance, q
+
+
+def _target_covariance(state: tuple[float, float], *, config: C2AConfig) -> Any:
+    torch = _torch()
+    return torch.tensor(
+        ((1.0 + config.beta * state[0], config.beta * state[1]),
+         (config.beta * state[1], 1.0 - config.beta * state[0])),
+        dtype=torch.float64,
+    )
+
+
 def write_covariance_state(normalized_latent: Any, state: tuple[float, float], *, config: C2AConfig = C2AConfig()) -> tuple[Any, list[dict[str, float | int]]]:
     """Apply the documented SPD OT mapping to all three hold groups.
 
@@ -102,12 +129,7 @@ def write_covariance_state(normalized_latent: Any, state: tuple[float, float], *
         raise ValueError("state is outside the fixed rho ball")
     written = normalized_latent.detach().clone()
     records: list[dict[str, float | int]] = []
-    sigma = torch.tensor(
-        ((1.0 + config.beta * state[0], config.beta * state[1]),
-         (config.beta * state[1], 1.0 - config.beta * state[0])),
-        device=written.device,
-        dtype=torch.float64,
-    )
+    sigma = _target_covariance(state, config=config).to(device=written.device)
     for group in config.ordinary_groups:
         block = _support(written, group, config)
         original_dtype = block.dtype
@@ -125,9 +147,9 @@ def write_covariance_state(normalized_latent: Any, state: tuple[float, float], *
         eigenvalues = torch.linalg.eigvalsh(covariance)
         records.append({
             "group": group,
-            "covariance_lambda_min": float(eigenvalues[0].item()),
-            "covariance_lambda_max": float(eigenvalues[-1].item()),
-            "post_target_max_abs_error": float((check - sigma).abs().max().item()),
+            "pre_write_covariance_lambda_min": float(eigenvalues[0].item()),
+            "pre_write_covariance_lambda_max": float(eigenvalues[-1].item()),
+            "analytic_transport_target_max_abs_error_float64": float((check - sigma).abs().max().item()),
         })
     return written, records
 
@@ -135,15 +157,49 @@ def write_covariance_state(normalized_latent: Any, state: tuple[float, float], *
 def read_q(normalized_latent: Any, *, config: C2AConfig = C2AConfig()) -> Any:
     """Read the fixed traceless covariance coordinates from the middle group."""
 
-    torch = _torch()
     config.validate()
     block = _support(normalized_latent, config.read_group, config)
-    x = block.reshape(2, -1).to(dtype=torch.float64)
-    centered = x - x.mean(dim=1, keepdim=True)
-    covariance = centered @ centered.transpose(0, 1) / 64.0
-    if not bool(torch.isfinite(covariance).all()):
-        raise ValueError("NONFINITE_READ_COVARIANCE")
-    return torch.stack(((covariance[0, 0] - covariance[1, 1]) / 2.0, covariance[0, 1]))
+    return _covariance_and_q(block)[1]
+
+
+def actual_write_measurement(normalized_latent: Any, state: tuple[float, float], *, config: C2AConfig = C2AConfig()) -> dict[str, Any]:
+    """Measure each written FP32 block after the writer has actually copied it.
+
+    This deliberately records the covariance and q of groups 1, 2, and 3 from
+    the tensor that will be decoded.  ``analytic_transport_*`` values from the
+    writer are separate diagnostics and must not be read as this measurement.
+    """
+
+    config.validate()
+    target = _target_covariance(state, config=config)
+    target_q = ((target[0, 0] - target[1, 1]) / 2.0, target[0, 1])
+    groups: list[dict[str, Any]] = []
+    for group in config.ordinary_groups:
+        covariance, q = _covariance_and_q(_support(normalized_latent, group, config))
+        target_on_measurement_device = target.to(device=covariance.device)
+        groups.append({
+            "group": group,
+            "actual_covariance_after_fp32_write": covariance.detach().cpu().tolist(),
+            "actual_q_after_fp32_write": q.detach().cpu().tolist(),
+            "actual_target_max_abs_error": float((covariance - target_on_measurement_device).abs().max().item()),
+        })
+    return {
+        "target_covariance": target.detach().cpu().tolist(),
+        "target_q": [float(target_q[0].item()), float(target_q[1].item())],
+        "groups": groups,
+        "read_group": config.read_group,
+        "middle_group_q_after_fp32_write": next(row["actual_q_after_fp32_write"] for row in groups if row["group"] == config.read_group),
+    }
+
+
+def actual_written_block_snapshots(normalized_latent: Any, *, config: C2AConfig = C2AConfig()) -> dict[str, Any]:
+    """Copy exactly the decoded support blocks to CPU without changing dtype."""
+
+    config.validate()
+    return {
+        f"group_{group}": _support(normalized_latent, group, config).detach().to(device="cpu").contiguous().clone()
+        for group in config.ordinary_groups
+    }
 
 
 def latent_change_metrics(reference: Any, changed: Any, *, config: C2AConfig = C2AConfig()) -> dict[str, float | None]:

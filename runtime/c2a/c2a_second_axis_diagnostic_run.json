@@ -1,0 +1,47 @@
+{
+  "status": "PREPARED_NOT_RUN",
+  "model": {
+    "id": "Wan-AI/Wan2.1-T2V-1.3B-Diffusers",
+    "revision": null
+  },
+  "generation": {
+    "role": "one new ordinary terminal generation shared only by ZERO/PLUS_E2/MINUS_E2; this is not recovery of the earlier tensor",
+    "prompt": "locked camera, a single matte white cube moving slowly across a dark plain table, stable lighting, no people, no cuts",
+    "negative_prompt": "text, watermark, logo, camera motion, cuts, multiple objects, flicker",
+    "seed": 1275,
+    "height": 320,
+    "width": 512,
+    "frames": 49,
+    "fps": 8,
+    "steps": 50,
+    "guidance_scale": 5.0,
+    "max_sequence_length": 512
+  },
+  "c2a": {
+    "channels_zero_based": [0, 1],
+    "central_block": "floor((H-8)/2):+8, floor((W-8)/2):+8",
+    "ordinary_groups": [1, 2, 3],
+    "read_group": 2,
+    "beta": 0.25,
+    "rho": 0.5,
+    "near_singular_rule": "reject if lambda_min <= 1e-8 * max(lambda_max, 1); no regularization or pseudoinverse",
+    "posterior": "mode",
+    "cache_reset": "before and after each decode and encode",
+    "arms": ["ZERO", "PLUS_E2", "MINUS_E2"]
+  },
+  "codec": {
+    "name": "h264_yuv420p",
+    "crf": 18,
+    "readback": "ffmpeg_rgb24",
+    "thread_count": 1
+  },
+  "acceptance": {
+    "status": "UNSET_REQUIRES_EXPLICIT_USER_DECISION_AFTER_DIAGNOSTIC_RECORDS",
+    "records_required": [
+      "all three arm rows including failures",
+      "shared terminal and actual post-FP32-write block snapshots",
+      "pre-codec and post-MP4 q for each readable arm",
+      "O2/M2 vectors and norms for both layers"
+    ]
+  }
+}
