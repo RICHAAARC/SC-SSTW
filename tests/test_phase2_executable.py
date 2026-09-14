@@ -79,6 +79,24 @@ class ExecutableTests(unittest.TestCase):
             self.assertNotEqual(code,0)
             r=json.loads((out/'result.json').read_text());self.assertEqual(r['supervisor_stop'],'WALL_BUDGET')
             self.assertTrue(all(x['status']=='NOT_EXECUTED' for x in r['arms'].values()))
+    def test_host_memory_is_diagnostic_only(self):
+        import subprocess,sys
+        original=subprocess.Popen
+        for diagnostic in (64*2**30, PermissionError('diagnostic unavailable')):
+            with self.subTest(diagnostic=str(diagnostic)):
+                c=config();self.assertNotIn('host_rss_gib',c['budget']);validate_config(c)
+                def short_child(command,**kwargs):
+                    return original([sys.executable,'-c','import time;time.sleep(.3)'],**kwargs)
+                kwargs={'side_effect':diagnostic} if isinstance(diagnostic,Exception) else {'return_value':diagnostic}
+                with tempfile.TemporaryDirectory() as tmp:
+                    cp=Path(tmp)/'config.json';write(cp,c);out=Path(tmp)/'run'
+                    with patch('experiments.public_statistic.run_phase2.subprocess.Popen',side_effect=short_child), patch('experiments.public_statistic.run_phase2.process_tree_rss',**kwargs):
+                        code=supervise(cp,out)
+                    record=json.loads((out/'execution_exit.json').read_text())
+                    self.assertEqual(code,0);self.assertIsNone(record['stop'])
+                    memory=record['host_memory_diagnostic']
+                    self.assertEqual(memory['status'],'unavailable' if isinstance(diagnostic,Exception) else 'available')
+                    if not isinstance(diagnostic,Exception):self.assertEqual(memory['peak_tree_rss_bytes'],64*2**30)
     def test_real_loader_flow_mocked_weights(self):
         events=[];a,z,s=setup()
         class DeviceModel(SmallTransformer):

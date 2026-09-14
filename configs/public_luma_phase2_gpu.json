@@ -32,8 +32,7 @@
     "mp4": 3,
     "saved_frames": 147,
     "wall_seconds": 1800,
-    "allocator_gib": 22,
-    "host_rss_gib": 32
+    "allocator_gib": 22
   },
   "automatic_retries": 0,
   "claim": "One proposed engineering trial, not executed or authorized by this file; no scientific denominator"

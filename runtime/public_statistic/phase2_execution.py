@@ -34,7 +34,7 @@ def validate_config(c):
     for name in ('learning_rate','per_update_fraction','cumulative_fraction','amplitude','quality_clip_rmse'):
         if not math.isfinite(f[name]) or f[name] <= 0: raise ValueError('positive feedback ' + name)
     # These are requested workload/resource bounds, never environment matching gates.
-    for name in ('transformer_calls','vae_calls','backward_calls','mp4','saved_frames','wall_seconds','allocator_gib','host_rss_gib'):
+    for name in ('transformer_calls','vae_calls','backward_calls','mp4','saved_frames','wall_seconds','allocator_gib'):
         if not math.isfinite(b[name]) or b[name] <= 0: raise ValueError('positive budget ' + name)
     if b['mp4'] < 3 or b['saved_frames'] < 3*g['frames']: raise ValueError('budget cannot retain the fixed three-arm roster')
     if c.get('automatic_retries') != 0: raise ValueError('no automatic retry')
