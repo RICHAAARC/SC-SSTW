@@ -29,11 +29,30 @@ def _load_args(model: dict[str, Any], *, torch_dtype: Any, subfolder: str | None
     return args
 
 
+def load_frozen_vae(config: dict[str, Any]) -> Any:
+    """Load only the fixed FP32 Wan VAE for a C2A readout.
+
+    This intentionally does not instantiate ``WanPipeline`` or a transformer.
+    """
+
+    import torch
+    from diffusers import AutoencoderKLWan
+
+    model = config["model"]
+    vae = AutoencoderKLWan.from_pretrained(model["id"], **_load_args(model, torch_dtype=torch.float32, subfolder="vae")).eval()
+    disable = getattr(vae, "disable_gradient_checkpointing", None)
+    if callable(disable):
+        disable()
+    for parameter in vae.parameters():
+        parameter.requires_grad_(False)
+    return vae.to(torch.device("cuda"))
+
+
 def generate_terminal_latent(config: dict[str, Any]) -> GeneratedTerminal:
     """Generate one normalized terminal latent by the existing Wan step path."""
 
     import torch
-    from diffusers import AutoencoderKLWan, WanPipeline
+    from diffusers import WanPipeline
 
     model, generation = config["model"], config["generation"]
     device = torch.device("cuda")
@@ -55,13 +74,13 @@ def generate_terminal_latent(config: dict[str, Any]) -> GeneratedTerminal:
     pipe.vae = None
     gc.collect()
     torch.cuda.empty_cache()
-    vae = AutoencoderKLWan.from_pretrained(model["id"], **_load_args(model, torch_dtype=torch.float32, subfolder="vae")).eval()
+    vae = load_frozen_vae(config)
     pipe.vae = vae
     pipe.vae_scale_factor_temporal = getattr(vae.config, "scale_factor_temporal", None) or 2 ** sum(vae.config.temperal_downsample)
     pipe.vae_scale_factor_spatial = getattr(vae.config, "scale_factor_spatial", None) or 2 ** len(vae.config.temperal_downsample)
     if generation["height"] % pipe.vae_scale_factor_spatial or generation["width"] % pipe.vae_scale_factor_spatial or (generation["frames"] - 1) % pipe.vae_scale_factor_temporal:
         raise ValueError("the reused Wan VAE cannot represent the configured video geometry")
-    for module in (pipe.transformer, vae):
+    for module in (pipe.transformer,):
         disable = getattr(module, "disable_gradient_checkpointing", None)
         if callable(disable):
             disable()
@@ -69,7 +88,6 @@ def generate_terminal_latent(config: dict[str, Any]) -> GeneratedTerminal:
         for parameter in module.parameters():
             parameter.requires_grad_(False)
     pipe.transformer.to(device)
-    vae.to(device)
     with torch.no_grad():
         latent = pipe.prepare_latents(
             1,

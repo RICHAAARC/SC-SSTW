@@ -81,3 +81,14 @@ labeled analytic metadata. The package writes only below
 three arm outcomes. Its declared work is one 100-forward terminal generation,
 three VAE decodes, and six VAE encodes; it does not perform a parameter scan,
 new fit, or 2B activity.
+
+`run_quantization_diagnostic.py` and
+`notebooks/c2a_quantization_diagnostic_colab.ipynb` are a distinct, fixed
+three-arm readout of the persisted second-axis run
+`c2a_second_axis_20260914T145106Z`. They reuse the exact RGB8 rounding used by
+`ffmpeg_roundtrip` (`np.rint(clamp(rgb)*255).astype(uint8)` followed by
+`/255`) but do not invoke FFmpeg, colour conversion, a video codec, terminal
+generation, a transformer, or VAE decode. A single FP32 VAE loader performs
+three posterior-mode encodes and saves the RGB8 uint8 tensors, q at the source
+pre-codec/RGB8/source-post-MP4 layers, direct comparisons, and O2/M2
+vectors/norms below `MyDrive/Video-WM/C2A_Quantization_Diagnostic/<UTC-run-id>/`.

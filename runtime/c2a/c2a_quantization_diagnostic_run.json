@@ -1,0 +1,30 @@
+{
+  "status": "PREPARED_NOT_RUN",
+  "model": {
+    "id": "Wan-AI/Wan2.1-T2V-1.3B-Diffusers",
+    "revision": null
+  },
+  "source": {
+    "second_axis_run": "/content/drive/MyDrive/Video-WM/C2A_SecondAxis_Diagnostic/c2a_second_axis_20260914T145106Z",
+    "arms": ["ZERO", "PLUS_E2", "MINUS_E2"]
+  },
+  "c2a": {
+    "channels_zero_based": [0, 1],
+    "ordinary_groups": [1, 2, 3],
+    "read_group": 2,
+    "central_block": "floor((H-8)/2):+8, floor((W-8)/2):+8",
+    "beta": 0.25,
+    "rho": 0.5,
+    "posterior": "mode",
+    "cache_reset": "before and after each encode"
+  },
+  "acceptance": {
+    "status": "UNSET_REQUIRES_EXPLICIT_USER_DECISION_AFTER_QUANTIZATION_RECORDS",
+    "records_required": [
+      "all three arm rows including failures",
+      "persisted RGB8 uint8 tensors",
+      "source pre-codec, RGB8-quantized, and source post-MP4 q",
+      "O2/M2 vectors and norms for the three q layers"
+    ]
+  }
+}
