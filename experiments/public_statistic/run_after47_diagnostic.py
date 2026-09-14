@@ -57,16 +57,18 @@ def worker(config,reference,output):
         persist()
 
 
-def supervise(a):
+def supervise(a, *, module="experiments.public_statistic.run_after47_diagnostic", budget=None, replay=None):
+    budget = BUDGET if budget is None else budget
+    replay = REPLAY if replay is None else replay
     out=Path(a.output);out.mkdir(parents=True,exist_ok=False)
-    write(out/'result.json',dict(status='RUNNING',science_denominator=0,active='LAUNCHER_START',automatic_retries=0,budget=BUDGET,recomputation_budget=REPLAY))
-    command=[sys.executable,'-m','experiments.public_statistic.run_after47_diagnostic','--worker','--parent-pid',str(os.getpid()),'--config',str(Path(a.config).resolve()),'--reference',str(Path(a.reference).resolve()),'--output',str(out.resolve())]
+    write(out/'result.json',dict(status='RUNNING',science_denominator=0,active='LAUNCHER_START',automatic_retries=0,budget=budget,recomputation_budget=replay))
+    command=[sys.executable,'-m',module,'--worker','--parent-pid',str(os.getpid()),'--config',str(Path(a.config).resolve()),'--reference',str(Path(a.reference).resolve()),'--output',str(out.resolve())]
     child=None;reason=None;start=time.monotonic();memory=dict(peak_tree_rss_bytes=None)
     try:
         with (out/'execution.log').open('w') as log:
             child=subprocess.Popen(command,stdout=log,stderr=subprocess.STDOUT,start_new_session=True)
             while child.poll() is None:
-                if time.monotonic()-start>=BUDGET['wall_seconds']:reason='WALL_BUDGET';break
+                if time.monotonic()-start>=budget['wall_seconds']:reason='WALL_BUDGET';break
                 try:memory['peak_tree_rss_bytes']=max(memory['peak_tree_rss_bytes'] or 0,process_tree_rss(child.pid))
                 except Exception as exc:memory['error']=repr(exc)
                 time.sleep(.2)
