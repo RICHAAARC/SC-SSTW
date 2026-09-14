@@ -97,6 +97,31 @@ class ExecutableTests(unittest.TestCase):
                     memory=record['host_memory_diagnostic']
                     self.assertEqual(memory['status'],'unavailable' if isinstance(diagnostic,Exception) else 'available')
                     if not isinstance(diagnostic,Exception):self.assertEqual(memory['peak_tree_rss_bytes'],64*2**30)
+    def test_mixed_parameter_input_dtype_and_terminal_gradient(self):
+        a,z,state=setup()
+        class Mixed(torch.nn.Module):
+            def __init__(self):
+                super().__init__()
+                self.scale_shift_table=torch.nn.Parameter(torch.zeros(1,dtype=torch.float32))
+                self.patch_embedding=torch.nn.Conv3d(3,3,1).to(torch.bfloat16)
+                with torch.no_grad():
+                    self.patch_embedding.weight.fill_(.02);self.patch_embedding.bias.zero_()
+                self.seen=[]
+            def forward(self,hidden_states,timestep,encoder_hidden_states,**kwargs):
+                self.seen.append(hidden_states.dtype)
+                return (self.patch_embedding(hidden_states),)
+        model=Mixed()
+        self.assertEqual(next(model.parameters()).dtype,torch.float32)
+        with self.assertRaises(RuntimeError):model(z,torch.tensor(1),None)
+        model.seen.clear()
+        adapter=type(a)(model,a.vae,a.prompt,a.negative,guidance_scale=5.,torch=torch)
+        latent=z.detach().clone().requires_grad_(True)
+        rgb=adapter.rollout(latent,state)
+        gradient=torch.autograd.grad(adapter.readout(rgb).square().sum(),latent)[0]
+        self.assertEqual(model.seen,[torch.bfloat16]*12)  # six steps, cond and uncond
+        self.assertEqual(latent.dtype,torch.float32);self.assertEqual(rgb.dtype,torch.float32)
+        self.assertEqual(next(model.parameters()).dtype,torch.float32)
+        self.assertTrue(torch.isfinite(gradient).all());self.assertGreater(float(gradient.abs().sum()),0.)
     def test_real_loader_flow_mocked_weights(self):
         events=[];a,z,s=setup()
         class DeviceModel(SmallTransformer):

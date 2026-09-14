@@ -45,9 +45,16 @@ class WanTerminalAdapter:
         if any(p.dtype!=torch.float32 for p in vae.parameters()):raise ValueError('VAE must be independently loaded FP32 weights')
         self.counts=dict(transformer_calls=0,vae_calls=0,solver_steps=0)
     def _context(self,name):return self.transformer.cache_context(name) if hasattr(self.transformer,'cache_context') else nullcontext()
+    def input_dtype(self):
+        # Wan keeps root scale_shift_table in FP32; it is not the input projection.
+        patch = getattr(self.transformer, 'patch_embedding', None)
+        if patch is not None: return patch.weight.dtype
+        dtype = getattr(self.transformer, 'dtype', None)
+        if dtype is not None: return dtype
+        parameter = next(self.transformer.parameters(), None)
+        return parameter.dtype if parameter is not None else self.prompt.dtype
     def velocity(self,z,t):
-        params=list(self.transformer.parameters());dtype=params[0].dtype if params else z.dtype
-        hidden=z.to(dtype);timestep=t.expand(z.shape[0])
+        hidden=z.to(self.input_dtype());timestep=t.expand(z.shape[0])
         if self.resource_guard:self.resource_guard.consume('transformer_calls')
         with self._context('cond'):
             cond=self.transformer(hidden_states=hidden,timestep=timestep,encoder_hidden_states=self.prompt,attention_kwargs=None,return_dict=False)[0];self.counts['transformer_calls']+=1
