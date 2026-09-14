@@ -107,8 +107,8 @@ def load_wan(c, guard, *, torch=None, pipeline_class=None, vae_class=None, recor
     pipe.scheduler.set_timesteps(g['steps'], device=device)
     if hasattr(pipe.scheduler, 'set_begin_index'): pipe.scheduler.set_begin_index(0)
     # No class/version/config equality gate. Adapter checks the actual step cursor.
-    adapter = WanTerminalAdapter(pipe.transformer, vae, cond, uncond, guidance_scale=g['guidance'], torch=torch, resource_guard=guard)
-    if record: record(dict(model=model, scheduler_class=type(pipe.scheduler).__name__, scheduler_config=dict(pipe.scheduler.config), timesteps=pipe.scheduler.timesteps.detach().cpu().tolist(), latent_shape=list(initial.shape), latent_dtype=str(initial.dtype), transformer_dtype=str(adapter.input_dtype()), transformer_first_parameter_dtype=str(next(pipe.transformer.parameters()).dtype), vae_dtype=str(next(vae.parameters()).dtype), offload=False, transformer_checkpointing=bool(getattr(pipe.transformer, 'is_gradient_checkpointing', False)), vae_checkpointing=bool(getattr(vae, 'is_gradient_checkpointing', False)), transformer_resolved_revision=getattr(pipe.transformer.config, '_commit_hash', None), vae_resolved_revision=getattr(vae.config, '_commit_hash', None)))
+    adapter = WanTerminalAdapter(pipe.transformer, vae, cond, uncond, guidance_scale=g['guidance'], torch=torch, resource_guard=guard, save_forecast_tensors_on_cpu=c.get("save_forecast_tensors_on_cpu", False))
+    if record: record(dict(save_forecast_tensors_on_cpu=adapter.save_forecast_tensors_on_cpu, model=model, scheduler_class=type(pipe.scheduler).__name__, scheduler_config=dict(pipe.scheduler.config), timesteps=pipe.scheduler.timesteps.detach().cpu().tolist(), latent_shape=list(initial.shape), latent_dtype=str(initial.dtype), transformer_dtype=str(adapter.input_dtype()), transformer_first_parameter_dtype=str(next(pipe.transformer.parameters()).dtype), vae_dtype=str(next(vae.parameters()).dtype), offload=False, transformer_checkpointing=bool(getattr(pipe.transformer, 'is_gradient_checkpointing', False)), vae_checkpointing=bool(getattr(vae, 'is_gradient_checkpointing', False)), transformer_resolved_revision=getattr(pipe.transformer.config, '_commit_hash', None), vae_resolved_revision=getattr(vae.config, '_commit_hash', None)))
     return adapter, initial, SolverState(pipe.scheduler, 0)
 
 
@@ -152,6 +152,8 @@ def execute_arms(adapter, initial, state, c, result, persist, save_arm):
         result['arms'][arm]['status'] = 'COMPLETE'
         if arm == 'Y_MINUS': result['arms'][arm]['control_outcome'] = 'ACCEPTED_PROPOSAL' if any(row['accepted'] for row in feedback) else 'NO_ACCEPTED_PROPOSAL_WITH_THIS_CONFIG'
         persist()
+        # Completed arm output is persisted; OFF1 remains the fixed reference.
+        del rgb, q, quality, per_frame
     result['status'] = 'EXECUTED_REQUIRES_REVIEW'
     result['active'] = None; persist()
 

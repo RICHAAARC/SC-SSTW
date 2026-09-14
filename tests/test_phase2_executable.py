@@ -122,6 +122,38 @@ class ExecutableTests(unittest.TestCase):
         self.assertEqual(latent.dtype,torch.float32);self.assertEqual(rgb.dtype,torch.float32)
         self.assertEqual(next(model.parameters()).dtype,torch.float32)
         self.assertTrue(torch.isfinite(gradient).all());self.assertGreater(float(gradient.abs().sum()),0.)
+    def test_saved_tensor_cpu_policy_preserves_terminal_gradient(self):
+        from main.sc_sstw.terminal_feedback import clone_graph_state
+        results=[]
+        for enabled in (False,True):
+            a,z,state=setup();a.save_forecast_tensors_on_cpu=enabled
+            with torch.no_grad():
+                for _ in range(3):z,state=a.advance(z,state)
+                reference=a.rollout(z,clone_graph_state(state,torch))
+            x=z.detach().clone().requires_grad_(True)
+            rgb=a.rollout(x,clone_graph_state(state,torch))
+            target=a.readout(reference).detach()+.01
+            loss=(a.readout(rgb)-target).square().mean()
+            grad=torch.autograd.grad(loss,x)[0]
+            self.assertTrue(torch.isfinite(grad).all());self.assertGreater(float(grad.abs().sum()),0)
+            results.append((rgb.detach(),loss.detach(),grad,a.counts.copy()))
+        for i in range(3):self.assertTrue(torch.equal(results[0][i],results[1][i]))
+        self.assertEqual(results[0][3],results[1][3])
+    def test_saved_tensor_cpu_policy_only_differentiable_forecasts(self):
+        from contextlib import contextmanager
+        original=torch.autograd.graph.save_on_cpu;events=[]
+        @contextmanager
+        def tracked(*args,**kwargs):
+            events.append((torch.is_grad_enabled(),kwargs))
+            with original(*args,**kwargs):yield
+        a,z,state=setup();a.save_forecast_tensors_on_cpu=True;c=config()
+        guard=ResourceGuard(c['budget']);a.resource_guard=guard
+        with patch('torch.autograd.graph.save_on_cpu',tracked):
+            execute_arms(a,z,state,c,initial_result(c),lambda:None,lambda *args:None)
+        self.assertEqual(events,[(True,{'pin_memory':False})]*2)
+        self.assertEqual(guard.counts['transformer_calls'],36)
+        self.assertEqual(guard.counts['vae_calls'],7)
+        self.assertEqual(guard.counts['backward_calls'],2)
     def test_real_loader_flow_mocked_weights(self):
         events=[];a,z,s=setup()
         class DeviceModel(SmallTransformer):

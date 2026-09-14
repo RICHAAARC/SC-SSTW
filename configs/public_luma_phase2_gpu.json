@@ -35,5 +35,6 @@
     "allocator_gib": 22
   },
   "automatic_retries": 0,
-  "claim": "One proposed engineering trial, not executed or authorized by this file; no scientific denominator"
+  "claim": "One proposed engineering trial, not executed or authorized by this file; no scientific denominator",
+  "save_forecast_tensors_on_cpu": true
 }

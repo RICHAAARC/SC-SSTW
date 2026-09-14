@@ -34,9 +34,10 @@ class WanTerminalAdapter:
     expand_timesteps/dual-transformer Wan2.2 unsupported. FP32 floating VAE only.
     Runtime offload/checkpoint/backward with real Wan weights remains unverified.
     """
-    def __init__(self,transformer,vae,prompt_embeds,negative_prompt_embeds,*,guidance_scale,torch,transformer_2=None,boundary_ratio=None,expand_timesteps=False,offload_enabled=False,persistent_transformer_cache=False,resource_guard=None):
+    def __init__(self,transformer,vae,prompt_embeds,negative_prompt_embeds,*,guidance_scale,torch,transformer_2=None,boundary_ratio=None,expand_timesteps=False,offload_enabled=False,persistent_transformer_cache=False,resource_guard=None,save_forecast_tensors_on_cpu=False):
         if transformer_2 is not None or boundary_ratio is not None or expand_timesteps or offload_enabled or persistent_transformer_cache:raise ValueError('unsupported Wan2.2/expanded/offload/persistent-cache path')
         self.resource_guard=resource_guard
+        self.save_forecast_tensors_on_cpu=save_forecast_tensors_on_cpu
         self.torch=torch;self.transformer=transformer;self.vae=vae
         self.prompt=prompt_embeds.detach();self.negative=negative_prompt_embeds.detach() if negative_prompt_embeds is not None else None;self.guidance_scale=guidance_scale
         for model in (transformer,vae):
@@ -88,8 +89,12 @@ class WanTerminalAdapter:
         if decoded.ndim!=5 or decoded.shape[0]!=1 or decoded.shape[1]!=3:raise ValueError('single B,C,T,H,W RGB output required')
         return (decoded[0].permute(1,2,3,0)/2+.5).clamp(0,1)
     def rollout(self,z,state):
-        while state.next_index<len(state.scheduler.timesteps):z,state=self.advance(z,state)
-        return self.decode_float(z)
+        # Only the differentiable forecast saves tensors for backward. No recompute.
+        offload = self.save_forecast_tensors_on_cpu and self.torch.is_grad_enabled() and z.requires_grad
+        context = self.torch.autograd.graph.save_on_cpu(pin_memory=False) if offload else nullcontext()
+        with context:
+            while state.next_index<len(state.scheduler.timesteps):z,state=self.advance(z,state)
+            return self.decode_float(z)
     def readout(self,rgb):return read_rgb_differentiable(rgb,self.torch)
 
 def controlled_run(adapter,latent,state,config,*,off1_terminal_rgb,enabled,strict=False,event_callback=None):
