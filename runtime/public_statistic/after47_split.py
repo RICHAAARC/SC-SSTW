@@ -13,8 +13,19 @@ def diagnose_split(adapter,snapshot,report,persist,save):
         local=clone_graph_state(state,torch)
         while local.next_index<len(local.scheduler.timesteps):x,local=adapter.advance(x,local)
         return x
+    def release_idle_model(model,label):
+        # Only at graph-free stage boundaries: never migrate a pending backward.
+        model.to('cpu')
+        import gc
+        gc.collect()
+        if origin.device.type=='cuda':torch.cuda.empty_cache()
+        report.setdefault('residency_events',[]).append(dict(stage=label,idle_model_device='cpu',allocated_bytes=torch.cuda.memory_allocated() if origin.device.type=='cuda' else None))
+        persist()
     with torch.no_grad():
-        u=terminal(origin.detach().clone());rgb=adapter.decode_float(u)
+        u=terminal(origin.detach().clone())
+    # The solver forward is finished and has no autograd graph here.
+    release_idle_model(adapter.transformer,'VAE_ONLY')
+    with torch.no_grad():rgb=adapter.decode_float(u)
     # Freeze the upstream RGB cotangent once, then use it for BOTH VAE VJPs.
     probe=rgb.detach().requires_grad_(True);loss=(adapter.readout(probe)-target).square().mean()
     guard.consume('backward_calls');upstream_rgb=torch.autograd.grad(loss,probe)[0].detach();guard.complete('backward_calls')
@@ -29,6 +40,9 @@ def diagnose_split(adapter,snapshot,report,persist,save):
         del x,decoded,g;persist()
     del upstream_rgb
     report['vae_repeat']=gradient_comparison(vae_gradients[1],vae_gradients[0]);persist()
+    # Both VAE graphs were consumed and their locals deleted above.
+    release_idle_model(adapter.vae,'SOLVER_ONLY')
+    adapter.transformer.to(origin.device)
     # Freeze the FIRST VAE VJP for BOTH solver/Transformer VJPs.
     upstream_u=vae_gradients[0].to(origin.device);solver_gradients=[]
     for index in (1,2):

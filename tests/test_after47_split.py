@@ -21,5 +21,6 @@ class SplitTests(unittest.TestCase):
         torch.testing.assert_close(saved['solver_vjp_1'],expected,rtol=2e-5,atol=1e-9)
         self.assertTrue(report['vae_repeat']['exact']);self.assertTrue(report['solver_repeat']['exact']);self.assertTrue(report['state_unchanged'])
         self.assertEqual(set(saved),{'vae_vjp_1','vae_vjp_2','solver_vjp_1','solver_vjp_2'})
+        self.assertEqual([x['stage'] for x in report['residency_events']],['VAE_ONLY','SOLVER_ONLY'])
 
 if __name__=='__main__':unittest.main()
