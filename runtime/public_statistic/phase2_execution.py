@@ -116,8 +116,13 @@ def load_wan(c, guard, *, torch=None, pipeline_class=None, vae_class=None, recor
     pipe.scheduler.set_timesteps(g['steps'], device=device)
     if hasattr(pipe.scheduler, 'set_begin_index'): pipe.scheduler.set_begin_index(0)
     # No class/version/config equality gate. Adapter checks the actual step cursor.
-    adapter = WanTerminalAdapter(pipe.transformer, vae, cond, uncond, guidance_scale=g['guidance'], torch=torch, resource_guard=guard, save_forecast_tensors_on_cpu=c.get("save_forecast_tensors_on_cpu", False))
-    if record: record(dict(save_forecast_tensors_on_cpu=adapter.save_forecast_tensors_on_cpu, model=model, scheduler_class=type(pipe.scheduler).__name__, scheduler_config=dict(pipe.scheduler.config), timesteps=pipe.scheduler.timesteps.detach().cpu().tolist(), latent_shape=list(initial.shape), latent_dtype=str(initial.dtype), transformer_dtype=str(adapter.input_dtype()), transformer_first_parameter_dtype=str(next(pipe.transformer.parameters()).dtype), vae_dtype=str(next(vae.parameters()).dtype), offload=False, transformer_checkpointing=bool(getattr(pipe.transformer, 'is_gradient_checkpointing', False)), vae_checkpointing=bool(getattr(vae, 'is_gradient_checkpointing', False)), transformer_resolved_revision=getattr(pipe.transformer.config, '_commit_hash', None), vae_resolved_revision=getattr(vae.config, '_commit_hash', None)))
+    ledger = None
+    if c.get('checkpoint_recomputation') is not None:
+        if c.get('save_forecast_tensors_on_cpu', False):raise ValueError('checkpoint path cannot use CPU activation transfer')
+        from runtime.public_statistic.checkpointing import CheckpointLedger
+        ledger = CheckpointLedger(c['checkpoint_recomputation'], resource_check=guard.check)
+    adapter = WanTerminalAdapter(pipe.transformer, vae, cond, uncond, guidance_scale=g['guidance'], torch=torch, resource_guard=guard, save_forecast_tensors_on_cpu=c.get("save_forecast_tensors_on_cpu", False), checkpoint_ledger=ledger)
+    if record: record(dict(checkpoint_recomputation_limits=ledger.limits if ledger else None, save_forecast_tensors_on_cpu=adapter.save_forecast_tensors_on_cpu, model=model, scheduler_class=type(pipe.scheduler).__name__, scheduler_config=dict(pipe.scheduler.config), timesteps=pipe.scheduler.timesteps.detach().cpu().tolist(), latent_shape=list(initial.shape), latent_dtype=str(initial.dtype), transformer_dtype=str(adapter.input_dtype()), transformer_first_parameter_dtype=str(next(pipe.transformer.parameters()).dtype), vae_dtype=str(next(vae.parameters()).dtype), offload=False, transformer_checkpointing=bool(getattr(pipe.transformer, 'is_gradient_checkpointing', False)), vae_checkpointing=bool(getattr(vae, 'is_gradient_checkpointing', False)), transformer_resolved_revision=getattr(pipe.transformer.config, '_commit_hash', None), vae_resolved_revision=getattr(vae.config, '_commit_hash', None)))
     return adapter, initial, SolverState(pipe.scheduler, 0)
 
 
@@ -204,10 +209,13 @@ def worker(config_path, output):
     import subprocess
     import sys
     c = json.loads(Path(config_path).read_text()); validate_config(c)
-    out = Path(output); result = initial_result(c)
+    out = Path(output); result = initial_result(c); adapter = None
     guard = ResourceGuard(c['budget'])
     def progress(counts):
-        write(out/'counts.json', dict(attempted=counts, completed=guard.completed, current=guard.events[-1] if guard.events else None))
+        payload=dict(attempted=counts, completed=guard.completed, current=guard.events[-1] if guard.events else None)
+        if adapter is not None and adapter.checkpoint_ledger is not None:
+            payload['recomputation']=dict(counts=adapter.checkpoint_ledger.counts, capture='LAST_TOP_LEVEL_STAGE; internal replay counts can advance before next flush')
+        write(out/'counts.json', payload)
     guard.persist = progress
     def persist(): write(out/'result.json', result)
     result['status']='RUNNING'; result['active']='LOAD_MODEL'
@@ -241,3 +249,4 @@ def worker(config_path, output):
     finally:
         result['counts'] = dict(attempted=guard.counts, completed=guard.completed); result['elapsed_seconds'] = time.monotonic()-guard.start
         persist(); progress(guard.counts); write(out/'progress.json', guard.events)
+        if adapter is not None and adapter.checkpoint_ledger is not None:write(out/'recomputation.json',dict(capture='FINAL_WORKER_CLEANUP',**adapter.checkpoint_ledger.summary()))

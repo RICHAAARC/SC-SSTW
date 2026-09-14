@@ -62,8 +62,10 @@ class WanTerminalAdapter:
     expand_timesteps/dual-transformer Wan2.2 unsupported. FP32 floating VAE only.
     Runtime offload/checkpoint/backward with real Wan weights remains unverified.
     """
-    def __init__(self,transformer,vae,prompt_embeds,negative_prompt_embeds,*,guidance_scale,torch,transformer_2=None,boundary_ratio=None,expand_timesteps=False,offload_enabled=False,persistent_transformer_cache=False,resource_guard=None,save_forecast_tensors_on_cpu=False):
+    def __init__(self,transformer,vae,prompt_embeds,negative_prompt_embeds,*,guidance_scale,torch,transformer_2=None,boundary_ratio=None,expand_timesteps=False,offload_enabled=False,persistent_transformer_cache=False,resource_guard=None,save_forecast_tensors_on_cpu=False,checkpoint_ledger=None):
         if transformer_2 is not None or boundary_ratio is not None or expand_timesteps or offload_enabled or persistent_transformer_cache:raise ValueError('unsupported Wan2.2/expanded/offload/persistent-cache path')
+        if checkpoint_ledger is not None and save_forecast_tensors_on_cpu:raise ValueError('checkpoint path does not migrate activations to CPU')
+        self.checkpoint_ledger=checkpoint_ledger
         self.resource_guard=resource_guard
         self.save_forecast_tensors_on_cpu=save_forecast_tensors_on_cpu
         self.torch=torch;self.transformer=transformer;self.vae=vae
@@ -72,6 +74,9 @@ class WanTerminalAdapter:
             model.eval()
             for p in model.parameters():p.requires_grad_(False)
         if any(p.dtype!=torch.float32 for p in vae.parameters()):raise ValueError('VAE must be independently loaded FP32 weights')
+        if checkpoint_ledger is not None:
+            from runtime.public_statistic.checkpointing import enable_transformer_checkpointing
+            enable_transformer_checkpointing(transformer, checkpoint_ledger)
         self.counts=dict(transformer_calls=0,vae_calls=0,solver_steps=0)
     def _context(self,name):return self.transformer.cache_context(name) if hasattr(self.transformer,'cache_context') else nullcontext()
     def input_dtype(self):
@@ -113,7 +118,10 @@ class WanTerminalAdapter:
         if self.resource_guard:self.resource_guard.consume('vae_calls')
         self.counts['vae_calls']+=1
         try:
-            decoded=self.vae.decode(z*std+mean,return_dict=False)[0]
+            if self.checkpoint_ledger is not None and torch.is_grad_enabled() and z.requires_grad:
+                from runtime.public_statistic.checkpointing import checkpoint_decode
+                decoded=checkpoint_decode(self.vae,z*std+mean,self.checkpoint_ledger)
+            else:decoded=self.vae.decode(z*std+mean,return_dict=False)[0]
             if self.resource_guard:self.resource_guard.complete('vae_calls')
         finally:
             clear=getattr(self.vae,'clear_cache',None) or getattr(self.vae,'_clear_cache',None)
