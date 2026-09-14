@@ -46,6 +46,8 @@ class ResourceGuard:
         self.budget, self.torch, self.persist, self.clock = budget, torch, persist, clock
         self.start = clock()
         self.counts = dict(transformer_calls=0, vae_calls=0, backward_calls=0, mp4=0, saved_frames=0)
+        self.completed = dict(self.counts)
+        self.events = []
     def check(self):
         if self.clock()-self.start >= self.budget['wall_seconds']: raise TimeoutError('WALL_BUDGET')
         if self.torch is not None and self.torch.cuda.is_available():
@@ -54,7 +56,14 @@ class ResourceGuard:
         self.check()
         if self.counts[kind]+amount > self.budget[kind]: raise RuntimeError('CALL_BUDGET_' + kind)
         self.counts[kind] += amount
-        if self.persist: self.persist(self.counts)
+        self.stage(kind, 'START', attempted=self.counts[kind], completed=self.completed[kind])
+    def complete(self, kind, amount=1):
+        self.completed[kind] += amount
+        if self.completed[kind] > self.counts[kind]:raise RuntimeError('completion without attempt')
+        self.stage(kind, 'COMPLETE', attempted=self.counts[kind], completed=self.completed[kind])
+    def stage(self, name, status, **details):
+        self.events.append(dict(stage=name, status=status, elapsed_seconds=self.clock()-self.start, **details))
+        if self.persist:self.persist(self.counts)
     def remaining(self):
         self.check()
         return max(.001, self.budget['wall_seconds']-(self.clock()-self.start))
@@ -117,15 +126,18 @@ def execute_arms(adapter, initial, state, c, result, persist, save_arm):
     torch = adapter.torch
     prefix_next = c['feedback']['after_indices'][0]
     z = initial
-    result['active'] = 'PREFIX'; persist()
+    result['status'] = 'RUNNING'; result['active'] = 'PREFIX'; persist()
+    if adapter.resource_guard:adapter.resource_guard.stage('PREFIX', 'START')
     with torch.no_grad():
         while state.next_index < prefix_next: z, state = adapter.advance(z, state)
+    if adapter.resource_guard:adapter.resource_guard.stage('PREFIX', 'COMPLETE')
     r0 = float(z.square().mean().sqrt())
     if not math.isfinite(r0) or r0 <= 0: raise ValueError('nonfinite/zero prefix RMS')
     result['prefix'] = dict(next_index=state.next_index, rms=r0, history='complete unchanged cloned per arm')
     off1 = None
     for arm in ARMS:
         result['active'] = arm; result['arms'][arm]['status'] = 'RUNNING'; persist()
+        if adapter.resource_guard:adapter.resource_guard.stage(arm, 'START')
         if arm.startswith('OFF'):
             with torch.no_grad(): rgb = adapter.rollout(z.detach().clone(), clone_graph_state(state, torch))
             if not bool(torch.isfinite(rgb).all()): raise RuntimeError('NONFINITE_OFF_TERMINAL')
@@ -150,6 +162,7 @@ def execute_arms(adapter, initial, state, c, result, persist, save_arm):
         result['arms'][arm].update(float_q=q.detach().cpu().tolist(), terminal_clip_rmse=float(quality), per_frame_rmse_diagnostic=per_frame.detach().cpu().tolist(), worst_frame_rmse_diagnostic=float(per_frame.max()), feedback=feedback)
         save_arm(arm, rgb, off1)
         result['arms'][arm]['status'] = 'COMPLETE'
+        if adapter.resource_guard:adapter.resource_guard.stage(arm, 'COMPLETE')
         if arm == 'Y_MINUS': result['arms'][arm]['control_outcome'] = 'ACCEPTED_PROPOSAL' if any(row['accepted'] for row in feedback) else 'NO_ACCEPTED_PROPOSAL_WITH_THIS_CONFIG'
         persist()
         # Completed arm output is persisted; OFF1 remains the fixed reference.
@@ -158,15 +171,47 @@ def execute_arms(adapter, initial, state, c, result, persist, save_arm):
     result['active'] = None; persist()
 
 
+def persist_arm_media(arm, rgb, off, *, c, result, guard, out):
+    import numpy as np
+    import subprocess
+    folder = out/arm; folder.mkdir()
+    values = rgb.detach().cpu().numpy()
+    np.save(folder/'terminal_float_rgb.npy', values, allow_pickle=False)
+    u8 = np.rint(values*255).astype(np.uint8)
+    guard.consume('mp4'); guard.consume('saved_frames', c['generation']['frames'])
+    g = c['generation']; path = folder/'saved.mp4'
+    cmd = ['ffmpeg','-v','error','-threads','1','-f','rawvideo','-pix_fmt','rgb24','-s',f"{g['width']}x{g['height']}",'-r',str(g['fps']),'-i','pipe:0','-an','-c:v','libx264','-crf','18','-pix_fmt','yuv420p','-threads','1','-n',str(path)]
+    encoded = subprocess.run(cmd, input=u8.tobytes(), capture_output=True, timeout=guard.remaining())
+    write(folder/'encode.json', dict(command=cmd, returncode=encoded.returncode, stderr=encoded.stderr.decode(errors='replace')))
+    encoded.check_returncode()
+    guard.complete('mp4')
+    guard.stage('MP4_READBACK', 'START', arm=arm)
+    decoded = subprocess.run(['ffmpeg','-v','error','-threads','1','-noautorotate','-i',str(path),'-map','0:v:0','-f','rawvideo','-pix_fmt','rgb24','-'], capture_output=True, timeout=guard.remaining())
+    decoded.check_returncode()
+    expected = g['frames']*g['height']*g['width']*3
+    if len(decoded.stdout) != expected: raise RuntimeError('SAVED_FRAME_COUNT')
+    guard.complete('saved_frames', g['frames'])
+    data = np.frombuffer(decoded.stdout, np.uint8).reshape(values.shape)/255
+    from main.sc_sstw.public_luma_statistic import read_rgb
+    q = read_rgb(data, np)
+    guard.stage('MP4_READBACK', 'COMPLETE', arm=arm)
+    reference = off.detach().cpu().numpy()
+    result['arms'][arm].update(mp4_q=q.tolist(), mp4_clip_rmse_vs_float_off1=float(np.sqrt(np.mean((data-reference)**2))), mp4_per_frame_rmse_diagnostic=np.sqrt(np.mean((data-reference)**2, axis=(1,2,3))).tolist(), rows=[dict(index=i,time=i/g['fps'],q=q[i].tolist(),status='COMPLETE') for i in range(g['frames'])])
+
+
 def worker(config_path, output):
     import importlib.metadata
     import subprocess
     import sys
     c = json.loads(Path(config_path).read_text()); validate_config(c)
     out = Path(output); result = initial_result(c)
-    guard = ResourceGuard(c['budget'], persist=lambda counts: write(out/'counts.json', counts))
+    guard = ResourceGuard(c['budget'])
+    def progress(counts):
+        write(out/'counts.json', dict(attempted=counts, completed=guard.completed, current=guard.events[-1] if guard.events else None))
+    guard.persist = progress
     def persist(): write(out/'result.json', result)
-    persist(); write(out/'config.json', c)
+    result['status']='RUNNING'; result['active']='LOAD_MODEL'
+    persist(); write(out/'config.json', c); guard.stage('WORKER','START')
     try:
         import torch
         import numpy as np
@@ -177,29 +222,14 @@ def worker(config_path, output):
         torch.cuda.set_per_process_memory_fraction(min(1., c['budget']['allocator_gib']*2**30/total), 0)
         torch.cuda.reset_peak_memory_stats()
         write(out/'runtime.json', dict(python=sys.version, torch=torch.__version__, diffusers=diffusers.__version__, cuda=torch.version.cuda, gpu=torch.cuda.get_device_name(0), packages={x: importlib.metadata.version(x) for x in ('transformers','accelerate','numpy')}, allocator_cap_gib=c['budget']['allocator_gib']))
+        guard.stage('LOAD_MODEL', 'START')
         adapter, initial, state = load_wan(c, guard, torch=torch, record=lambda record: write(out/'loaded_model.json', record))
+        guard.stage('LOAD_MODEL', 'COMPLETE')
         def save_arm(arm, rgb, off):
-            folder = out/arm; folder.mkdir()
-            values = rgb.detach().cpu().numpy()
-            np.save(folder/'terminal_float_rgb.npy', values, allow_pickle=False)
-            u8 = np.rint(values*255).astype(np.uint8)
-            guard.consume('mp4'); guard.consume('saved_frames', c['generation']['frames'])
-            g = c['generation']; path = folder/'saved.mp4'
-            cmd = ['ffmpeg','-v','error','-threads','1','-f','rawvideo','-pix_fmt','rgb24','-s',f"{g['width']}x{g['height']}",'-r',str(g['fps']),'-i','pipe:0','-an','-c:v','libx264','-crf','18','-pix_fmt','yuv420p','-threads','1','-n',str(path)]
-            encoded = subprocess.run(cmd, input=u8.tobytes(), capture_output=True, timeout=guard.remaining())
-            write(folder/'encode.json', dict(command=cmd, returncode=encoded.returncode, stderr=encoded.stderr.decode(errors='replace')))
-            encoded.check_returncode()
-            decoded = subprocess.run(['ffmpeg','-v','error','-threads','1','-noautorotate','-i',str(path),'-map','0:v:0','-f','rawvideo','-pix_fmt','rgb24','-'], capture_output=True, timeout=guard.remaining())
-            decoded.check_returncode()
-            expected = g['frames']*g['height']*g['width']*3
-            if len(decoded.stdout) != expected: raise RuntimeError('SAVED_FRAME_COUNT')
-            data = np.frombuffer(decoded.stdout, np.uint8).reshape(values.shape)/255
-            from main.sc_sstw.public_luma_statistic import read_rgb
-            q = read_rgb(data, np)
-            reference = off.detach().cpu().numpy()
-            result['arms'][arm].update(mp4_q=q.tolist(), mp4_clip_rmse_vs_float_off1=float(np.sqrt(np.mean((data-reference)**2))), mp4_per_frame_rmse_diagnostic=np.sqrt(np.mean((data-reference)**2, axis=(1,2,3))).tolist(), rows=[dict(index=i,time=i/g['fps'],q=q[i].tolist(),status='COMPLETE') for i in range(g['frames'])])
+            persist_arm_media(arm, rgb, off, c=c, result=result, guard=guard, out=out)
         execute_arms(adapter, initial, state, c, result, persist, save_arm)
         result['peak_allocated_bytes'] = torch.cuda.max_memory_allocated()
+        guard.stage('WORKER','COMPLETE')
     except BaseException as exc:
         result['status'] = 'FATAL_STOP'; result['error'] = repr(exc)
         active = result.get('active')
@@ -209,5 +239,5 @@ def worker(config_path, output):
                 if row['status'] != 'COMPLETE': row['status'] = 'FAILED'
         raise
     finally:
-        result['counts'] = guard.counts; result['elapsed_seconds'] = time.monotonic()-guard.start
-        persist(); write(out/'counts.json', guard.counts)
+        result['counts'] = dict(attempted=guard.counts, completed=guard.completed); result['elapsed_seconds'] = time.monotonic()-guard.start
+        persist(); progress(guard.counts); write(out/'progress.json', guard.events)

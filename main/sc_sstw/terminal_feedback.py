@@ -25,7 +25,7 @@ def clone_graph_state(value,torch,memo=None):
         return result
     return copy.deepcopy(value,memo)
 
-def terminal_feedback(latent,solver_state,rollout,readout,target,reference_rgb,*,learning_rate,step_rms,quality_rms_budget,torch,strict=False,before_backward=None):
+def terminal_feedback(latent,solver_state,rollout,readout,target,reference_rgb,*,learning_rate,step_rms,quality_rms_budget,torch,strict=False,before_backward=None,after_backward=None,stage_callback=None):
     """rollout(z, deepcopied_full_state) must normally finish solver and decode RGB.
 
     State is never reset/warped. Targets/quality references are external controls,
@@ -34,13 +34,16 @@ def terminal_feedback(latent,solver_state,rollout,readout,target,reference_rgb,*
     if not all(math.isfinite(x) and x>0 for x in (learning_rate,step_rms,quality_rms_budget)):raise ValueError('positive fixed budgets')
     original=latent.detach().clone();record=dict(accepted=False,attempts=1,step_rms=step_rms,quality_rms_budget=quality_rms_budget)
     try:
+        if stage_callback:stage_callback('FORECAST','START')
         z=original.clone().requires_grad_(True)
         rgb=rollout(z,clone_graph_state(solver_state,torch));q=readout(rgb)
         if q.shape!=target.shape or rgb.shape!=reference_rgb.shape:raise ValueError('terminal target/reference shape')
         if not bool(torch.isfinite(q).all()) or not bool(torch.isfinite(target).all()) or not bool(torch.isfinite(rgb).all()):raise ValueError('nonfinite terminal')
+        if stage_callback:stage_callback('FORECAST','COMPLETE')
         loss=(q-target).square().mean()
         if before_backward is not None:before_backward()
         grad=torch.autograd.grad(loss,z)[0]
+        if after_backward is not None:after_backward()
         gnorm=grad.square().mean().sqrt();record['baseline_loss']=float(loss.detach());record['gradient_rms']=float(gnorm.detach())
         if not bool(torch.isfinite(grad).all()) or not bool(torch.isfinite(gnorm)) or not bool(torch.isfinite(loss)):
             if strict:raise RuntimeError('NONFINITE_GRADIENT')
@@ -48,13 +51,16 @@ def terminal_feedback(latent,solver_state,rollout,readout,target,reference_rgb,*
         if float(gnorm)==0:
             if strict:raise RuntimeError('ZERO_GRADIENT')
             record['reason']='ZERO_GRADIENT';return original,record
+        del rgb,q,loss,z
         scale=min(learning_rate,step_rms/float(gnorm.detach()))
         candidate=(original-scale*grad.detach()).detach()
         # The exact same terminal callback with another full history clone.
+        if stage_callback:stage_callback('CANDIDATE','START')
         with torch.no_grad():
             proposed_rgb=rollout(candidate,clone_graph_state(solver_state,torch));proposed_q=readout(proposed_rgb)
             if proposed_rgb.shape!=reference_rgb.shape or proposed_q.shape!=target.shape:raise ValueError('proposal shape')
             proposed_loss=(proposed_q-target).square().mean();quality=(proposed_rgb-reference_rgb).square().mean().sqrt()
+        if stage_callback:stage_callback('CANDIDATE','COMPLETE')
         if not bool(torch.isfinite(proposed_loss)) or not bool(torch.isfinite(quality)):raise ValueError('nonfinite proposal')
         record.update(proposed_loss=float(proposed_loss),terminal_rgb_rmse=float(quality),actual_update_rms=float((candidate-original).square().mean().sqrt()))
         record['accepted']=record['proposed_loss']<record['baseline_loss'] and record['terminal_rgb_rmse']<=quality_rms_budget

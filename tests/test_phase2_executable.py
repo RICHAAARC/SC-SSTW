@@ -141,16 +141,16 @@ class ExecutableTests(unittest.TestCase):
         self.assertEqual(results[0][3],results[1][3])
     def test_saved_tensor_cpu_policy_only_differentiable_forecasts(self):
         from contextlib import contextmanager
-        original=torch.autograd.graph.save_on_cpu;events=[]
+        original=torch.autograd.graph.saved_tensors_hooks;events=[]
         @contextmanager
         def tracked(*args,**kwargs):
             events.append((torch.is_grad_enabled(),kwargs))
             with original(*args,**kwargs):yield
         a,z,state=setup();a.save_forecast_tensors_on_cpu=True;c=config()
         guard=ResourceGuard(c['budget']);a.resource_guard=guard
-        with patch('torch.autograd.graph.save_on_cpu',tracked):
+        with patch('torch.autograd.graph.saved_tensors_hooks',tracked):
             execute_arms(a,z,state,c,initial_result(c),lambda:None,lambda *args:None)
-        self.assertEqual(events,[(True,{'pin_memory':False})]*2)
+        self.assertEqual(events,[(True,{})]*2)
         self.assertEqual(guard.counts['transformer_calls'],36)
         self.assertEqual(guard.counts['vae_calls'],7)
         self.assertEqual(guard.counts['backward_calls'],2)

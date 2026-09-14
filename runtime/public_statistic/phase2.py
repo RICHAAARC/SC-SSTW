@@ -29,6 +29,34 @@ class SolverState:
     scheduler:object
     next_index:int
 
+class SelectiveSavedTensors:
+    """Move saved activations, retaining resident parameter/buffer storage and views.
+
+    Storage identity, not requires_grad, distinguishes frozen weights from
+    activations. Modules stay resident and unmodified for the whole forecast.
+    No tensor deduplication cache or recomputation is introduced.
+    """
+    def __init__(self, torch, modules):
+        self.torch = torch
+        self.resident = {self.storage_key(t) for module in modules for t in (*module.parameters(), *module.buffers())}
+        self.counts = dict(resident_saves=0, activation_saves=0)
+    @staticmethod
+    def storage_key(tensor):
+        storage = tensor.untyped_storage()
+        return (tensor.device.type, tensor.device.index, storage.data_ptr(), storage.nbytes())
+    def pack(self, tensor):
+        resident = self.storage_key(tensor) in self.resident
+        self.counts['resident_saves' if resident else 'activation_saves'] += 1
+        # detach avoids an autograd reference cycle; dtype/layout/value preserved.
+        return (tensor.device, tensor.detach() if resident else tensor.detach().to('cpu'))
+    @staticmethod
+    def unpack(saved):
+        device, tensor = saved
+        return tensor.to(device)
+    def context(self):
+        return self.torch.autograd.graph.saved_tensors_hooks(self.pack, self.unpack)
+
+
 class WanTerminalAdapter:
     """Real Wan transformer and VAE call signatures; one transformer, standard timestep.
     expand_timesteps/dual-transformer Wan2.2 unsupported. FP32 floating VAE only.
@@ -59,11 +87,13 @@ class WanTerminalAdapter:
         if self.resource_guard:self.resource_guard.consume('transformer_calls')
         with self._context('cond'):
             cond=self.transformer(hidden_states=hidden,timestep=timestep,encoder_hidden_states=self.prompt,attention_kwargs=None,return_dict=False)[0];self.counts['transformer_calls']+=1
+            if self.resource_guard:self.resource_guard.complete('transformer_calls')
         if self.guidance_scale>1:
             if self.negative is None:raise ValueError('CFG negative embeddings missing')
             if self.resource_guard:self.resource_guard.consume('transformer_calls')
             with self._context('uncond'):
                 uncond=self.transformer(hidden_states=hidden,timestep=timestep,encoder_hidden_states=self.negative,attention_kwargs=None,return_dict=False)[0];self.counts['transformer_calls']+=1
+                if self.resource_guard:self.resource_guard.complete('transformer_calls')
             return uncond+self.guidance_scale*(cond-uncond)
         return cond
     def advance(self,z,state):
@@ -82,7 +112,9 @@ class WanTerminalAdapter:
         if mean.shape[1]!=z.shape[1] or not bool(torch.isfinite(std).all()) or bool((std<=0).any()):raise ValueError('VAE scaling')
         if self.resource_guard:self.resource_guard.consume('vae_calls')
         self.counts['vae_calls']+=1
-        try:decoded=self.vae.decode(z*std+mean,return_dict=False)[0]
+        try:
+            decoded=self.vae.decode(z*std+mean,return_dict=False)[0]
+            if self.resource_guard:self.resource_guard.complete('vae_calls')
         finally:
             clear=getattr(self.vae,'clear_cache',None) or getattr(self.vae,'_clear_cache',None)
             if clear is not None:clear()
@@ -91,7 +123,8 @@ class WanTerminalAdapter:
     def rollout(self,z,state):
         # Only the differentiable forecast saves tensors for backward. No recompute.
         offload = self.save_forecast_tensors_on_cpu and self.torch.is_grad_enabled() and z.requires_grad
-        context = self.torch.autograd.graph.save_on_cpu(pin_memory=False) if offload else nullcontext()
+        storage = SelectiveSavedTensors(self.torch, (self.transformer, self.vae)) if offload else None
+        context = storage.context() if storage else nullcontext()
         with context:
             while state.next_index<len(state.scheduler.timesteps):z,state=self.advance(z,state)
             return self.decode_float(z)
@@ -114,7 +147,7 @@ def controlled_run(adapter,latent,state,config,*,off1_terminal_rgb,enabled,stric
             remaining=config.cumulative_rms-used
             if remaining<=0:record=dict(accepted=False,reason='CUMULATIVE_BUDGET_EXHAUSTED',attempts=0)
             else:
-                z,record=terminal_feedback(z,state,adapter.rollout,adapter.readout,target,reference,learning_rate=config.learning_rate,step_rms=min(config.per_update_rms,remaining),quality_rms_budget=config.terminal_quality_rms,torch=torch,strict=strict,before_backward=(lambda:adapter.resource_guard.consume('backward_calls')) if adapter.resource_guard else None)
+                z,record=terminal_feedback(z,state,adapter.rollout,adapter.readout,target,reference,learning_rate=config.learning_rate,step_rms=min(config.per_update_rms,remaining),quality_rms_budget=config.terminal_quality_rms,torch=torch,strict=strict,before_backward=(lambda:adapter.resource_guard.consume('backward_calls')) if adapter.resource_guard else None,after_backward=(lambda:adapter.resource_guard.complete('backward_calls')) if adapter.resource_guard else None,stage_callback=(lambda name,status:adapter.resource_guard.stage(name,status,after_index=index)) if adapter.resource_guard else None)
                 if record['accepted']:used+=record['actual_update_rms']
             record.update(after_index=index,cumulative_accepted_rms=used,next_normal_index=state.next_index);records.append(record)
             if event_callback:event_callback(record)

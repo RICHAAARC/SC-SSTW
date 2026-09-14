@@ -10,6 +10,36 @@ from pathlib import Path
 from runtime.public_statistic.phase2_execution import initial_result, validate_config, worker, write
 
 
+class RunCancelled(BaseException):
+    pass
+
+
+def install_lifetime(expected_parent):
+    """Linux parent-death signal plus post-install check closes startup race."""
+    import ctypes
+    interrupted = [False]
+    def cancel(signum, frame):
+        if interrupted[0]:return
+        interrupted[0] = True
+        raise RunCancelled('PARENT_LOST' if os.getppid() != expected_parent else 'CANCELLED')
+    signal.signal(signal.SIGTERM, cancel)
+    signal.signal(signal.SIGINT, cancel)
+    libc = ctypes.CDLL(None, use_errno=True)
+    if libc.prctl(1, signal.SIGTERM, 0, 0, 0):raise OSError(ctypes.get_errno(), 'parent-death signal')
+    if os.getppid() != expected_parent:raise RunCancelled('PARENT_LOST')
+
+
+def stop_group(child):
+    """Allow worker ledger cleanup, then bound cancellation and kill descendants."""
+    try:os.killpg(child.pid, signal.SIGTERM)
+    except ProcessLookupError:pass
+    try:child.wait(timeout=3)
+    except subprocess.TimeoutExpired:pass
+    try:os.killpg(child.pid, signal.SIGKILL)
+    except ProcessLookupError:pass
+    child.wait()
+
+
 def finalize_stopped(out, c, reason):
     path = Path(out)/'result.json'
     result = json.loads(path.read_text()) if path.exists() else initial_result(c)
@@ -48,8 +78,9 @@ def process_tree_rss(pid):
 def supervise(config_path, output):
     c = json.loads(Path(config_path).read_text()); validate_config(c)
     out = Path(output); out.mkdir(parents=True, exist_ok=False)
-    write(out/'result.json', initial_result(c)); write(out/'config.json', c)
-    command = [sys.executable, '-m', 'experiments.public_statistic.run_phase2', '--config', str(Path(config_path).resolve()), '--output', str(out.resolve()), '--worker']
+    initial = initial_result(c); initial['status']='RUNNING'; initial['active']='LAUNCHER_START'
+    write(out/'result.json', initial); write(out/'config.json', c)
+    command = [sys.executable, '-m', 'experiments.public_statistic.run_phase2', '--config', str(Path(config_path).resolve()), '--output', str(out.resolve()), '--worker', '--parent-pid', str(os.getpid())]
     start = time.monotonic(); reason = None; child = None
     memory = dict(status="unavailable", peak_tree_rss_bytes=None, error=None)
     try:
@@ -64,21 +95,18 @@ def supervise(config_path, output):
                     memory.update(status='unavailable', error=repr(exc))
                 time.sleep(.2)
             if reason is not None:
-                try: os.killpg(child.pid, signal.SIGKILL)
-                except ProcessLookupError: pass
-                child.wait()
+                stop_group(child)
                 finalize_stopped(out, c, reason)
             elif child.returncode:
                 # Kill any surviving codec/download descendant on child failure.
                 try: os.killpg(child.pid, signal.SIGKILL)
                 except ProcessLookupError: pass
                 finalize_stopped(out, c, 'WORKER_FAILURE')
-    except BaseException:
+    except BaseException as exc:
+        reason = str(exc) if isinstance(exc, RunCancelled) else 'LAUNCHER_INTERRUPTED'
         if child is not None:
-            try: os.killpg(child.pid, signal.SIGKILL)
-            except ProcessLookupError: pass
-            child.wait()
-        finalize_stopped(out, c, 'LAUNCHER_INTERRUPTED')
+            stop_group(child)
+        finalize_stopped(out, c, reason)
         raise
     finally:
         write(out/'execution_exit.json', dict(command=command, returncode=child.returncode if child else None, stop=reason, elapsed_seconds=time.monotonic()-start, automatic_retries=0, host_memory_diagnostic=memory))
@@ -86,7 +114,17 @@ def supervise(config_path, output):
 
 
 def main():
-    p = argparse.ArgumentParser(); p.add_argument('--config', required=True); p.add_argument('--output', required=True); p.add_argument('--worker', action='store_true'); a=p.parse_args()
-    if a.worker: worker(a.config, a.output)
-    else: sys.exit(supervise(a.config, a.output))
+    p = argparse.ArgumentParser(); p.add_argument('--config', required=True); p.add_argument('--output', required=True); p.add_argument('--worker', action='store_true'); p.add_argument('--parent-pid',type=int); a=p.parse_args()
+    try:
+        install_lifetime(a.parent_pid if a.parent_pid is not None else os.getppid())
+        if a.worker: worker(a.config, a.output)
+        else: sys.exit(supervise(a.config, a.output))
+    except RunCancelled as exc:
+        # Parent may already be gone; the worker owns its final ledger cleanup.
+        out = Path(a.output)
+        if out.exists():finalize_stopped(out,json.loads(Path(a.config).read_text()),str(exc))
+        if a.worker and os.getpgrp() == os.getpid():
+            # Persist first; then terminate this worker and any codec descendants.
+            os.killpg(os.getpid(), signal.SIGKILL)
+        sys.exit(130)
 if __name__ == '__main__': main()
