@@ -34,7 +34,7 @@ def validate_config(c):
     for name in ('learning_rate','per_update_fraction','cumulative_fraction','amplitude','quality_clip_rmse'):
         if not math.isfinite(f[name]) or f[name] <= 0: raise ValueError('positive feedback ' + name)
     # These are requested workload/resource bounds, never environment matching gates.
-    for name in ('transformer_calls','vae_calls','backward_calls','mp4','saved_frames','wall_seconds','allocator_gib'):
+    for name in ('transformer_calls','vae_calls','backward_calls','mp4','saved_frames','wall_seconds'):
         if not math.isfinite(b[name]) or b[name] <= 0: raise ValueError('positive budget ' + name)
     if b['mp4'] < 3 or b['saved_frames'] < 3*g['frames']: raise ValueError('budget cannot retain the fixed three-arm roster')
     if c.get('automatic_retries') != 0: raise ValueError('no automatic retry')
@@ -50,8 +50,6 @@ class ResourceGuard:
         self.events = []
     def check(self):
         if self.clock()-self.start >= self.budget['wall_seconds']: raise TimeoutError('WALL_BUDGET')
-        if self.torch is not None and self.torch.cuda.is_available():
-            if self.torch.cuda.memory_allocated() > self.budget['allocator_gib']*2**30: raise MemoryError('CUDA_ALLOCATOR_BUDGET')
     def consume(self, kind, amount=1):
         self.check()
         if self.counts[kind]+amount > self.budget[kind]: raise RuntimeError('CALL_BUDGET_' + kind)
@@ -227,9 +225,8 @@ def worker(config_path, output):
         if not torch.cuda.is_available() or not torch.cuda.is_bf16_supported(): raise RuntimeError('CUDA BF16 device required')
         guard.torch = torch
         total = torch.cuda.get_device_properties(0).total_memory
-        torch.cuda.set_per_process_memory_fraction(min(1., c['budget']['allocator_gib']*2**30/total), 0)
         torch.cuda.reset_peak_memory_stats()
-        write(out/'runtime.json', dict(python=sys.version, torch=torch.__version__, diffusers=diffusers.__version__, cuda=torch.version.cuda, gpu=torch.cuda.get_device_name(0), packages={x: importlib.metadata.version(x) for x in ('transformers','accelerate','numpy')}, allocator_cap_gib=c['budget']['allocator_gib']))
+        write(out/'runtime.json', dict(python=sys.version, torch=torch.__version__, diffusers=diffusers.__version__, cuda=torch.version.cuda, gpu=torch.cuda.get_device_name(0), packages={x: importlib.metadata.version(x) for x in ('transformers','accelerate','numpy')}, device_total_memory_bytes=total, allocator_cap_gib=None))
         guard.stage('LOAD_MODEL', 'START')
         adapter, initial, state = load_wan(c, guard, torch=torch, record=lambda record: write(out/'loaded_model.json', record))
         guard.stage('LOAD_MODEL', 'COMPLETE')

@@ -51,6 +51,20 @@ class ExecutableTests(unittest.TestCase):
         clock[0]=1800.
         with self.assertRaises(TimeoutError):guard.consume('vae_calls')
         self.assertEqual(guard.counts['vae_calls'],0)
+    def test_device_memory_does_not_impose_artificial_budget(self):
+        from unittest.mock import Mock
+        c=config();self.assertNotIn('allocator_gib',c['budget']);validate_config(c)
+        cuda=Mock()
+        cuda.is_available.return_value=True
+        cuda.memory_allocated.return_value=30*2**30
+        # Legacy configs must also run without reinstating the old 22 GiB limit.
+        for budget in (c['budget'],dict(c['budget'],allocator_gib=22)):
+            guard=ResourceGuard(budget,torch=types.SimpleNamespace(cuda=cuda))
+            guard.consume('transformer_calls');guard.complete('transformer_calls')
+            self.assertEqual(guard.completed['transformer_calls'],1)
+        cuda.memory_allocated.assert_not_called()
+        cuda.set_per_process_memory_fraction.assert_not_called()
+
     def test_fatal_during_forecast_no_continuation(self):
         a,z,s=setup();c=config();c['budget']['transformer_calls']=20
         guard=ResourceGuard(c['budget']);a.resource_guard=guard;result=initial_result(c);saved=[]
