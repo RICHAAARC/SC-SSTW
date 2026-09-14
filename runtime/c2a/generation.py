@@ -1,0 +1,116 @@
+"""One no-gradient Wan terminal-latent generation reused by C2A.
+
+This is the small, endpoint-only part of the prior public-statistic loader:
+it retains the WanPipeline prompt/latent/scheduler path and its independently
+loaded FP32 VAE, but drops feedback, autograd, checkpointing, and the old
+three-arm controller.
+"""
+
+from __future__ import annotations
+
+import gc
+from dataclasses import dataclass
+from typing import Any
+
+
+@dataclass
+class GeneratedTerminal:
+    normalized_latent: Any
+    vae: Any
+    metadata: dict[str, Any]
+
+
+def _load_args(model: dict[str, Any], *, torch_dtype: Any, subfolder: str | None = None) -> dict[str, Any]:
+    args: dict[str, Any] = {"torch_dtype": torch_dtype, "local_files_only": True}
+    if subfolder is not None:
+        args["subfolder"] = subfolder
+    if model.get("revision"):
+        args["revision"] = model["revision"]
+    return args
+
+
+def generate_terminal_latent(config: dict[str, Any]) -> GeneratedTerminal:
+    """Generate one normalized terminal latent by the existing Wan step path."""
+
+    import torch
+    from diffusers import AutoencoderKLWan, WanPipeline
+
+    if not torch.cuda.is_available():
+        raise RuntimeError("C2A terminal generation requires CUDA")
+    model, generation = config["model"], config["generation"]
+    device = torch.device("cuda")
+    pipe = WanPipeline.from_pretrained(model["id"], **_load_args(model, torch_dtype=torch.bfloat16))
+    if getattr(pipe, "transformer_2", None) is not None or getattr(pipe.config, "boundary_ratio", None) is not None or getattr(pipe.config, "expand_timesteps", False):
+        raise ValueError("the reused C2A adapter supports the prior single-transformer Wan path only")
+    pipe.text_encoder.to(device)
+    with torch.no_grad():
+        prompt, negative = pipe.encode_prompt(
+            prompt=generation["prompt"],
+            negative_prompt=generation["negative_prompt"],
+            do_classifier_free_guidance=True,
+            num_videos_per_prompt=1,
+            max_sequence_length=generation["max_sequence_length"],
+            device=device,
+        )
+    prompt, negative = prompt.to(torch.bfloat16), negative.to(torch.bfloat16)
+    pipe.text_encoder = None
+    pipe.vae = None
+    gc.collect()
+    torch.cuda.empty_cache()
+    vae = AutoencoderKLWan.from_pretrained(model["id"], **_load_args(model, torch_dtype=torch.float32, subfolder="vae")).eval()
+    temporal_scale = getattr(vae.config, "scale_factor_temporal", None) or 2 ** sum(vae.config.temperal_downsample)
+    spatial_scale = getattr(vae.config, "scale_factor_spatial", None) or 2 ** len(vae.config.temperal_downsample)
+    if generation["height"] % spatial_scale or generation["width"] % spatial_scale or (generation["frames"] - 1) % temporal_scale:
+        raise ValueError("the reused Wan VAE cannot represent the configured video geometry")
+    for module in (pipe.transformer, vae):
+        disable = getattr(module, "disable_gradient_checkpointing", None)
+        if callable(disable):
+            disable()
+        module.eval()
+        for parameter in module.parameters():
+            parameter.requires_grad_(False)
+    pipe.transformer.to(device)
+    vae.to(device)
+    with torch.no_grad():
+        latent = pipe.prepare_latents(
+            1,
+            int(pipe.transformer.config.in_channels),
+            generation["height"],
+            generation["width"],
+            generation["frames"],
+            torch.float32,
+            device,
+            torch.Generator(device=device).manual_seed(generation["seed"]),
+            None,
+        ).detach()
+    pipe.scheduler.set_timesteps(generation["steps"], device=device)
+    if hasattr(pipe.scheduler, "set_begin_index"):
+        pipe.scheduler.set_begin_index(0)
+    input_dtype = getattr(getattr(pipe.transformer, "patch_embedding", None), "weight", None)
+    input_dtype = input_dtype.dtype if input_dtype is not None else next(pipe.transformer.parameters()).dtype
+    transformer_calls = 0
+    with torch.no_grad():
+        for index, timestep in enumerate(pipe.scheduler.timesteps):
+            hidden = latent.to(input_dtype)
+            time = timestep.expand(latent.shape[0])
+            conditional = pipe.transformer(hidden_states=hidden, timestep=time, encoder_hidden_states=prompt, attention_kwargs=None, return_dict=False)[0]
+            unconditional = pipe.transformer(hidden_states=hidden, timestep=time, encoder_hidden_states=negative, attention_kwargs=None, return_dict=False)[0]
+            transformer_calls += 2
+            velocity = unconditional + generation["guidance_scale"] * (conditional - unconditional)
+            latent = pipe.scheduler.step(velocity, timestep, latent, return_dict=False)[0]
+            if hasattr(pipe.scheduler, "step_index") and pipe.scheduler.step_index not in (None, index + 1):
+                raise RuntimeError("Wan scheduler cursor diverged during C2A terminal generation")
+    metadata = {
+        "generation_entry": "reused_public_statistic_single_transformer_wan_endpoint",
+        "model": model,
+        "generation": generation,
+        "scheduler_class": type(pipe.scheduler).__name__,
+        "scheduler_config": dict(pipe.scheduler.config),
+        "terminal_latent_shape": list(latent.shape),
+        "terminal_latent_dtype": str(latent.dtype),
+        "transformer_dtype": str(input_dtype),
+        "vae_dtype": str(next(vae.parameters()).dtype),
+        "transformer_calls": transformer_calls,
+        "generation_invocations": 1,
+    }
+    return GeneratedTerminal(latent.detach(), vae, metadata)

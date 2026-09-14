@@ -1,0 +1,53 @@
+{
+  "status": "PREPARED_NOT_RUN",
+  "model": {
+    "id": "Wan-AI/Wan2.1-T2V-1.3B-Diffusers",
+    "revision": null,
+    "local_files_only": true
+  },
+  "generation": {
+    "role": "reused_public_statistic_terminal_generation_once_then_shared_six_arm_c2a",
+    "prompt": "locked camera, a single matte white cube moving slowly across a dark plain table, stable lighting, no people, no cuts",
+    "negative_prompt": "text, watermark, logo, camera motion, cuts, multiple objects, flicker",
+    "seed": 1275,
+    "height": 320,
+    "width": 512,
+    "frames": 49,
+    "fps": 8,
+    "steps": 50,
+    "guidance_scale": 5.0,
+    "max_sequence_length": 512
+  },
+  "c2a": {
+    "channels_zero_based": [0, 1],
+    "central_block": "floor((H-8)/2):+8, floor((W-8)/2):+8",
+    "ordinary_groups": [1, 2, 3],
+    "read_group": 2,
+    "beta": 0.25,
+    "rho": 0.5,
+    "near_singular_rule": "reject if lambda_min <= 1e-8 * max(lambda_max, 1); no regularization or pseudoinverse",
+    "posterior": "mode",
+    "cache_reset": "before and after each decode and encode",
+    "arms": ["OFF", "ZERO", "PLUS_E1", "MINUS_E1", "PLUS_E2", "MINUS_E2"]
+  },
+  "codec": {
+    "name": "h264_yuv420p",
+    "crf": 18,
+    "readback": "ffmpeg_rgb24",
+    "thread_count": 1
+  },
+  "acceptance": {
+    "status": "UNSET_REQUIRES_EXPLICIT_USER_DECISION_AFTER_INTERFACE_RECORDS",
+    "records_required": [
+      "all six arm rows including failures",
+      "OFF_to_ZERO, ZERO_to_nonzero, and OFF_to_nonzero quality metrics",
+      "readback q for every readable arm",
+      "response singular values and signed negative-axis holdouts"
+    ],
+    "not_adopted_candidate_gates": {
+      "latent_relative_change_max": 0.15,
+      "rgb_psnr_db_min": 40.0,
+      "temporal_difference_energy_increase_max": 0.05
+    }
+  }
+}
