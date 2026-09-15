@@ -5,7 +5,7 @@ import gc
 import json
 import subprocess
 from pathlib import Path
-from runtime.c2a.generation import load_frozen_vae
+from runtime.c2a.generation import load_frozen_vae, generate_terminal_latent
 from runtime.c2a.chain import decode_normalized_latent, reencode_rgb24_readback
 from runtime.c2a.protocol import rgb_quality_metrics
 from runtime.c2t1.run import dump, read_mp4, encode_rgb
@@ -18,14 +18,16 @@ def run(config: dict, output: Path) -> dict:
     import numpy as np
     import torch
     state_mode = config.get('protocol') == 'state_clock_v1'
-    conditions = ('RESAVED', 'DELETE138', 'REPEAT138') if state_mode else ('RESAVED', 'DELETE138')
+    edit_frame = int(config.get('edit_source_frame',138))
+    fresh = config.get('terminal_mode') == 'generate_new'
+    conditions = ('RESAVED', f'DELETE{edit_frame}', f'REPEAT{edit_frame}') if state_mode else ('RESAVED', f'DELETE{edit_frame}')
     videos = tuple(a + '_NORMAL' for a in ARMS) + tuple(f'MESSAGE_{m}_{c}' for m in (0,1) for c in conditions)
     if state_mode:
         from runtime.tstwv2 import state_clock
     output.mkdir(parents=True, exist_ok=False)
     result = {"status": "RUNNING", "diagnostic_denominator": {"arms": 3, "received_videos": len(videos), "receiver_encodes": 4*len(videos)},
-              "formal_science_denominator": 0, "fixed_calls": {"transformer": 0, "generation": 0, "vae_decode": 3, "vae_encode": 4*len(videos)},
-              "actual_calls": {"vae_decode_attempted": 0, "vae_decode_completed": 0, "vae_encode_attempted": 0, "vae_encode_completed": 0},
+              "formal_science_denominator": 0, "fixed_calls": {"transformer": 2*config['generation']['steps'] if fresh else 0, "generation": int(fresh), "vae_decode": 3, "vae_encode": 4*len(videos)},
+              "actual_calls": {"generation_attempted":0,"generation_completed":0,"transformer_attempted":0,"transformer_completed":0,"vae_decode_attempted": 0, "vae_decode_completed": 0, "vae_encode_attempted": 0, "vae_encode_completed": 0},
               "videos": {name: {"status": "NOT_RUN", "observations": {str(g): {"status": "NOT_RUN"} for g in range(4)}} for name in videos}, "failures": []}
     dump(output / "config.json", config)
     def save():
@@ -37,7 +39,26 @@ def run(config: dict, output: Path) -> dict:
     vae = None
     try:
         result["source_commit"] = subprocess.check_output(["git", "rev-parse", "HEAD"], text=True).strip()
-        terminal = torch.load(config["source_shared_terminal"], map_location="cpu", weights_only=True).float()
+        if fresh:
+            result['actual_calls']['generation_attempted']+=1
+            save()
+            def progress(counts):
+                result['actual_calls'].update(counts)
+                save()
+                if counts['transformer_completed'] and counts['transformer_completed']%10==0 and counts['transformer_attempted']==counts['transformer_completed']:
+                    print('generation Transformer forwards completed:',counts['transformer_completed'],flush=True)
+            generated=generate_terminal_latent(config,progress=progress)
+            terminal=generated.normalized_latent.detach().cpu().float()
+            vae=generated.vae
+            result['generation']=generated.metadata
+            result['actual_calls']['generation_completed']+=1
+            torch.save(terminal,output/'shared_terminal_normalized.pt')
+            del generated
+            gc.collect()
+            torch.cuda.empty_cache()
+            save()
+        else:
+            terminal = torch.load(config["source_shared_terminal"], map_location="cpu", weights_only=True).float()
         z = terminal.numpy()
         method.blocks(z)  # Checks actual data geometry, not an environment gate.
         book = state_clock.codebook(config['key_utf8'].encode()) if state_mode else method.codebook(config["key_utf8"].encode())
@@ -55,8 +76,11 @@ def run(config: dict, output: Path) -> dict:
                                       state_context=state_clock.CONTEXT, state_context_digest=state_clock.CONTEXT_DIGEST,
                                       global_candidates=204, local_clock_candidates=4284, observer_gain=.5, innovation_weight=.05, clock_event_cost=.002,
                                       aisb='not adopted: no shared affine projection channel established', flow_trajectory_modified=False)
+        result['protocol']['edit_source_frame_zero_based']=edit_frame
+        result['protocol']['event_window']=(edit_frame-1)//16
         save()
-        vae = load_frozen_vae(config)
+        if vae is None:
+            vae = load_frozen_vae(config)
         off_rgb = None
         for arm in ARMS:
             try:
@@ -101,7 +125,7 @@ def run(config: dict, output: Path) -> dict:
                 for condition in conditions:
                     name = f"MESSAGE_{m}_{condition}"
                     try:
-                        edited = rgb if condition == 'RESAVED' else (torch.cat((rgb[:138],rgb[139:]),dim=0) if condition=='DELETE138' else torch.cat((rgb[:139],rgb[138:139],rgb[139:]),dim=0))
+                        edited = rgb if condition == 'RESAVED' else (torch.cat((rgb[:edit_frame],rgb[edit_frame+1:]),dim=0) if condition.startswith('DELETE') else torch.cat((rgb[:edit_frame+1],rgb[edit_frame:edit_frame+1],rgb[edit_frame+1:]),dim=0))
                         path = output / "received_videos" / f"{name}.mp4"
                         encode_rgb(edited, path, 8, 18)
                         result["videos"][name].update(status="VIDEO_PERSISTED", path=str(path.relative_to(output)), expected_frames=int(edited.shape[0]))
@@ -158,8 +182,8 @@ def run(config: dict, output: Path) -> dict:
             if name != "OFF_NORMAL":
                 truth = int(name.split("_")[1])
                 if state_mode:
-                    delta = 1 if name.endswith('DELETE138') else (-1 if name.endswith('REPEAT138') else 0)
-                    item['reporting_only'] = state_clock.report(detection, truth, delta)
+                    delta = 1 if name.endswith(f'DELETE{edit_frame}') else (-1 if name.endswith(f'REPEAT{edit_frame}') else 0)
+                    item['reporting_only'] = state_clock.report(detection, truth, delta,edit_frame)
                 else:
                     best = detection["best_by_message"]
                     true, wrong = best[str(truth)], best[str(1 - truth)]

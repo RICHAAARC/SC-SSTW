@@ -129,7 +129,7 @@ def read(observations:dict,book:dict) -> dict:
         cid=classes[signature]
         candidates.append(path|{'class':cid,'event_cost':EDIT_COST if path['delta'] else 0.})
     rankings={}
-    for mode in ('global_matched','global_state','local_state'):
+    for mode in ('global_matched','global_state','local_matched','local_without_update','local_state'):
         pairs=[]
         for row in candidates:
             if mode.startswith('global') and row['delta']:
@@ -137,7 +137,8 @@ def read(observations:dict,book:dict) -> dict:
             for score in details[row['class']]['scores']:
                 if not score['matched_supports']:
                     continue
-                value=score['matched_score'] if mode=='global_matched' else score['state_score']-row['event_cost']
+                field = 'matched_score' if mode in ('global_matched','local_matched') else ('without_update_score' if mode=='local_without_update' else 'state_score')
+                value=score[field]-row['event_cost']
                 pairs.append((value,row,score))
         pairs.sort(key=lambda p:(-p[0],abs(p[1]['delta']),abs(p[1]['offset']),abs(p[1]['scale'][0]/p[1]['scale'][1]-1),p[1]['g'],p[1]['boundary'],p[1]['delta'],p[2]['message']))
         def compact(p):
@@ -152,13 +153,15 @@ def read(observations:dict,book:dict) -> dict:
             'rankings':rankings,'candidates':candidates,'classes':details,
             'claim':'fixed-gain directional observer and bounded clock comparison; no calibrated likelihood or AISB'}
 
-def report(detection:dict,truth:int,delta:int) -> dict:
+def report(detection:dict,truth:int,delta:int,edit_frame:int=138) -> dict:
     """Post-ranking truth join. The edited window is retained in every score."""
-    reference=next(r for r in detection['candidates'] if r['g']==0 and r['scale']==[1,1] and r['offset']==0 and r['delta']==delta and r['boundary']==(9 if delta else 11))
+    event_window=(edit_frame-1)//16
+    reference=next(r for r in detection['candidates'] if r['g']==0 and r['scale']==[1,1] and r['offset']==0 and r['delta']==delta and r['boundary']==(event_window+1 if delta else 11))
     target=detection['classes'][reference['class']]
-    checked=[n for n in range(11) if not (delta and n==8)]
+    checked=[n for n in range(11) if not (delta and n==event_window)]
     result={'true_message':truth,'nominal_clock_reference':reference,'time_checked_windows':checked,
-            'event_window_8_excluded_from_time_metric_only':bool(delta),
+            'edited_source_frame_zero_based':edit_frame if delta else None,
+            'event_window_excluded_from_time_metric_only':event_window if delta else None,
             'time_claim':'window correspondence only, not unique frame-level edit localization','modes':{}}
     for mode,ranking in detection['rankings'].items():
         by=ranking['best_by_message'];true,wrong=by[str(truth)],by[str(1-truth)]

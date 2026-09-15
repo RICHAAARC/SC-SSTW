@@ -48,7 +48,7 @@ def load_frozen_vae(config: dict[str, Any]) -> Any:
     return vae.to(torch.device("cuda"))
 
 
-def generate_terminal_latent(config: dict[str, Any]) -> GeneratedTerminal:
+def generate_terminal_latent(config: dict[str, Any], progress: Any = None) -> GeneratedTerminal:
     """Generate one normalized terminal latent by the existing Wan step path."""
 
     import torch
@@ -106,13 +106,25 @@ def generate_terminal_latent(config: dict[str, Any]) -> GeneratedTerminal:
     input_dtype = getattr(getattr(pipe.transformer, "patch_embedding", None), "weight", None)
     input_dtype = input_dtype.dtype if input_dtype is not None else next(pipe.transformer.parameters()).dtype
     transformer_calls = 0
+    transformer_attempted = 0
+    def record_forward(completed: bool) -> None:
+        nonlocal transformer_calls, transformer_attempted
+        if completed:
+            transformer_calls += 1
+        else:
+            transformer_attempted += 1
+        if progress is not None:
+            progress({"transformer_attempted": transformer_attempted, "transformer_completed": transformer_calls})
     with torch.no_grad():
         for index, timestep in enumerate(pipe.scheduler.timesteps):
             hidden = latent.to(input_dtype)
             time = timestep.expand(latent.shape[0])
+            record_forward(False)
             conditional = pipe.transformer(hidden_states=hidden, timestep=time, encoder_hidden_states=prompt, attention_kwargs=None, return_dict=False)[0]
+            record_forward(True)
+            record_forward(False)
             unconditional = pipe.transformer(hidden_states=hidden, timestep=time, encoder_hidden_states=negative, attention_kwargs=None, return_dict=False)[0]
-            transformer_calls += 2
+            record_forward(True)
             velocity = unconditional + generation["guidance_scale"] * (conditional - unconditional)
             latent = pipe.scheduler.step(velocity, timestep, latent, return_dict=False)[0]
             if hasattr(pipe.scheduler, "step_index") and pipe.scheduler.step_index not in (None, index + 1):

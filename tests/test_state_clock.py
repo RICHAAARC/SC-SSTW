@@ -68,5 +68,20 @@ class StateClockTests(unittest.TestCase):
         self.assertTrue(report['modes']['local_state']['all_checked_windows_match'])
         self.assertEqual(report['modes']['local_state']['nominal_time_denominator'],10)
 
+    def test_equal_path_cost_ablations_and_new_event_report(self):
+        def fake(obs,book,n,g,num,den,b):
+            q=book['states'][0,n]
+            return {'selected':[10000*num+1000*den+100*b+4*n+j for j in range(4)],'valid':True,'q':q.tolist(),
+                    'scores':[float(q@book['states'][m,n]/2) for m in (0,1)],'agreement':[1.,.5]}
+        with patch.object(s,'emissions',fake):
+            result=s.read({},self.book)
+        for mode,field in (('local_matched','matched_score'),('local_without_update','without_update_score'),('local_state','state_score')):
+            scores=[clscore[field]-row['event_cost'] for row in result['candidates'] for clscore in result['classes'][row['class']]['scores']]
+            self.assertAlmostEqual(result['rankings'][mode]['best']['score'],max(scores))
+        report=s.report(result,0,1,90)
+        self.assertEqual(report['nominal_clock_reference']['boundary'],6)
+        self.assertEqual(report['event_window_excluded_from_time_metric_only'],5)
+        self.assertEqual(report['time_checked_windows'],[0,1,2,3,4,6,7,8,9,10])
+
 if __name__=='__main__':
     unittest.main()
