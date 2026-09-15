@@ -1,0 +1,38 @@
+{
+  "status": "PREPARED_NOT_RUN",
+  "model": {
+    "id": "Wan-AI/Wan2.1-T2V-1.3B-Diffusers",
+    "revision": null
+  },
+  "source": {
+    "shared_terminal": "/content/drive/MyDrive/Video-WM/C2A_SecondAxis_Diagnostic/c2a_second_axis_20260914T145106Z/shared_terminal_normalized.pt",
+    "terminal_shape": [1, 16, 13, 40, 64],
+    "terminal_dtype": "torch.float32"
+  },
+  "generation": {"fps": 8},
+  "c2a": {
+    "channels_zero_based": [0, 1],
+    "ordinary_groups": [1, 2, 3],
+    "read_group": 2,
+    "block_size": 8,
+    "beta": 0.25,
+    "rho": 0.5,
+    "posterior": "mode",
+    "layouts": {
+      "single": [[16, 28]],
+      "four": [[16, 28], [4, 16], [4, 40], [28, 28]]
+    },
+    "aggregation": "equal_weight_mean_of_per_block_inverse_calibrated_state",
+    "inverse_rule": "reject if sigma_min <= 1e-8 * max(sigma_max, 1); no pseudoinverse or reweighting"
+  },
+  "codec": {"name": "h264_yuv420p", "crf": 18, "readback": "ffmpeg_rgb24", "thread_count": 1},
+  "acceptance": {
+    "status": "UNSET_REQUIRES_EXPLICIT_USER_DECISION_AFTER_MULTIBLOCK_RECORDS",
+    "records_required": [
+      "all 11 output rows including failures",
+      "post-MP4 reencoded latents and pre-codec float RGB for every readable output",
+      "per-block actual write records and snapshots",
+      "per-block inverse calibration, equal-weight state aggregate, and held-negative errors"
+    ]
+  }
+}

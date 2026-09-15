@@ -105,3 +105,23 @@ quantization and carries no container/codec colour metadata. Commands and
 that boundary are persisted below
 `MyDrive/Video-WM/C2A_YUV420_Diagnostic/<UTC-run-id>/`; it must not be used to
 automatically attribute any remaining difference to H.264.
+
+`run_multiblock_diagnostic.py` and
+`notebooks/c2a_multiblock_diagnostic_colab.ipynb` read the exact saved
+second-axis terminal and perform a fixed spatial-repetition comparison: one
+original block `(16,28)` versus four non-overlapping blocks `(16,28)`,
+`(4,16)`, `(4,40)`, `(28,28)`. Shared OFF plus five fixed states for each
+layout makes 11 independent outputs; it is not a public temporal layout or a
+blind calibration experiment. Every written block and ordinary group receives
+its own covariance transport and actual post-FP32-write measurement. Each
+output performs one FP32 VAE decode, CRF18 H.264/YUV420p readback and one VAE
+encode; generation and transformer calls remain zero.
+
+For each layout, `b_b` and `A_b` are fitted only from ZERO/+E1/+E2. A state
+is calibrated per block before the fixed equal-weight mean is taken. No
+pseudoinverse, failed-block omission, or reweighting is allowed; a failed or
+near-singular block makes the four-block layout unsupported while preserving
+all records. Negative directions are retained holdouts. Full post-MP4
+reencoded normalized latents and lossless pre-codec RGB tensors are saved for
+each readable output; the latter are about 11 × 92 MiB, so the package needs
+roughly 1 GiB before MP4 and metadata overhead.

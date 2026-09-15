@@ -80,10 +80,23 @@ def _symmetric_sqrt(matrix: Any, *, inverse: bool = False, config: C2AConfig) ->
 def _support(normalized_latent: Any, group: int, config: C2AConfig) -> Any:
     if normalized_latent.ndim != 5 or normalized_latent.shape[0] != 1:
         raise ValueError("C2A requires one normalized latent with layout [1,C,T,H,W]")
+    _, _, _, height, width = normalized_latent.shape
+    top, left = (int(height) - config.block_size) // 2, (int(width) - config.block_size) // 2
+    return _support_at(normalized_latent, group, top_left=(top, left), config=config)
+
+
+def _support_at(normalized_latent: Any, group: int, *, top_left: tuple[int, int], config: C2AConfig) -> Any:
+    """Return one named 8x8 support without changing the central-block API."""
+
+    if normalized_latent.ndim != 5 or normalized_latent.shape[0] != 1:
+        raise ValueError("C2A requires one normalized latent with layout [1,C,T,H,W]")
     _, channels, groups, height, width = normalized_latent.shape
     if channels < 2 or group >= groups:
         raise ValueError("C2A latent lacks the fixed channel or ordinary-group support")
-    rows, cols = central_block_slices(int(height), int(width), config.block_size)
+    top, left = (int(top_left[0]), int(top_left[1]))
+    if top < 0 or left < 0 or top + config.block_size > height or left + config.block_size > width:
+        raise ValueError("C2A block top-left lies outside the latent spatial geometry")
+    rows, cols = slice(top, top + config.block_size), slice(left, left + config.block_size)
     # A slice, rather than advanced channel indexing, is required here: the
     # writer must update the cloned latent in place.
     return normalized_latent[0, 0:2, group, rows, cols]
@@ -199,6 +212,90 @@ def actual_written_block_snapshots(normalized_latent: Any, *, config: C2AConfig 
     return {
         f"group_{group}": _support(normalized_latent, group, config).detach().to(device="cpu").contiguous().clone()
         for group in config.ordinary_groups
+    }
+
+
+def read_q_at_block(normalized_latent: Any, *, top_left: tuple[int, int], config: C2AConfig = C2AConfig()) -> Any:
+    """Read q from a fixed non-central support using the same middle group."""
+
+    config.validate()
+    return _covariance_and_q(_support_at(normalized_latent, config.read_group, top_left=top_left, config=config))[1]
+
+
+def write_covariance_state_at_blocks(normalized_latent: Any, state: tuple[float, float], *, blocks: tuple[tuple[int, int], ...], config: C2AConfig = C2AConfig()) -> tuple[Any, list[dict[str, Any]]]:
+    """Write the same fixed state independently in each predeclared support."""
+
+    torch = _torch()
+    config.validate()
+    if not blocks or len(set(blocks)) != len(blocks):
+        raise ValueError("C2A multiblock layout requires unique nonempty block locations")
+    if max(abs(float(value)) for value in state) > config.rho:
+        raise ValueError("state is outside the fixed rho ball")
+    written = normalized_latent.detach().clone()
+    sigma = _target_covariance(state, config=config).to(device=written.device)
+    records: list[dict[str, Any]] = []
+    for block_index, top_left in enumerate(blocks):
+        for group in config.ordinary_groups:
+            block = _support_at(written, group, top_left=top_left, config=config)
+            original_dtype = block.dtype
+            x = block.reshape(2, -1).to(dtype=torch.float64)
+            centered = x - x.mean(dim=1, keepdim=True)
+            covariance = centered @ centered.transpose(0, 1) / 64.0
+            root = _symmetric_sqrt(covariance, config=config)
+            inverse_root = _symmetric_sqrt(covariance, inverse=True, config=config)
+            transform = inverse_root @ _symmetric_sqrt(root @ sigma @ root, config=config) @ inverse_root
+            block.copy_((transform @ centered + x.mean(dim=1, keepdim=True)).reshape_as(block).to(dtype=original_dtype))
+            analytic = transform @ covariance @ transform.transpose(0, 1)
+            actual_covariance, actual_q = _covariance_and_q(block)
+            eigenvalues = torch.linalg.eigvalsh(covariance)
+            records.append({
+                "block_index": block_index,
+                "top_left": [int(top_left[0]), int(top_left[1])],
+                "group": group,
+                "pre_write_covariance_lambda_min": float(eigenvalues[0].item()),
+                "pre_write_covariance_lambda_max": float(eigenvalues[-1].item()),
+                "analytic_transport_target_max_abs_error_float64": float((analytic - sigma).abs().max().item()),
+                "actual_covariance_after_fp32_write": actual_covariance.detach().cpu().tolist(),
+                "actual_q_after_fp32_write": actual_q.detach().cpu().tolist(),
+                "actual_target_max_abs_error": float((actual_covariance - sigma).abs().max().item()),
+            })
+    return written, records
+
+
+def written_block_snapshots_at_blocks(normalized_latent: Any, *, blocks: tuple[tuple[int, int], ...], config: C2AConfig = C2AConfig()) -> dict[str, Any]:
+    """Persist exactly the blocks that are later decoded, grouped by location."""
+
+    config.validate()
+    return {
+        f"block_{index}_{top}_{left}": {
+            f"group_{group}": _support_at(normalized_latent, group, top_left=(top, left), config=config).detach().to(device="cpu").contiguous().clone()
+            for group in config.ordinary_groups
+        }
+        for index, (top, left) in enumerate(blocks)
+    }
+
+
+def latent_change_metrics_at_blocks(reference: Any, changed: Any, *, blocks: tuple[tuple[int, int], ...], config: C2AConfig = C2AConfig()) -> dict[str, Any]:
+    """Report dimensionless normalized-latent L2 costs for a fixed layout."""
+
+    torch = _torch()
+    before = torch.cat([_support_at(reference, group, top_left=top_left, config=config).reshape(-1) for top_left in blocks for group in config.ordinary_groups])
+    after = torch.cat([_support_at(changed, group, top_left=top_left, config=config).reshape(-1) for top_left in blocks for group in config.ordinary_groups])
+
+    def metrics(left: Any, right: Any) -> tuple[float, float | None]:
+        delta_l2 = float((right - left).detach().float().norm().item())
+        baseline_l2 = float(left.detach().float().norm().item())
+        return delta_l2, None if baseline_l2 == 0.0 else delta_l2 / baseline_l2
+
+    local_l2, local_relative = metrics(before, after)
+    global_l2, global_relative = metrics(reference.reshape(-1), changed.reshape(-1))
+    return {
+        "coordinate_system": "normalized_latent",
+        "local_support_delta_l2": local_l2,
+        "local_support_relative_l2_dimensionless": local_relative,
+        "whole_latent_delta_l2": global_l2,
+        "whole_latent_relative_l2_dimensionless": global_relative,
+        "spatial_blocks": len(blocks),
     }
 
 
