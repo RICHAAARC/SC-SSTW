@@ -6,6 +6,8 @@ from typing import Any
 from runtime.c2a.generation import load_frozen_vae
 from runtime.c2t1.run import dump,read_mp4,receiver_observation
 from runtime.c2t1.run_interleaved import FIT,HOLDOUT,PAYLOAD,allocate,interleaved_sequence,score
+from runtime.c2t1.run import mapped_frame
+from runtime.c2t1.run_local_paths import path_time
 
 def repair(r: Any) -> Any:
     import torch
@@ -25,7 +27,20 @@ def detail(qs:list[list[float]],sel:list[int|None],seq:list[str]) -> dict[str,An
         if j is None or j>=len(qs): rows.append({"position":i,"role":"holdout" if i in HOLDOUT else "payload","status":"MISSING"}); continue
         value=np.asarray(qs[j],float); nearest=min(p,key=lambda state:float(np.sum((value-p[state])**2)))
         rows.append({"position":i,"role":"holdout" if i in HOLDOUT else "payload","selected_group":j,"target":seq[i],"nearest_prototype":nearest,"absolute_squared_distance":float(np.sum((value-p[seq[i]])**2)),"normalized_loss":None if d2<=0 else float(np.sum((value-p[seq[i]])**2)/d2)})
-    return base|{"status":"DETAIL","prototype_absolute_pairwise_mean_squared_distance":d2,"rows":rows}
+    pairs=[]
+    for ix,x in enumerate(("Z","A","B","C","D")):
+        for y in ("Z","A","B","C","D")[ix+1:]: pairs.append({"pair":[x,y],"absolute_squared_distance":float(np.sum((p[x]-p[y])**2))})
+    return base|{"status":"DETAIL","prototype_q":{k:v.tolist() for k,v in p.items()},"prototype_pairwise_absolute_squared_distances":pairs,"prototype_pairwise_minimum_squared_distance":min(x["absolute_squared_distance"] for x in pairs),"prototype_absolute_pairwise_mean_squared_distance":d2,"rows":rows}
+
+def qualified_counts(n:int,kind:str)->list[int]:
+    counts=[]; complete=(n-1)//4
+    for i in range(15):
+        total=0; lo,hi=1+12*i,13+12*i
+        for j in range(complete):
+            ts=[path_time(mapped_frame(1.,1+4*j+h,0),kind,138 if kind=="delete" else None) for h in range(4)]
+            total+=int(all(lo<=t<hi for t in ts))
+        counts.append(total)
+    return counts
 
 def run(config:dict[str,Any],output:Path)->dict[str,Any]:
     import torch
@@ -56,7 +71,8 @@ def run(config:dict[str,Any],output:Path)->dict[str,Any]:
         for m in (0,1):
             seq=sequences[m]; comparisons[str(m)]={}
             for label in ("normal","delete","repaired"):
-                row=observations[f"message{m}_{label}"]; sel=row["allocation"][0]; comparisons[str(m)][label]={"score":score(row["q"],sel,seq),"detail":detail(row["q"],sel,seq)}
+                row=observations[f"message{m}_{label}"]; sel=row["allocation"][0]; kind="delete" if label=="delete" else "none"; score_by_message={str(candidate):score(row["q"],sel,sequences[candidate]) for candidate in (0,1)}; true=score_by_message[str(m)].get("score"); wrong=score_by_message[str(1-m)].get("score")
+                comparisons[str(m)][label]={"score_by_message":score_by_message,"wrong_minus_true_margin":None if true is None or wrong is None else wrong-true,"qualified_observation_count_by_position":qualified_counts(180 if label=="delete" else 181,kind),"detail_true_message":detail(row["q"],sel,seq)}
         result["status"]="EXECUTED_REQUIRES_FIXED_PATH_REVIEW"; result["mapping_check"]={"received_to_repaired_length":"180_to_181","indices_137_138_139":[137,137,138],"prefix_frames":138,"suffix_unchanged":True,"g0_expected_latent_groups":46}; result["comparisons"]=comparisons; dump(output/"comparisons.json",comparisons)
     except BaseException as exc: result["status"]="FAILED"; result["failures"].append(repr(exc)); dump(output/"result.json",result); raise
     dump(output/"result.json",result); return result
