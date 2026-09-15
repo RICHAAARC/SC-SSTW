@@ -125,3 +125,12 @@ all records. Negative directions are retained holdouts. Full post-MP4
 reencoded normalized latents and lossless pre-codec RGB tensors are saved for
 each readable output; the latter are about 11 × 92 MiB, so the package needs
 roughly 1 GiB before MP4 and metadata overhead.
+
+`recover_multiblock_summary.py` and
+`notebooks/c2a_multiblock_recovery_colab.ipynb` recover only the missing
+multiblock calibration summary from the persisted JSON q lists of the failed
+`c2a_multiblock_20260915T022411Z` launcher. They use the Python standard
+library only: no model/tensor/video load, GPU, FFmpeg, generation, decode or
+encode occurs. The recovery writes a new
+`MyDrive/Video-WM/C2A_Multiblock_Recovered_Summary/<UTC-run-id>/` directory
+and never alters the failed source result.

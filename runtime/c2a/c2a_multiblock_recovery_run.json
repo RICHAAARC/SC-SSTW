@@ -1,0 +1,8 @@
+{
+  "status": "PREPARED_CPU_JSON_RECOVERY_ONLY",
+  "source_result": "/content/drive/MyDrive/Video-WM/C2A_Multiblock_Diagnostic/c2a_multiblock_20260915T022411Z/result.json",
+  "layouts": {
+    "single": [[16, 28]],
+    "four": [[16, 28], [4, 16], [4, 40], [28, 28]]
+  }
+}

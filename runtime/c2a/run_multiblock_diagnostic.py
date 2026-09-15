@@ -139,11 +139,12 @@ def _calibrate_layout(layout: str, q_rows: dict[str, dict[str, dict[str, Any]]])
 
     aggregate = {state: torch.stack(values).mean(dim=0) for state, values in estimates.items()}
     holdouts: dict[str, Any] = {}
-    for state, target in (("MINUS_E1", torch.tensor([-0.5, 0.0], dtype=torch.float64)), ("MINUS_E2", torch.tensor([0.0, -0.5], dtype=torch.float64))):
+    for state, target_values in (("MINUS_E1", (-0.5, 0.0)), ("MINUS_E2", (0.0, -0.5))):
+        target = torch.tensor(target_values, dtype=torch.float64, device=estimates[state][0].device)
         errors = torch.stack([estimate - target for estimate in estimates[state]])
         mean_error = errors.mean(dim=0)
         holdouts[state] = {
-            "target_state": target.tolist(),
+            "target_state": target.detach().cpu().tolist(),
             "per_block_state_estimates": [value.detach().cpu().tolist() for value in estimates[state]],
             "per_block_error_vectors": [value.detach().cpu().tolist() for value in errors],
             "mean_error_vector": mean_error.detach().cpu().tolist(),
