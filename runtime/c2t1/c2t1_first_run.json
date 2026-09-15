@@ -1,0 +1,19 @@
+{
+  "model": {"id": "Wan-AI/Wan2.1-T2V-1.3B-Diffusers", "revision": null},
+  "generation": {
+    "role": "one_shared_long_terminal_then_three_decode_arms",
+    "prompt": "locked camera, a single matte white cube moving slowly across a dark plain table, stable lighting, no people, no cuts",
+    "negative_prompt": "text, watermark, logo, camera motion, cuts, multiple objects, flicker",
+    "seed": 1275, "height": 320, "width": 512, "frames": 181, "fps": 8,
+    "steps": 50, "guidance_scale": 5.0, "max_sequence_length": 512
+  },
+  "writer": {"channels_zero_based": [0, 1], "block_size": 8, "beta": 0.25, "rho": 0.5,
+    "ordinary_groups": 45, "special_group": 0, "posterior": "mode",
+    "central_block": "floor((H-8)/2):+8, floor((W-8)/2):+8",
+    "near_singular_rule": "reject if lambda_min <= 1e-8 * max(lambda_max, 1); no regularization or pseudoinverse"},
+  "payload_key_utf8": "C2-T1-first-validation-key-v1",
+  "codec": {"name": "h264_yuv420p", "crf": 18, "readback": "ffmpeg_rgb24", "thread_count": 1},
+  "candidate_grid": {"a": [0.8, 1.0, 1.25], "g": [0, 1, 2, 3], "b_rule": "inclusive [1-ceil(a*(N-1)), 180]", "local_edit_paths": "none"},
+  "reporting_only_reference": {"normal": {"a": 1.0, "b": 0, "g": 0}, "cut3": {"a": 1.0, "b": 3, "g": 0}, "speed125": {"a": 1.25, "b": 0, "g": 0}},
+  "acceptance": {"status": "NO_PASS_OR_FPR_GATE", "claim_ceiling": "ranking_and_score_gaps_only; joint_edit_plus_reencoding_conditions"}
+}
