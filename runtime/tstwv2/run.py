@@ -17,11 +17,16 @@ VIDEOS = tuple(a + "_NORMAL" for a in ARMS) + tuple(f"MESSAGE_{m}_{c}" for m in 
 def run(config: dict, output: Path) -> dict:
     import numpy as np
     import torch
+    state_mode = config.get('protocol') == 'state_clock_v1'
+    conditions = ('RESAVED', 'DELETE138', 'REPEAT138') if state_mode else ('RESAVED', 'DELETE138')
+    videos = tuple(a + '_NORMAL' for a in ARMS) + tuple(f'MESSAGE_{m}_{c}' for m in (0,1) for c in conditions)
+    if state_mode:
+        from runtime.tstwv2 import state_clock
     output.mkdir(parents=True, exist_ok=False)
-    result = {"status": "RUNNING", "diagnostic_denominator": {"arms": 3, "received_videos": 7, "receiver_encodes": 28},
-              "formal_science_denominator": 0, "fixed_calls": {"transformer": 0, "generation": 0, "vae_decode": 3, "vae_encode": 28},
+    result = {"status": "RUNNING", "diagnostic_denominator": {"arms": 3, "received_videos": len(videos), "receiver_encodes": 4*len(videos)},
+              "formal_science_denominator": 0, "fixed_calls": {"transformer": 0, "generation": 0, "vae_decode": 3, "vae_encode": 4*len(videos)},
               "actual_calls": {"vae_decode_attempted": 0, "vae_decode_completed": 0, "vae_encode_attempted": 0, "vae_encode_completed": 0},
-              "videos": {name: {"status": "NOT_RUN", "observations": {str(g): {"status": "NOT_RUN"} for g in range(4)}} for name in VIDEOS}, "failures": []}
+              "videos": {name: {"status": "NOT_RUN", "observations": {str(g): {"status": "NOT_RUN"} for g in range(4)}} for name in videos}, "failures": []}
     dump(output / "config.json", config)
     def save():
         dump(output / "result.json", result)
@@ -35,13 +40,21 @@ def run(config: dict, output: Path) -> dict:
         terminal = torch.load(config["source_shared_terminal"], map_location="cpu", weights_only=True).float()
         z = terminal.numpy()
         method.blocks(z)  # Checks actual data geometry, not an environment gate.
-        book = method.codebook(config["key_utf8"].encode())
+        book = state_clock.codebook(config['key_utf8'].encode()) if state_mode else method.codebook(config["key_utf8"].encode())
         np.savez(output / "codebook.npz", **book)
+        if state_mode:
+            dump(output/'public_context.json', state_clock.CONTEXT)
+            dump(output/'state_trajectories.json', {'context_digest':state_clock.CONTEXT_DIGEST,'states':book['states'].tolist(),'steps':book['steps'].tolist(),'message_drives':book['drives'].tolist()})
         result["protocol"] = {"namespace": method.NAMESPACE.decode(), "shape": list(z.shape), "support_count": 1760,
                               "tubelet_groups": 4, "patch": [4, 4], "margin": 1.0, "message_candidates": [0, 1],
                               "temporal_groups_written": [1, 44], "special_group_0_untouched": True, "tail_group_45_untouched": True,
                               "search_candidates_per_video": 204, "writer_support_score_weight": 0,
                               "normal_vs_resaved": "encoding-generation control", "delete_vs_resaved": "matched second lossy encoding"}
+        if state_mode:
+            result['protocol'].update(state_encoding='four circular phases -> two groups of 80 spatial projection supports',
+                                      state_context=state_clock.CONTEXT, state_context_digest=state_clock.CONTEXT_DIGEST,
+                                      global_candidates=204, local_clock_candidates=4284, observer_gain=.5, innovation_weight=.05, clock_event_cost=.002,
+                                      aisb='not adopted: no shared affine projection channel established', flow_trajectory_modified=False)
         save()
         vae = load_frozen_vae(config)
         off_rgb = None
@@ -85,10 +98,10 @@ def run(config: dict, output: Path) -> dict:
                 rgb = read_mp4(source)
                 if rgb.shape[0] != 181:
                     raise ValueError("normal MP4 must have 181 frames")
-                for condition in ("RESAVED", "DELETE138"):
+                for condition in conditions:
                     name = f"MESSAGE_{m}_{condition}"
                     try:
-                        edited = rgb if condition == "RESAVED" else torch.cat((rgb[:138], rgb[139:]), dim=0)
+                        edited = rgb if condition == 'RESAVED' else (torch.cat((rgb[:138],rgb[139:]),dim=0) if condition=='DELETE138' else torch.cat((rgb[:139],rgb[138:139],rgb[139:]),dim=0))
                         path = output / "received_videos" / f"{name}.mp4"
                         encode_rgb(edited, path, 8, 18)
                         result["videos"][name].update(status="VIDEO_PERSISTED", path=str(path.relative_to(output)), expected_frames=int(edited.shape[0]))
@@ -100,7 +113,7 @@ def run(config: dict, output: Path) -> dict:
                 fail(f"MESSAGE_{m}_edit_source", exc)
             save()
         # All receiver observations use the same grid. Truth is never a read() input.
-        for name in VIDEOS:
+        for name in videos:
             item = result["videos"][name]
             obs = {}
             try:
@@ -137,16 +150,20 @@ def run(config: dict, output: Path) -> dict:
                 del rgb
             except Exception as exc:
                 fail(f"{name}/readback", exc)
-            detection = method.read(obs, book)
+            detection = state_clock.read(obs, book) if state_mode else method.read(obs, book)
             dump(output / "detections" / f"{name}.json", detection)
-            item["detection"] = {k: v for k, v in detection.items() if k != "candidates"}
+            item["detection"] = {k: v for k, v in detection.items() if k not in ('candidates','classes')}
             item["status"] = "COMPLETE" if len(obs) == 4 else "PARTIAL_OR_FAILED"
             # Reporting only: label joins happen after blind search has finished.
             if name != "OFF_NORMAL":
                 truth = int(name.split("_")[1])
-                best = detection["best_by_message"]
-                true, wrong = best[str(truth)], best[str(1 - truth)]
-                item["reporting_only"] = {"true_message": truth, "true_minus_wrong_best_score": None if true is None or wrong is None else true["score"] - wrong["score"]}
+                if state_mode:
+                    delta = 1 if name.endswith('DELETE138') else (-1 if name.endswith('REPEAT138') else 0)
+                    item['reporting_only'] = state_clock.report(detection, truth, delta)
+                else:
+                    best = detection["best_by_message"]
+                    true, wrong = best[str(truth)], best[str(1 - truth)]
+                    item["reporting_only"] = {"true_message": truth, "true_minus_wrong_best_score": None if true is None or wrong is None else true["score"] - wrong["score"]}
             save()
             del obs
         result["status"] = "EXECUTED_REQUIRES_METHOD_REVIEW" if not result["failures"] else "EXECUTED_WITH_RETAINED_FAILURES"
