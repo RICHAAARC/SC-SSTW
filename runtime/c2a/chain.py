@@ -65,6 +65,58 @@ def quantize_rgb8_no_codec(rgb: Any) -> Any:
     return torch.from_numpy(pixels.copy())
 
 
+def raw_yuv420p_roundtrip_rgb8(rgb8: Any, path: str | Path, *, fps: int) -> tuple[Any, dict[str, Any]]:
+    """Roundtrip an already-quantized RGB8 raster through raw YUV420p only.
+
+    This preserves the RGB24 input geometry/rate and default conversion choices
+    of ``ffmpeg_roundtrip`` but deliberately omits the libx264/container step.
+    Rawvideo carries no colour metadata, so it cannot be a byte-for-byte proxy
+    for a decoded H.264 file; command records make that boundary explicit.
+    """
+
+    import numpy as np
+    import torch
+
+    if rgb8.ndim != 4 or rgb8.shape[-1] != 3 or rgb8.dtype != torch.uint8:
+        raise ValueError("raw YUV420p input must be an RGB8 uint8 [T,H,W,3] tensor")
+    frames, height, width, _ = (int(value) for value in rgb8.shape)
+    if height % 2 or width % 2:
+        raise ValueError("YUV420p requires even RGB dimensions")
+    target = Path(path)
+    if target.exists():
+        raise FileExistsError(f"refusing to overwrite raw YUV420p intermediate: {target}")
+    target.parent.mkdir(parents=True, exist_ok=True)
+    pixels = rgb8.detach().cpu().contiguous().numpy()
+    encode = ["ffmpeg", "-v", "error", "-threads", "1", "-f", "rawvideo", "-pix_fmt", "rgb24", "-s", f"{width}x{height}", "-r", str(fps), "-i", "pipe:0", "-an", "-c:v", "rawvideo", "-pix_fmt", "yuv420p", "-f", "rawvideo", "pipe:1"]
+    yuv = subprocess.run(encode, input=pixels.tobytes(), check=True, capture_output=True).stdout
+    expected_yuv = frames * height * width * 3 // 2
+    if len(yuv) != expected_yuv:
+        raise RuntimeError(f"raw YUV420p byte count {len(yuv)} != {expected_yuv}")
+    target.write_bytes(yuv)
+    # Rawvideo has no orientation metadata, so the MP4-only -noautorotate
+    # decode option has no applicable rawvideo counterpart.
+    decode = ["ffmpeg", "-v", "error", "-threads", "1", "-f", "rawvideo", "-pix_fmt", "yuv420p", "-s", f"{width}x{height}", "-r", str(fps), "-i", "pipe:0", "-map", "0:v:0", "-f", "rawvideo", "-pix_fmt", "rgb24", "pipe:1"]
+    decoded = subprocess.run(decode, input=yuv, check=True, capture_output=True).stdout
+    expected_rgb = frames * height * width * 3
+    if len(decoded) != expected_rgb:
+        raise RuntimeError(f"raw YUV420p RGB24 readback byte count {len(decoded)} != {expected_rgb}")
+    metadata = {
+        "encode_command": encode,
+        "decode_command": decode,
+        "input_format": "rgb24_rawvideo",
+        "intermediate_format": "yuv420p_rawvideo",
+        "output_format": "rgb24_rawvideo",
+        "frames": frames,
+        "width": width,
+        "height": height,
+        "fps": fps,
+        "raw_yuv_bytes": expected_yuv,
+        "explicit_colour_parameters": None,
+        "matching_boundary": "shares FFmpeg defaults, RGB24 geometry/rate, and RGB24/YUV420p conversion with the H.264 path, but rawvideo has no orientation/container/codec metadata (therefore no rawvideo equivalent of the MP4 decode -noautorotate option) and excludes H.264 quantization; it is not a strict substitute for the original MP4 roundtrip.",
+    }
+    return torch.from_numpy(np.frombuffer(decoded, dtype=np.uint8).reshape(frames, height, width, 3).copy()), metadata
+
+
 def ffmpeg_roundtrip(rgb: Any, path: str | Path, *, fps: int, crf: int = 18) -> Any:
     """Use one fixed RGB24/H.264/YUV420p file roundtrip and check frame bytes."""
 

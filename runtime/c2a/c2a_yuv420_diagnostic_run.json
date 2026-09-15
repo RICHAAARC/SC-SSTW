@@ -1,0 +1,34 @@
+{
+  "status": "PREPARED_NOT_RUN",
+  "model": {
+    "id": "Wan-AI/Wan2.1-T2V-1.3B-Diffusers",
+    "revision": null
+  },
+  "source": {
+    "quantization_run": "/content/drive/MyDrive/Video-WM/C2A_Quantization_Diagnostic/c2a_quantization_20260915T005839Z",
+    "arms": ["ZERO", "PLUS_E2", "MINUS_E2"],
+    "frames": 49,
+    "height": 320,
+    "width": 512,
+    "fps": 8
+  },
+  "c2a": {
+    "channels_zero_based": [0, 1],
+    "ordinary_groups": [1, 2, 3],
+    "read_group": 2,
+    "central_block": "floor((H-8)/2):+8, floor((W-8)/2):+8",
+    "beta": 0.25,
+    "rho": 0.5,
+    "posterior": "mode",
+    "cache_reset": "before and after each encode"
+  },
+  "acceptance": {
+    "status": "UNSET_REQUIRES_EXPLICIT_USER_DECISION_AFTER_RAW_YUV420P_RECORDS",
+    "records_required": [
+      "all three arm rows including failures",
+      "raw YUV420p intermediates and RGB8 roundtrip tensors",
+      "source pre-codec, source RGB8, raw-YUV420p, and source post-MP4 q",
+      "O2/M2 vectors and norms for all four q layers"
+    ]
+  }
+}

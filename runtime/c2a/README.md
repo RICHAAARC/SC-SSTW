@@ -92,3 +92,16 @@ generation, a transformer, or VAE decode. A single FP32 VAE loader performs
 three posterior-mode encodes and saves the RGB8 uint8 tensors, q at the source
 pre-codec/RGB8/source-post-MP4 layers, direct comparisons, and O2/M2
 vectors/norms below `MyDrive/Video-WM/C2A_Quantization_Diagnostic/<UTC-run-id>/`.
+
+`run_yuv420_diagnostic.py` and `notebooks/c2a_yuv420_diagnostic_colab.ipynb`
+then read one fixed RGB8 quantization package and isolate the rawvideo
+`RGB8 -> YUV420p -> RGB8` conversion. They reuse the original RGB24 geometry,
+frame rate, FFmpeg defaults and `yuv420p` sampling, save raw YUV intermediates
+and RGB8 readbacks, and perform one frozen VAE load plus three VAE encodes.
+They do not call `libx264`, create an MP4, generate a terminal, load a
+transformer, or decode a VAE latent. This raw stream shares the conversion
+stage but cannot strictly match the original H.264/MP4 path: it omits H.264
+quantization and carries no container/codec colour metadata. Commands and
+that boundary are persisted below
+`MyDrive/Video-WM/C2A_YUV420_Diagnostic/<UTC-run-id>/`; it must not be used to
+automatically attribute any remaining difference to H.264.
