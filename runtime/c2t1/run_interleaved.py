@@ -77,7 +77,7 @@ def write_search(path: Path, obs: dict[str,Any], local: bool, sequences: dict[in
             for m in (0,1):
                 value=records[row["effective_alignment_class"]][str(m)].get("score")
                 if value is not None and (wrong[m] is None or value<wrong[m]): wrong[m]=value
-    rank={str(m):{"best_candidate":best[m],"reference_exact_path":reference,"reference_exact_path_present":m in exact,"reference_exact_path_score":exact.get(m),"reference_effective_alignment_class":ref_class,"best_wrong_time_score_excluding_reference_class":wrong[m],"reference_minus_best_wrong_time":None if exact.get(m) is None or wrong[m] is None else exact[m]-wrong[m]} for m in (0,1)}
+    rank={str(m):{"best_candidate":best[m],"reference_exact_path":reference,"reference_exact_path_present":m in exact,"reference_exact_path_score":exact.get(m),"reference_equivalent_class_status":"REPRESENTED" if ref_class is not None else "NOT_REPRESENTED","reference_equivalent_class_score":None if ref_class is None else records[ref_class][str(m)].get("score"),"reference_effective_alignment_class":ref_class,"best_wrong_time_score_excluding_reference_class":wrong[m],"reference_equivalent_minus_best_wrong_time":None if ref_class is None or records[ref_class][str(m)].get("score") is None or wrong[m] is None else records[ref_class][str(m)]["score"]-wrong[m]} for m in (0,1)}
     return {"candidate_rows":counts["rows"],"effective_alignment_class_count":len(classes),"status_counts":counts["status"],"ranking_and_true_wrong_time_gaps":rank}
 
 def ideal_check() -> dict[str,Any]:
@@ -106,6 +106,7 @@ def run(config: dict[str,Any], output: Path) -> dict[str,Any]:
             marked,evidence,snap=write_states(terminal,sequences[m]); evidence_dir=output/"actual_writing_evidence"; evidence_dir.mkdir(exist_ok=True); torch.save(snap,evidence_dir/f"message_{m}_blocks.pt"); dump(evidence_dir/f"message_{m}_records.json",evidence)
             arm=output/"precodec_and_normal"/f"MESSAGE_{m}"; arm.mkdir(parents=True); result["actual_calls"]["vae_decode_attempted"]+=1; rgb=decode_normalized_latent(vae,marked); result["actual_calls"]["vae_decode_completed"]+=1; torch.save(rgb.detach().cpu(),arm/"precodec_rgb.pt"); normal=arm/"normal.mp4"; ffmpeg_roundtrip(rgb,normal,fps=config["codec"]["fps"],crf=config["codec"]["crf"]); raster=read_mp4(normal); deleted=output/"received_videos"/f"MESSAGE_{m}_DELETE138.mp4"; encode_rgb(torch.cat((raster[:138],raster[139:]),0),deleted,config["codec"]["fps"],config["codec"]["crf"]); videos[f"MESSAGE_{m}_NORMAL"]=normal; videos[f"MESSAGE_{m}_DELETE138"]=deleted
         result["status"]="FOUR_VIDEOS_COMPLETE"; dump(output/"result.json",result); obs={}
+        print("C2-T1 interleaved: four videos persisted",flush=True)
         for name,path in videos.items():
             raster=read_mp4(path); expected=180 if "DELETE" in name else 181
             if int(raster.shape[0])!=expected: raise RuntimeError(f"{name} length mismatch")
@@ -116,12 +117,12 @@ def run(config: dict[str,Any], output: Path) -> dict[str,Any]:
                     row=receiver_observation(vae,raster,g,dest); result["actual_calls"]["vae_encode_completed"]+=int(row["status"]=="COMPLETE")
                 except BaseException as exc:
                     count,tail=observed_count(expected,g); row={"status":"FAILED","g":g,"complete_ordinary_groups_expected":count,"incomplete_tail_frames":tail,"complete_groups_available_from_latent":0,"q":[],"error":repr(exc)}; result["failures"].append({"video":name,"g":g,"error":repr(exc)})
-                obs[name][str(g)]=row; dump(dest/"observation.json",row); dump(output/"result.json",result)
-        dump(output/"receiver_observations/index.json",obs); summaries={}
+                obs[name][str(g)]=row; dump(dest/"observation.json",row); dump(output/"result.json",result); print(f"C2-T1 interleaved: {name} g={g} {row['status']}",flush=True)
+        dump(output/"receiver_observations/index.json",obs); result["status"]="SIXTEEN_RECEIVER_OBSERVATIONS_COMPLETE"; dump(output/"result.json",result); print("C2-T1 interleaved: receiver observations persisted",flush=True); summaries={}
         for name,item in obs.items():
             ref={"a":1.,"b":0,"g":0,"local_path":"delete" if "DELETE" in name else "none","k":138 if "DELETE" in name else None}; summaries[name]={}
             for label,local in (("no_local_path",False),("one_local_path",True)):
-                p=output/"candidate_jsonl"/f"{name}_{label}.jsonl"; p.parent.mkdir(exist_ok=True); summaries[name][label]=write_search(p,item,local,sequences,ref)
+                p=output/"candidate_jsonl"/f"{name}_{label}.jsonl"; p.parent.mkdir(exist_ok=True); summaries[name][label]=write_search(p,item,local,sequences,ref); dump(output/"search_summary.json",summaries); result["status"]="SEARCH_IN_PROGRESS"; result["search_summary"]={n:{l:{k:v[k] for k in ("candidate_rows","effective_alignment_class_count")} for l,v in s.items()} for n,s in summaries.items()}; dump(output/"result.json",result); print(f"C2-T1 interleaved: {name} {label} search persisted",flush=True)
         dump(output/"search_summary.json",summaries); result["search_summary"]={n:{l:{k:v[k] for k in ("candidate_rows","effective_alignment_class_count")} for l,v in s.items()} for n,s in summaries.items()}; result["status"]="EXECUTED_REQUIRES_COMPARATIVE_RANKING_REVIEW"; result["limitations"]=["No FPR, threshold, or PASS claim.","New/old layout differences also include symbol history and re-encoding; they do not uniquely identify public spacing."]
     except BaseException as exc:
         result["status"]="FAILED"; result["failures"].append(repr(exc)); dump(output/"result.json",result); raise
