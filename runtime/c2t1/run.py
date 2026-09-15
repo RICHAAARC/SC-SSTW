@@ -125,7 +125,7 @@ def evaluate(video: str, obs: dict[str,Any], config: dict[str,Any], messages: di
             for b in range(1-ceil_scaled(a,n-1),181):
                 sel,dev,cov=allocation(n,g,a,b,count); sig=json.dumps({"allocation":sel,"coverage":cov},separators=(",",":")); key=f"g={g}|{sig}"
                 if key not in classes: classes[key]=class_next; class_next+=1
-                item={"a":a,"b":b,"g":g,"effective_alignment_class":classes[key],"allocation":sel,"coverage":cov,"projected_source_time_deviation":dev,"message":{}}
+                item={"a":a,"b":b,"g":g,"effective_alignment_class":classes[key],"allocation":sel,"coverage":cov,"candidate_symbol_center_deviation":dev,"reporting_only_reference_parameter_delta":{"a_minus_reference":a-reference["a"],"b_minus_reference":b-reference["b"],"g_minus_reference":g-reference["g"]},"message":{}}
                 for m,sequence in messages.items(): item["message"][str(m)]=score_candidate(one["q"],sel,sequence)
                 rows.append(item)
     pairs=[]
@@ -138,9 +138,11 @@ def evaluate(video: str, obs: dict[str,Any], config: dict[str,Any], messages: di
         ordered=sorted(scored,key=lambda r:r["message"][str(m)]["score"])
         ref=next((r for r in rows if all(r[x]==reference[x] for x in ("a","b","g"))),None)
         ref_score=None if ref is None else ref["message"][str(m)].get("score")
-        wrong=[r["message"][str(m)]["score"] for r in scored if r is not ref]
+        reference_class=None if ref is None else ref["effective_alignment_class"]
+        wrong=[r["message"][str(m)]["score"] for r in scored if r["effective_alignment_class"] != reference_class]
         best_wrong=min(wrong) if wrong else None
-        ranking[str(m)]={"scored_candidate_count":len(scored),"best_candidate":None if not ordered else {x:ordered[0][x] for x in ("a","b","g","effective_alignment_class")}|{"score":ordered[0]["message"][str(m)]["score"]},"reporting_only_reference":reference,"reference_score":ref_score,"best_wrong_time_score":best_wrong,"reference_minus_best_wrong":None if ref_score is None or best_wrong is None else ref_score-best_wrong}
+        equivalent_count=sum(r["effective_alignment_class"]==reference_class for r in rows) if ref is not None else 0
+        ranking[str(m)]={"scored_candidate_count":len(scored),"best_candidate":None if not ordered else {x:ordered[0][x] for x in ("a","b","g","effective_alignment_class")}|{"score":ordered[0]["message"][str(m)]["score"]},"reporting_only_reference":reference,"reference_exact_path_score":ref_score,"reference_effective_alignment_class":reference_class,"equivalent_path_count_in_reference_class":equivalent_count,"best_wrong_time_score_excluding_reference_class":best_wrong,"reference_minus_best_wrong_time":None if ref_score is None or best_wrong is None else ref_score-best_wrong}
     return {"video":video,"candidate_count":len(rows),"effective_alignment_class_count":class_next,"candidates":rows,"three_condition_message_competition":pairs,"ranking_and_true_wrong_time_gaps":ranking}
 
 def run(config: dict[str,Any], output: Path) -> dict[str,Any]:
