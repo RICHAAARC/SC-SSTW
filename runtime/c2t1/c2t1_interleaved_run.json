@@ -1,0 +1,10 @@
+{
+  "model": {"id": "Wan-AI/Wan2.1-T2V-1.3B-Diffusers", "revision": null},
+  "source_shared_terminal": "/content/drive/MyDrive/Video-WM/C2T1/c2t1_20260915T092031Z/shared_terminal_normalized.pt",
+  "output_drive_parent": "/content/drive/MyDrive/Video-WM/C2T1_Interleaved",
+  "payload_key_utf8": "C2-T1-first-validation-key-v1",
+  "codec": {"crf": 18, "fps": 8},
+  "edit": {"source_frame_zero_based": 138, "path_k_ranges": [[61,72],[85,96],[109,120],[133,144]]},
+  "candidate_grid": {"a": [0.8,1.0,1.25], "g": [0,1,2,3], "b_rule": "inclusive [1-ceil(a*(N-1)),180]", "local_paths": 97},
+  "acceptance": {"status": "NO_PASS_OR_FPR_GATE", "claim_ceiling": "interleaved-layout ranking and competition only"}
+}
