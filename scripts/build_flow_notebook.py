@@ -1,52 +1,51 @@
-"""Build the local, self-contained Run-all handoff; no publishing or execution."""
+"""Build the Run-all notebook bound to the published immutable source commit."""
 from pathlib import Path
-import base64
-import io
 import json
-import zipfile
 
 ROOT = Path(__file__).resolve().parents[1]
+SOURCE_COMMIT = 'fca6f1f4a447da8f3b725425f0db960541cb6a74'
+SOURCE_URL = 'https://github.com/RICHAAARC/SC-SSTW.git'
 
 
 def build():
-    config = json.loads((ROOT/'experiments/wan_state_clock/configs/generate_replication.json').read_text())
-    config['source_snapshot'] = 'unpublished Flow-Tube-State local source bundled in this notebook; base 3f0a5fafa7c2aa56fbc69bed17649accf49ae152'
-    config['generation']['role'] = 'shared_prefix_0_43_then_off_flow_a_flow_b'
-    buffer = io.BytesIO()
-    with zipfile.ZipFile(buffer, 'w', zipfile.ZIP_DEFLATED) as archive:
-        for folder in ('main', 'runtime', 'experiments/wan_state_clock'):
-            for path in sorted((ROOT/folder).rglob('*.py')):
-                archive.writestr(str(path.relative_to(ROOT)), path.read_bytes())
-        archive.writestr('experiments/wan_state_clock/configs/flow_replication.json', json.dumps(config, indent=2))
-    payload = base64.b64encode(buffer.getvalue()).decode()
     cells = []
     def code(name, source):
         cells.append(dict(cell_type='code', id=name, execution_count=None, metadata={}, outputs=[], source=source.splitlines(keepends=True)))
     def markdown(name, source):
         cells.append(dict(cell_type='markdown', id=name, metadata={}, source=source.splitlines(keepends=True)))
     code('drive-mount', "from google.colab import drive\ndrive.mount('/content/drive')\n")
-    markdown('scope', '# Flow tube-state: fixed five conditions\n\nLocal static handoff, not an executed result. Run all runs OFF, TERMINAL_A/B, FLOW_A/B at the fixed prompt and seed. This notebook contains its complete unpublished implementation snapshot, rather than fetching an old main commit. GitHub publication and binding to a new immutable release SHA remain a separate authorized action.\n\n50 steps; guidance only at indices 44/45/46, then normal 47/48/49. No model or VAE backward. R is fixed by same-run terminal A/B before Flow. Fixed budget: 124 Transformer forwards, 62 real and 12 shadow scheduler steps, 5 VAE decodes, 5 normal MP4 saves, 20 receiver encodes. Failures stay in all five rows. First-round saved RGB and residual temporal MSE limits are 1.5 times the corresponding terminal reference; these are not perceptual thresholds.\n')
+    markdown('scope', '# Flow tube-state: fixed five conditions\n\nPublished source handoff, not an executed result. Run all runs OFF, TERMINAL_A/B, FLOW_A/B at the fixed prompt and seed. This notebook fetches the complete immutable GitHub source commit shown below, independently of the current branch tip.\n\n50 steps; guidance only at indices 44/45/46, then normal 47/48/49. No model or VAE backward. R is fixed by same-run terminal A/B before Flow. Fixed budget: 124 Transformer forwards, 62 real and 12 shadow scheduler steps, 5 VAE decodes, 5 normal MP4 saves, 20 receiver encodes. Failures stay in all five rows. First-round saved RGB and residual temporal MSE limits are 1.5 times the corresponding terminal reference; these are not perceptual thresholds.\n')
     code('source', f'''from pathlib import Path
 from datetime import datetime, timezone
-import base64, io, json, os, signal, subprocess, sys, zipfile
+import json, os, signal, subprocess, sys
+SOURCE_URL = {SOURCE_URL!r}
+SOURCE_COMMIT = {SOURCE_COMMIT!r}
 RUN_ID = 'flow_tube_state_' + datetime.now(timezone.utc).strftime('%Y%m%dT%H%M%S%fZ')
 SOURCE = Path('/content') / (RUN_ID + '_source')
 SOURCE.mkdir(exist_ok=False)
-PAYLOAD = {payload!r}
-with zipfile.ZipFile(io.BytesIO(base64.b64decode(PAYLOAD))) as archive:
-    archive.extractall(SOURCE)
+subprocess.run(['git', 'init', str(SOURCE)], check=True)
+subprocess.run(['git', '-C', str(SOURCE), 'remote', 'add', 'origin', SOURCE_URL], check=True)
+subprocess.run(['git', '-C', str(SOURCE), 'fetch', '--depth', '1', 'origin', SOURCE_COMMIT], check=True)
+subprocess.run(['git', '-C', str(SOURCE), 'checkout', '--detach', SOURCE_COMMIT], check=True)
+actual_commit = subprocess.check_output(['git', '-C', str(SOURCE), 'rev-parse', 'HEAD'], text=True).strip()
+if actual_commit != SOURCE_COMMIT:
+    raise RuntimeError('Fetched source does not match the fixed source commit')
 subprocess.run([sys.executable, '-m', 'pip', 'install', 'diffusers', 'transformers', 'accelerate', 'ftfy', 'sentencepiece', 'safetensors', 'huggingface_hub', 'numpy', 'Pillow'], check=True)
 subprocess.run(['ffmpeg', '-version'], check=True)
 subprocess.run(['ffprobe', '-version'], check=True)
-print('Local bundled source:', SOURCE)
+print('Published source:', actual_commit, SOURCE)
 ''')
     code('fixed-run', '''OUTPUT = Path('/content/drive/MyDrive/Video-WM/FlowTubeState') / RUN_ID
-CONFIG = SOURCE / 'experiments/wan_state_clock/configs/flow_replication.json'
+config = json.loads((SOURCE / 'experiments/wan_state_clock/configs/generate_replication.json').read_text())
+config['source_snapshot'] = 'published GitHub source ' + SOURCE_COMMIT
+config['generation']['role'] = 'shared_prefix_0_43_then_off_flow_a_flow_b'
+CONFIG = Path('/content') / f'{RUN_ID}.config.json'
+CONFIG.write_text(json.dumps(config, indent=2) + '\\n')
 LOG = OUTPUT.parent / f'{RUN_ID}.launcher.log'
 LOG.parent.mkdir(parents=True, exist_ok=True)
-# Retain exact source beside the results without a published-source claim.
+# Retain the exact published source beside the user-run results.
 SOURCE_ARCHIVE = OUTPUT.parent / f'{RUN_ID}.source.zip'
-SOURCE_ARCHIVE.write_bytes(base64.b64decode(PAYLOAD))
+subprocess.run(['git', '-C', str(SOURCE), 'archive', '--format=zip', '--output', str(SOURCE_ARCHIVE), SOURCE_COMMIT], check=True)
 cmd = [sys.executable, '-u', '-m', 'experiments.wan_state_clock.flow_run', '--config', str(CONFIG), '--output', str(OUTPUT)]
 with LOG.open('w') as log:
     process = subprocess.Popen(cmd, cwd=SOURCE, start_new_session=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, bufsize=1)

@@ -1,7 +1,8 @@
 # Flow tube-state local candidate
 
 Base: `3f0a5fafa7c2aa56fbc69bed17649accf49ae152`; branch `dev/flow-tube-state`.
-This is an uncommitted local implementation, not a published source or GPU result.
+Published runtime source: `fca6f1f4a447da8f3b725425f0db960541cb6a74`.
+This is an engineering implementation, not a GPU result.
 
 The original state-clock codebook, normalized coordinates, 1760 support blocks,
 receiver and synchronization remain unchanged. At indices 44/45/46 of 50,
@@ -46,12 +47,14 @@ is retained without changing parameters. CPU/GPU peak memory and elapsed time
 are reported for real user execution, not inferred from tensor sizes.
 
 Local notebook: `notebooks/flow_tube_state_colab.ipynb`. Its first code cell is
-the exact independent Drive mount. Run all extracts the bundled local source
-and launches the fixed five-condition run, persisting that source archive,
-progress and results. There is no mode menu. It does not fetch old main code.
-The authorized local static handoff is complete separately from publishing:
-a future authorized commit/push can bind a published notebook to its new source
-SHA. No such commit, push, Drive write or real run is performed here.
+the exact independent Drive mount. Run all fetches the complete immutable
+runtime source SHA above from `https://github.com/RICHAAARC/SC-SSTW.git`, checks
+out that commit, and launches the fixed five-condition run, persisting that
+source archive, progress and results. There is no mode menu or branch-tip
+source resolution. The earlier self-contained local notebook remains available
+in the runtime source commit as a historical backup; the current notebook is
+the formal published entry. Publication does not imply a real run, model
+download, GPU execution or Drive write by the implementation agent.
 
 Regenerate the notebook after any source change:
 `python scripts/build_flow_notebook.py`.

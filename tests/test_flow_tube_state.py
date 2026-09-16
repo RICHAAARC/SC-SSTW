@@ -156,8 +156,8 @@ def test_fixed_runner_failure_retention_and_counts(monkeypatch,tmp_path,failure)
     assert json.loads((tmp_path/'run/result.json').read_text())['actual_calls']==result['actual_calls']
 
 
-def test_notebook_static_bundle():
-    import ast,base64,io,zipfile
+def test_notebook_static_source_binding():
+    import ast
     root=Path('.')
     notebook=json.loads((root/'notebooks/flow_tube_state_colab.ipynb').read_text())
     assert ''.join(notebook['cells'][0]['source'])=="from google.colab import drive\ndrive.mount('/content/drive')\n"
@@ -165,8 +165,11 @@ def test_notebook_static_bundle():
         if cell['cell_type']=='code': ast.parse(''.join(cell['source']))
     source=''.join(next(c for c in notebook['cells'] if c['id']=='source')['source'])
     tree=ast.parse(source)
-    payload=next(ast.literal_eval(n.value) for n in tree.body if isinstance(n,ast.Assign) and any(isinstance(t,ast.Name) and t.id=='PAYLOAD' for t in n.targets))
-    with zipfile.ZipFile(io.BytesIO(base64.b64decode(payload))) as archive:
-        for name in archive.namelist():
-            if name.endswith('.py'): assert archive.read(name)==(root/name).read_bytes()
+    constants={t.id:ast.literal_eval(n.value) for n in tree.body if isinstance(n,ast.Assign) and isinstance(n.value,ast.Constant) for t in n.targets if isinstance(t,ast.Name)}
+    assert constants['SOURCE_COMMIT']=='fca6f1f4a447da8f3b725425f0db960541cb6a74'
+    assert constants['SOURCE_URL']=='https://github.com/RICHAAARC/SC-SSTW.git'
+    assert "'fetch', '--depth', '1', 'origin', SOURCE_COMMIT" in source
+    assert "'checkout', '--detach', SOURCE_COMMIT" in source
+    assert 'actual_commit != SOURCE_COMMIT' in source
+    assert 'PAYLOAD' not in source
     assert 'experiments.wan_state_clock.flow_run' in ''.join(notebook['cells'][-1]['source'])
