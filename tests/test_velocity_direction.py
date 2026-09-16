@@ -276,7 +276,7 @@ def test_notebook_has_pinned_source_and_fixed_runner():
     for cell in nb['cells']:
         if cell['cell_type']=='code':ast.parse(''.join(cell['source']))
     source=''.join(nb['cells'][2]['source'])
-    assert "SOURCE_COMMIT = 'ff474c712e7d3b5a5874a24c61f77e94d9bfc59c'" in source
+    assert "SOURCE_COMMIT = '5beff27c5aed479f7f4209ca42b77f61e6d9997e'" in source
     assert "SOURCE_URL = 'https://github.com/RICHAAARC/SC-SSTW.git'" in source
     assert "'fetch', '--depth', '1', 'origin', SOURCE_COMMIT" in source
     assert "'checkout', '--detach', SOURCE_COMMIT" in source
@@ -287,7 +287,7 @@ def test_notebook_has_pinned_source_and_fixed_runner():
     assert "'archive', '--format=zip', '--output', str(SOURCE_ARCHIVE), SOURCE_COMMIT" in launch
     original=json.loads((root/'experiments/wan_state_clock/configs/generate_replication.json').read_text())
     config=copy.deepcopy(original)
-    env={'config':config,'SOURCE_URL':'https://github.com/RICHAAARC/SC-SSTW.git','ACTUAL_SOURCE_COMMIT':'ff474c712e7d3b5a5874a24c61f77e94d9bfc59c'}
+    env={'config':config,'SOURCE_URL':'https://github.com/RICHAAARC/SC-SSTW.git','ACTUAL_SOURCE_COMMIT':'5beff27c5aed479f7f4209ca42b77f61e6d9997e'}
     assignments=[n for n in ast.parse(launch).body if isinstance(n,ast.Assign) and isinstance(n.targets[0],ast.Subscript) and ast.unparse(n.targets[0]).startswith('config[') and ast.unparse(n.targets[0])!="config['artifact_paths']"]
     exec(compile(ast.Module(body=assignments,type_ignores=[]),'config-overrides','exec'),env)
     assert config['source_commit']==env['ACTUAL_SOURCE_COMMIT']

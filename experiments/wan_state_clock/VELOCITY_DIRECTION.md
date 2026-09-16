@@ -2,7 +2,7 @@
 
 Implementation base: `5736501151a0e454857e4e503e7008b6b6b27467` in the existing
 `dev/flow-tube-state` worktree. The notebook checks out published runtime source
-`ff474c712e7d3b5a5874a24c61f77e94d9bfc59c`;
+`5beff27c5aed479f7f4209ca42b77f61e6d9997e`;
 publication does not constitute a real model run.
 The prior five-condition `flow_run` entry and published notebook are unchanged.
 `prepare_generation` adds `load_vae=False`; its existing default remains True.
@@ -153,7 +153,7 @@ results remain uncertain; no automatic follow-up search is run.
 ## SHA-pinned user-run handoff
 
 `notebooks/velocity_direction_colab.ipynb` fetches the full immutable source SHA
-`ff474c712e7d3b5a5874a24c61f77e94d9bfc59c` from GitHub and verifies its detached checkout. Open this notebook in Colab and Run all; the first cell is
+`5beff27c5aed479f7f4209ca42b77f61e6d9997e` from GitHub and verifies its detached checkout. Open this notebook in Colab and Run all; the first cell is
 the exact independent two-line Drive mount, without force_remount. It creates a
 fresh source directory. Result files are saved in
 `/content/drive/MyDrive/Video-WM/VelocityDirection/<unique-run-id>/`.

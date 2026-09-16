@@ -3,7 +3,7 @@ from pathlib import Path
 import json
 
 ROOT=Path(__file__).resolve().parents[1]
-SOURCE_COMMIT="ff474c712e7d3b5a5874a24c61f77e94d9bfc59c"
+SOURCE_COMMIT="5beff27c5aed479f7f4209ca42b77f61e6d9997e"
 SOURCE_URL="https://github.com/RICHAAARC/SC-SSTW.git"
 
 
@@ -32,10 +32,17 @@ All six rows, including failures, remain in the results. BF16 AD and finite
 differences are reported separately; a sign match is only local direction evidence.
 
 Complete cost: 88 prefix + 72 tail Transformer forwards; two backwards; pure
-Transformer checkpoint replays counted separately (up to 20 invocations, possibly
-early-stopped); 80 live scheduler steps, 36 detached budget-shadow steps and six
-scalar response-probe steps. No VAE loading, decode/encode, MP4, or VAE backward.
-Actual memory peaks and elapsed time are measured by the user-run process.
+outer Transformer checkpoint replays counted separately (up to 20 invocations,
+possibly early-stopped). Official non-reentrant Wan block checkpoints are nested
+inside each gradient-bearing Transformer call. Block original forwards, forwards
+during outer reconstruction, and inner block replays are separate counting units
+(up to 20 times the model block count in each category across both zero paths).
+The 80 live scheduler steps, 36 detached budget-shadow steps and six
+scalar response-probe steps remain unchanged. No VAE loading, decode/encode,
+MP4, or VAE backward. CPU tests verify equivalent endpoints/gradients and observed
+block-input storage lifetime; they do not establish full-model L4 feasibility.
+The user-run process records current and peak CUDA allocated/reserved memory at
+forward/backward/failure/cleanup stages and preserves full failure tracebacks.
 ''')
     cell('code','local-source',f'''from pathlib import Path
 from datetime import datetime, timezone
