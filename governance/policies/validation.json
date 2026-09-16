@@ -1,8 +1,8 @@
 {
   "code_roots": ["main", "runtime", "experiments"],
-  "release_notebook_templates": ["notebooks/wan_state_clock_release_template.ipynb"],
-  "notebook_binding_kind": "template",
-  "published_release_notebooks": [],
+  "release_notebook_templates": [],
+  "notebook_binding_kind": "published",
+  "published_release_notebooks": ["notebooks/wan_state_clock_colab.ipynb"],
   "configs": [
     "experiments/wan_state_clock/configs/fixed_terminal_validation.json",
     "experiments/wan_state_clock/configs/generate_replication.json"

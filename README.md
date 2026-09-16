@@ -33,6 +33,6 @@ and ffprobe are external runtime dependencies for persisted RGB24/H.264 media.
 ## Formal experiment and notebook
 
 The formal entrypoint is `experiments.wan_state_clock.run`. The release notebook
-is bound in a separate follow-up commit to this source commit, so its immutable
-source SHA is visible and auditable. Both notebook and release checks use the
-explicit `notebook_binding_kind` policy selection.
+is bound in a separate follow-up commit to a published source commit, so its
+immutable source SHA is visible and auditable. Both notebook and release checks
+use the explicit `notebook_binding_kind` policy selection.
