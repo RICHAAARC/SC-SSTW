@@ -119,13 +119,21 @@ def test_true_tail_ad_checkpoint_finite_difference_and_history(setup):
     torch.testing.assert_close(large[0][1]['requested_delta_velocity'],method.scatter(1000*q[0],d))
 
 
-@pytest.mark.parametrize('failure',[False,'direction','plus_forward','zero_a_forward'])
+@pytest.mark.parametrize('failure',[False,'direction','plus_forward','zero_a_forward','zero_a_backward'])
 def test_six_rows_counts_failure_and_symmetric_coefficients(monkeypatch,tmp_path,setup,failure):
     from experiments.wan_state_clock import velocity_direction_run as runner
     def prepare(config,*,load_vae):
         assert load_vae is False
         return SimpleNamespace(transformer=Model(),scheduler=scheduler(),vae=None),torch.zeros(carrier.SHAPE),torch.tensor(1.),torch.tensor(-1.),torch.float32
     monkeypatch.setattr(runner,'prepare_generation',prepare)
+    if failure=='zero_a_backward':
+        original_grad=torch.autograd.grad
+        attempts=[0]
+        def failed_backward(*args,**kwargs):
+            attempts[0]+=1
+            if attempts[0]==1:raise RuntimeError('injected backward operator OOM')
+            return original_grad(*args,**kwargs)
+        monkeypatch.setattr(torch.autograd,'grad',failed_backward)
     if failure=='direction':
         original=runner.method.direction_and_amplitude
         calls=[0]
@@ -158,6 +166,16 @@ def test_six_rows_counts_failure_and_symmetric_coefficients(monkeypatch,tmp_path
         assert result['conditions']['MINUS_A']['status']=='COMPLETE'
         assert result['conditions']['MINUS_B']['status']=='COMPLETE'
         assert any('injected tail OOM' in row['error'] for row in result['failures'])
+    elif failure=='zero_a_backward':
+        assert result['conditions']['ZERO_A']['status']=='FAILED_AFTER_FORWARD'
+        assert result['conditions']['ZERO_B']['status']=='COMPLETE'
+        assert result['conditions']['PLUS_A']['status']=='MISSING_DIRECTION'
+        assert result['conditions']['MINUS_B']['status']=='COMPLETE'
+        stages=[r['stage'] for r in result['conditions']['ZERO_A']['resource_snapshots']]
+        assert stages==['forward_complete','before_backward','failure_with_traceback_live',
+                        'condition_finally_after_graph_release','after_condition_return']
+        assert 'failed_backward' in result['failures'][0]['traceback']
+        assert 'injected backward operator OOM' in result['failures'][0]['traceback']
     elif failure=='zero_a_forward':
         assert result['conditions']['ZERO_A']['status']=='FAILED_FORWARD'
         assert result['conditions']['ZERO_B']['status']=='COMPLETE'
@@ -176,6 +194,11 @@ def test_six_rows_counts_failure_and_symmetric_coefficients(monkeypatch,tmp_path
             minus=torch.load(tmp_path/f'run/MINUS_{suffix}_coefficients.pt',weights_only=True)
             assert torch.equal(plus,-minus)
             assert result['direction_comparisons'][suffix]['scientific_pass'] is None
+    for row in result['conditions'].values():
+        if row['status']=='COMPLETE':
+            stages=[r['stage'] for r in row['resource_snapshots']]
+            assert stages[0]=='forward_complete' and stages[-1]=='after_condition_return'
+    assert all(isinstance(row['traceback'],str) for row in result['failures'])
     persisted=json.loads((tmp_path/'run/result.json').read_text())
     assert persisted['actual_calls']==result['actual_calls']
 

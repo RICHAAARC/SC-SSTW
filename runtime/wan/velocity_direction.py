@@ -1,6 +1,7 @@
-"""Differentiable Wan/UniPC tail with pure-Transformer checkpoint replay."""
+"""Differentiable Wan/UniPC tail with nested pure-Transformer/block checkpoint replay."""
 from __future__ import annotations
 import copy
+from contextlib import contextmanager
 import torch
 from torch.utils.checkpoint import checkpoint
 from main.tube_state.velocity_coefficients import ACTIVE, scatter
@@ -64,7 +65,58 @@ def response_coefficients(snapshot,count):
     return rows
 
 
-def transformer_output(transformer,hidden,timestep,embedding,count,use_checkpoint):
+BLOCK_CALL_KINDS = ('transformer_block_forward', 'transformer_block_outer_replay', 'transformer_block_replay')
+
+
+@contextmanager
+def block_checkpointing(transformer, count, outer_kind, enabled):
+    """Scope the official Wan block hook to this pure forward, including replay.
+
+    The outer checkpoint discards inner saved inputs across calls. During its
+    replay only this invocation's block boundaries are reconstructed, and each
+    block replays separately during backward. No solver or graph tensors are
+    captured in this instrumentation. Restore flags/functions even on early stop.
+    """
+    if not enabled or not hasattr(transformer, 'enable_gradient_checkpointing'):
+        yield  # Small callable test doubles retain the existing outer path.
+        return
+    missing=object()
+    previous=[(module, module.gradient_checkpointing,
+               getattr(module, '_gradient_checkpointing_func', missing))
+              for module in transformer.modules() if hasattr(module, 'gradient_checkpointing')]
+    def checkpoint_block(module, *args):
+        invocation=0
+        def measured(*inputs):
+            nonlocal invocation
+            kind=('transformer_block_forward' if outer_kind=='transformer' else
+                  'transformer_block_outer_replay') if invocation==0 else 'transformer_block_replay'
+            invocation+=1
+            count(kind,False)
+            try:
+                output=module(*inputs)
+            except Exception as exc:
+                if kind=='transformer_block_replay' and type(exc).__name__=='_StopRecomputationError':
+                    count(kind,True)
+                raise
+            count(kind,True)
+            return output
+        return checkpoint(measured,*args,use_reentrant=False,preserve_rng_state=True)
+    try:
+        # Wan checks grad-enabled AND this flag, not training or parameter grads.
+        transformer.enable_gradient_checkpointing(gradient_checkpointing_func=checkpoint_block)
+        yield
+    finally:
+        for module, flag, function in previous:
+            module.gradient_checkpointing=flag
+            if function is missing:
+                if hasattr(module, '_gradient_checkpointing_func'):
+                    delattr(module, '_gradient_checkpointing_func')
+            else:
+                module._gradient_checkpointing_func=function
+
+
+def transformer_output(transformer,hidden,timestep,embedding,count,use_checkpoint,*,use_block_checkpoint=True):
+    checkpointed=use_checkpoint and torch.is_grad_enabled() and hidden.requires_grad
     invocation=0
     def pure_forward(x,t,e):
         nonlocal invocation
@@ -72,8 +124,9 @@ def transformer_output(transformer,hidden,timestep,embedding,count,use_checkpoin
         invocation+=1
         count(kind,False)
         try:
-            out=transformer(hidden_states=x,timestep=t,encoder_hidden_states=e,
-                            attention_kwargs=None,return_dict=False)[0]
+            with block_checkpointing(transformer,count,kind,checkpointed and use_block_checkpoint):
+                out=transformer(hidden_states=x,timestep=t,encoder_hidden_states=e,
+                                attention_kwargs=None,return_dict=False)[0]
         except Exception as exc:
             # Successful partial replay: non-reentrant checkpoint stops as soon
             # as all tensors needed by autograd have been recomputed.
@@ -82,13 +135,13 @@ def transformer_output(transformer,hidden,timestep,embedding,count,use_checkpoin
             raise
         count(kind,True)
         return out
-    if use_checkpoint and torch.is_grad_enabled() and hidden.requires_grad:
+    if checkpointed:
         return checkpoint(pure_forward,hidden,timestep,embedding,use_reentrant=False,preserve_rng_state=True)
     return pure_forward(hidden,timestep,embedding)
 
 
 def tail(pipe,snapshot,prefix,prompt,negative,input_dtype,guidance_scale,
-         coefficients,directions,radius,count,record_step,*,use_checkpoint=True,responses=None):
+         coefficients,directions,radius,count,record_step,*,use_checkpoint=True,responses=None,use_block_checkpoint=True):
     """F(a): real six-step trajectory; live model_outputs/last_sample keep graph."""
     scheduler=detached_scheduler(snapshot)
     require_affine_flow(scheduler)
@@ -98,8 +151,8 @@ def tail(pipe,snapshot,prefix,prompt,negative,input_dtype,guidance_scale,
         timestep=scheduler.timesteps[index]
         hidden=sample.to(input_dtype)
         time=timestep.expand(sample.shape[0])
-        conditional=transformer_output(pipe.transformer,hidden,time,prompt,count,use_checkpoint)
-        unconditional=transformer_output(pipe.transformer,hidden,time,negative,count,use_checkpoint)
+        conditional=transformer_output(pipe.transformer,hidden,time,prompt,count,use_checkpoint,use_block_checkpoint=use_block_checkpoint)
+        unconditional=transformer_output(pipe.transformer,hidden,time,negative,count,use_checkpoint,use_block_checkpoint=use_block_checkpoint)
         raw_cfg=unconditional+guidance_scale*(conditional-unconditional)
         velocity=raw_cfg.float()
         if not bool(torch.isfinite(velocity).all()): raise FloatingPointError('nonfinite CFG velocity')

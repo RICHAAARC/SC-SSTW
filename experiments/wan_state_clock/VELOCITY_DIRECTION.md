@@ -86,23 +86,42 @@ effective increments and their budgets are measured afterwards without retry.
 
 ## Checkpoint and execution costs
 
-Only a pure Transformer invocation is non-reentrant checkpointed; it explicitly
-takes hidden states, timestep and embedding tensors. No scheduler update is
-inside checkpoint or replay. First-step model inputs are independent of a;
-the remaining ten Transformer calls per zero pass can replay during backward.
-Whole-Transformer checkpointing drops saved activations across calls, but its
-single-call replay peak still needs real measurement. No GPU feasibility is
-inferred from CPU tests or tensor sizes, and no allocator/GPU-model gate is added.
-The VAE is neither loaded nor executed in this path. The old run08 experience
-is used only for pure replay accounting and graph lifetime; its VAE cache/offload
-framework and historical replay hard limits are not imported.
+The checkpoint strategy is nested and non-reentrant: the existing outer pure
+Transformer checkpoint remains, while the official Wan
+`enable_gradient_checkpointing` hook checkpoints each internal block. Neither
+checkpoint encloses CFG, coefficient injection, loss, or a solver update. First
+step model inputs are independent of a; the remaining ten Transformer calls per
+zero pass have gradient-bearing inputs. Wan 0.39/0.40 activates the internal
+path on `torch.is_grad_enabled() and self.gradient_checkpointing`, including eval
+with frozen parameters. Flags and the prior checkpoint function are restored
+on ordinary return, early-stop replay, and failure. Other runtime entrypoints
+retain their existing defaults.
+
+The outer checkpoint prevents block boundary tensors from accumulating across
+ten calls. During backward it reconstructs the current invocation's block
+boundaries; inner checkpoints replay individual blocks. Those one-call boundaries,
+one block's activations, model weights, and the live solver graph still consume
+memory. This is not a guarantee that the full model fits L4. CPU weak references
+verify that original block inputs do not survive ten completed forwards and
+that replay inputs are released after backward or an injected failure. Scalar
+counters and formatted traceback strings retain no graph or exception objects.
+
+The older `Public-Statistic-Control` Transformer implementation informed use of
+the official block hook only; no VAE cache/offload code, allocator quota, GPU gate,
+or historical replay hard limit is imported. The previous user's run completed
+the two zero forwards but both outer replays OOMed before a completed backward;
+this repair still requires a new user-run GPU measurement.
+
 
 | Operation | Fixed complete plan |
 |---|---:|
 | Shared prefix Transformer forwards | 88 |
 | Six real tails Transformer forwards | 72 |
 | Backward passes | 2 |
-| Pure-Transformer replay invocations | Up to 20, separately attempted/completed; may early-stop |
+| Outer pure-Transformer replay invocations | Up to 20, separately attempted/completed; may early-stop |
+| Block forward inside gradient-bearing original calls | 20 × actual model block count across both zeros |
+| Block forward while outer replay reconstructs boundaries | Up to 20 × block count; separately attempted/completed |
+| Inner block backward replay | Up to 20 × block count; separately attempted/completed; may early-stop |
 | Live scheduler steps | 44+36=80 |
 | Detached full-tensor budget shadow steps | 36 |
 | Scalar response probe steps | 6 |
@@ -110,10 +129,17 @@ framework and historical replay hard limits are not imported.
 
 There are exactly six rows: ZERO_A, ZERO_B, PLUS_A, MINUS_A, PLUS_B, MINUS_B.
 No tail failure suppresses another valid tail; missing directions stay explicit.
+Block units are never added to Transformer invocation totals. Block counters are
+accumulated in memory and persisted at outer-call/stage/failure boundaries.
 Each row keeps counts, elapsed time, process high-water RSS, stage CUDA peaks,
 actual endpoint projections/loss, correct-code signed absolute projection gain,
 competitor margins, per-step U/D and final OFF difference. Raw tensors and
-effective config/source are persisted for interpretation. Two zero forward
+effective config/source are persisted for interpretation. Resource snapshots at
+forward completion, before/after backward, failure (while traceback is live),
+condition-finally cleanup, and after condition return distinguish current CUDA
+allocated/reserved bytes from stage peaks. The final return sample occurs after
+the exception function frame exits. Full formatted tracebacks preserve the failing
+operator without retaining exception objects. Two zero forward
 results define only this pair's observed baseline difference. Missing zero
 evidence stays null, never synthetic zero.
 
@@ -148,3 +174,32 @@ Rebuild with `python scripts/build_velocity_direction_notebook.py` and check
 with `python -m pytest tests/test_velocity_direction.py -q -k notebook`. Method tests use
 CPU torch, real UniPC and a deterministic fake Transformer; no pretrained model,
 GPU, Colab or Drive execution has occurred. Source/notebook publication is separate from real model/GPU execution.
+
+## Checkpoint repair validation ceiling
+
+`tests/test_velocity_checkpointing.py` uses randomly initialized small real Wan
+Transformers and real UniPC. It checks the complete six-step production tail,
+all 5280 coefficients and the original terminal loss in FP32 and BF16 (with native
+FP32 parameter exceptions): native, outer-only, and nested endpoints/gradients
+agree. Solver update counts remain six after backward; all three coefficient
+rows carry gradients. These are CPU architecture checks, not pretrained outputs.
+
+A separate ten-call tiny-Wan saved-tensor inventory excludes model weights and
+uses storage identity deduplication. Outer-only and nested retain the same
+6,120 logical bytes / 5,220 unique storage bytes after forward; block-only retains
+65,280 logical / 53,760 unique bytes. These measurements describe this CPU fixture,
+not live allocator peaks or predictions for the user's GPU. C++ weak-storage
+handles (including aliases with different tensor wrappers) observe block-input
+storage peaks of 1,024 bytes in forward and 3,072 bytes in replay for a separate
+three-block tiny fixture; both inventories are empty after backward/failure.
+These observations cover block inputs, not all internal activations. Weak-reference checks
+also cover replay-boundary release, exception restoration, and a subsequent
+independent gradient call. Runner failure injection retains all six conditions,
+missing directions, full traceback strings and post-return resource snapshots.
+
+Run the bounded validation with
+`python -m pytest tests/test_velocity_checkpointing.py tests/test_velocity_direction.py -q`.
+No full model, GPU, Colab or Drive experiment was executed for this repair.
+
+Source inspection: [Wan v0.40.0 block activation](https://github.com/huggingface/diffusers/blob/v0.40.0/src/diffusers/models/transformers/transformer_wan.py#L634)
+and [PyTorch v2.11.0 nested checkpoint semantics](https://github.com/pytorch/pytorch/blob/v2.11.0/torch/utils/checkpoint.py#L563).

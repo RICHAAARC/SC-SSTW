@@ -7,6 +7,7 @@ import platform
 import resource
 import subprocess
 import time
+import traceback
 from pathlib import Path
 import numpy as np
 import torch
@@ -15,7 +16,7 @@ from main.tube_state import velocity_coefficients as method
 from runtime.wan.generation import prepare_generation
 from runtime.wan.flow_generation import continue_steps
 from runtime.wan.flow_step import measures
-from runtime.wan.velocity_direction import tail, detached_scheduler, response_coefficients
+from runtime.wan.velocity_direction import tail, detached_scheduler, response_coefficients, BLOCK_CALL_KINDS
 from runtime.wan.io import dump
 
 CONDITIONS = ('ZERO_A','ZERO_B','PLUS_A','MINUS_A','PLUS_B','MINUS_B')
@@ -41,13 +42,14 @@ def run(config,output):
     started=time.monotonic()
     fixed={'transformer':160,'scheduler_step':80,'shadow_step':36,'response_probe_step':6,
            'backward':2,'vae_decode':0,'vae_encode':0,'mp4_save':0}
-    kinds=tuple(fixed)+('transformer_replay',)
+    kinds=tuple(fixed)+('transformer_replay',)+BLOCK_CALL_KINDS
     result={'status':'RUNNING','conditions':{c:{'status':'NOT_RUN','steps':[],
         'calls':{k+'_'+s:0 for k in kinds for s in ('attempted','completed')},
         'elapsed_seconds':None,'resources':None,'endpoint':None,'loss':None} for c in CONDITIONS},
         'diagnostic_denominator':6,'formal_science_denominator':0,'fixed_calls':fixed,
         'call_plan':{'prefix_transformer':88,'six_tail_transformer':72,'two_zero_backwards':2,
-                     'checkpoint_replay':'up to 20 pure-Transformer invocations, possibly early-stopped; counted separately',
+                     'checkpoint_replay':'up to 20 outer pure-Transformer replays, possibly early-stopped; counted separately',
+                     'block_checkpoint_calls':'gradient-bearing calls only: block original forward, outer reconstruction, and block replay are separate units; no solver replay',
                      'prefix_scheduler':44,'six_tail_scheduler':36,'budget_shadow':36,'scalar_response_probe':6},
         'actual_calls':{k+'_'+s:0 for k in kinds for s in ('attempted','completed')},
         'failures':[],'directions':{},'responses':None,'R':None,'zero_repeat_floor':None,
@@ -65,15 +67,17 @@ def run(config,output):
         result['actual_calls'][key]+=1
         if active in result['conditions']:
             calls=result['conditions'][active]['calls'];calls[key]=calls.get(key,0)+1
-        save()
+        if kind not in BLOCK_CALL_KINDS: save()
         if kind in ('backward','transformer_replay') or (kind=='transformer' and completed and result['actual_calls'][key]%12==0):
             print(active,kind,'completed' if completed else 'attempted',result['actual_calls'][key],flush=True)
     def failure(stage,exc):
-        result['failures'].append({'stage':stage,'error':repr(exc),'classification':'ENGINEERING_OR_DIRECTION_UNAVAILABLE'})
+        result['failures'].append({'stage':stage,'error':repr(exc),'traceback':''.join(traceback.format_exception(type(exc),exc,exc.__traceback__)),'classification':'ENGINEERING_OR_DIRECTION_UNAVAILABLE'})
         save()
     def resources():
         value={'process_peak_rss_kib':resource.getrusage(resource.RUSAGE_SELF).ru_maxrss}
         if torch.cuda.is_available():
+            value['cuda_current_allocated_bytes']=torch.cuda.memory_allocated()
+            value['cuda_current_reserved_bytes']=torch.cuda.memory_reserved()
             for label,fn in (('allocated_bytes',torch.cuda.max_memory_allocated),('reserved_bytes',torch.cuda.max_memory_reserved)):
                 value['cuda_stage_peak_'+label]=fn();cuda_peaks[label]=max(cuda_peaks[label],fn())
         return value
@@ -92,6 +96,10 @@ def run(config,output):
         if torch.cuda.is_available(): torch.cuda.reset_peak_memory_stats()
         m=0 if name.endswith('A') else 1
         endpoint=loss=gradient=None
+        row['resource_snapshots']=[]
+        def sample_resources(stage):
+            row['resource_snapshots'].append(dict(stage=stage,**resources()))
+            save()
         try:
             def record(step,arrays):
                 row['steps'].append(step)
@@ -114,11 +122,13 @@ def run(config,output):
                 row['endpoint']=endpoint_metrics(cpu,directions.cpu(),codes.cpu())
                 row['loss']=float(loss.detach())
                 row['status']='FORWARD_COMPLETE'
-                save()
+                sample_resources('forward_complete')
                 if backward:
+                    sample_resources('before_backward')
                     count('backward',False)
                     gradient=torch.autograd.grad(loss,coefficients)[0]
                     count('backward',True)
+                    sample_resources('after_backward')
                     if not bool(torch.isfinite(gradient).all()): raise FloatingPointError('nonfinite coefficient gradient')
                     torch.save(gradient.detach().cpu(),output/f'{name}_gradient.pt')
                     answer=gradient.detach().cpu()
@@ -128,13 +138,20 @@ def run(config,output):
             return answer
         except Exception as exc:
             row['status']='FAILED_AFTER_FORWARD' if row.get('endpoint') else 'FAILED_FORWARD'
+            sample_resources('failure_with_traceback_live')
             failure(name,exc)
             return None
         finally:
             endpoint=loss=gradient=None
             row['elapsed_seconds']=time.monotonic()-tick
             row['resources']=resources()
-            release();save()
+            release()
+            sample_resources('condition_finally_after_graph_release')
+    def after_condition(name):
+        # Called after condition() and its exception frame have actually exited.
+        result['conditions'][name]['resource_snapshots'].append(
+            dict(stage='after_condition_return',**resources()))
+        save()
     try:
         if config['generation']['steps']!=50: raise ValueError('fixed experiment requires 50 steps')
         source=subprocess.run(['git','rev-parse','HEAD'],capture_output=True,text=True)
@@ -150,9 +167,12 @@ def run(config,output):
         pipe,prefix,prompt,negative,dtype=prepare_generation(config,load_vae=False)
         result['precision']={'transformer_input':str(dtype),'CFG':'original model-output arithmetic',
             'scheduler_input':'float32 after completed CFG','coefficient':'float32','projection_accumulation':'float64'}
-        result['checkpoint']={'scope':'pure Transformer invocation only','use_reentrant':False,
+        result['checkpoint']={'scope':'outer pure Transformer plus official inner Wan blocks','use_reentrant':False,
+            'block_count':len(getattr(pipe.transformer,'blocks',())),
+            'block_activation':'grad enabled and input requires_grad; scoped official enable_gradient_checkpointing, valid in eval with frozen parameters',
+            'boundary_lifetime':'outer discards block saved inputs across tail calls; replay reconstructs current invocation boundaries, consumed by per-block backward',
             'scheduler_replayed':False,'no_VAE_loaded':pipe.vae is None,
-            'memory_claim':'checkpointed cross-call activations only; actual GPU/host peak must be measured'}
+            'memory_claim':'CPU equivalence and boundary lifetime only; current user GPU peak/feasibility remains unverified'}
         directions=torch.as_tensor(book['directions'],device=prefix.device)
         codes=torch.as_tensor(book['codes'],device=prefix.device)
         prefix=continue_steps(pipe,pipe.scheduler,prefix,prompt,negative,dtype,
@@ -168,6 +188,7 @@ def run(config,output):
             a=torch.zeros(method.COEFFICIENT_SHAPE,device=prefix.device,requires_grad=True)
             gradients[name[-1]]=condition(name,a,backward=True)
             del a
+            after_condition(name)
             if name=='ZERO_A' and (output/'ZERO_A_terminal.pt').exists():
                 off=torch.load(output/'ZERO_A_terminal.pt',map_location='cpu',weights_only=True).numpy()
                 radii=[None,None]
@@ -207,6 +228,7 @@ def run(config,output):
                 a=(info['epsilon']*q*sign).to(prefix.device)
                 condition(name,a)
                 del a
+                after_condition(name)
                 release()
             q=None
     except Exception as exc:
