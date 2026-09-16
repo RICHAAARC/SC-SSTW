@@ -48,15 +48,16 @@ def load_frozen_vae(config: dict[str, Any]) -> Any:
     return vae.to(torch.device("cuda"))
 
 
-def prepare_generation(config: dict[str, Any]):
-    """Generate one normalized terminal latent by the existing Wan step path."""
+def prepare_generation(config: dict[str, Any], *, load_vae: bool = True):
+    """Prepare Wan prompt, latent and scheduler; optionally omit the unused VAE."""
 
     import torch
     from diffusers import WanPipeline
 
     model, generation = config["model"], config["generation"]
     device = torch.device("cuda")
-    pipe = WanPipeline.from_pretrained(model["id"], **_load_args(model, torch_dtype=torch.bfloat16))
+    pipe = WanPipeline.from_pretrained(model["id"], **_load_args(model, torch_dtype=torch.bfloat16),
+                                       **({} if load_vae else {'vae': None}))
     if getattr(pipe, "transformer_2", None) is not None or getattr(pipe.config, "boundary_ratio", None) is not None or getattr(pipe.config, "expand_timesteps", False):
         raise ValueError("the reused C2A adapter supports the prior single-transformer Wan path only")
     pipe.text_encoder.to(device)
@@ -74,10 +75,11 @@ def prepare_generation(config: dict[str, Any]):
     pipe.vae = None
     gc.collect()
     torch.cuda.empty_cache()
-    vae = load_frozen_vae(config)
-    pipe.vae = vae
-    pipe.vae_scale_factor_temporal = getattr(vae.config, "scale_factor_temporal", None) or 2 ** sum(vae.config.temperal_downsample)
-    pipe.vae_scale_factor_spatial = getattr(vae.config, "scale_factor_spatial", None) or 2 ** len(vae.config.temperal_downsample)
+    if load_vae:
+        vae = load_frozen_vae(config)
+        pipe.vae = vae
+        pipe.vae_scale_factor_temporal = getattr(vae.config, "scale_factor_temporal", None) or 2 ** sum(vae.config.temperal_downsample)
+        pipe.vae_scale_factor_spatial = getattr(vae.config, "scale_factor_spatial", None) or 2 ** len(vae.config.temperal_downsample)
     if generation["height"] % pipe.vae_scale_factor_spatial or generation["width"] % pipe.vae_scale_factor_spatial or (generation["frames"] - 1) % pipe.vae_scale_factor_temporal:
         raise ValueError("the reused Wan VAE cannot represent the configured video geometry")
     for module in (pipe.transformer,):
