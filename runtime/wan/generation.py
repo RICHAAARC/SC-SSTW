@@ -48,7 +48,7 @@ def load_frozen_vae(config: dict[str, Any]) -> Any:
     return vae.to(torch.device("cuda"))
 
 
-def generate_terminal_latent(config: dict[str, Any], progress: Any = None) -> GeneratedTerminal:
+def prepare_generation(config: dict[str, Any]):
     """Generate one normalized terminal latent by the existing Wan step path."""
 
     import torch
@@ -105,6 +105,13 @@ def generate_terminal_latent(config: dict[str, Any], progress: Any = None) -> Ge
         pipe.scheduler.set_begin_index(0)
     input_dtype = getattr(getattr(pipe.transformer, "patch_embedding", None), "weight", None)
     input_dtype = input_dtype.dtype if input_dtype is not None else next(pipe.transformer.parameters()).dtype
+    return pipe, latent, prompt, negative, input_dtype
+
+
+def generate_terminal_latent(config: dict[str, Any], progress: Any = None) -> GeneratedTerminal:
+    import torch
+    pipe, latent, prompt, negative, input_dtype = prepare_generation(config)
+    model, generation, vae = config['model'], config['generation'], pipe.vae
     transformer_calls = 0
     transformer_attempted = 0
     def record_forward(completed: bool) -> None:
