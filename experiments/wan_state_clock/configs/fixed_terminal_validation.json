@@ -1,0 +1,7 @@
+{
+  "protocol": "state_clock_v1",
+  "model": {"id": "Wan-AI/Wan2.1-T2V-1.3B-Diffusers", "revision": null},
+  "source_shared_terminal": "/content/drive/MyDrive/Video-WM/C2T1/c2t1_20260915T092031Z/shared_terminal_normalized.pt",
+  "key_utf8": "WanProjection-first-validation-key-v1",
+  "output_drive_parent": "/content/drive/MyDrive/Video-WM/WanStateClock"
+}

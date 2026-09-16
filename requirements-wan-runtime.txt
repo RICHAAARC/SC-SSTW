@@ -1,0 +1,14 @@
+# Optional only: required for separately authorized real Wan execution.
+# Colab supplies the compatible torch runtime; do not install or load it locally
+# merely to run the CPU profiles.
+torch
+diffusers
+transformers
+accelerate
+ftfy
+sentencepiece
+safetensors
+huggingface_hub
+numpy
+Pillow
+# External executable requirements: ffmpeg and ffprobe.

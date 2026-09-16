@@ -1,28 +1,32 @@
-# SC-SSTW Project Contract
+# SC-SSTW main project contract
 
-## Current authorization
+## Authorization and status
 
-The project is at research_defined. The authorized implementation scope is the
-migrated CPU-only synthetic feasibility bridge for affine-invariant public
-capture, public-only calibration, and state-constrained synchronization.
+`main` is the sole authoritative implementation branch. Historical branches
+remain reproducibility records and must not be imported into main. Method
+execution authority remains scope-specific. Implementation completion and
+evidence completion are separate: architecture/test PASS cannot turn recorded
+diagnostics into FPR, generalization, paper, or Flow-writing PASS.
 
-## Claim ceiling
+## Method safeguards
 
-All migrated interfaces, tests, protocols and runner outputs are synthetic_only.
-They do not establish performance on a VAE, DiT, Flow Matching, saved MP4,
-attacks, fixed false-positive rate, or a paper claim.
+- Use the fixed state-clock arm denominator and persist every success, failure,
+  and missing observation.
+- Keep receiver search blind to message truth and writer evidence; join truth
+  only for post-search reporting.
+- Message 0 and message 1 use the same condition-specific persisted
+  save/readback chain and candidate budget. NORMAL has one lossy save; RESAVED,
+  DELETE, and REPEAT each have a matched second lossy save before readback.
+  Record calls, seed, config, source, and output paths.
+- A future notebook must mount Drive in cell zero using the exact two lines,
+  bind a published immutable GitHub source SHA, and persist progress during its
+  authorized run.
 
-## Boundaries
+## Architecture
 
-- main/ contains pure method code and may not import runtime/, experiments/,
-  governance/, or paper_artifacts/.
-- runtime/ is reserved for separately authorized real-model work.
-- experiments/feasibility/ may only run CPU-only constructed-channel probes.
-- paper_artifacts/ may only rebuild from future frozen records and manifests.
-- outputs/, MP4 files and Drive packages are not committed.
-
-## Validation
-
-The default suite is lightweight and may run only CPU-only synthetic tests.
-Real models, GPU work, external services and formal evidence workflows require
-explicit current authorization.
+- `main/tube_state` is pure method code and imports no runtime, experiments, or
+  governance modules.
+- `runtime/wan` contains shared VAE/generation/media adapters and may not
+  import `experiments.wan_state_clock` or any historical runner.
+- `experiments/wan_state_clock` is the only formal orchestration layer.
+- Governance is a local check layer, never a method-runtime dependency.

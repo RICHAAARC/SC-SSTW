@@ -1,8 +1,10 @@
-project_stage: research_defined
-allowed_scope: synthetic_only
-active_method: affine_invariant_public_calibrated_state_synchronization
-forbidden_runtime_claims:
-  - real_video
-  - gpu
+implementation_status: formal_candidate_complete_locally
+evidence_status: gpu_and_scientific_validation_not_rerun
+current_local_scope: formal_candidate_packaging_and_cpu_validation
+new_gpu_execution: false
+active_method: wan_terminal_projection_state_clock
+claims_not_established:
   - fixed_fpr
+  - generalization
   - paper_ready
+  - flow_time_write_completed

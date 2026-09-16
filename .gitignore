@@ -1,9 +1,10 @@
 __pycache__/
 *.py[cod]
 .pytest_cache/
-.venv/
-.conda/
 outputs/
-audit_reports/
 *.mp4
-*.zip
+*.pt
+*.npz
+models/
+checkpoints/
+local_reports/

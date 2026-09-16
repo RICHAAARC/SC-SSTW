@@ -1,1 +1,0 @@
-"""SC-SSTW method packages."""

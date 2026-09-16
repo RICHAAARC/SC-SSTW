@@ -1,24 +1,38 @@
 # SC-SSTW
 
-SC-SSTW is the governed main repository for research on affine-invariant,
-public-only calibrated state-space synchronization watermarking.
+`main` is the sole authoritative implementation of the Wan terminal
+projection/state-clock method. Historical development branches remain only to
+reproduce their own records; they are not parallel authoritative
+implementations and are not imported by this tree.
 
-## Current feasible starting point
+## Status
 
-main/sc_sstw/ holds the carrier-independent method interfaces;
-experiments/feasibility/synthetic/ holds the constructed-channel bridge used
-to validate them under declared temporal edits. It is explicitly not a video
-watermark runtime or a formal detection claim.
+Implementation status is `formal_main_published`. Evidence status is separate:
+recorded real Wan runs remain fixed-condition method diagnostics; publishing
+this source does not establish
+FPR, generalization, paper readiness, or Flow-time writing.
 
-The next scientific boundary is a real-video motion-subject observer and
-frozen public-candidate acquisition. That work is not implemented here.
+## Dependencies and local checks
 
-## Layout
+Core CPU tests require `numpy`; development checks additionally require
+`pytest` and `nbformat`:
 
-- main/: minimal method interfaces and the synthetic mechanism package.
-- runtime/: reserved for future real-model adapters.
-- experiments/: protocols and reproducible synthetic runners.
-- paper_artifacts/: future record-to-artifact rebuild layer.
-- governance/: research-state and validation controls.
+```bash
+python -m pip install -r requirements-dev.txt
+python governance/tools/run_validation_profile.py method
+python governance/tools/run_validation_profile.py notebook
+python governance/tools/run_validation_profile.py governance
+python governance/tools/run_validation_profile.py release
+```
 
-Run the lightweight suite with python -m pytest -q.
+`requirements-wan-runtime.txt` declares, but does not install or load during
+these checks, the optional real Wan runtime packages used by the successful
+replication workflow (including NumPy and its tokenizer/safety helpers). FFmpeg
+and ffprobe are external runtime dependencies for persisted RGB24/H.264 media.
+
+## Formal experiment and notebook
+
+The formal entrypoint is `experiments.wan_state_clock.run`. The release notebook
+is bound in a separate follow-up commit to this source commit, so its immutable
+source SHA is visible and auditable. Both notebook and release checks use the
+explicit `notebook_binding_kind` policy selection.

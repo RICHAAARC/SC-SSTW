@@ -1,0 +1,20 @@
+{
+  "code_roots": ["main", "runtime", "experiments"],
+  "release_notebook_templates": ["notebooks/wan_state_clock_release_template.ipynb"],
+  "notebook_binding_kind": "template",
+  "published_release_notebooks": [],
+  "configs": [
+    "experiments/wan_state_clock/configs/fixed_terminal_validation.json",
+    "experiments/wan_state_clock/configs/generate_replication.json"
+  ],
+  "dev_requirements": "requirements-dev.txt",
+  "required_dev_dependencies": ["numpy", "pytest", "nbformat"],
+  "reproduction_entries": ["experiments/wan_state_clock/run.py"],
+  "required_files": [
+    "README.md", "docs/current_method.md", "requirements-dev.txt",
+    "main/tube_state/__init__.py", "main/tube_state/projection_margin.py", "main/tube_state/state_clock.py",
+    "runtime/wan/__init__.py", "runtime/wan/generation.py", "runtime/wan/vae.py", "runtime/wan/io.py", "runtime/wan/quality.py",
+    "experiments/wan_state_clock/run.py", "experiments/wan_state_clock/configs/fixed_terminal_validation.json",
+    "experiments/wan_state_clock/configs/generate_replication.json", "tests/test_wan_projection.py", "tests/test_state_clock.py"
+  ]
+}

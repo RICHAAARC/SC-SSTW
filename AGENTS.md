@@ -1,7 +1,11 @@
-# SC-SSTW Agent Contract
+# SC-SSTW main contract
 
-Before modifying the repository, read .codex/project_contract.md.
+Read `.codex/project_contract.md` before changing main. Keep
+`main/tube_state` independent of runtime, experiments, and governance.
+`runtime/wan` is a shared adapter and must not import
+`experiments.wan_state_clock`. Detection must not receive writer evidence or
+truth labels; truth joins are reporting-only after search.
 
-The active implementation is synthetic-only. Do not present its results as
-real-video, GPU, fixed-FPR, reproducibility, or paper evidence. Runtime-heavy
-tests and generated outputs must remain outside the default test path and git.
+Preserve fixed denominators, missing observations, and failures in persisted
+results. Record code/config/seed/call counts/output paths for a real run.
+Local PASS is an engineering implementation check, not a scientific PASS.

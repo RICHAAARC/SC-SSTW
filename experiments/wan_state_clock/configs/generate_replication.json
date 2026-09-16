@@ -1,0 +1,16 @@
+{
+  "protocol": "state_clock_v1",
+  "terminal_mode": "generate_new",
+  "edit_source_frame": 90,
+  "model": {"id": "Wan-AI/Wan2.1-T2V-1.3B-Diffusers", "revision": null},
+  "generation": {
+    "role": "one_shared_long_terminal_then_three_decode_arms",
+    "prompt": "locked camera, a single small red sailboat gliding slowly across a calm lake, gentle ripples, stable daylight, no people, no cuts",
+    "negative_prompt": "text, watermark, logo, camera motion, cuts, multiple objects, flicker",
+    "seed": 20260916,
+    "height": 320, "width": 512, "frames": 181, "fps": 8,
+    "steps": 50, "guidance_scale": 5.0, "max_sequence_length": 512
+  },
+  "key_utf8": "WanProjection-first-validation-key-v1",
+  "output_drive_parent": "/content/drive/MyDrive/Video-WM/WanStateClockReplication"
+}
