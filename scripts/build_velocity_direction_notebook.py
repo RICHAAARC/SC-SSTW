@@ -1,27 +1,13 @@
-"""Self-contained user-run direction notebook. Does not run models."""
+"""SHA-pinned user-run direction notebook. Does not run models."""
 from pathlib import Path
-import base64
-import io
 import json
-import zipfile
 
 ROOT=Path(__file__).resolve().parents[1]
+SOURCE_COMMIT="ff474c712e7d3b5a5874a24c61f77e94d9bfc59c"
+SOURCE_URL="https://github.com/RICHAAARC/SC-SSTW.git"
 
 
 def build():
-    config=json.loads((ROOT/'experiments/wan_state_clock/configs/generate_replication.json').read_text())
-    config['source_snapshot']='velocity-coefficient direction source bundled in this notebook; baseline 5736501151a0e454857e4e503e7008b6b6b27467'
-    config['generation']['role']='shared_0_43_then_two_zero_and_four_signed_real_terminal_tails'
-    config['output_drive_parent']='/content/drive/MyDrive/Video-WM/VelocityDirection'
-    memory=io.BytesIO()
-    with zipfile.ZipFile(memory,'w',zipfile.ZIP_DEFLATED) as archive:
-        for folder in ('main','runtime','experiments/wan_state_clock'):
-            for path in sorted((ROOT/folder).rglob('*.py')):
-                info=zipfile.ZipInfo(str(path.relative_to(ROOT)))
-                info.compress_type=zipfile.ZIP_DEFLATED
-                archive.writestr(info,path.read_bytes())
-        archive.writestr(zipfile.ZipInfo('experiments/wan_state_clock/configs/velocity_direction.json'),json.dumps(config,indent=2))
-    payload=base64.b64encode(memory.getvalue()).decode()
     cells=[]
     def cell(kind,name,text):
         row=dict(cell_type=kind,id=name,metadata={},source=text.splitlines(keepends=True))
@@ -30,9 +16,9 @@ def build():
     cell('code','drive-mount',"from google.colab import drive\ndrive.mount('/content/drive')\n")
     cell('markdown','scope', '''# Real-terminal velocity coefficient direction
 
-Self-contained engineering handoff with its complete source. Open this notebook
-in Colab and Run all. It does not fetch old published code as if it contained
-the new differentiable implementation. No GPU/model execution has been performed
+Engineering handoff with an immutable published GitHub source checkout. Open this
+notebook in Colab and Run all. The source SHA is separate from the notebook
+delivery commit. No GPU/model execution has been performed
 for this handoff. The original prompt, seed, key and 50-step schedule are fixed.
 
 Run all creates one prefix (0–43), then ZERO_A, ZERO_B, PLUS_A, MINUS_A, PLUS_B,
@@ -53,23 +39,34 @@ Actual memory peaks and elapsed time are measured by the user-run process.
 ''')
     cell('code','local-source',f'''from pathlib import Path
 from datetime import datetime, timezone
-import base64, io, json, os, signal, subprocess, sys, zipfile
+import json, os, signal, subprocess, sys
 RUN_ID = 'velocity_direction_' + datetime.now(timezone.utc).strftime('%Y%m%dT%H%M%S%fZ')
 SOURCE = Path('/content') / (RUN_ID + '_source')
 SOURCE.mkdir(exist_ok=False)
-PAYLOAD = {payload!r}
-with zipfile.ZipFile(io.BytesIO(base64.b64decode(PAYLOAD))) as archive:
-    archive.extractall(SOURCE)
+SOURCE_COMMIT = {SOURCE_COMMIT!r}
+SOURCE_URL = {SOURCE_URL!r}
+subprocess.run(['git', 'init', str(SOURCE)], check=True)
+subprocess.run(['git', '-C', str(SOURCE), 'remote', 'add', 'origin', SOURCE_URL], check=True)
+subprocess.run(['git', '-C', str(SOURCE), 'fetch', '--depth', '1', 'origin', SOURCE_COMMIT], check=True)
+subprocess.run(['git', '-C', str(SOURCE), 'checkout', '--detach', SOURCE_COMMIT], check=True)
+ACTUAL_SOURCE_COMMIT = subprocess.check_output(['git', '-C', str(SOURCE), 'rev-parse', 'HEAD'], text=True).strip()
+if ACTUAL_SOURCE_COMMIT != SOURCE_COMMIT:
+    raise RuntimeError('Source checkout does not match pinned commit')
 subprocess.run([sys.executable, '-m', 'pip', 'install', 'diffusers', 'transformers', 'accelerate', 'ftfy', 'sentencepiece', 'safetensors', 'huggingface_hub', 'numpy', 'Pillow'], check=True)
-print('Bundled source snapshot:', SOURCE)
+print('Published source checkout:', SOURCE, ACTUAL_SOURCE_COMMIT)
 ''')
     cell('code','fixed-six-tails','''OUTPUT = Path('/content/drive/MyDrive/Video-WM/VelocityDirection') / RUN_ID
-BUNDLED_CONFIG = SOURCE / 'experiments/wan_state_clock/configs/velocity_direction.json'
+BASE_CONFIG = SOURCE / 'experiments/wan_state_clock/configs/generate_replication.json'
 LOG = OUTPUT.parent / f'{RUN_ID}.launcher.log'
 LOG.parent.mkdir(parents=True, exist_ok=True)
 SOURCE_ARCHIVE = OUTPUT.parent / f'{RUN_ID}.source.zip'
-SOURCE_ARCHIVE.write_bytes(base64.b64decode(PAYLOAD))
-config = json.loads(BUNDLED_CONFIG.read_text())
+subprocess.run(['git', '-C', str(SOURCE), 'archive', '--format=zip', '--output', str(SOURCE_ARCHIVE), SOURCE_COMMIT], check=True)
+config = json.loads(BASE_CONFIG.read_text())
+config['source_snapshot'] = 'Published GitHub source ' + SOURCE_URL + ' at ' + ACTUAL_SOURCE_COMMIT
+config['source_commit'] = ACTUAL_SOURCE_COMMIT
+config['source_url'] = SOURCE_URL
+config['generation']['role'] = 'shared_0_43_then_two_zero_and_four_signed_real_terminal_tails'
+config['output_drive_parent'] = '/content/drive/MyDrive/Video-WM/VelocityDirection'
 config['artifact_paths'] = {'launcher_log': str(LOG), 'source_archive': str(SOURCE_ARCHIVE), 'source_directory': str(SOURCE)}
 CONFIG = Path('/content') / f'{RUN_ID}.config.json'
 CONFIG.write_text(json.dumps(config, indent=2) + '\\n')

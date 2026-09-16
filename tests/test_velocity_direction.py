@@ -1,11 +1,8 @@
 import ast
-import base64
 import copy
-import io
 import json
 from pathlib import Path
 from types import SimpleNamespace
-import zipfile
 import numpy as np
 import pytest
 import torch
@@ -249,24 +246,35 @@ def test_prepare_generation_optional_vae_preserves_default(monkeypatch):
     assert torch.equal(default[1],without[1])
 
 
-def test_notebook_has_exact_current_bundle_and_fixed_runner():
+def test_notebook_has_pinned_source_and_fixed_runner():
     root=Path('.')
     nb=json.loads((root/'notebooks/velocity_direction_colab.ipynb').read_text())
     assert ''.join(nb['cells'][0]['source'])=="from google.colab import drive\ndrive.mount('/content/drive')\n"
     for cell in nb['cells']:
         if cell['cell_type']=='code':ast.parse(''.join(cell['source']))
-    tree=ast.parse(''.join(nb['cells'][2]['source']))
-    payload=next(ast.literal_eval(n.value) for n in tree.body if isinstance(n,ast.Assign) and any(isinstance(t,ast.Name) and t.id=='PAYLOAD' for t in n.targets))
-    with zipfile.ZipFile(io.BytesIO(base64.b64decode(payload))) as archive:
-        for name in archive.namelist():
-            if name.endswith('.py'):assert archive.read(name)==(root/name).read_bytes()
-        config=json.loads(archive.read('experiments/wan_state_clock/configs/velocity_direction.json'))
-        original=json.loads((root/'experiments/wan_state_clock/configs/generate_replication.json').read_text())
-        config.pop('source_snapshot');config['generation']['role']=original['generation']['role']
-        assert config['output_drive_parent']=='/content/drive/MyDrive/Video-WM/VelocityDirection'
-        config['output_drive_parent']=original['output_drive_parent']
-        assert config==original
+    source=''.join(nb['cells'][2]['source'])
+    assert "SOURCE_COMMIT = 'ff474c712e7d3b5a5874a24c61f77e94d9bfc59c'" in source
+    assert "SOURCE_URL = 'https://github.com/RICHAAARC/SC-SSTW.git'" in source
+    assert "'fetch', '--depth', '1', 'origin', SOURCE_COMMIT" in source
+    assert "'checkout', '--detach', SOURCE_COMMIT" in source
+    assert 'if ACTUAL_SOURCE_COMMIT != SOURCE_COMMIT:' in source
+    assert 'PAYLOAD' not in json.dumps(nb) and 'base64' not in json.dumps(nb)
     launch=''.join(nb['cells'][3]['source'])
+    assert "BASE_CONFIG = SOURCE / 'experiments/wan_state_clock/configs/generate_replication.json'" in launch
+    assert "'archive', '--format=zip', '--output', str(SOURCE_ARCHIVE), SOURCE_COMMIT" in launch
+    original=json.loads((root/'experiments/wan_state_clock/configs/generate_replication.json').read_text())
+    config=copy.deepcopy(original)
+    env={'config':config,'SOURCE_URL':'https://github.com/RICHAAARC/SC-SSTW.git','ACTUAL_SOURCE_COMMIT':'ff474c712e7d3b5a5874a24c61f77e94d9bfc59c'}
+    assignments=[n for n in ast.parse(launch).body if isinstance(n,ast.Assign) and isinstance(n.targets[0],ast.Subscript) and ast.unparse(n.targets[0]).startswith('config[') and ast.unparse(n.targets[0])!="config['artifact_paths']"]
+    exec(compile(ast.Module(body=assignments,type_ignores=[]),'config-overrides','exec'),env)
+    assert config['source_commit']==env['ACTUAL_SOURCE_COMMIT']
+    assert config['source_url']==env['SOURCE_URL']
+    assert config['generation']['role']=='shared_0_43_then_two_zero_and_four_signed_real_terminal_tails'
+    assert config['output_drive_parent']=='/content/drive/MyDrive/Video-WM/VelocityDirection'
+    for key in ('source_snapshot','source_commit','source_url'):config.pop(key)
+    config['generation']['role']=original['generation']['role']
+    config['output_drive_parent']=original['output_drive_parent']
+    assert config==original
     assert 'experiments.wan_state_clock.velocity_direction_run' in launch
     assert "OUTPUT = Path('/content/drive/MyDrive/Video-WM/VelocityDirection') / RUN_ID" in launch
     assert "LOG = OUTPUT.parent / f'{RUN_ID}.launcher.log'" in launch

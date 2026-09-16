@@ -1,7 +1,8 @@
 # True terminal velocity-coefficient direction diagnostic
 
 Implementation base: `5736501151a0e454857e4e503e7008b6b6b27467` in the existing
-`dev/flow-tube-state` worktree. The notebook embeds the complete audited source;
+`dev/flow-tube-state` worktree. The notebook checks out published runtime source
+`ff474c712e7d3b5a5874a24c61f77e94d9bfc59c`;
 publication does not constitute a real model run.
 The prior five-condition `flow_run` entry and published notebook are unchanged.
 `prepare_generation` adds `load_vae=False`; its existing default remains True.
@@ -123,10 +124,10 @@ not a scientific PASS, guaranteed writing mechanism, curvature statement,
 saved-video result or payload/receiver extension. Weak/below-floor/nonlinear
 results remain uncertain; no automatic follow-up search is run.
 
-## Self-contained user-run handoff
+## SHA-pinned user-run handoff
 
-`notebooks/velocity_direction_colab.ipynb` contains the complete
-source bundle. Open this notebook in Colab and Run all; the first cell is
+`notebooks/velocity_direction_colab.ipynb` fetches the full immutable source SHA
+`ff474c712e7d3b5a5874a24c61f77e94d9bfc59c` from GitHub and verifies its detached checkout. Open this notebook in Colab and Run all; the first cell is
 the exact independent two-line Drive mount, without force_remount. It creates a
 fresh source directory. Result files are saved in
 `/content/drive/MyDrive/Video-WM/VelocityDirection/<unique-run-id>/`.
@@ -135,11 +136,15 @@ The source ZIP and launcher log are sibling files in `VelocityDirection/`, named
 They can therefore preserve source/log evidence even if result-directory
 creation or runner setup fails. This layout matches the existing launcher.
 The effective configuration and `result.json` also record these source/log
-paths, the extracted source directory and the actual CLI result/config paths.
-The bundled configuration's output parent names `VelocityDirection` explicitly.
-It does not fetch old published code as if the new method were already there.
+paths, the checked-out source directory and the actual CLI result/config paths.
+The launcher reads the tracked `configs/generate_replication.json` and applies
+the same direction role and `VelocityDirection` output parent, recording the
+actual source commit and repository URL. It does not depend on a tracked
+`velocity_direction.json`. The source ZIP is produced by `git archive` from
+the pinned commit; the effective configuration is saved separately by the runner.
+The notebook delivery commit is separate from this runtime source commit.
 
 Rebuild with `python scripts/build_velocity_direction_notebook.py` and check
-with `python -m pytest tests/test_velocity_direction.py -q`. Local tests use
+with `python -m pytest tests/test_velocity_direction.py -q -k notebook`. Method tests use
 CPU torch, real UniPC and a deterministic fake Transformer; no pretrained model,
 GPU, Colab or Drive execution has occurred. Source/notebook publication is separate from real model/GPU execution.
