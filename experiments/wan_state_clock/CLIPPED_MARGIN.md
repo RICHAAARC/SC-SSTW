@@ -1,6 +1,7 @@
 # Saved-prefix clipped-margin comparison
 
-Implementation only; not yet authorized for model/Colab execution or publication.
+Source and notebook publication is authorized; the user runs the notebook.
+The assistant has not executed real models, GPU, Colab or Drive experiments.
 This is a method candidate, not a confirmed bug fix.
 
 The sole new writing objective is
@@ -51,3 +52,7 @@ Fixed development compute upper plan: 384 ordinary Transformer forwards,
 inner checkpoint replays retain their existing independent accounting.
 New media upper bound: 16 decode/save and 64 VAE encode calls. No GPU feasibility,
 readout, quality, or scientific success follows from CPU validation.
+
+Published source: `8b55bce72e661d0705370daff6b4d59d8c0ed57a`.
+`notebooks/clipped_margin_colab.ipynb` binds this immutable source and Run all
+executes develop, media, then report with the two fixed Drive inputs above.
