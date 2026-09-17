@@ -1,6 +1,6 @@
 # 有限开发集强度校准：固定最小协议
 
-状态：本地实现与 CPU/Fake 验证；尚未发布，未执行模型/GPU/Colab/Drive。
+状态：源码已发布为 `5db00fa60e1a3cad88b6736e1a402381afad3623`；CPU/Fake 验证通过，未执行模型/GPU/Colab/Drive。
 清单：`configs/velocity_calibration.json`，不根据生成结果更换内容或种子。
 
 | 阶段/内容 | 固定 prompt 原文 | seed |
@@ -55,7 +55,7 @@ experiments/wan_state_clock/configs/velocity_calibration.json --output <new-dir>
 可独立运行develop、development-media、holdout以复用终态；不自动重试失败case。
 
 Notebook：`notebooks/velocity_calibration_colab.ipynb` 首格为精确独立Drive mount。
-当前SOURCE_COMMIT=None，明确待发布，不假绑定旧源码、不嵌PAYLOAD。
-获得新阶段发布授权后，先发布含新入口/清单的源码，再用
-`python scripts/build_velocity_calibration_notebook.py --source-commit <published-full-SHA>`
-生成绑定版，fresh fetch校验后单独发布Notebook交付提交。已有方向Notebook完全不变。
+当前 Notebook 固定检出已发布源码 `5db00fa60e1a3cad88b6736e1a402381afad3623`，
+完整SHA fetch、detached checkout并核对HEAD；不嵌PAYLOAD。直接Run all执行固定阶段。
+Notebook交付提交与运行源码提交分开，已有方向Notebook完全不变。
+重建绑定版：`python scripts/build_velocity_calibration_notebook.py --source-commit 5db00fa60e1a3cad88b6736e1a402381afad3623`。

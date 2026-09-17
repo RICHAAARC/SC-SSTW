@@ -140,13 +140,14 @@ def test_media_failed_save_readable_residue_never_upgrades(monkeypatch,tmp_path)
     assert 'partial MP4' in result['failures'][0]['traceback']
 
 
-def test_local_notebook_pending_published_source_is_honest():
+def test_notebook_binds_published_calibration_source():
     nb=json.loads(Path('notebooks/velocity_calibration_colab.ipynb').read_text())
     assert ''.join(nb['cells'][0]['source'])=="from google.colab import drive\ndrive.mount('/content/drive')\n"
     for cell in nb['cells']:
         if cell['cell_type']=='code':ast.parse(''.join(cell['source']))
     source=''.join(nb['cells'][2]['source']);launch=''.join(nb['cells'][3]['source'])
-    assert 'SOURCE_COMMIT = None' in source and 'raise RuntimeError' in source
+    assert "SOURCE_COMMIT = '5db00fa60e1a3cad88b6736e1a402381afad3623'" in source
+    assert 'if ACTUAL_SOURCE != SOURCE_COMMIT:' in source
     assert "'fetch', '--depth', '1', 'origin', SOURCE_COMMIT" in source
     assert "'checkout', '--detach', SOURCE_COMMIT" in source
     assert 'PAYLOAD' not in json.dumps(nb) and 'base64' not in json.dumps(nb)
