@@ -13,7 +13,7 @@ from runtime.wan.vae import decode_normalized_latent, reencode_rgb24_readback, _
 from .flow_run import quality
 
 
-def run(config,terminals,output):
+def run(config,terminals,output,*,off_reference=None):
     output=Path(output);output.mkdir(parents=True,exist_ok=False)
     book=state_clock.codebook(config['key_utf8'].encode())
     result={'status':'RUNNING','videos':{name:{'status':'NOT_RUN','terminal_path':str(path),
@@ -57,7 +57,7 @@ def run(config,terminals,output):
                 rgb=read_mp4(path)
                 if len(rgb)!=181:raise ValueError('normal MP4 requires 181 frames')
                 if name!='OFF':
-                    reference=read_mp4(output/'received_videos/OFF.mp4')
+                    reference=read_mp4(Path(off_reference) if off_reference is not None else output/'received_videos/OFF.mp4')
                     item['saved_quality_vs_off']=quality(reference,rgb);reference=None
                 for g in range(4):
                     row=item['observations'][str(g)]

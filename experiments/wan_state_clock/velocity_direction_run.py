@@ -36,7 +36,7 @@ def endpoint_metrics(z, directions, codes):
         'meaning':'actual terminal normalized-latent diagnostics, not MP4 or blind receiver evidence'}
 
 
-def run(config,output,*,strengths=None):
+def run(config,output,*,strengths=None,_restored=None):
     # Only the separate calibration entry passes strengths; the published probe stays fixed.
     calibration=strengths is not None
     if calibration:
@@ -73,6 +73,14 @@ def run(config,output,*,strengths=None):
         result['call_plan'].update(six_tail_transformer=None,six_tail_scheduler=None,
             calibration_tail_transformer=24+24*len(strengths),calibration_tail_scheduler=12+12*len(strengths),
             budget_shadow=12+12*len(strengths))
+    if _restored is not None:
+        if not calibration or strengths!=(.1,.3,1.):raise ValueError('restored clipped experiment requires fixed strengths')
+        from main.tube_state import clipped_margin
+        fixed.update(transformer=96,scheduler_step=48,shadow_step=48,response_probe_step=0)
+        result.update(objective='negative_nominal_clipped_matched_margin_v1',
+            original_run=_restored['original_run'],OFF_definition='new ZERO_A for tensor differences only; R remains original OFF-derived',R=_restored['record']['R'],responses=_restored['record']['responses'])
+        result['call_plan'].update(prefix_transformer=0,prefix_scheduler=0,scalar_response_probe=0)
+        result['evidence_ceiling']='new clipped objective only; nominal matched alignment, not observer/search alignment or scientific PASS'
     active='prefix'
     cuda_peaks={'allocated_bytes':0,'reserved_bytes':0}
     def save():
@@ -125,7 +133,8 @@ def run(config,output,*,strengths=None):
             with context:
                 endpoint=tail(pipe,snapshot,prefix,prompt,negative,dtype,config['generation']['guidance_scale'],
                               coefficients,directions,result['R'],count,record,use_checkpoint=True,responses=result['responses'])
-                loss=method.terminal_loss(endpoint,directions,codes[m])
+                loss=(method.terminal_loss(endpoint,directions,codes[m]) if _restored is None else
+                      clipped_margin.terminal_loss(endpoint,directions,codes,m))
                 if not bool(torch.isfinite(loss)): raise FloatingPointError('nonfinite actual terminal loss')
                 cpu=endpoint.detach().cpu().float()
                 torch.save(cpu,output/f'{name}_terminal.pt')
@@ -137,6 +146,9 @@ def run(config,output,*,strengths=None):
                     row['actual_coefficient_relative_norm_error']=(row['actual_coefficient_l2']-requested)/requested
                 row['endpoint']=endpoint_metrics(cpu,directions.cpu(),codes.cpu())
                 row['loss']=float(loss.detach())
+                if _restored is not None:
+                    row['projection_gradient_support']=clipped_margin.gradient_support(
+                        torch.as_tensor(row['endpoint']['projection'],dtype=torch.float64),codes.cpu())
                 row['status']='FORWARD_COMPLETE'
                 sample_resources('forward_complete')
                 if backward:
@@ -146,6 +158,7 @@ def run(config,output,*,strengths=None):
                     count('backward',True)
                     sample_resources('after_backward')
                     if not bool(torch.isfinite(gradient).all()): raise FloatingPointError('nonfinite coefficient gradient')
+                    if _restored is not None:row['coefficient_gradient_l2']=float(torch.linalg.vector_norm(gradient.detach().double()))
                     torch.save(gradient.detach().cpu(),output/f'{name}_gradient.pt')
                     answer=gradient.detach().cpu()
                 else:
@@ -178,7 +191,7 @@ def run(config,output,*,strengths=None):
         result['environment']={'python':platform.python_version(),'torch':torch.__version__,'diffusers':diffusers.__version__,
             'cuda':torch.version.cuda,'device':torch.cuda.get_device_name() if torch.cuda.is_available() else 'cpu'}
         if torch.cuda.is_available(): torch.cuda.reset_peak_memory_stats()
-        book=state_clock.codebook(config['key_utf8'].encode())
+        book=state_clock.codebook(config['key_utf8'].encode()) if _restored is None else _restored['book']
         np.savez(output/'codebook.npz',**book)
         pipe,prefix,prompt,negative,dtype=prepare_generation(config,load_vae=False)
         result['precision']={'transformer_input':str(dtype),'CFG':'original model-output arithmetic',
@@ -189,23 +202,39 @@ def run(config,output,*,strengths=None):
             'boundary_lifetime':'outer discards block saved inputs across tail calls; replay reconstructs current invocation boundaries, consumed by per-block backward',
             'scheduler_replayed':False,'no_VAE_loaded':pipe.vae is None,
             'memory_claim':'CPU equivalence and boundary lifetime only; current user GPU peak/feasibility remains unverified'}
+        if _restored is not None:
+            from runtime.wan.zero_restore import restore_snapshot
+            old=_restored['record']
+            if str(dtype)!=old['precision']['transformer_input'] or prompt.dtype!=torch.bfloat16 or negative.dtype!=torch.bfloat16:
+                raise ValueError('restored conditioning precision differs from original')
+            if pipe.transformer.training or any(p.requires_grad for p in pipe.transformer.parameters()):
+                raise ValueError('expected frozen eval transformer')
+            prefix,snapshot,restoration=restore_snapshot(_restored['payload'],pipe.scheduler,
+                next(pipe.transformer.parameters()).device,old['scheduler'],carrier.SHAPE)
+            result['restoration']=restoration
+            result['conditioning']={'original_embeddings_saved':False,
+                'resolved_transformer_commit':getattr(pipe.transformer.config,'_commit_hash',None),
+                'note':'reencoded original prompts; original weight/tokenizer/embedding identity unproven'}
         directions=torch.as_tensor(book['directions'],device=prefix.device)
         codes=torch.as_tensor(book['codes'],device=prefix.device)
-        prefix=continue_steps(pipe,pipe.scheduler,prefix,prompt,negative,dtype,
-                              config['generation']['guidance_scale'],0,44,count)
-        snapshot=detached_scheduler(pipe.scheduler)
-        torch.save({'latent':prefix.cpu(),'scheduler':detached_scheduler(snapshot)},output/'pre_intervention_state.pt')
-        # Embeddings are newly obtained by the same prompt/seed configuration;
-        # an old snapshot alone would not provide them.
-        result['scheduler']={'class':type(snapshot).__name__,'config':dict(snapshot.config),'sigmas':snapshot.sigmas.tolist()}
-        result['responses']=response_coefficients(snapshot,count)
+        if _restored is None:
+            prefix=continue_steps(pipe,pipe.scheduler,prefix,prompt,negative,dtype,
+                                  config['generation']['guidance_scale'],0,44,count)
+            snapshot=detached_scheduler(pipe.scheduler)
+            torch.save({'latent':prefix.cpu(),'scheduler':detached_scheduler(snapshot)},output/'pre_intervention_state.pt')
+            # Embeddings are newly obtained by the same prompt/seed configuration;
+            # an old snapshot alone would not provide them.
+            result['scheduler']={'class':type(snapshot).__name__,'config':dict(snapshot.config),'sigmas':snapshot.sigmas.tolist()}
+            result['responses']=response_coefficients(snapshot,count)
+        else:
+            result['scheduler']=_restored['record']['scheduler']
         result['prefix_resources']=resources();save()
         for name in ('ZERO_A','ZERO_B'):
             a=torch.zeros(method.COEFFICIENT_SHAPE,device=prefix.device,requires_grad=True)
             gradients[name[-1]]=condition(name,a,backward=True)
             del a
             after_condition(name)
-            if name=='ZERO_A' and (output/'ZERO_A_terminal.pt').exists():
+            if _restored is None and name=='ZERO_A' and (output/'ZERO_A_terminal.pt').exists():
                 off=torch.load(output/'ZERO_A_terminal.pt',map_location='cpu',weights_only=True).numpy()
                 radii=[None,None]
                 for message in (0,1):
