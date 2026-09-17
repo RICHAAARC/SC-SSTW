@@ -1,0 +1,73 @@
+{
+  "protocol": "velocity_strength_calibration_v1",
+  "base_config": {
+    "protocol": "state_clock_v1",
+    "terminal_mode": "generate_new",
+    "edit_source_frame": 90,
+    "model": {
+      "id": "Wan-AI/Wan2.1-T2V-1.3B-Diffusers",
+      "revision": null
+    },
+    "generation": {
+      "role": "calibration_fixed_roster_zero_gradient_then_fixed_strengths",
+      "prompt": "locked camera, a single small red sailboat gliding slowly across a calm lake, gentle ripples, stable daylight, no people, no cuts",
+      "negative_prompt": "text, watermark, logo, camera motion, cuts, multiple objects, flicker",
+      "seed": 20260916,
+      "height": 320,
+      "width": 512,
+      "frames": 181,
+      "fps": 8,
+      "steps": 50,
+      "guidance_scale": 5.0,
+      "max_sequence_length": 512
+    },
+    "key_utf8": "WanProjection-first-validation-key-v1",
+    "output_drive_parent": "/content/drive/MyDrive/Video-WM/VelocityCalibration"
+  },
+  "strengths": [
+    0.1,
+    0.3,
+    1.0
+  ],
+  "max_media_candidates": 2,
+  "development": [
+    {
+      "id": "dev_p0_s0",
+      "prompt": "locked camera, a single small red sailboat gliding slowly across a calm lake, gentle ripples, stable daylight, no people, no cuts",
+      "seed": 20260916
+    },
+    {
+      "id": "dev_p0_s1",
+      "prompt": "locked camera, a single small red sailboat gliding slowly across a calm lake, gentle ripples, stable daylight, no people, no cuts",
+      "seed": 20260917
+    },
+    {
+      "id": "dev_p1_s0",
+      "prompt": "locked camera, a single yellow tram moving slowly along a straight tree-lined street, stable overcast daylight, no people, no cuts",
+      "seed": 20260916
+    },
+    {
+      "id": "dev_p1_s1",
+      "prompt": "locked camera, a single yellow tram moving slowly along a straight tree-lined street, stable overcast daylight, no people, no cuts",
+      "seed": 20260917
+    }
+  ],
+  "holdout": [
+    {
+      "id": "holdout_p0_s0",
+      "prompt": "locked camera, a single white swan swimming slowly across a quiet pond, soft morning daylight, no people, no cuts",
+      "seed": 20261001
+    },
+    {
+      "id": "holdout_p1_s0",
+      "prompt": "locked camera, a single blue cable car moving slowly across a mountain valley, stable afternoon daylight, no people, no cuts",
+      "seed": 20261002
+    }
+  ],
+  "selection": {
+    "terminal": "complete fixed roster, budget/response valid; descending worst margin, mean margin, ascending rho; up to 2",
+    "media": "complete fixed roster including OFF/terminal controls; terminal and flow five modes uniquely correct; both saved quality metrics <=1.5 times own terminal; ascending worst quality ratio, mean ratio, rho",
+    "quality_relative_limit": 1.5,
+    "meaning": "development ranking only, not FPR or validated perceptual threshold"
+  }
+}

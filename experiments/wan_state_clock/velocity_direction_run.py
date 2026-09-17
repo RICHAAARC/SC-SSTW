@@ -36,17 +36,27 @@ def endpoint_metrics(z, directions, codes):
         'meaning':'actual terminal normalized-latent diagnostics, not MP4 or blind receiver evidence'}
 
 
-def run(config,output):
+def run(config,output,*,strengths=None):
+    # Only the separate calibration entry passes strengths; the published probe stays fixed.
+    calibration=strengths is not None
+    if calibration:
+        strengths=tuple(float(rho) for rho in strengths)
+        if not strengths or len(set(strengths))!=len(strengths) or any(not 0<rho<=1 for rho in strengths):
+            raise ValueError('strengths must be distinct predetermined fractions in (0,1]')
+    conditions=CONDITIONS if not calibration else ('ZERO_A','ZERO_B')+tuple(
+        f'FLOW_r{i:02d}_{suffix}' for i in range(len(strengths)) for suffix in ('A','B'))
     output=Path(output)
     output.mkdir(parents=True,exist_ok=False)
     started=time.monotonic()
     fixed={'transformer':160,'scheduler_step':80,'shadow_step':36,'response_probe_step':6,
            'backward':2,'vae_decode':0,'vae_encode':0,'mp4_save':0}
+    if calibration:
+        fixed.update(transformer=112+24*len(strengths),scheduler_step=56+12*len(strengths),shadow_step=12+12*len(strengths))
     kinds=tuple(fixed)+('transformer_replay',)+BLOCK_CALL_KINDS
     result={'status':'RUNNING','conditions':{c:{'status':'NOT_RUN','steps':[],
         'calls':{k+'_'+s:0 for k in kinds for s in ('attempted','completed')},
-        'elapsed_seconds':None,'resources':None,'endpoint':None,'loss':None} for c in CONDITIONS},
-        'diagnostic_denominator':6,'formal_science_denominator':0,'fixed_calls':fixed,
+        'elapsed_seconds':None,'resources':None,'endpoint':None,'loss':None} for c in conditions},
+        'diagnostic_denominator':len(conditions),'formal_science_denominator':0,'fixed_calls':fixed,
         'call_plan':{'prefix_transformer':88,'six_tail_transformer':72,'two_zero_backwards':2,
                      'checkpoint_replay':'up to 20 outer pure-Transformer replays, possibly early-stopped; counted separately',
                      'block_checkpoint_calls':'gradient-bearing calls only: block original forward, outer reconstruction, and block replay are separate units; no solver replay',
@@ -57,6 +67,12 @@ def run(config,output):
         'amplitude_policy':'one budget-derived epsilon per message, same +/- coefficients, no clipping/search/retry',
         'artifact_paths':dict(config.get('artifact_paths',{}),result_directory=str(output.resolve()),
                               effective_config=str((output/'config.json').resolve()))}
+    if calibration:
+        result['strengths']=list(strengths)
+        result['amplitude_policy']='predetermined positive rho*(1-0.001)*cap; one frozen zero-gradient q per message; no adaptive scaling/retry'
+        result['call_plan'].update(six_tail_transformer=None,six_tail_scheduler=None,
+            calibration_tail_transformer=24+24*len(strengths),calibration_tail_scheduler=12+12*len(strengths),
+            budget_shadow=12+12*len(strengths))
     active='prefix'
     cuda_peaks={'allocated_bytes':0,'reserved_bytes':0}
     def save():
@@ -116,7 +132,7 @@ def run(config,output):
                 torch.save(coefficients.detach().cpu(),output/f'{name}_coefficients.pt')
                 row['actual_coefficient_l2']=float(torch.linalg.vector_norm(coefficients.detach().double()))
                 if not backward:
-                    requested=result['directions'][name[-1]]['epsilon']
+                    requested=row.get('requested_epsilon',result['directions'][name[-1]]['epsilon'])
                     row['requested_probe_epsilon']=requested
                     row['actual_coefficient_relative_norm_error']=(row['actual_coefficient_l2']-requested)/requested
                 row['endpoint']=endpoint_metrics(cpu,directions.cpu(),codes.cpu())
@@ -215,17 +231,24 @@ def run(config,output):
                 if result['R'] is None: raise ValueError('ZERO_A/OFF-derived radius unavailable')
                 q,info=method.direction_and_amplitude(gradients[suffix],directions.cpu(),
                     [r['sigma'] for r in result['responses']],[r['h'] for r in result['responses']],result['R'])
+                if calibration:
+                    info=dict(info,epsilon=None,rho=None,amplitude_rule='each fixed rho uses rho*(1-0.001)*epsilon_cap; see each condition requested_epsilon',
+                        meaning='one frozen q and cap per case/message; epsilon is condition-specific')
                 result['directions'][suffix]=info
                 torch.save(q,output/f'{suffix}_q.pt')
                 save()
             except Exception as exc:
                 failure(active,exc)
-            for sign,label in ((1,'PLUS'),(-1,'MINUS')):
-                name=label+'_'+suffix
+            probes=[(1,f'FLOW_r{i:02d}_{suffix}',rho) for i,rho in enumerate(strengths)] if calibration else [
+                (1,'PLUS_'+suffix,method.PROBE_FRACTION),(-1,'MINUS_'+suffix,method.PROBE_FRACTION)]
+            for sign,name,rho in probes:
+                if calibration:result['conditions'][name]['rho']=rho
                 if q is None:
                     result['conditions'][name].update(status='MISSING_DIRECTION',reason='own direction or shared radius unavailable')
                     save();continue
-                a=(info['epsilon']*q*sign).to(prefix.device)
+                epsilon=rho*(1.-method.ROUNDING_RESERVE)*info['epsilon_cap'] if calibration else info['epsilon']
+                if calibration:result['conditions'][name]['requested_epsilon']=epsilon
+                a=(epsilon*q*sign).to(prefix.device)
                 condition(name,a)
                 del a
                 after_condition(name)
@@ -261,7 +284,7 @@ def run(config,output):
             'projection_difference_rms':float(np.sqrt(np.mean((np.asarray(b['projection'])-np.asarray(a['projection']))**2))),
             'meaning':'two same-control forward observations only, not a distributional noise threshold'}
     result['direction_comparisons']={}
-    for suffix in ('A','B'):
+    for suffix in (() if calibration else ('A','B')):
         info=result['directions'].get(suffix)
         plus,minus=(result['conditions'][s+'_'+suffix] for s in ('PLUS','MINUS'))
         comparison={'status':'MISSING_EVIDENCE'}
