@@ -37,4 +37,5 @@ timestep_list，以及原生CPU sigmas/训练schedule表分别恢复；其余字
 工程验证：小型真实Wan BF16+真实UniPC保存/加载/恢复后完整六步终点逐位一致；Fake完整case
 只有一次12TF零尾程，原run全部文件hash不变；同范数相反张量差RMS=2反例；缺历史和首case失败
 不扩大调用且保留4case；Notebook首mount/AST/固定路径与版本恢复静态检查。均为CPU工程证据。
-未执行真实模型/GPU/Colab/Drive。发布先提交源码，再用builder绑定已发布完整SHA生成Notebook。
+未执行真实模型/GPU/Colab/Drive。当前Notebook固定运行源码 `b9b7e89486370be1b98255b7c9741b0bfefffca5`；
+Notebook交付提交与该运行源码提交分开，原输入证据仍属于5db00fa，不改写原run。

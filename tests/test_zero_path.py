@@ -143,6 +143,7 @@ def test_zero_notebook_static():
     for cell in nb['cells']:
         if cell['cell_type']=='code':ast.parse(''.join(cell['source']))
     assert runner.ORIGINAL_RUN in text and 'diffusers==0.40.0' in text
+    assert "SOURCE_COMMIT = 'b9b7e89486370be1b98255b7c9741b0bfefffca5'" in ''.join(nb['cells'][2]['source'])
     assert 'PAYLOAD' not in text and 'base64' not in text
     assert 'package in sys.modules' not in text and 'Restart the runtime' not in text
     assert 'import torch,diffusers; assert str(torch.__version__)' in text
