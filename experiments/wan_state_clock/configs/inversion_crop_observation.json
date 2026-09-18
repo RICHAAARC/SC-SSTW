@@ -1,0 +1,19 @@
+{
+  "protocol": "inversion_crop_observation_v1",
+  "source_run": "inversion_state_holdout_20260918T140243514638Z",
+  "cases": ["holdout_p0_s0", "holdout_p1_s0"],
+  "arms": ["OFF", "A", "B"],
+  "starts_reporting_only": [0, 16, 17],
+  "frames": 129,
+  "fps": 8,
+  "shape": [1, 16, 33, 40, 64],
+  "crop_codec": "libx264rgb",
+  "crop_crf": 0,
+  "crop_pixel_format": "rgb24",
+  "pad_maps_reporting_only": {"0": [0], "16": [4], "17": [4, 5]},
+  "complete_core_only": true,
+  "receiver_uses_start": false,
+  "observer_role": "posthoc oracle auxiliary; no blind ranking",
+  "clip_denominator": 18,
+  "oracle_map_denominator": 24
+}
