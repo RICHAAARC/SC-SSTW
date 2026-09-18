@@ -1,0 +1,107 @@
+{
+  "protocol": "wan_initial_noise_inversion_v1",
+  "base_config": {
+    "protocol": "state_clock_v1",
+    "terminal_mode": "generate_new",
+    "edit_source_frame": 90,
+    "model": {
+      "id": "Wan-AI/Wan2.1-T2V-1.3B-Diffusers",
+      "revision": null
+    },
+    "generation": {
+      "role": "initial_noise_inversion_mechanism_baseline",
+      "prompt": "locked camera, a single small red sailboat gliding slowly across a calm lake, gentle ripples, stable daylight, no people, no cuts",
+      "negative_prompt": "text, watermark, logo, camera motion, cuts, multiple objects, flicker",
+      "seed": 20260916,
+      "height": 320,
+      "width": 512,
+      "frames": 181,
+      "fps": 8,
+      "steps": 50,
+      "guidance_scale": 5.0,
+      "max_sequence_length": 512
+    },
+    "key_utf8": "WanProjection-first-validation-key-v1",
+    "output_drive_parent": null
+  },
+  "development": [
+    {
+      "id": "dev_p0_s0",
+      "prompt": "locked camera, a single small red sailboat gliding slowly across a calm lake, gentle ripples, stable daylight, no people, no cuts",
+      "seed": 20260916
+    },
+    {
+      "id": "dev_p0_s1",
+      "prompt": "locked camera, a single small red sailboat gliding slowly across a calm lake, gentle ripples, stable daylight, no people, no cuts",
+      "seed": 20260917
+    },
+    {
+      "id": "dev_p1_s0",
+      "prompt": "locked camera, a single yellow tram moving slowly along a straight tree-lined street, stable overcast daylight, no people, no cuts",
+      "seed": 20260916
+    },
+    {
+      "id": "dev_p1_s1",
+      "prompt": "locked camera, a single yellow tram moving slowly along a straight tree-lined street, stable overcast daylight, no people, no cuts",
+      "seed": 20260917
+    }
+  ],
+  "arms": [
+    "OFF",
+    "A",
+    "B"
+  ],
+  "payloads": [
+    [
+      -1,
+      1,
+      1,
+      -1,
+      -1,
+      1,
+      1,
+      -1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      -1,
+      1
+    ],
+    [
+      1,
+      -1,
+      -1,
+      1,
+      1,
+      -1,
+      -1,
+      1,
+      -1,
+      -1,
+      -1,
+      -1,
+      -1,
+      -1,
+      1,
+      -1
+    ]
+  ],
+  "payload_provenance": "one-time values from GROW e04f48ed2e85a6d9ae8d9b639c7c9bd6e9d7bddb public codebook; no runtime dependency",
+  "carrier": {
+    "channel": 0,
+    "bits": 16,
+    "coordinates_per_time": 2560,
+    "votes_per_bit_per_time": 160,
+    "latent_times": 46,
+    "votes_per_bit": 7360
+  },
+  "receiver": {
+    "conditioning": "known prompt and negative, CFG5",
+    "loader_seed": 0,
+    "inversion": "one 50-step explicit flow Euler, reversed actual sigma nodes, left-node original timesteps, clean endpoint t0"
+  },
+  "quality_tolerance": null
+}
