@@ -169,12 +169,12 @@ def posthoc(output,result,payloads):
         except Exception as exc:item['posthoc']={'status':'MISSING_OR_FAILED','error':repr(exc)}
 
 
-def run_case(case_id,output,*,manifest_path=None,mechanism=None,empty_factory=None,posthoc_fn=None,claim=None):
+def run_case(case_id,output,*,manifest_path=None,mechanism=None,empty_factory=None,posthoc_fn=None,claim=None,roster_key='development'):
     manifest_path=MANIFEST if manifest_path is None else manifest_path
     mechanism=method if mechanism is None else mechanism
     empty_factory=empty_case if empty_factory is None else empty_factory
     posthoc_fn=posthoc if posthoc_fn is None else posthoc_fn
-    manifest=load(manifest_path);case=next(c for c in manifest['development'] if c['id']==case_id)
+    manifest=load(manifest_path);case=next(c for c in manifest[roster_key] if c['id']==case_id)
     config=copy.deepcopy(manifest['base_config']);config['generation'].update(prompt=case['prompt'],seed=case['seed'])
     output=Path(output);output.mkdir(parents=True,exist_ok=False)
     for folder in ('writer','receiver','videos'):(output/folder).mkdir()

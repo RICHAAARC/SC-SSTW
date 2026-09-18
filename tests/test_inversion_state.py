@@ -61,7 +61,10 @@ def test_invalid_tiny_phase_not_counted_as_recovered():
     assert all(r['valid_windows']==10 for r in decoded['rankings'].values())
 
 
-def test_fake_saved_mp4_receiver_and_fixed_budget(tmp_path,monkeypatch):
+@pytest.mark.parametrize('use_holdout',[False,True])
+def test_fake_saved_mp4_receiver_and_fixed_budget(tmp_path,monkeypatch,use_holdout):
+    from experiments.wan_state_clock import inversion_state_holdout_run
+    active=inversion_state_holdout_run if use_holdout else runner
     initial=torch.randn(method.SHAPE,generator=torch.Generator().manual_seed(5))
     stored={};decoded_latents=[];loaded=[];inverse_inputs=[];readback=[]
     def prepare(config,**kwargs):
@@ -92,8 +95,8 @@ def test_fake_saved_mp4_receiver_and_fixed_budget(tmp_path,monkeypatch):
     monkeypatch.setattr(base,'read_mp4',read);monkeypatch.setattr(base,'reencode_rgb24_readback',reencode)
     monkeypatch.setattr(base,'invert_received_latent',inverse);monkeypatch.setattr(base,'quality',lambda *a:{})
     monkeypatch.setattr(base,'_clear_cache',lambda *a:None)
-    result=runner.run_case(runner.CASES[0],tmp_path/'case')
-    assert result['status']=='EXECUTION_COMPLETE' and loaded==[20260916,0]
+    result=active.run_case(active.CASES[0],tmp_path/'case')
+    assert result['status']=='EXECUTION_COMPLETE' and loaded==[20261001 if use_holdout else 20260916,0]
     assert readback==[11.,12.,13.] and len(inverse_inputs)==3
     for inp,original in zip(inverse_inputs,decoded_latents):torch.testing.assert_close(inp,original+.01)
     for stage,counts in runner.PLAN.items():
