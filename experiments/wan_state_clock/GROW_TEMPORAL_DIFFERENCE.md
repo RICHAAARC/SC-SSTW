@@ -1,0 +1,15 @@
+# Fixed adjacent-time difference candidate
+
+Sole method change relative to the late30..49 candidate: replace time-constant spatial-DCT targets with d[k]=(c[2k]-c[2k+1])/sqrt(2), k=0..22. Writer loss and receiver use exactly this transform. Original method/runtime remain unchanged; the new runtime has its own pulse bound explicitly to the new loss. No global method replacement.
+
+The spatial channel0 mask2..9, keyed ordering, identical16bit A/B payloads, amplitude.5, eta.1, half-squared sum, control indices30..49, CFG5, native50step UniPC and generation roster are unchanged. Four frequency repeats x23pairs=92 votes/bit. Zero and ties are erasures. Forty-six raw latent slices cover known pairs0/1 through44/45; there is no time alignment or attack robustness claim.
+
+For e=d-target, the coefficient gradients are +e/sqrt(2) and -e/sqrt(2). Local control preserves pair common mode and unselected channels/frequencies; squared gradient norm equals2L and eta.1 gives local loss ratio.81. Fewer constrained coordinates change control energy; actual same-history native-shadow response is measured, not assumed equal strength or quality.
+
+A new fixed roster of4case xOFF/A/B=12 trajectories is mandatory; historical OFF is not reused. The runner preserves23pair failure placeholders, source/config/schedule/initial hashes, all terminal tensors, final-step pre-state and predicted-clean before/after, actual output, controlled-step losses and candidate scores, induced displacement versus identical-history shadow, and terminal difference-domain RMS includingOFF. All8marked exact and zero-erasure with complete case/exit0 are required for media eligibility. No automatic VAE/MP4, strength scan, holdout, or generated-media claim.
+
+Budget1200 Transformer forwards,600live steps,160local gradients,160shadow steps. Local CPU/Fake verification covers projection gradient/common-mode/energy, roundtrip/ties, native OFF bitwise equivalence to original late runtime, actual difference-loss pulse ratio, failure roster and fake fullcase. This is engineering evidence only. The notebook binds a published immutable SHA before delivery; current draft is guarded when source isNone.
+
+Hypothesis from prior saved tensors: temporal differencing suppresses nearly static content-frequency bias. A failure of this fixed terminal candidate is retained, not repaired by selecting bits, frequencies, pairs or strength after seeing truth. Pair-domain terminal recovery alone does not establish media survival, visual quality, FPR, generalization or temporal synchronization.
+
+Loss coordinates change from46x64 to23x64: unnormalized total losses across these carriers have different denominators and cannot directly establish improvement. Report per-coordinate error or the explicit denominator when comparing. Likewise92 votes are not statistically equivalent to184 independent votes. Pair common-mode cancellation is a local linear operator property; downstream native solver/model dynamics need not preserve pair common mode.
