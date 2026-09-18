@@ -44,7 +44,8 @@ def release():
     if torch.cuda.is_available():torch.cuda.empty_cache()
 
 
-def generation_stage(config,output,result,book,payloads,count,save,fail):
+def generation_stage(config,output,result,book,payloads,count,save,fail,*,mechanism=method):
+    method=mechanism
     pipe=base=prompt=negative=origin=marked=terminal=None
     try:
         pipe,base,prompt,negative,dtype=prepare_generation(config,load_vae=False)
@@ -116,7 +117,8 @@ def receiver_config(config):
     return public
 
 
-def inversion_stage(public_config,output,result,book,count,save,fail):
+def inversion_stage(public_config,output,result,book,count,save,fail,*,mechanism=method):
+    method=mechanism
     pipe=unused_noise=prompt=negative=received=recovered=None
     try:
         if not any(v['media_status']=='COMPLETE' for v in result['videos'].values()):
@@ -167,17 +169,22 @@ def posthoc(output,result,payloads):
         except Exception as exc:item['posthoc']={'status':'MISSING_OR_FAILED','error':repr(exc)}
 
 
-def run_case(case_id,output):
-    manifest=load(MANIFEST);case=next(c for c in manifest['development'] if c['id']==case_id)
+def run_case(case_id,output,*,manifest_path=None,mechanism=None,empty_factory=None,posthoc_fn=None,claim=None):
+    manifest_path=MANIFEST if manifest_path is None else manifest_path
+    mechanism=method if mechanism is None else mechanism
+    empty_factory=empty_case if empty_factory is None else empty_factory
+    posthoc_fn=posthoc if posthoc_fn is None else posthoc_fn
+    manifest=load(manifest_path);case=next(c for c in manifest['development'] if c['id']==case_id)
     config=copy.deepcopy(manifest['base_config']);config['generation'].update(prompt=case['prompt'],seed=case['seed'])
     output=Path(output);output.mkdir(parents=True,exist_ok=False)
     for folder in ('writer','receiver','videos'):(output/folder).mkdir()
-    result=empty_case('RUNNING');result.update(case=case,config=config,fixed_calls=PLAN,stages={},failures=[],
+    result=empty_factory('RUNNING');result.update(case=case,config=config,fixed_calls=PLAN,stages={},failures=[],
         actual_calls={s:{k+'_'+done:0 for k in counts for done in ('attempted','completed')} for s,counts in PLAN.items()},
         quality_tolerance=None,scientific_pass=None,claim='initial-noise inversion mechanism baseline; not secure Gaussian/PRC/SIGMark or exact UniPC inverse')
+    if claim is not None:result['claim']=claim
     def save():dump(output/'result.json',result)
     def fail(stage,exc):result['failures'].append({'stage':stage,'error':repr(exc),'traceback':traceback.format_exc()});save()
-    book=method.codebook(config['key_utf8'].encode())
+    book=mechanism.codebook(config['key_utf8'].encode())
     torch.save(book,output/'codebook.pt');dump(output/'config.json',config)
     result['source_commit']=subprocess.check_output(['git','rev-parse','HEAD'],text=True).strip()
     result['source_dirty']=bool(subprocess.check_output(['git','status','--porcelain'],text=True).strip())
@@ -189,9 +196,9 @@ def run_case(case_id,output):
         save()
         def count(kind,done):result['actual_calls'][name][kind+('_completed' if done else '_attempted')]+=1;save()
         try:
-            if name=='generation':fn(config,output,result,book,manifest['payloads'],count,save,fail)
+            if name=='generation':fn(config,output,result,book,manifest['payloads'],count,save,fail,mechanism=mechanism)
             elif name=='media':fn(config,output,result,count,save,fail)
-            else:fn(receiver_config(config),output,result,book,count,save,fail)
+            else:fn(receiver_config(config),output,result,book,count,save,fail,mechanism=mechanism)
             result['stages'][name]['status']='RETURNED_WITH_RETAINED_ARM_STATUSES'
         except Exception as exc:result['stages'][name]['status']='FAILED_SETUP';fail(name+'/setup',exc)
         finally:
@@ -201,7 +208,7 @@ def run_case(case_id,output):
                 cuda_stage_peak_reserved_bytes=torch.cuda.max_memory_reserved() if torch.cuda.is_available() else None,
                 cuda_current_allocated_after_release=torch.cuda.memory_allocated() if torch.cuda.is_available() else None)
             save()
-    posthoc(output,result,manifest['payloads'])
+    posthoc_fn(output,result,manifest['payloads'])
     for item in result['videos'].values():item['status']='COMPLETE' if all(item[k+'_status']=='COMPLETE' for k in ('generation','media','inversion')) else 'WITH_RETAINED_FAILURES'
     result['status']='EXECUTION_COMPLETE' if all(v['status']=='COMPLETE' for v in result['videos'].values()) and not result['failures'] else 'WITH_RETAINED_FAILURES'
     save();return result

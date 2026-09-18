@@ -1,0 +1,84 @@
+{
+  "protocol": "inversion_state_v1",
+  "base_config": {
+    "protocol": "state_clock_v1",
+    "terminal_mode": "generate_new",
+    "edit_source_frame": 90,
+    "model": {
+      "id": "Wan-AI/Wan2.1-T2V-1.3B-Diffusers",
+      "revision": null
+    },
+    "generation": {
+      "role": "initial_noise_inversion_mechanism_baseline",
+      "prompt": "locked camera, a single small red sailboat gliding slowly across a calm lake, gentle ripples, stable daylight, no people, no cuts",
+      "negative_prompt": "text, watermark, logo, camera motion, cuts, multiple objects, flicker",
+      "seed": 20260916,
+      "height": 320,
+      "width": 512,
+      "frames": 181,
+      "fps": 8,
+      "steps": 50,
+      "guidance_scale": 5.0,
+      "max_sequence_length": 512
+    },
+    "key_utf8": "WanProjection-first-validation-key-v1",
+    "output_drive_parent": null
+  },
+  "development": [
+    {
+      "id": "dev_p0_s0",
+      "prompt": "locked camera, a single small red sailboat gliding slowly across a calm lake, gentle ripples, stable daylight, no people, no cuts",
+      "seed": 20260916
+    },
+    {
+      "id": "dev_p0_s1",
+      "prompt": "locked camera, a single small red sailboat gliding slowly across a calm lake, gentle ripples, stable daylight, no people, no cuts",
+      "seed": 20260917
+    },
+    {
+      "id": "dev_p1_s0",
+      "prompt": "locked camera, a single yellow tram moving slowly along a straight tree-lined street, stable overcast daylight, no people, no cuts",
+      "seed": 20260916
+    },
+    {
+      "id": "dev_p1_s1",
+      "prompt": "locked camera, a single yellow tram moving slowly along a straight tree-lined street, stable overcast daylight, no people, no cuts",
+      "seed": 20260917
+    }
+  ],
+  "arms": [
+    "OFF",
+    "A",
+    "B"
+  ],
+  "payloads": [
+    0,
+    1
+  ],
+  "payload_provenance": "state_clock.trajectory(key,message) unchanged",
+  "carrier": {
+    "channel": 0,
+    "axes": 2,
+    "windows": 11,
+    "latent_times": 46,
+    "core_start": 1,
+    "core_stop": 45,
+    "window_length": 4,
+    "coordinates_per_axis_per_time": 1280,
+    "coordinates_per_axis_per_window": 5120,
+    "boundaries": [
+      0,
+      45
+    ],
+    "observer_gain": 0.5,
+    "score": "negative_mean_innovation",
+    "tie_tolerance": 1E-12,
+    "invalid_norm_tolerance": 1E-12
+  },
+  "receiver": {
+    "conditioning": "known prompt and negative, CFG5",
+    "loader_seed": 0,
+    "inversion": "one 50-step explicit flow Euler, reversed actual sigma nodes, left-node original timesteps, clean endpoint t0"
+  },
+  "quality_tolerance": null
+}
