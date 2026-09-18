@@ -1,7 +1,8 @@
 # GROW-style frequency video adaptation v1
 
-A local implementation candidate, not an official GROW reproduction or an
-executed experiment. No model/GPU/Colab/Drive run or publication is authorized.
+An implementation candidate, not an official GROW reproduction or an executed
+experiment. Source/notebook publication is authorized for the user to run in
+Colab. The assistant has not executed models/GPU/Colab/Drive experiments.
 Reference: https://openaccess.thecvf.com/content/CVPR2026/html/Luo_GROW_Watermark_Generation_with_Progressive_Guidance_for_Diffusion_Models_CVPR_2026_paper.html
 The original interval notation and earlier/small-r wording remain ambiguous;
 this adaptation fixes explicit zero-based indices instead of claiming equivalence.
@@ -51,3 +52,7 @@ Each of4 cases runs in its own process; all3 arms share its initial noise and
 conditioning, with independent fresh scheduler copies. Full plan:1200 Transformer
 forwards,600 real scheduler steps,160 local gradients,12 decodes/MP4 saves,
 36 VAE encodes. Failures and missing cases keep the fixed12-video/48-layer roster.
+
+Published source: `e04f48ed2e85a6d9ae8d9b639c7c9bd6e9d7bddb`.
+`notebooks/grow_video_frequency_colab.ipynb` binds this immutable source.
+Run all writes a unique new directory under `MyDrive/Video-WM/GROWVideoFrequency`.
