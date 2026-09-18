@@ -158,6 +158,7 @@ def run_all(output):
     dump(output/'manifest.json',load(MANIFEST));dump(output/'result.json',result)
     for case in CASES:
         log=output/(case+'.log')
+        print(case,'started; child log:',log,flush=True)
         try:
             with log.open('w') as stream:
                 child=subprocess.run([sys.executable,'-u','-m','experiments.wan_state_clock.grow_frequency_run',
@@ -165,6 +166,7 @@ def run_all(output):
             result['cases'][case]=load(output/case/'result.json')|{'exit_code':child.returncode,'log':str(log)}
         except Exception as exc:result['cases'][case]=missing_case('FAILED_LAUNCH_OR_RESULT')|{'error':repr(exc),'log':str(log)}
         dump(output/'result.json',result)
+        print(case,result['cases'][case]['status'],'child log:',log,flush=True)
     result['actual_calls_observed']={k+'_'+s:sum(v.get('actual_calls',{}).get(k+'_'+s,0) for v in result['cases'].values()) for k in PLAN for s in ('attempted','completed')}
     result['call_count_case_coverage']=sum('actual_calls' in v for v in result['cases'].values())
     result['status']='EXECUTION_COMPLETE' if all(v['status']=='EXECUTION_COMPLETE' and v.get('exit_code')==0 for v in result['cases'].values()) else 'WITH_RETAINED_FAILURES'
