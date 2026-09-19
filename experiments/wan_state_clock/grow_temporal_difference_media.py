@@ -35,9 +35,9 @@ def load(path):return json.loads(Path(path).read_text())
 def empty_layer():return {'status':'NOT_RUN','latent_time_denominator':46,'pair_denominator':23,'per_pair':[{'pair':k,'times':[2*k,2*k+1],'status':'NOT_RUN'} for k in range(23)]}
 
 
-def missing_case(status):
-    return {'status':status,'video_denominator':3,'videos':{
-        arm:{'status':status,'layers':{layer:empty_layer() for layer in LAYERS}} for arm in ARMS}}
+def missing_case(status,arms=ARMS):
+    return {'status':status,'video_denominator':len(arms),'videos':{
+        arm:{'status':status,'layers':{layer:empty_layer() for layer in LAYERS}} for arm in arms}}
 
 
 def release():
@@ -45,7 +45,10 @@ def release():
     if torch.cuda.is_available():torch.cuda.empty_cache()
 
 
-def run_case(case_id,output,source_root,*,expected_source_run=SOURCE_RUN,expected_source_commit=SOURCE_COMMIT,expected_manifest=None):
+def run_case(case_id,output,source_root,*,expected_source_run=SOURCE_RUN,expected_source_commit=SOURCE_COMMIT,expected_manifest=None,arms=ARMS,messages=None,compare_readouts=False):
+    ARMS=tuple(arms)
+    message_for={a:(None if a=='OFF' else i-1) for i,a in enumerate(ARMS)} if messages is None else messages
+    plan={k:v*len(ARMS)//3 for k,v in PLAN.items()}
     manifest=load(MANIFEST) if expected_manifest is None else expected_manifest
     case=next(c for c in manifest['development'] if c['id']==case_id)
     config=copy.deepcopy(manifest['base_config']);config['generation'].update(prompt=case['prompt'],seed=case['seed'])
@@ -53,8 +56,8 @@ def run_case(case_id,output,source_root,*,expected_source_run=SOURCE_RUN,expecte
     if output.resolve()==source_root.resolve() or source_root.resolve() in output.resolve().parents:raise ValueError('output must be outside immutable source run')
     output.mkdir(parents=True,exist_ok=False);started=time.monotonic()
     result={'status':'RUNNING','case':case,'config':config,'protocol':manifest['frequency'],
-        'video_denominator':3,'layers_per_video':4,'latent_time_denominator_per_layer':46,'bits':16,
-        'fixed_calls':PLAN,'actual_calls':{k+'_'+s:0 for k in PLAN for s in ('attempted','completed')},
+        'video_denominator':len(ARMS),'layers_per_video':4,'latent_time_denominator_per_layer':46,'bits':16,
+        'fixed_calls':plan,'actual_calls':{k+'_'+s:0 for k in plan for s in ('attempted','completed')},
         'videos':{a:{'status':'NOT_RUN','generation_status':'NOT_RUN','steps':[],
                     'layers':{l:empty_layer() for l in LAYERS},'quality':{l:{'status':'NOT_RUN'} for l in LAYERS[1:]}} for a in ARMS},
         'file_sha256':{},'source_root':str(source_root),'failures':[],'quality_tolerance':None,'scientific_pass':None,
@@ -74,8 +77,15 @@ def run_case(case_id,output,source_root,*,expected_source_run=SOURCE_RUN,expecte
             persist_tensor(output/'latents'/f'{arm}_{layer}.pt',z.detach().cpu().float())
             decoded=method.read(z.detach().cpu().float(),book)
             decoded['payload_comparisons_reporting_only']=method.compare_payloads(decoded,book)
-            decoded['truth']=None if arm=='OFF' else ARMS.index(arm)-1
+            decoded['truth']=message_for[arm]
             decoded['OFF_coincidental_exact_matches']=[v['message'] for v in decoded['payload_comparisons_reporting_only']['aggregate'] if v['exact_payload_match']] if arm=='OFF' else None
+            if compare_readouts:
+                from main.tube_state.grow_readout_comparison import score,compare,candidate_scores
+                scored=score(decoded['aggregate'])
+                decoded['hard_soft_scores']=scored
+                decoded['hard_soft_candidates']=candidate_scores(scored,book['payloads'])
+                decoded['candidate_attribution_reporting_only']=None if arm=='OFF' else {k:(v['top']==message_for[arm]) if v['top'] is not None else False for k,v in decoded['hard_soft_candidates'].items()}
+                decoded['hard_soft_comparisons_reporting_only']=[compare(scored,p) for p in book['payloads']] if arm=='OFF' else compare(scored,book['payloads'][message_for[arm]])
             row.update(decoded)
         except Exception as exc:row['status']='FAILED';fail(arm+'/'+layer,exc)
         save()
@@ -175,7 +185,10 @@ def run_case(case_id,output,source_root,*,expected_source_run=SOURCE_RUN,expecte
     save();return result
 
 
-def recovery_summary(cases):
+def recovery_summary(cases,arms=ARMS,messages=None):
+    ARMS=tuple(arms)
+    message_for={a:(None if a=='OFF' else i-1) for i,a in enumerate(ARMS)} if messages is None else messages
+    denominator=4*(len(ARMS)-1)
     summary={}
     for layer in LAYERS:
         n=errors=erasures=exact=off=off_n=0
@@ -185,10 +198,10 @@ def recovery_summary(cases):
                 if row.get('status')!='COMPLETE':continue
                 if arm=='OFF':
                     off_n+=1;off+=bool(row.get('OFF_coincidental_exact_matches'));continue
-                n+=1;truth=ARMS.index(arm)-1
+                n+=1;truth=message_for[arm]
                 c=row['payload_comparisons_reporting_only']['aggregate'][truth]
                 errors+=c['bit_errors_including_erasures'];erasures+=row['aggregate']['bit_erasures'];exact+=bool(c['exact_payload_match'])
-        summary[layer]=dict(marked_denominator=8,fixed_bit_denominator=128,completed_marked=n,missing_or_failed_marked=8-n,exact=exact,
+        summary[layer]=dict(marked_denominator=denominator,fixed_bit_denominator=denominator*16,completed_marked=n,missing_or_failed_marked=denominator-n,exact=exact,
             errors_on_observed_bits=errors,observed_bit_denominator=n*16,erasures_on_observed_bits=erasures,
             OFF_case_denominator=4,OFF_completed=off_n,OFF_missing_or_failed=4-off_n,OFF_exact_coincidences=off)
     return summary
