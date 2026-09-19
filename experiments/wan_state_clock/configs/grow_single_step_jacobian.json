@@ -1,0 +1,182 @@
+{
+  "protocol": "grow_single_step_jacobian_v1",
+  "base_config": {
+    "protocol": "state_clock_v1",
+    "terminal_mode": "generate_new",
+    "edit_source_frame": 90,
+    "model": {
+      "id": "Wan-AI/Wan2.1-T2V-1.3B-Diffusers",
+      "revision": null
+    },
+    "generation": {
+      "role": "grow_video_frequency_fixed_first_adaptation",
+      "prompt": "locked camera, a single small red sailboat gliding slowly across a calm lake, gentle ripples, stable daylight, no people, no cuts",
+      "negative_prompt": "text, watermark, logo, camera motion, cuts, multiple objects, flicker",
+      "seed": 20260916,
+      "height": 320,
+      "width": 512,
+      "frames": 181,
+      "fps": 8,
+      "steps": 50,
+      "guidance_scale": 5.0,
+      "max_sequence_length": 512
+    },
+    "key_utf8": "WanProjection-first-validation-key-v1",
+    "output_drive_parent": null
+  },
+  "development": [
+    {
+      "id": "dev_p0_s0",
+      "prompt": "locked camera, a single small red sailboat gliding slowly across a calm lake, gentle ripples, stable daylight, no people, no cuts",
+      "seed": 20260916
+    },
+    {
+      "id": "dev_p0_s1",
+      "prompt": "locked camera, a single small red sailboat gliding slowly across a calm lake, gentle ripples, stable daylight, no people, no cuts",
+      "seed": 20260917
+    },
+    {
+      "id": "dev_p1_s0",
+      "prompt": "locked camera, a single yellow tram moving slowly along a straight tree-lined street, stable overcast daylight, no people, no cuts",
+      "seed": 20260916
+    },
+    {
+      "id": "dev_p1_s1",
+      "prompt": "locked camera, a single yellow tram moving slowly along a straight tree-lined street, stable overcast daylight, no people, no cuts",
+      "seed": 20260917
+    }
+  ],
+  "arms": [
+    "OFF",
+    "LOCAL_A",
+    "LOCAL_B",
+    "JAC_A",
+    "JAC_B"
+  ],
+  "frequency": {
+    "channel": 0,
+    "spatial_mask": [
+      2,
+      9,
+      2,
+      9
+    ],
+    "dct": "ortho-II",
+    "payload_bits": 16,
+    "repeats_per_bit_per_time": 4,
+    "target_amplitude": 0.5,
+    "eta": 0.1,
+    "loss_reduction": "half_squared_error_sum",
+    "controlled_indices": [
+      30
+    ],
+    "temporal_carrier": {
+      "pairs": [
+        [
+          0,
+          1
+        ],
+        [
+          2,
+          3
+        ],
+        [
+          4,
+          5
+        ],
+        [
+          6,
+          7
+        ],
+        [
+          8,
+          9
+        ],
+        [
+          10,
+          11
+        ],
+        [
+          12,
+          13
+        ],
+        [
+          14,
+          15
+        ],
+        [
+          16,
+          17
+        ],
+        [
+          18,
+          19
+        ],
+        [
+          20,
+          21
+        ],
+        [
+          22,
+          23
+        ],
+        [
+          24,
+          25
+        ],
+        [
+          26,
+          27
+        ],
+        [
+          28,
+          29
+        ],
+        [
+          30,
+          31
+        ],
+        [
+          32,
+          33
+        ],
+        [
+          34,
+          35
+        ],
+        [
+          36,
+          37
+        ],
+        [
+          38,
+          39
+        ],
+        [
+          40,
+          41
+        ],
+        [
+          42,
+          43
+        ],
+        [
+          44,
+          45
+        ]
+      ],
+      "transform": "(even-odd)/sqrt(2)",
+      "votes_per_bit": 92
+    }
+  },
+  "readout": "coefficient_sign_then_total_repeat_vote; zero and ties erased",
+  "quality_tolerance": null,
+  "matching": "single_step_native_response_rms_squared",
+  "messages": {
+    "OFF": null,
+    "LOCAL_A": 0,
+    "LOCAL_B": 1,
+    "JAC_A": 0,
+    "JAC_B": 1
+  }
+}
