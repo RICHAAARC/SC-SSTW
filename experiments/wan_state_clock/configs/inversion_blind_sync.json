@@ -1,0 +1,14 @@
+{
+  "protocol": "inversion_blind_sync_v1",
+  "source_run": "inversion_crop_observation_20260918T171553283563Z",
+  "shape": [1,16,33,40,64],
+  "nominal_shifts": [0,1,2,3,4,5,6,7,8,9,10,11,12,13],
+  "local_indices": [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31],
+  "messages": [0,1],
+  "score": "mean_raw_demodulated_amplitude_times_candidate_state_over_31_slices_and_2_axes",
+  "tie_epsilon": 1e-12,
+  "observer": "auxiliary_only_unchanged_on_off",
+  "source_start_used_by_search": false,
+  "clip_denominator": 18,
+  "candidate_denominator": 504
+}
