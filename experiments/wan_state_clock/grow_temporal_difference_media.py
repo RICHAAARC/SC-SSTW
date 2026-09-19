@@ -45,8 +45,8 @@ def release():
     if torch.cuda.is_available():torch.cuda.empty_cache()
 
 
-def run_case(case_id,output,source_root):
-    manifest=load(MANIFEST)
+def run_case(case_id,output,source_root,*,expected_source_run=SOURCE_RUN,expected_source_commit=SOURCE_COMMIT,expected_manifest=None):
+    manifest=load(MANIFEST) if expected_manifest is None else expected_manifest
     case=next(c for c in manifest['development'] if c['id']==case_id)
     config=copy.deepcopy(manifest['base_config']);config['generation'].update(prompt=case['prompt'],seed=case['seed'])
     source_root=Path(source_root);output=Path(output)
@@ -59,6 +59,10 @@ def run_case(case_id,output,source_root):
                     'layers':{l:empty_layer() for l in LAYERS},'quality':{l:{'status':'NOT_RUN'} for l in LAYERS[1:]}} for a in ARMS},
         'file_sha256':{},'source_root':str(source_root),'failures':[],'quality_tolerance':None,'scientific_pass':None,
         'claim':'fixed candidate video adaptation; completion, bit recovery and quality are separate; OFF is not FPR'}
+    result['expected_source_run']=expected_source_run;result['expected_source_commit']=expected_source_commit
+    result['effective_manifest']=manifest
+    result['effective_manifest_sha256']=hashlib.sha256(json.dumps(manifest,sort_keys=True,separators=(',',':')).encode()).hexdigest()
+    dump(output/'effective_manifest.json',manifest)
     def save():result['elapsed_seconds']=time.monotonic()-started;dump(output/'result.json',result)
     def count(kind,done):result['actual_calls'][kind+('_completed' if done else '_attempted')]+=1;save()
     def fail(stage,exc):result['failures'].append({'stage':stage,'error':repr(exc),'traceback':traceback.format_exc()});save()
@@ -88,7 +92,7 @@ def run_case(case_id,output,source_root):
         actual_config=load(source_root/case_id/'config.json')
         result['source_evidence_sha256']={name:hashlib.sha256(path.read_bytes()).hexdigest() for name,path in
             [('root_result',source_root/'result.json'),('case_result',source_root/case_id/'result.json'),('case_config',source_root/case_id/'config.json')]}
-        if source_root.name!=SOURCE_RUN or source['source_commit']!=SOURCE_COMMIT:raise ValueError('wrong fixed source run/commit')
+        if source_root.name!=expected_source_run or source['source_commit']!=expected_source_commit:raise ValueError('wrong fixed source run/commit')
         if source['config']!=config or actual_config!=config:raise ValueError('source config differs from fixed roster')
         if source_result['cases'][case_id].get('file_sha256')!=source['file_sha256']:raise ValueError('source root/case hash records disagree')
         result['source_generation_commit']=source['source_commit']

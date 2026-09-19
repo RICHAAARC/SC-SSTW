@@ -9,28 +9,30 @@ CONTROL_INDICES=tuple(range(30,50))
 
 
 @torch.no_grad()
-def pulse(z,v,sigma,book,message,count):
+def pulse(z,v,sigma,book,message,count,loss_fn=None):
+    objective=method.loss if loss_fn is None else loss_fn
     clean=z-sigma*v
     with torch.enable_grad():
-        leaf=clean.detach().requires_grad_(True);loss=method.loss(leaf,book,message)
+        leaf=clean.detach().requires_grad_(True);loss=objective(leaf,book,message)
         count('local_gradient',False);gradient=torch.autograd.grad(loss,leaf)[0];count('local_gradient',True)
     u=-method.ETA*gradient.detach();controlled=v-u/sigma;after=z-sigma*controlled
     if not finite((u,controlled,after,loss)):raise FloatingPointError('nonfinite local difference control')
-    return u,controlled,after,dict(controlled=True,loss_before=float(loss.detach()),loss_after=float(method.loss(after,book,message)),
-        loss_ratio=float(method.loss(after,book,message)/loss.detach()) if float(loss.detach()) else None,
+    return u,controlled,after,dict(controlled=True,loss_before=float(loss.detach()),loss_after=float(objective(after,book,message)),
+        loss_ratio=float(objective(after,book,message)/loss.detach()) if float(loss.detach()) else None,
         algebra=check_delta(after-clean,u,z,clean,after),u_rms=rms(u))
 
 
-def observation(z,book):
+def observation(z,book,loss_fn=None):
     row=method.read(z,book)['aggregate']
     means=z.new_tensor(row['coefficient_mean_diagnostic'],dtype=torch.float64)
     row['candidate_direction_scores']=[float((means*means.new_tensor(p)).mean()) for p in book['payloads']]
     row['candidate_losses']=[float(method.loss(z,book,m)) for m in (0,1)]
+    if loss_fn is not None:row['writer_objective_candidate_losses']=[float(loss_fn(z,book,m)) for m in (0,1)]
     return row
 
 
 @torch.no_grad()
-def generate(pipe,initial,prompt,negative,dtype,guidance,book,message,count,record,artifact,*,control_indices):
+def generate(pipe,initial,prompt,negative,dtype,guidance,book,message,count,record,artifact,*,control_indices,loss_fn=None):
     if tuple(control_indices)!=CONTROL_INDICES:raise ValueError('runtime requires fixed 30..49 indices')
     require_scheduler(pipe.scheduler)
     if tuple(initial.shape)!=method.SHAPE:raise ValueError('fixed latent shape required')
@@ -44,10 +46,10 @@ def generate(pipe,initial,prompt,negative,dtype,guidance,book,message,count,reco
         controlled=v;after=clean
         if active:
             shadow=copy.deepcopy(pipe.scheduler)
-            u,controlled,after,local=pulse(z,v,sigma,book,message,count)
+            u,controlled,after,local=pulse(z,v,sigma,book,message,count,loss_fn=loss_fn)
             row.update(local,loss_after_local=local['loss_after'],effective_clean_control_rms=rms(sigma*(controlled-v)),
                 delta_velocity_rms=rms(controlled-v),control_rms=rms(u),
-                clean_before=observation(clean,book),clean_after=observation(after,book))
+                clean_before=observation(clean,book,loss_fn=loss_fn),clean_after=observation(after,book,loss_fn=loss_fn))
             count('response_probe_step',False)
             off=shadow.step(v,timestep,z.clone(),return_dict=False)[0]
             count('response_probe_step',True)
@@ -55,19 +57,19 @@ def generate(pipe,initial,prompt,negative,dtype,guidance,book,message,count,reco
         if index==49:
             for name,value in [('before_state',z),('predicted_clean_before',clean),('predicted_clean_after',after)]:
                 artifact('last49_'+name,value)
-            row.update(last_before=observation(z,book),last_clean_before=observation(clean,book),last_clean_after=observation(after,book))
+            row.update(last_before=observation(z,book,loss_fn=loss_fn),last_clean_before=observation(clean,book,loss_fn=loss_fn),last_clean_after=observation(after,book,loss_fn=loss_fn))
         count('scheduler_step',False)
         next_z=pipe.scheduler.step(controlled,timestep,z,return_dict=False)[0]
         count('scheduler_step',True)
         row['whole_transition_rms']=rms(next_z-z)
         if active:
             row['control_induced_delta_rms']=rms(next_z-off)
-            row['control_induced_delta_readout']=observation(next_z-off,book)
-            row['actual_after']=observation(next_z,book)
+            row['control_induced_delta_readout']=observation(next_z-off,book,loss_fn=loss_fn)
+            row['actual_after']=observation(next_z,book,loss_fn=loss_fn)
             del off
         if index==49:
             artifact('last49_actual_after',next_z)
-            row.update(last_after=observation(next_z,book),terminal_vs_last_controlled_clean_rms=rms(next_z-after),
+            row.update(last_after=observation(next_z,book,loss_fn=loss_fn),terminal_vs_last_controlled_clean_rms=rms(next_z-after),
                 terminal_vs_last_controlled_clean_maxabs=float((next_z-after).abs().max()),
                 terminal_lower_order=pipe.scheduler.this_order)
         if pipe.scheduler.step_index!=index+1 or not finite(next_z):raise RuntimeError('invalid native step')
