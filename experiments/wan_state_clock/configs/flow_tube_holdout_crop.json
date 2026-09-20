@@ -1,0 +1,49 @@
+{
+  "protocol": "flow_tube_holdout_real_crop_v1",
+  "source_run": "flow_tube_state_holdout_20260920T033109891109Z",
+  "source_commit": "0797064cc5f1166170ed5c229e18defd681d8185",
+  "cases": [
+    "holdout_p0_s0",
+    "holdout_p1_s0"
+  ],
+  "arms": [
+    "OFF",
+    "LAST_A",
+    "LAST_B"
+  ],
+  "starts": [
+    0,
+    4,
+    5
+  ],
+  "frames": 129,
+  "origins": [
+    0,
+    1,
+    2,
+    3
+  ],
+  "storage": "uint8_npy_no_second_codec",
+  "source_shape": [
+    181,
+    320,
+    512,
+    3
+  ],
+  "crop_shape": [
+    129,
+    320,
+    512,
+    3
+  ],
+  "no_search": {
+    "g": 0,
+    "scale": [
+      1,
+      1
+    ],
+    "offset": 0,
+    "delta": 0,
+    "boundary": 11
+  }
+}
