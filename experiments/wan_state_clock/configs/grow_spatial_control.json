@@ -1,0 +1,105 @@
+{
+  "protocol": "grow_spatial_control_v1",
+  "base_config": {
+    "protocol": "state_clock_v1",
+    "terminal_mode": "generate_new",
+    "edit_source_frame": 90,
+    "model": {
+      "id": "Wan-AI/Wan2.1-T2V-1.3B-Diffusers",
+      "revision": null
+    },
+    "generation": {
+      "role": "fixed_spatial_carrier_multi_last_media_completion",
+      "prompt": "locked camera, a single small red sailboat gliding slowly across a calm lake, gentle ripples, stable daylight, no people, no cuts",
+      "negative_prompt": "text, watermark, logo, camera motion, cuts, multiple objects, flicker",
+      "seed": 20260916,
+      "height": 320,
+      "width": 512,
+      "frames": 181,
+      "fps": 8,
+      "steps": 50,
+      "guidance_scale": 5.0,
+      "max_sequence_length": 512
+    },
+    "key_utf8": "WanProjection-first-validation-key-v1",
+    "output_drive_parent": "/content/drive/MyDrive/Video-WM/GROWSpatialCarrier"
+  },
+  "development": [
+    {
+      "id": "dev_p0_s0",
+      "prompt": "locked camera, a single small red sailboat gliding slowly across a calm lake, gentle ripples, stable daylight, no people, no cuts",
+      "seed": 20260916
+    },
+    {
+      "id": "dev_p0_s1",
+      "prompt": "locked camera, a single small red sailboat gliding slowly across a calm lake, gentle ripples, stable daylight, no people, no cuts",
+      "seed": 20260917
+    },
+    {
+      "id": "dev_p1_s0",
+      "prompt": "locked camera, a single yellow tram moving slowly along a straight tree-lined street, stable overcast daylight, no people, no cuts",
+      "seed": 20260916
+    },
+    {
+      "id": "dev_p1_s1",
+      "prompt": "locked camera, a single yellow tram moving slowly along a straight tree-lined street, stable overcast daylight, no people, no cuts",
+      "seed": 20260917
+    }
+  ],
+  "arms": [
+    "OFF",
+    "MULTI_A",
+    "MULTI_B",
+    "LAST_A",
+    "LAST_B"
+  ],
+  "frequency": {
+    "channel": 0,
+    "spatial_mask": [
+      2,
+      9,
+      2,
+      9
+    ],
+    "dct": "ortho-II",
+    "payload_bits": 16,
+    "repeats_per_bit_per_time": 4,
+    "target_amplitude": 0.5,
+    "eta": 0.1,
+    "loss_reduction": "half_squared_error_sum",
+    "controlled_indices": [
+      30,
+      31,
+      32,
+      33,
+      34,
+      35,
+      36,
+      37,
+      38,
+      39,
+      40,
+      41,
+      42,
+      43,
+      44,
+      45,
+      46,
+      47,
+      48,
+      49
+    ],
+    "spatial_carrier": "per_latent_time_whole_slice_DCT_no_time_difference",
+    "votes_per_bit": 184
+  },
+  "readout": "coefficient_sign_then_total_repeat_vote; zero and ties erased",
+  "quality_tolerance": null,
+  "matching": "paired_sum_native_response_rms_squared",
+  "messages": {
+    "OFF": null,
+    "MULTI_A": 0,
+    "MULTI_B": 1,
+    "LAST_A": 0,
+    "LAST_B": 1
+  }
+}
