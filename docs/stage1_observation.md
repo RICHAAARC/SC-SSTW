@@ -9,8 +9,8 @@ unit tests have science_denominator=0 and the real run is development engineerin
 
 ## S0 user-confirmed freeze before execution
 
-The working branch is `dev/真实视频公共观测/帧差加权质心-固定镜头单主体`.
-The naming convention is `dev/<具体工作目标>/<当前方法-适用内容>`, without a stage number.
+The working branch is `dev/real-video-public-observation`. Historical branch mapping: [branch_mapping.md](branch_mapping.md).
+Current branch names use English kebab-case under `dev/`, without a stage number.
 The existing worktree directory stays `worktrees/Stage1-Public-Observation`.
 
 `experiments/stage1/s0_frozen.json` records the user-confirmed S0 freeze. The
