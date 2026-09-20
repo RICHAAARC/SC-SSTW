@@ -1,0 +1,51 @@
+{
+  "protocol": "flow_tube_real_crop_v1",
+  "source_run": "flow_tube_state_guidance_20260919T202545864571Z",
+  "source_commit": "892013f44a5ab1596386f5e7046548ca4150d44e",
+  "cases": [
+    "dev_p0_s0",
+    "dev_p0_s1",
+    "dev_p1_s0",
+    "dev_p1_s1"
+  ],
+  "arms": [
+    "OFF",
+    "LAST_A",
+    "LAST_B"
+  ],
+  "starts": [
+    0,
+    4,
+    5
+  ],
+  "frames": 129,
+  "origins": [
+    0,
+    1,
+    2,
+    3
+  ],
+  "storage": "uint8_npy_no_second_codec",
+  "source_shape": [
+    181,
+    320,
+    512,
+    3
+  ],
+  "crop_shape": [
+    129,
+    320,
+    512,
+    3
+  ],
+  "no_search": {
+    "g": 0,
+    "scale": [
+      1,
+      1
+    ],
+    "offset": 0,
+    "delta": 0,
+    "boundary": 11
+  }
+}
