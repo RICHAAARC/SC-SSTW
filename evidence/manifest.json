@@ -1,0 +1,18 @@
+{
+  "archived_at_utc": "2026-09-20T10:25:14.211690+00:00",
+  "scope": "Local records only; raw files are not Git-published. SHA256 verifies local byte integrity, not scientific validity.",
+  "claim_boundary": "Active multistep branch. Only the supplied execution summary is locally archived; this is NOT a raw Drive result package. LAST/EARLY_LAST 8/8; EARLY_ONLY 6/8 or 7/8 depending on reader. This configuration did not improve the control/quality tradeoff; the branch remains active.",
+  "files": [
+    {
+      "run": "flow_tube_multistep_20260920T075731119017Z",
+      "title": "user_pasted_summary.txt",
+      "local_path": "raw/flow_tube_multistep_20260920T075731119017Z/user_pasted_summary.txt",
+      "provenance": "user_pasted_summary",
+      "original_local_path": "/mnt/d/CodexData/.codex/attachments/68d29216-27e5-4a12-a2f6-c015745d5320/已粘贴的文本.txt",
+      "acquired_at": "2026-09-20T10:25:14.211690+00:00",
+      "missing": "Drive original result, per-case records and metadata were not returned by connected search or Video-WM folder listing.",
+      "sha256": "db3804adf1b24e6d3d7103830f42252b59c36d60c743e8b12ea777a96c6936f7",
+      "bytes": 52609
+    }
+  ]
+}
