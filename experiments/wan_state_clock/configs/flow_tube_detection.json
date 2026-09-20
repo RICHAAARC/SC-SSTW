@@ -1,0 +1,113 @@
+{
+  "protocol": "flow_tube_detection_v1",
+  "base_config": {
+    "protocol": "state_clock_v1",
+    "terminal_mode": "generate_new",
+    "edit_source_frame": 90,
+    "model": {
+      "id": "Wan-AI/Wan2.1-T2V-1.3B-Diffusers",
+      "revision": null
+    },
+    "generation": {
+      "role": "fixed_last_source_cluster_detection",
+      "prompt": "locked camera, a single small red sailboat gliding slowly across a calm lake, gentle ripples, stable daylight, no people, no cuts",
+      "negative_prompt": "text, watermark, logo, camera motion, cuts, multiple objects, flicker",
+      "seed": 20260916,
+      "height": 320,
+      "width": 512,
+      "frames": 181,
+      "fps": 8,
+      "steps": 50,
+      "guidance_scale": 5.0,
+      "max_sequence_length": 512
+    },
+    "key_utf8": "WanProjection-first-validation-key-v1",
+    "output_drive_parent": "/content/drive/MyDrive/Video-WM/FlowTubeDetection"
+  },
+  "calibration": [
+    {
+      "id": "cal01",
+      "prompt": "locked camera, a single purple sailboat gliding slowly across a quiet bay, stable daylight, no people, no cuts",
+      "seed": 20270101
+    },
+    {
+      "id": "cal02",
+      "prompt": "locked camera, a single silver train moving slowly across an open plain, stable daylight, no people, no cuts",
+      "seed": 20270102
+    },
+    {
+      "id": "cal03",
+      "prompt": "locked camera, a single brown sea turtle swimming slowly through shallow clear water, stable daylight, no people, no cuts",
+      "seed": 20270103
+    },
+    {
+      "id": "cal04",
+      "prompt": "locked camera, a single white canoe gliding slowly across a quiet lake, stable daylight, no people, no cuts",
+      "seed": 20270104
+    },
+    {
+      "id": "cal05",
+      "prompt": "locked camera, a single red cable car moving slowly above a forest, stable daylight, no people, no cuts",
+      "seed": 20270105
+    },
+    {
+      "id": "cal06",
+      "prompt": "locked camera, a single yellow excavator moving slowly across a quiet construction site, stable daylight, no people, no cuts",
+      "seed": 20270106
+    },
+    {
+      "id": "cal07",
+      "prompt": "locked camera, a single gray ferry moving slowly through a harbor, stable daylight, no people, no cuts",
+      "seed": 20270107
+    },
+    {
+      "id": "cal08",
+      "prompt": "locked camera, a single black and white cow walking slowly across a pasture, stable daylight, no people, no cuts",
+      "seed": 20270108
+    },
+    {
+      "id": "cal09",
+      "prompt": "locked camera, a single blue hot air balloon drifting slowly above a desert, stable daylight, no people, no cuts",
+      "seed": 20270109
+    }
+  ],
+  "evaluation": [
+    {
+      "id": "eval01",
+      "prompt": "locked camera, a single green kayak gliding slowly around a river bend, stable daylight, no people, no cuts",
+      "seed": 20270201
+    },
+    {
+      "id": "eval02",
+      "prompt": "locked camera, a single white tram moving slowly across a stone bridge, stable daylight, no people, no cuts",
+      "seed": 20270202
+    }
+  ],
+  "calibration_arms": [
+    "OFF"
+  ],
+  "evaluation_arms": [
+    "OFF",
+    "LAST_A",
+    "LAST_B"
+  ],
+  "views": [
+    "full181",
+    "crop0",
+    "crop4",
+    "crop5",
+    "delete90",
+    "speed125",
+    "resaved"
+  ],
+  "primary_mode": "local_state",
+  "sequence_views": [
+    "crop0",
+    "crop4",
+    "crop5"
+  ],
+  "calibration_sources": 9,
+  "threshold_rule": "strict > max of 9 calibration source maxima over all seven views and fixed three-crop sequence",
+  "alpha_rank_resolution": 0.1,
+  "quality_tolerance": null
+}
