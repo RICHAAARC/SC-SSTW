@@ -259,6 +259,7 @@ def mechanism_summary(cases):
             readout={}
             for mode in MODES:
                 def receiver_gap(video):
+                    if video.get('status')!='COMPLETE':return None
                     by=video.get('rankings',{}).get(mode,{}).get('best_by_message',{})
                     a,b=by.get(str(message)),by.get(str(1-message)) if message is not None else None
                     return None if a is None or b is None else a['score']-b['score']

@@ -73,3 +73,20 @@ def test_prespecified_sign_diagnostics_retain_missing_zeros_and_exclude_49():
     assert r['current_clean_gain__terminal_projection_gain']['opposite_nonzero_sign']==1
     assert r['short_clean_gain__MP4_local_state_gain']['both_zero']==1
     assert all(v['fixed_pair_denominator']==8 and v['valid']==1 and v['missing_or_nonfinite']==7 for v in r.values())
+
+
+@pytest.mark.parametrize('partial_arm',['OFF','T44_A'])
+def test_partial_media_marked_or_off_is_missing_for_prediction(partial_arm):
+    ranks={'local_state':{'best_by_message':{'0':{'score':.7},'1':{'score':.2}}}}
+    videos={'OFF':{'status':'COMPLETE','rankings':ranks},'T44_A':{'status':'COMPLETE','rankings':ranks,
+        'control':{'before_clean':{'nominal_score_A_minus_B':0.},'controlled_clean':{'nominal_score_A_minus_B':.2}},
+        'terminal_projection':{'nominal_score_A_minus_B':.3},'OFF_terminal_projection':{'nominal_score_A_minus_B':0.}}}
+    videos[partial_arm]['status']='PARTIAL_OR_FAILED'
+    rows=run.mechanism_summary({run.CASES[0]:{'videos':videos}})
+    row=next(r for r in rows if r['case']==run.CASES[0] and r['arm']=='T44_A')
+    assert row['receiver']['local_state']['gain_vs_OFF'] is None
+    assert row['terminal_projection_gain']==.3
+    comparisons=run.predictive_diagnostics(rows)['comparisons']
+    assert comparisons['current_clean_gain__MP4_local_state_gain']['valid']==0
+    assert comparisons['current_clean_gain__MP4_local_state_gain']['missing_or_nonfinite']==8
+    assert comparisons['current_clean_gain__terminal_projection_gain']['valid']==1
