@@ -1,7 +1,7 @@
 {
   "archived_at_utc": "2026-09-20T10:25:14.211690+00:00",
   "scope": "Local records only; raw files are not Git-published. SHA256 verifies local byte integrity, not scientific validity.",
-  "claim_boundary": "Active multistep branch. Only the supplied execution summary is locally archived; this is NOT a raw Drive result package. LAST/EARLY_LAST 8/8; EARLY_ONLY 6/8 or 7/8 depending on reader. This configuration did not improve the control/quality tradeoff; the branch remains active.",
+  "claim_boundary": "Active multistep branch; currently user-pasted summary only, not a raw Drive result package. LAST/EARLY_LAST 8/8; EARLY_ONLY 6/8 or 7/8. Control increased, attribution count did not improve, final compensation slightly decreased. Larger pixel/temporal residuals relative to OFF do not establish worse perceptual quality; perceptual quality is unverified.",
   "files": [
     {
       "run": "flow_tube_multistep_20260920T075731119017Z",
@@ -14,5 +14,12 @@
       "sha256": "db3804adf1b24e6d3d7103830f42252b59c36d60c743e8b12ea777a96c6936f7",
       "bytes": 52609
     }
-  ]
+  ],
+  "original_result_retrieval": {
+    "checked_at_utc": "2026-09-20T11:03:39.745134+00:00",
+    "status": "NOT_LOCATED_IN_CONNECTED_DRIVE",
+    "accessible_root_id": "1JvuNbrLs6Mo0yoPPgeYBuiVvd2UvCglA",
+    "needed": "Reachable exact run folder or result.json file URL/ID",
+    "rerun_performed": false
+  }
 }
