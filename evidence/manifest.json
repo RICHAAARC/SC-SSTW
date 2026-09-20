@@ -1,0 +1,118 @@
+{
+  "archived_utc": "2026-09-20T10:24:10.837849+00:00",
+  "scope": "bounded small evidence archive; no models/scoring/media downloads",
+  "records": [
+    {
+      "branch": "GROW-Video-Frequency",
+      "run": "grow_paired_control_20260919T110131665623Z",
+      "folder_id": "13aljLJxX4I8-2wOr-t8p__drluvVhHAr",
+      "file_id": "1kPyEpmUt6CrTiIRVE6A_dTnstlhKH3uJ",
+      "name": "result.json",
+      "expected_size": 9238904,
+      "mime": "application/json",
+      "bytes": 9238904,
+      "sha256": "77fcd18c41f8bbed6d13f703958bacdb399eb811617dcf7a29d51ea3a712ceaf",
+      "archived_utc": "2026-09-20T10:24:10.837849+00:00",
+      "kind": "drive-original",
+      "downloaded_utc": "2026-09-20T10:24:10.837849+00:00",
+      "relative_path": "evidence/raw/grow_paired_control_20260919T110131665623Z/result.json",
+      "source_commits_in_file": [
+        "51b774acbe0fbafc783727165733d1408ea75c78"
+      ]
+    },
+    {
+      "branch": "GROW-Video-Frequency",
+      "run": "grow_paired_control_20260919T110131665623Z",
+      "folder_id": "13aljLJxX4I8-2wOr-t8p__drluvVhHAr",
+      "file_id": "1vsdVFDQLlaUPBQQyI7p7WdcrufBTlY5h",
+      "name": "manifest.json",
+      "expected_size": 3818,
+      "mime": "application/json",
+      "bytes": 3818,
+      "sha256": "1e9248b61b3fe1a8c0d18333e09d530a0e56776cdea4763efa7d1c7f6e8099f3",
+      "archived_utc": "2026-09-20T10:24:10.837849+00:00",
+      "kind": "drive-original",
+      "downloaded_utc": "2026-09-20T10:24:10.837849+00:00",
+      "relative_path": "evidence/raw/grow_paired_control_20260919T110131665623Z/manifest.json",
+      "source_commits_in_file": []
+    },
+    {
+      "branch": "GROW-Video-Frequency",
+      "run": "grow_video_frequency_20260918T012616870889Z",
+      "name": "result.json",
+      "file_id": null,
+      "origin_local": "/mnt/d/CodexData/.codex/grow-audit-20260918/result.json",
+      "kind": "existing-local",
+      "downloaded_utc": null,
+      "bytes": 5495878,
+      "sha256": "9287ef9036739bd3b540a22625b8f3cb051f0d8cfef078694d0bfbd7da0411ea",
+      "archived_utc": "2026-09-20T10:24:10.837849+00:00",
+      "relative_path": "evidence/raw/grow_video_frequency_20260918T012616870889Z/result.json",
+      "source_commits_in_file": [
+        "e04f48ed2e85a6d9ae8d9b639c7c9bd6e9d7bddb"
+      ]
+    },
+    {
+      "branch": "GROW-Video-Frequency",
+      "run": "grow_late_control_20260918T080310904782Z",
+      "name": "result.json",
+      "file_id": null,
+      "origin_local": "/mnt/d/CodexData/.codex/grow-late-offline/result.json",
+      "kind": "existing-local",
+      "downloaded_utc": null,
+      "bytes": 2930128,
+      "sha256": "019d3a453829e18158de0b0923abaad72cc62f9287af03dad687b29ec8743e43",
+      "archived_utc": "2026-09-20T10:24:10.837849+00:00",
+      "relative_path": "evidence/raw/grow_late_control_20260918T080310904782Z/result.json",
+      "source_commits_in_file": [
+        "482222f5637fa3a38c170f9ee762fc03eb08ce2e"
+      ]
+    },
+    {
+      "branch": "GROW-Video-Frequency",
+      "run": "grow_temporal_difference_20260918T142825573989Z",
+      "name": "result.json",
+      "file_id": null,
+      "origin_local": "/mnt/d/CodexData/.codex/grow-difference-result-20260919.json",
+      "kind": "existing-local",
+      "downloaded_utc": null,
+      "bytes": 951101,
+      "sha256": "04e0d23a29d241c1853f13daf63dc3af6729b082b719ca6c305c06f8433ce1d8",
+      "archived_utc": "2026-09-20T10:24:10.837849+00:00",
+      "relative_path": "evidence/raw/grow_temporal_difference_20260918T142825573989Z/result.json",
+      "source_commits_in_file": [
+        "a004134f650267485c0b80abdfbb4062fb7c7128"
+      ]
+    },
+    {
+      "branch": "GROW-Video-Frequency",
+      "run": "grow_temporal_difference_media_20260918T171544536253Z",
+      "name": "result.json",
+      "file_id": null,
+      "origin_local": "/mnt/d/CodexData/.codex/grow-difference-media-result.json",
+      "kind": "existing-local",
+      "downloaded_utc": null,
+      "bytes": 2841400,
+      "sha256": "723a596c51eb7f111c7df2e9ab241fbdcd191a0003e32e964184b73459627906",
+      "archived_utc": "2026-09-20T10:24:10.837849+00:00",
+      "relative_path": "evidence/raw/grow_temporal_difference_media_20260918T171544536253Z/result.json",
+      "source_commits_in_file": [
+        "8ed2cd146dd9b77b0e97946da9ee14f45a5fddda"
+      ]
+    },
+    {
+      "branch": "GROW-Video-Frequency",
+      "run": "grow_paired_control_20260919T110131665623Z",
+      "name": "user-pasted-summary.txt",
+      "file_id": null,
+      "origin_local": "/mnt/d/CodexData/.codex/attachments/43485755-31bb-4093-a4ce-412aa1e1fcdd/\u5df2\u7c98\u8d34\u7684\u6587\u672c.txt",
+      "kind": "user-pasted-summary",
+      "downloaded_utc": null,
+      "bytes": 15101,
+      "sha256": "5d7ee8641cd1962a2912ac5c3a983568f9759e0302da841c82e095393ce0700b",
+      "archived_utc": "2026-09-20T10:24:10.837849+00:00",
+      "relative_path": "evidence/raw/grow_paired_control_20260919T110131665623Z/user-pasted-summary.txt",
+      "source_commits_in_file": []
+    }
+  ]
+}
