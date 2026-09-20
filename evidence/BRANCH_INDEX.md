@@ -6,12 +6,12 @@ Git 中保存轻量索引与 manifest；原始 JSON/log 位于各工作树 `evid
 
 ## 10 个方法/历史/发布分支
 
-以下 SHA 是研究源码/已发布入口的固定锚点，不是不断变化的文档 HEAD。英文名对应新规范分支；两个旧中文 tag 是兼容入口，不算额外研究路线。
+以下 SHA 是研究源码/已发布入口的固定锚点，不是不断变化的文档 HEAD。英文名对应新规范分支；远端旧中文兼容标签已由用户删除；本地残留标签未处理，不代表远端入口仍可用。
 
 | 分支 | 状态与用途 | 固定源码 / notebook 入口锚点 | 结果与结论边界 | 下一步 |
 |---|---|---|---|---|
 | dev/flow-tube-state-guidance | 活跃；LAST 末步管状块状态控制 | dev 源892013f；holdout源0797064；crop源7298170；holdout-crop源3b8ee00；最新入口eb06976 | [四批原始记录](INDEX.md)：完整视频dev五模式8/8；holdout-crop每起点4/4。裁剪窗口对齐不等于精确帧级同步或低FPR | 保留已验证固定配置，继续未证实能力 |
-| dev/flow-tube-multistep | 活跃；完整早期投影与末步补偿 | 源b57c13b；入口018ab4c | [本轮记录](../../Flow-Tube-Multistep/evidence/INDEX.md)：LAST/EARLY_LAST各8/8，EARLY_ONLY6/8或7/8；EARLY_LAST控制和画质代价更高。当前只有用户摘要，原Drive包未取得 | 继续方法推进；本轮只是固定配置消融 |
+| dev/flow-tube-multistep | 活跃；完整早期投影与末步补偿 | 源b57c13b；入口018ab4c | [本轮记录](../../Flow-Tube-Multistep/evidence/INDEX.md)：LAST/EARLY_LAST各8/8，EARLY_ONLY6/8或7/8；EARLY_LAST控制量增加，相对OFF的像素与时域残差更大，感知质量待验证。当前只有用户摘要，原Drive包未取得 | 继续方法推进；本轮只是固定配置消融 |
 | dev/video-inversion | 固定正结果对照；初始噪声写入、已知prompt反演 | paper源7fa72ef；入口b6caddc | [三批原始记录](../../Video-Inversion/evidence/INDEX.md)：STATE与STATIC/search14均4/4源全视图正确；shift0各2/4与3/4；评估OFF仅2源 | 不追加无目标调参；状态优势、低FPR、质量和一般鲁棒性未证明 |
 | dev/grow-video-frequency | 历史保留；固定已有配置与消融 | paired源51b774a；入口b6e470c | [记录](../../GROW-Video-Frequency/evidence/INDEX.md)：paired MULTI/LAST终态均8/8，MP4硬读4/8与7/8，软读3/8与5/8 | 保存部分正证据，不把整GROW判失败 |
 | dev/grow-single-step-jacobian | 历史保留；单步30控制负消融 | 源001bc59；入口b95f01c | [原始记录](../../GROW-Single-Step-Jacobian/evidence/INDEX.md)：LOCAL/JAC完整消息各层0/8，输入VJP实际完成 | 结论限当前时刻、载体、预算与自由续程 |
@@ -31,12 +31,12 @@ Git 中保存轻量索引与 manifest；原始 JSON/log 位于各工作树 `evid
 
 ## 两个旧名的兼容映射
 
-| 旧中文兼容 tag（本地与远端保留，原中文分支已移除） | 固定提交 | 新规范名称 |
+| 旧中文名称（远端branch/tag已移除，仅本地tag残留） | 固定提交 | 新规范名称 |
 |---|---|---|
 | dev/生成端公共关系载体/二维图像统计-持续生成约束 | 891988bfeaedb82a622d9ae3aac7a3e1531d66d5 | dev/public-statistic-control |
 | dev/真实视频公共观测/帧差加权质心-固定镜头单主体 | 1698fbfc1a7081d0538090fe549d8aabe3d1f049 | dev/real-video-public-observation |
 
-改名前相对其他研究分支各有12/14独有提交，现由新英文分支共同保存。旧SHA notebook仍可能fetch/clone旧分支，所以以同名tag保留旧入口。新4+2入口仅固定改名前默认实际获取的源码并验证HEAD，非追认旧实验SHA。warp既有f54917a绑定未改。历史日志、结果及notebook历史版本不改写；本次将旧中文branch原子转换为同名兼容tag，不移除工作树。
+改名前相对其他研究分支各有12/14独有提交，现由新英文分支共同保存。旧SHA notebook仍可能fetch/clone旧名称，远端标签已由用户有意删除，此类历史入口不再保证可用，不恢复标签。新4+2入口仅固定改名前默认实际获取的源码并验证HEAD，非追认旧实验SHA。warp既有f54917a绑定未改。历史日志、结果及notebook历史版本不改写；先前转换为tag的历史操作不代表当前远端状态；当前有效入口按固定源码SHA取源，不移除工作树。
 
 ## c2a 未提交工作：只读分类
 
@@ -50,4 +50,4 @@ Git 中保存轻量索引与 manifest；原始 JSON/log 位于各工作树 `evid
 - 历史检查报告：docs/local_refactor_review.md、governance/reports/extraction_equivalence.json。后者是dff5dd3基线的CPU抽取等价记录，不是新增科学结果。
 
 后续若保存，需按上述归属精确选文件；本次不对整个dirty树打包提交。c2a整理不是其余分支工作的前置条件。
-2026-09-20 后续命名整理：本地与远端现在仅10个英文分支，两个中文名称仅为固定兼容标签。已在全新临时仓库验证历史 fetch 与 clone --branch 两种取源方式，均得到原SHA。
+2026-09-20 当前状态：本地与远端仅10个英文分支；远端两个中文兼容标签已由用户删除，本地标签仍存在且未清理。先前的旧名取源验证只代表删除前状态。当前维护入口内部使用固定执行源码SHA。多步原始结果目录再次未被连接器搜索/Video-WM根目录列举返回，需要可访问的目录或文件链接；原摘要保留。
