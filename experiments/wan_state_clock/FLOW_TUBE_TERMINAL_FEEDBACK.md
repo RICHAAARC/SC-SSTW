@@ -12,7 +12,7 @@ Two existing development cases: dev_p0_s0 and dev_p1_s0; both fixed messages. Ex
 
 One new OFF generation supplies states and complete UniPC histories. New LAST49 A/B native responses give per-message target R=RMS_support(D49). LAST is an auxiliary future-information oracle, recorded with two native calls per case; it has no video arm and no new media validation. This budget is a mechanism diagnostic, not an online strength rule or equal-perceptual-quality comparison.
 
-From the stored T46 input/CFG velocity, one separate no_grad preview really runs native46 and the free47..49 tail, using a deep copy of all solver history. Both messages share this uncontrolled preview. Its terminal is saved and compared with OFF by max absolute and relative RMS error. The OFF terminal is not substituted for preview computation. Formal controlled updates each start from a fresh copy of the original T46 history, never preview-mutated history.
+From the stored T46 input/CFG velocity, one separate no_grad preview really runs native46 and the free47..49 tail, using a deep copy of all solver history. Both messages share this uncontrolled preview. Its terminal is saved and compared with OFF by numerical_equivalence maxabs with atol/rtol tolerance. The runner separately records support_relative_rms_error = RMS_support(preview−OFF)/max(RMS_support(OFF),1e-30); that diagnostic does not define the equivalence pass rule. The OFF terminal is not substituted for preview computation. Formal controlled updates each start from a fresh copy of the original T46 history, never preview-mutated history.
 
 ## Objective and transport
 
