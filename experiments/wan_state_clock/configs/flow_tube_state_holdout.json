@@ -1,0 +1,55 @@
+{
+  "protocol": "flow_tube_state_holdout_v1",
+  "base_config": {
+    "protocol": "state_clock_v1",
+    "terminal_mode": "generate_new",
+    "edit_source_frame": 90,
+    "model": {
+      "id": "Wan-AI/Wan2.1-T2V-1.3B-Diffusers",
+      "revision": null
+    },
+    "generation": {
+      "role": "fixed_independent_full_video_last_projection",
+      "prompt": "locked camera, a single small red sailboat gliding slowly across a calm lake, gentle ripples, stable daylight, no people, no cuts",
+      "negative_prompt": "text, watermark, logo, camera motion, cuts, multiple objects, flicker",
+      "seed": 20260916,
+      "height": 320,
+      "width": 512,
+      "frames": 181,
+      "fps": 8,
+      "steps": 50,
+      "guidance_scale": 5.0,
+      "max_sequence_length": 512
+    },
+    "key_utf8": "WanProjection-first-validation-key-v1",
+    "output_drive_parent": "/content/drive/MyDrive/Video-WM/FlowTubeStateHoldout"
+  },
+  "arms": [
+    "OFF",
+    "LAST_A",
+    "LAST_B"
+  ],
+  "control_index": 49,
+  "margin": 1.0,
+  "numeric_atol": 2e-05,
+  "numeric_rtol": 0.0002,
+  "receiver_origins": [
+    0,
+    1,
+    2,
+    3
+  ],
+  "quality_tolerance": null,
+  "holdout": [
+    {
+      "id": "holdout_p0_s0",
+      "prompt": "locked camera, a single white swan swimming slowly across a quiet pond, soft morning daylight, no people, no cuts",
+      "seed": 20261001
+    },
+    {
+      "id": "holdout_p1_s0",
+      "prompt": "locked camera, a single blue cable car moving slowly across a mountain valley, stable afternoon daylight, no people, no cuts",
+      "seed": 20261002
+    }
+  ]
+}
