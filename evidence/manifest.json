@@ -16,10 +16,16 @@
     }
   ],
   "original_result_retrieval": {
-    "checked_at_utc": "2026-09-20T11:03:39.745134+00:00",
+    "checked_at_utc": "2026-09-20T11:09:24.877055+00:00",
     "status": "NOT_LOCATED_IN_CONNECTED_DRIVE",
     "accessible_root_id": "1JvuNbrLs6Mo0yoPPgeYBuiVvd2UvCglA",
     "needed": "Reachable exact run folder or result.json file URL/ID",
-    "rerun_performed": false
+    "rerun_performed": false,
+    "published_notebook_commit": "018ab4c5aac87529bb71289664ef1f333e4d13ef",
+    "notebook_execution_source": "b57c13be72069a6778258891fd3bbfaf168f9189",
+    "expected_colab_path": "/content/drive/MyDrive/Video-WM/FlowTubeMultistep/flow_tube_multistep_20260920T075731119017Z/result.json",
+    "checked_local_drive_root": "G:\\我的云端硬盘",
+    "expected_local_path": "G:\\我的云端硬盘\\Video-WM\\FlowTubeMultistep\\flow_tube_multistep_20260920T075731119017Z\\result.json",
+    "local_mapping_result": "Video-WM accessible; expected FlowTubeMultistep path absent; force listing and bounded depth-2 run-name search returned no match. Does not establish that the original run failed to persist elsewhere."
   }
 }
