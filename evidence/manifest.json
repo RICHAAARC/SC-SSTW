@@ -1,0 +1,54 @@
+{
+  "archived_utc": "2026-09-20T10:24:10.837849+00:00",
+  "scope": "bounded small evidence archive; no models/scoring/media downloads",
+  "records": [
+    {
+      "branch": "GROW-Single-Step-Jacobian",
+      "run": "grow_single_step_jacobian_20260919T155733907785Z",
+      "folder_id": "1cee6hEilIpfN8L9HZTfyp_Jn4zEHRk2I",
+      "file_id": "1SAVZGTjLAgZ5n0v_uLtW_mj809-GH12Z",
+      "name": "result.json",
+      "expected_size": 6866249,
+      "mime": "application/json",
+      "bytes": 6866249,
+      "sha256": "04c9da692f44559d10a1db0eacb2c670236eb17b59ac1351ba16b1099b3c4b52",
+      "archived_utc": "2026-09-20T10:24:10.837849+00:00",
+      "kind": "drive-original",
+      "downloaded_utc": "2026-09-20T10:24:10.837849+00:00",
+      "relative_path": "evidence/raw/grow_single_step_jacobian_20260919T155733907785Z/result.json",
+      "source_commits_in_file": [
+        "001bc592d66d550923e39f1871ee152993a07fe1"
+      ]
+    },
+    {
+      "branch": "GROW-Single-Step-Jacobian",
+      "run": "grow_single_step_jacobian_20260919T155733907785Z",
+      "folder_id": "1cee6hEilIpfN8L9HZTfyp_Jn4zEHRk2I",
+      "file_id": "17a1MpTv0dP3D4_y9xhJgzCNzlYVVjn4g",
+      "name": "manifest.json",
+      "expected_size": 3631,
+      "mime": "application/json",
+      "bytes": 3631,
+      "sha256": "1f40afd122b5c51d089106f7df7989b340c3bb7254893c8010bae20197b593da",
+      "archived_utc": "2026-09-20T10:24:10.837849+00:00",
+      "kind": "drive-original",
+      "downloaded_utc": "2026-09-20T10:24:10.837849+00:00",
+      "relative_path": "evidence/raw/grow_single_step_jacobian_20260919T155733907785Z/manifest.json",
+      "source_commits_in_file": []
+    },
+    {
+      "branch": "GROW-Single-Step-Jacobian",
+      "run": "grow_single_step_jacobian_20260919T155733907785Z",
+      "name": "user-pasted-summary.txt",
+      "file_id": null,
+      "origin_local": "/mnt/d/CodexData/.codex/attachments/bce80355-0243-4e06-835f-b9536ae3a033/\u5df2\u7c98\u8d34\u7684\u6587\u672c.txt",
+      "kind": "user-pasted-summary",
+      "downloaded_utc": null,
+      "bytes": 60812,
+      "sha256": "671e3e3da871846ae79fddb53dcd24968a18ca61610cba78339583964bf0ed1e",
+      "archived_utc": "2026-09-20T10:24:10.837849+00:00",
+      "relative_path": "evidence/raw/grow_single_step_jacobian_20260919T155733907785Z/user-pasted-summary.txt",
+      "source_commits_in_file": []
+    }
+  ]
+}
