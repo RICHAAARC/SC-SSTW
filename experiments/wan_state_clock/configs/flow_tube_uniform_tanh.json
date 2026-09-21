@@ -1,0 +1,68 @@
+{
+  "name": "flow_tube_uniform_tanh",
+  "protocol": "Uniform-Tanh-44/46",
+  "source_run": "flow_tube_response_selection_20260921T013844126172Z",
+  "source_commit": "9fdfac97126fa681c42423089eb342ce85b676a7",
+  "model": {
+    "id": "Wan-AI/Wan2.1-T2V-1.3B-Diffusers",
+    "revision": "0fad780a534b6463e45facd96134c9f345acfa5b"
+  },
+  "generation": {
+    "height": 320,
+    "width": 512,
+    "frames": 181,
+    "fps": 8,
+    "steps": 50,
+    "guidance_scale": 5.0,
+    "negative_prompt": "text, watermark, logo, camera motion, cuts, multiple objects, flicker"
+  },
+  "key_utf8": "WanProjection-first-validation-key-v1",
+  "cases": [
+    {
+      "id": "dev_p0_s0",
+      "prompt": "locked camera, a single small red sailboat gliding slowly across a calm lake, gentle ripples, stable daylight, no people, no cuts",
+      "seed": 20260916
+    },
+    {
+      "id": "dev_p1_s0",
+      "prompt": "locked camera, a single yellow tram moving slowly along a straight tree-lined street, stable overcast daylight, no people, no cuts",
+      "seed": 20260916
+    }
+  ],
+  "arms": [
+    "OFF",
+    "SINGLE46_A",
+    "SINGLE46_B",
+    "MULTI44_46_A",
+    "MULTI44_46_B"
+  ],
+  "objective": {
+    "name": "tanh",
+    "temperature": 1
+  },
+  "budget": {
+    "R_star": 0.042943312697648145,
+    "historical_complete_dev_native_response_rms": [
+      0.04398231690421802,
+      0.04495011965027108,
+      0.042943312697648145,
+      0.04306408796221067
+    ],
+    "selection": "minimum of all four historical complete development LOCAL native46 response budgets",
+    "single46_per_step": 0.042943312697648145,
+    "multi44_46_per_step": 0.021471656348824073,
+    "meaning": "cumulative sum of immediate same-history native controlled-minus-zero response RMS; oracle provenance is historical and this run never reads a future LAST budget",
+    "nonclaim": "equal cumulative RMS is not equal energy and not equal terminal displacement"
+  },
+  "fixed_calls_per_case": {
+    "transformer": 42,
+    "scheduler_step": 26,
+    "unit_response_probe_step": 6,
+    "second_control_zero_shadow_step": 2,
+    "clean_leaf_backward": 6,
+    "vae_decode": 5,
+    "mp4_save": 5,
+    "vae_encode": 60
+  },
+  "scope": "two fixed original development contents and seeds; mechanism comparison only; no calibration, holdout, FPR, equal-energy or generalization claim"
+}
