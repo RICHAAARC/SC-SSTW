@@ -48,17 +48,29 @@ def load_frozen_vae(config: dict[str, Any]) -> Any:
     return vae.to(torch.device("cuda"))
 
 
-def generate_terminal_latent(config: dict[str, Any], progress: Any = None) -> GeneratedTerminal:
-    """Generate one normalized terminal latent by the existing Wan step path."""
+def prepare_generation(config: dict[str, Any], *, load_vae: bool = True):
+    """Prepare a fresh prompt-conditioned Wan noise state and native scheduler.
+
+    ``load_vae=False`` is the generation-worker path: the transformer process
+    owns no VAE, and the later media worker loads the VAE independently.
+    """
 
     import torch
     from diffusers import WanPipeline
 
     model, generation = config["model"], config["generation"]
     device = torch.device("cuda")
-    pipe = WanPipeline.from_pretrained(model["id"], **_load_args(model, torch_dtype=torch.bfloat16))
-    if getattr(pipe, "transformer_2", None) is not None or getattr(pipe.config, "boundary_ratio", None) is not None or getattr(pipe.config, "expand_timesteps", False):
-        raise ValueError("the reused C2A adapter supports the prior single-transformer Wan path only")
+    pipe = WanPipeline.from_pretrained(
+        model["id"],
+        **_load_args(model, torch_dtype=torch.bfloat16),
+        **({} if load_vae else {"vae": None}),
+    )
+    if (
+        getattr(pipe, "transformer_2", None) is not None
+        or getattr(pipe.config, "boundary_ratio", None) is not None
+        or getattr(pipe.config, "expand_timesteps", False)
+    ):
+        raise ValueError("the shared adapter supports the fixed single-transformer Wan path only")
     pipe.text_encoder.to(device)
     with torch.no_grad():
         prompt, negative = pipe.encode_prompt(
@@ -74,19 +86,23 @@ def generate_terminal_latent(config: dict[str, Any], progress: Any = None) -> Ge
     pipe.vae = None
     gc.collect()
     torch.cuda.empty_cache()
-    vae = load_frozen_vae(config)
-    pipe.vae = vae
-    pipe.vae_scale_factor_temporal = getattr(vae.config, "scale_factor_temporal", None) or 2 ** sum(vae.config.temperal_downsample)
-    pipe.vae_scale_factor_spatial = getattr(vae.config, "scale_factor_spatial", None) or 2 ** len(vae.config.temperal_downsample)
-    if generation["height"] % pipe.vae_scale_factor_spatial or generation["width"] % pipe.vae_scale_factor_spatial or (generation["frames"] - 1) % pipe.vae_scale_factor_temporal:
-        raise ValueError("the reused Wan VAE cannot represent the configured video geometry")
-    for module in (pipe.transformer,):
-        disable = getattr(module, "disable_gradient_checkpointing", None)
-        if callable(disable):
-            disable()
-        module.eval()
-        for parameter in module.parameters():
-            parameter.requires_grad_(False)
+    if load_vae:
+        vae = load_frozen_vae(config)
+        pipe.vae = vae
+        pipe.vae_scale_factor_temporal = getattr(vae.config, "scale_factor_temporal", None) or 2 ** sum(vae.config.temperal_downsample)
+        pipe.vae_scale_factor_spatial = getattr(vae.config, "scale_factor_spatial", None) or 2 ** len(vae.config.temperal_downsample)
+    if (
+        generation["height"] % pipe.vae_scale_factor_spatial
+        or generation["width"] % pipe.vae_scale_factor_spatial
+        or (generation["frames"] - 1) % pipe.vae_scale_factor_temporal
+    ):
+        raise ValueError("the fixed Wan VAE cannot represent the configured video geometry")
+    pipe.transformer.eval()
+    disable = getattr(pipe.transformer, "disable_gradient_checkpointing", None)
+    if callable(disable):
+        disable()
+    for parameter in pipe.transformer.parameters():
+        parameter.requires_grad_(False)
     pipe.transformer.to(device)
     with torch.no_grad():
         latent = pipe.prepare_latents(
@@ -103,8 +119,18 @@ def generate_terminal_latent(config: dict[str, Any], progress: Any = None) -> Ge
     pipe.scheduler.set_timesteps(generation["steps"], device=device)
     if hasattr(pipe.scheduler, "set_begin_index"):
         pipe.scheduler.set_begin_index(0)
-    input_dtype = getattr(getattr(pipe.transformer, "patch_embedding", None), "weight", None)
-    input_dtype = input_dtype.dtype if input_dtype is not None else next(pipe.transformer.parameters()).dtype
+    weight = getattr(getattr(pipe.transformer, "patch_embedding", None), "weight", None)
+    input_dtype = weight.dtype if weight is not None else next(pipe.transformer.parameters()).dtype
+    return pipe, latent, prompt, negative, input_dtype
+
+
+def generate_terminal_latent(config: dict[str, Any], progress: Any = None) -> GeneratedTerminal:
+    """Generate one normalized terminal latent by the existing Wan step path."""
+
+    import torch
+
+    pipe, latent, prompt, negative, input_dtype = prepare_generation(config)
+    model, generation, vae = config["model"], config["generation"], pipe.vae
     transformer_calls = 0
     transformer_attempted = 0
     def record_forward(completed: bool) -> None:

@@ -28,5 +28,7 @@ diagnostics into FPR, generalization, paper, or Flow-writing PASS.
   governance modules.
 - `runtime/wan` contains shared VAE/generation/media adapters and may not
   import `experiments.wan_state_clock` or any historical runner.
-- `experiments/wan_state_clock` is the only formal orchestration layer.
+- `experiments/wan_state_clock` is the only formal orchestration layer. The
+  legacy `run.py` and integrated `integrated_payload_run.py` are separate,
+  explicit entrypoints; neither imports a historical experiment runner.
 - Governance is a local check layer, never a method-runtime dependency.

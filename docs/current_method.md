@@ -1,18 +1,47 @@
-# Current formal method
+# Current integrated candidate
 
-The formal method writes a projection margin before the first Wan VAE decode
-into the normalized terminal latent. It encodes a finite circular state-clock,
-then performs a fixed bounded blind read over persisted receiver observations.
-The core is in `main/tube_state`; shared Wan adapters are in `runtime/wan`; the
-sole formal orchestration is `experiments/wan_state_clock`.
+The adopted historical method remains available through
+`experiments.wan_state_clock.run`. The new integrated candidate uses fresh
+prompt/seed noise, runs the native Wan trajectory to state 44, and forks OFF,
+SINGLE46, and MULTI44_46 paths. SINGLE46 receives the complete fixed native
+response budget `0.042943312697648145`; MULTI44_46 receives half at each step.
+Every second control recomputes velocity and a temperature-one clean-leaf
+gradient from its controlled live state and full scheduler history. Steps
+47--49 remain uncontrolled.
 
-The runner accepts only `state_clock_v1`. It holds fixed arm and receiver-encode
-denominators, persists running/failure/missing states, and applies truth only
-after blind ranking. Message 0 and message 1 use identical condition-specific
-save/readback and candidate budgets; NORMAL is saved once, while RESAVED, DELETE,
-and REPEAT receive a matched second lossy save before readback.
+The payload is one arbitrary nibble, not an A/B alias. RM(1,3) maps four net
+bits to eight data windows with physical hard-window distance four; three keyed
+pilot windows use a separate loss term with fixed weight `0.25`. The bounded
+decoder guarantees only unique recovery when `2*hard_errors+erasures<4`.
+It makes no frame-error or soft-channel claim. The 16-way target uses the mean
+of all rivals; with two templates this expression is exactly the historical
+`codes[m]-codes[1-m]` tanh objective.
 
-Historical AISB, C2A, C2T1, projection-only fallback, and compatibility
-interfaces are intentionally absent from authoritative main. Existing real Wan records are
-fixed-condition diagnostics; this source adds no GPU rerun or scientific
-conclusion.
+The receiver maps every message to eleven keyed base phases, negating data
+states according to its RM word and leaving the three pilots common. It reuses
+the legacy fixed-gain `state_clock.observe` update and bounded clock paths, but
+its 16-code score is a new receiver and is not described as the previously
+validated A/B `local_state` result. The legacy A/B code and tests remain intact.
+The receiver accepts only four phase observations and a public codebook; prompt,
+truth, original latent, writer evidence, and edit truth are absent. Truth joins
+happen after ranking and existence decisions.
+
+Two independent OFF sources are generated and fully received before the
+threshold is frozen. Each source statistic is the maximum over all 16 messages,
+clock paths, seven saved views, and the fixed three-crop aggregate. Any missing
+view makes calibration `UNCALIBRATED`; evaluation cannot return a payload in
+that state. Two calibration sources give empirical rank resolution 1/3 and do
+not support a low-FPR claim.
+
+The fixed roster is two calibration OFF contents and two evaluation contents
+carrying payloads `0x5` and `0xa`. Evaluation generates OFF, SINGLE46, and
+MULTI44_46 for each content. Every arm persists FULL, three actual 129-frame
+crop MP4s, DELETE90, SPEED5_4, and a second-generation REENCODE. Every saved
+view receives four independent VAE phase encodes. The denominator is four fresh
+cases, eight arms, 56 saved views, and 224 receiver encodes; failures and
+missing rows remain in place.
+
+This tree contains no GPU/model result for the integrated candidate. CPU/fake
+tests establish code, call accounting, lifecycle, blindness, and denominator
+behavior only. They do not establish payload recovery after real generation,
+quality, generalization, FPR, or paper readiness.
