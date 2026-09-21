@@ -192,7 +192,7 @@ def test_same_history_unit_probe_budget_and_source_history_are_exact():
     assert not torch.equal(after, zero_next)
 
 
-def test_generate_calibration_case_is_fresh_and_uses_no_saved_cache(monkeypatch, tmp_path):
+def test_generate_calibration_case_is_fresh_and_uses_no_saved_cache(monkeypatch, tmp_path, capsys):
     pipe = SimpleNamespace(scheduler=FakeScheduler(), transformer=FakeTransformer())
     monkeypatch.setattr(run, "prepare_generation", lambda config, load_vae=False: (
         pipe, torch.zeros(1, 1, 2, 2, 2), torch.tensor(1.0), torch.tensor(-1.0), torch.float32,
@@ -204,10 +204,55 @@ def test_generate_calibration_case_is_fresh_and_uses_no_saved_cache(monkeypatch,
     assert result["actual_calls"]["transformer_completed"] == 100
     assert result["actual_calls"]["scheduler_step_completed"] == 50
     assert (tmp_path / "fresh" / "OFF_terminal.pt").exists()
+    progress = run.load(tmp_path / "fresh" / "progress.json")
+    assert progress["actual_calls"]["transformer_completed"] == 100
+    assert progress["actual_calls"]["scheduler_step_completed"] == 50
+    console = capsys.readouterr().out
+    assert "stage=generate arm=OFF" in console
+    assert "model_step_pairs_completed=50" in console
+
+
+def complete_view(detection=None):
+    return {
+        "status": "SCORED",
+        "observations": {str(phase): {"status": "COMPLETE"} for phase in run.PHASES},
+        "detection": detection or fake_detection(5, 0.4),
+    }
+
+
+def fake_child_runner(tmp_path, *, partial_calibration=False):
+    config = run.load(run.MANIFEST)
+    by_id = {case["id"]: case for case in config["cases"]}
+
+    def execute(command, log_path):
+        case_id = command[command.index("--case-id") + 1]
+        stage = command[command.index("--stage") + 1]
+        case_root = Path(command[command.index("--output") + 1])
+        case_root.mkdir(parents=True, exist_ok=True)
+        case = by_id[case_id]
+        record = run.empty_case(case)
+        record.update(actual_calls={}, failures=[], config=run.case_config(config, case))
+        if stage == "generate":
+            record["status"] = "GENERATION_COMPLETE"
+            run.dump(case_root / "generation.json", record)
+        else:
+            record["status"] = "EXECUTION_COMPLETE"
+            for item in record["videos"].values():
+                item["status"] = "MEDIA_COMPLETE"
+                item["views"] = {view: complete_view() for view in run.VIEWS}
+                if partial_calibration and case["role"] == "calibration_off":
+                    item["views"]["DELETE90"]["status"] = "PARTIAL_OR_FAILED"
+                    item["views"]["DELETE90"]["observations"]["0"]["status"] = "FAILED"
+            run.dump(case_root / "result.json", record)
+        log_path.write_text(f"progress fake case={case_id} stage={stage}\n", encoding="utf-8")
+        print(f"progress fake case={case_id} stage={stage}", flush=True)
+        return 0
+
+    return execute
 
 
 def test_run_all_predeclares_every_failure_row(monkeypatch, tmp_path):
-    monkeypatch.setattr(run.subprocess, "run", lambda *args, **kwargs: SimpleNamespace(returncode=1))
+    monkeypatch.setattr(run, "_run_child", lambda *args, **kwargs: (_ for _ in ()).throw(OSError("spawn failed")))
     result = run.run_all(run.MANIFEST, tmp_path / "failed")
     assert result["fixed_denominator"] == {
         "fresh_cases": 4, "generated_arms": 8, "saved_attack_views": 56,
@@ -216,6 +261,80 @@ def test_run_all_predeclares_every_failure_row(monkeypatch, tmp_path):
     assert result["calibration"]["status"] == "UNCALIBRATED"
     assert sum(len(item["views"]) for case in result["cases"].values() for item in case["videos"].values()) == 56
     assert sum(len(view["observations"]) for case in result["cases"].values() for item in case["videos"].values() for view in item["views"].values()) == 224
+    assert len(result["failures"]) == 8
+    assert all("stage_logs" in case for case in result["cases"].values())
+
+
+def test_protocol_eligibility_rejects_partial_raw_ranking_and_prevents_freeze():
+    view = complete_view(fake_detection(5, 0.9))
+    view["status"] = "PARTIAL_OR_FAILED"
+    view["observations"]["0"]["status"] = "FAILED"
+    adapted = run.eligible_detection(view)
+    assert adapted["status"] == "INVALID"
+    assert adapted["raw_detection_status"] == "SCORED"
+    item = {"views": {name: complete_view() for name in run.VIEWS}}
+    item["views"]["FULL"] = view
+    aggregate, source = run._arm_source_record(item)
+    assert aggregate["status"] == "SCORED"  # crops remain internally complete
+    assert source["status"] == "INVALID"
+    calibration = payload_codec.freeze_calibration([source, source])
+    assert calibration["status"] == "UNCALIBRATED"
+    run._attach_decisions(item, {"status": "FROZEN", "threshold": 0.1}, truth=5, calibration_sample=False)
+    assert item["views"]["FULL"]["decision"] == {"status": "INVALID", "payload": None}
+    assert item["decision"]["status"] == "INVALID"
+
+
+def test_two_stage_orchestration_preserves_exits_calibration_decisions_and_completes(monkeypatch, tmp_path, capsys):
+    monkeypatch.setattr(run, "_run_child", fake_child_runner(tmp_path))
+    result = run.run_all(run.MANIFEST, tmp_path / "complete")
+    assert result["status"] == "EXECUTION_COMPLETE"
+    assert result["calibration"]["status"] == "FROZEN"
+    assert result["failures"] == []
+    for case in result["cases"].values():
+        assert case["generate_exit_code"] == 0 and case["media_exit_code"] == 0
+        assert set(case["stage_logs"]) == {"generate", "media"}
+    for case_id in ("cal_off_p0_s1", "cal_off_p1_s1"):
+        item = result["cases"][case_id]["videos"]["OFF"]
+        assert item["decision_role"] == "THRESHOLD_CONSTRUCTION_SAMPLE_NOT_HELDOUT_FPR"
+        assert item["decision"]["status"] == "REJECTED"
+        assert all(view["decision"]["status"] == "REJECTED" for view in item["views"].values())
+    console = capsys.readouterr().out
+    assert "case=cal_off_p0_s1 stage=generate" in console
+    assert "progress fake" in console
+
+
+def test_uncalibrated_still_runs_eval_but_never_returns_payload(monkeypatch, tmp_path):
+    monkeypatch.setattr(run, "_run_child", fake_child_runner(tmp_path, partial_calibration=True))
+    result = run.run_all(run.MANIFEST, tmp_path / "uncalibrated")
+    assert result["calibration"]["status"] == "UNCALIBRATED"
+    assert result["status"] == "WITH_RETAINED_FAILURES"
+    for case_id in ("eval_p2_s2_m5", "eval_p3_s3_ma"):
+        case = result["cases"][case_id]
+        assert case["generate_exit_code"] == 0 and case["media_exit_code"] == 0
+        for item in case["videos"].values():
+            assert item["decision"]["status"] == "UNCALIBRATED"
+            assert item["decision"]["payload"] is None
+            assert all(view["decision"]["status"] == "UNCALIBRATED" and view["decision"]["payload"] is None for view in item["views"].values())
+
+
+def test_one_spawn_exception_is_retained_without_aborting_later_children(monkeypatch, tmp_path):
+    successful = fake_child_runner(tmp_path)
+    calls = 0
+
+    def one_failure(command, log_path):
+        nonlocal calls
+        calls += 1
+        if calls == 1:
+            raise OSError("one launch failure")
+        return successful(command, log_path)
+
+    monkeypatch.setattr(run, "_run_child", one_failure)
+    result = run.run_all(run.MANIFEST, tmp_path / "spawn")
+    assert calls == 8
+    assert result["failures"][0]["kind"] == "CHILD_SPAWN_OR_TEE_FAILURE"
+    first = result["cases"]["cal_off_p0_s1"]
+    assert first["generate_exit_code"] is None and first["media_exit_code"] == 0
+    assert len(first["videos"]["OFF"]["views"]) == 7
 
 
 def test_media_attack_chain_has_seven_saved_views_and_four_phases(monkeypatch, tmp_path):

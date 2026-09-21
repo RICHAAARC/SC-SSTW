@@ -30,8 +30,19 @@ Two independent OFF sources are generated and fully received before the
 threshold is frozen. Each source statistic is the maximum over all 16 messages,
 clock paths, seven saved views, and the fixed three-crop aggregate. Any missing
 view makes calibration `UNCALIBRATED`; evaluation cannot return a payload in
-that state. Two calibration sources give empirical rank resolution 1/3 and do
-not support a low-FPR claim.
+that state. The fixed evaluation generation and attack collection still runs so
+the denominator and engineering failures remain observable, but all existence
+decisions stay `UNCALIBRATED` and return no payload. The two calibration OFF
+sources receive the same per-view, crop-aggregate, and source decisions after
+threshold construction; they are labeled construction samples and are not
+held-out FPR evidence. Two calibration sources give empirical rank resolution
+1/3 and do not support a low-FPR claim.
+
+A raw receiver ranking remains persisted even when only some phase encodes are
+available. Protocol eligibility is stricter: a view can enter calibration,
+aggregation, source maximization, or existence decisions only when the view is
+`SCORED` and all four phase rows are `COMPLETE`. Partial raw rankings therefore
+cannot freeze a threshold or return a payload.
 
 The fixed roster is two calibration OFF contents and two evaluation contents
 carrying payloads `0x5` and `0xa`. Evaluation generates OFF, SINGLE46, and

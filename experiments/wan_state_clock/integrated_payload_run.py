@@ -107,10 +107,19 @@ def case_config(config: dict, case: dict) -> dict:
 
 
 def _counter(result: dict):
+    def snapshot():
+        return {
+            "status": result["status"],
+            "current": result.get("progress"),
+            "actual_calls": dict(result["actual_calls"]),
+        }
+
     def count(kind: str, completed: bool):
         key = kind + ("_completed" if completed else "_attempted")
         result["actual_calls"][key] = result["actual_calls"].get(key, 0) + 1
-        dump(Path(result["_progress_path"]), {key: result["actual_calls"][key], "status": result["status"]})
+        dump(Path(result["_progress_path"]), snapshot())
+        if kind == "transformer" and completed and result["actual_calls"][key] % 20 == 0:
+            print(f"progress model_step_pairs_completed={result['actual_calls'][key] // 2}", flush=True)
     return count
 
 
@@ -171,6 +180,7 @@ def generate_case(case_id: str, config_path, output) -> dict:
 
     count = _counter(result)
     pipe = initial = prompt = negative = None
+    print(f"progress case={case_id} stage=generate", flush=True)
     try:
         result["source_commit"] = subprocess.check_output(["git", "rev-parse", "HEAD"], text=True).strip()
         result["source_files_sha256"] = {
@@ -191,6 +201,8 @@ def generate_case(case_id: str, config_path, output) -> dict:
         np.savez(output / "payload_codebook.npz", **book)
         payload = payload_codec.parse_payload(case.get("payload", 0))
         for arm in case_arms(case):
+            result["progress"] = {"case": case_id, "stage": "generate", "arm": arm}
+            print(f"progress case={case_id} stage=generate arm={arm}", flush=True)
             item = result["videos"][arm]
             try:
                 controls = () if arm == "OFF" else ((46,) if arm.startswith("SINGLE") else (44, 46))
@@ -225,6 +237,8 @@ def generate_case(case_id: str, config_path, output) -> dict:
         "cuda_peak_allocated_bytes": torch.cuda.max_memory_allocated() if torch.cuda.is_available() else None,
     }
     save()
+    dump(Path(result["_progress_path"]), {"status": result["status"], "current": result.get("progress"),
+                                           "actual_calls": dict(result["actual_calls"])})
     return result
 
 
@@ -272,11 +286,14 @@ def media_case(case_id: str, config_path, output) -> dict:
 
     count = _counter(result)
     vae = None
+    print(f"progress case={case_id} stage=media", flush=True)
     save()
     try:
         vae = load_frozen_vae(case_config(config, case))
         book = {key: value for key, value in np.load(output / "payload_codebook.npz").items()}
         for arm in case_arms(case):
+            result["progress"] = {"case": case_id, "stage": "media", "arm": arm}
+            print(f"progress case={case_id} stage=media arm={arm}", flush=True)
             item = result["videos"][arm]
             rgb = None
             try:
@@ -293,6 +310,8 @@ def media_case(case_id: str, config_path, output) -> dict:
                 continue
             full_path = output / "received_videos" / arm / "FULL.mp4"
             for view in VIEWS:
+                result["progress"] = {"case": case_id, "stage": "media", "arm": arm, "view": view}
+                print(f"progress case={case_id} stage=media arm={arm} view={view}", flush=True)
                 view_row = item["views"][view]
                 pixels = None
                 try:
@@ -356,13 +375,89 @@ def media_case(case_id: str, config_path, output) -> dict:
         "cuda_peak_allocated_bytes": torch.cuda.max_memory_allocated() if torch.cuda.is_available() else None,
     }
     save()
+    dump(Path(result["_progress_path"]), {"status": result["status"], "current": result.get("progress"),
+                                           "actual_calls": dict(result["actual_calls"])})
     return result
 
 
+def eligible_detection(view_row: dict) -> dict:
+    """Adapt raw ranking to the protocol: all four phase rows must complete."""
+    raw = view_row.get("detection") or {"status": "INVALID"}
+    phases = view_row.get("observations", {})
+    incomplete = [str(phase) for phase in PHASES if phases.get(str(phase), {}).get("status") != "COMPLETE"]
+    if view_row.get("status") != "SCORED" or incomplete or raw.get("status") != "SCORED":
+        return {
+            "status": "INVALID",
+            "reason": "VIEW_NOT_PROTOCOL_ELIGIBLE",
+            "view_status": view_row.get("status"),
+            "incomplete_phases": incomplete,
+            "raw_detection_status": raw.get("status"),
+        }
+    return raw
+
+
 def _arm_source_record(item: dict) -> tuple[dict, dict]:
-    detections = {view: item.get("views", {}).get(view, {}).get("detection") or {"status": "INVALID"} for view in VIEWS}
+    detections = {view: eligible_detection(item.get("views", {}).get(view, {})) for view in VIEWS}
     aggregate = payload_codec.aggregate_crop_views(detections)
     return aggregate, payload_codec.source_max_statistic(detections, aggregate)
+
+
+def _attach_decisions(item: dict, calibration: dict, *, truth: int | None, calibration_sample: bool) -> None:
+    aggregate, source_row = _arm_source_record(item)
+    item["crop_sequence_aggregate"] = aggregate
+    item["source_max_statistic"] = source_row
+    item["decision_role"] = (
+        "THRESHOLD_CONSTRUCTION_SAMPLE_NOT_HELDOUT_FPR" if calibration_sample else "EVALUATION"
+    )
+    marked = truth is not None
+    for view in VIEWS:
+        detection = eligible_detection(item.get("views", {}).get(view, {}))
+        decision = payload_codec.decide(detection, calibration)
+        item["views"][view]["decision"] = decision
+        item["views"][view]["reporting_only"] = {
+            "decision_role": item["decision_role"],
+            "truth_available_after_blind_decision": marked,
+            "true_payload": truth,
+            "accepted_and_correct": None if not marked else decision.get("status") == "DETECTED" and decision.get("payload") == truth,
+        }
+    aggregate_decision = payload_codec.decide(aggregate, calibration)
+    item["crop_sequence_aggregate"]["decision"] = aggregate_decision
+    item["crop_sequence_aggregate"]["reporting_only"] = {
+        "decision_role": item["decision_role"],
+        "truth_available_after_blind_decision": marked,
+        "true_payload": truth,
+        "accepted_and_correct": None if not marked else aggregate_decision.get("status") == "DETECTED" and aggregate_decision.get("payload") == truth,
+    }
+    if source_row.get("status") != "SCORED":
+        decision = {"status": "INVALID", "payload": None, "reason": source_row.get("reason")}
+    else:
+        winner = source_row["winning_view"]
+        detection = aggregate if winner == "CROP_SEQUENCE_AGGREGATE" else eligible_detection(item["views"][winner])
+        decision = payload_codec.decide(detection, calibration)
+        decision["source_max_statistic"] = source_row["statistic"]
+        decision["winning_view"] = winner
+    item["decision"] = decision
+    item["reporting_only"] = {
+        "decision_role": item["decision_role"],
+        "truth_available_after_blind_decision": marked,
+        "true_payload": truth,
+        "accepted_and_correct": None if not marked else decision.get("status") == "DETECTED" and decision.get("payload") == truth,
+    }
+
+
+def _run_child(command: list[str], log_path: Path) -> int:
+    """Tee child progress to the notebook/stdout while retaining an exact log."""
+    with log_path.open("w", encoding="utf-8") as log:
+        child = subprocess.Popen(
+            command, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
+            text=True, bufsize=1,
+        )
+        assert child.stdout is not None
+        for line in child.stdout:
+            print(line, end="", flush=True)
+            log.write(line)
+            log.flush()
+        return child.wait()
 
 
 def run_all(config_path, output) -> dict:
@@ -385,18 +480,36 @@ def run_all(config_path, output) -> dict:
         case_root = output / case["id"]
         for stage in ("generate", "media"):
             log_path = output / f"{case['id']}.{stage}.log"
-            with log_path.open("w", encoding="utf-8") as log:
-                child = subprocess.run(
-                    [sys.executable, "-u", "-m", MODULE, "--config", str(config_path), "--output", str(case_root),
-                     "--case-id", case["id"], "--stage", stage],
-                    stdout=log, stderr=subprocess.STDOUT, check=False,
-                )
+            command = [sys.executable, "-u", "-m", MODULE, "--config", str(config_path), "--output", str(case_root),
+                       "--case-id", case["id"], "--stage", stage]
+            print(f"progress case={case['id']} stage={stage} log={log_path}", flush=True)
+            previous = result["cases"][case["id"]]
+            previous.setdefault("stage_logs", {})[stage] = str(log_path.relative_to(output))
+            try:
+                returncode = _run_child(command, log_path)
+            except Exception as exc:
+                failure = {"case_id": case["id"], "stage": stage, "log": str(log_path.relative_to(output)),
+                           "error": repr(exc), "kind": "CHILD_SPAWN_OR_TEE_FAILURE"}
+                result["failures"].append(failure)
+                previous.setdefault("parent_failures", []).append(failure)
+                previous[stage + "_exit_code"] = None
+                previous["status"] = "FAILED_LAUNCH_OR_RESULT"
+                dump(output / "result.json", result)
+                continue
             record_path = case_root / ("generation.json" if stage == "generate" else "result.json")
             if record_path.exists():
-                result["cases"][case["id"]] = load(record_path)
+                current = load(record_path)
+                for key, value in previous.items():
+                    if key.endswith("_exit_code") or key in ("stage_logs", "parent_failures"):
+                        current[key] = value
+                result["cases"][case["id"]] = current
             else:
                 result["cases"][case["id"]]["status"] = "FAILED_LAUNCH_OR_RESULT"
-            result["cases"][case["id"]][stage + "_exit_code"] = child.returncode
+                failure = {"case_id": case["id"], "stage": stage, "log": str(log_path.relative_to(output)),
+                           "error": "child result file missing", "kind": "CHILD_RESULT_MISSING"}
+                result["failures"].append(failure)
+                result["cases"][case["id"]].setdefault("parent_failures", []).append(failure)
+            result["cases"][case["id"]][stage + "_exit_code"] = returncode
             dump(output / "result.json", result)
 
     calibration_cases = [case for case in config["cases"] if case["role"] == "calibration_off"]
@@ -415,6 +528,11 @@ def run_all(config_path, output) -> dict:
     calibration = payload_codec.freeze_calibration(calibration_rows, config["calibration"]["guard"])
     result["calibration"] = calibration
     dump(output / "calibration.json", calibration)
+    for case in calibration_cases:
+        case_result = result["cases"][case["id"]]
+        for item in case_result["videos"].values():
+            _attach_decisions(item, calibration, truth=None, calibration_sample=True)
+        dump(output / case["id"] / "result.json", case_result)
     dump(output / "result.json", result)
     for case in evaluation_cases:
         execute_case(case)
@@ -422,41 +540,7 @@ def run_all(config_path, output) -> dict:
         case_result = result["cases"][case["id"]]
         truth = payload_codec.parse_payload(case["payload"])
         for arm, item in case_result["videos"].items():
-            aggregate, source_row = _arm_source_record(item)
-            item["crop_sequence_aggregate"] = aggregate
-            item["source_max_statistic"] = source_row
-            marked = arm != "OFF"
-            for view in VIEWS:
-                detection = item["views"][view].get("detection") or {"status": "INVALID"}
-                view_decision = payload_codec.decide(detection, calibration)
-                item["views"][view]["decision"] = view_decision
-                item["views"][view]["reporting_only"] = {
-                    "truth_available_after_blind_decision": marked,
-                    "true_payload": truth if marked else None,
-                    "accepted_and_correct": None if not marked else view_decision.get("status") == "DETECTED" and view_decision.get("payload") == truth,
-                }
-            aggregate_decision = payload_codec.decide(aggregate, calibration)
-            item["crop_sequence_aggregate"]["decision"] = aggregate_decision
-            item["crop_sequence_aggregate"]["reporting_only"] = {
-                "truth_available_after_blind_decision": marked,
-                "true_payload": truth if marked else None,
-                "accepted_and_correct": None if not marked else aggregate_decision.get("status") == "DETECTED" and aggregate_decision.get("payload") == truth,
-            }
-            source_row = item["source_max_statistic"]
-            if source_row.get("status") != "SCORED":
-                decision = {"status": "INVALID", "payload": None, "reason": source_row.get("reason")}
-            else:
-                winner = source_row["winning_view"]
-                detection = item["crop_sequence_aggregate"] if winner == "CROP_SEQUENCE_AGGREGATE" else item["views"][winner]["detection"]
-                decision = payload_codec.decide(detection, calibration)
-                decision["source_max_statistic"] = source_row["statistic"]
-                decision["winning_view"] = winner
-            item["decision"] = decision
-            item["reporting_only"] = {
-                "truth_available_after_blind_decision": marked,
-                "true_payload": truth if marked else None,
-                "accepted_and_correct": None if not marked else decision.get("status") == "DETECTED" and decision.get("payload") == truth,
-            }
+            _attach_decisions(item, calibration, truth=None if arm == "OFF" else truth, calibration_sample=False)
         dump(output / case["id"] / "result.json", case_result)
     result["actual_calls_observed"] = {
         key + "_" + status: sum(
@@ -466,6 +550,7 @@ def run_all(config_path, output) -> dict:
     }
     result["status"] = "EXECUTION_COMPLETE" if (
         calibration.get("status") == "FROZEN"
+        and not result["failures"]
         and all(case.get("status") == "EXECUTION_COMPLETE" and case.get("generate_exit_code") == 0 and case.get("media_exit_code") == 0 for case in result["cases"].values())
     ) else "WITH_RETAINED_FAILURES"
     result["evidence_ceiling"] = config["evidence_ceiling"]

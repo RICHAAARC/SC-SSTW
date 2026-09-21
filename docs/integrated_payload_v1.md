@@ -52,7 +52,17 @@ Calibration runs both independent OFF sources through the complete fixed search
 family before any evaluation process starts. The frozen threshold is the larger
 source maximum plus `1e-6`. A source maximum includes message, clock path, all
 seven saved views, and the three-crop sequence aggregate. Missing or failed
-members invalidate that source and leave the run uncalibrated.
+members invalidate that source and leave the run uncalibrated. Raw rankings from
+partial phase sets are retained for diagnosis, but only a `SCORED` view with all
+four phase rows `COMPLETE` is eligible for aggregation, calibration, or a
+decision. If calibration is unavailable, the fixed evaluation cases still run
+to preserve payload/attack denominators; every existence decision is
+`UNCALIBRATED` and returns no payload.
+
+After freezing, the two calibration OFF sources receive the same per-view,
+crop-aggregate, and source decision fields as evaluation arms. They are marked
+`THRESHOLD_CONSTRUCTION_SAMPLE_NOT_HELDOUT_FPR`; their rejection is a mechanical
+consequence of the max-plus-guard rule, not held-out negative evidence.
 
 ## Fixed GPU candidate
 
@@ -76,6 +86,10 @@ The planned model-side counts are 4 generation preparations, 448 transformer
 forwards, 224 main native scheduler steps, 6 zero shadows, 6 unit probes, and 6
 CPU clean-leaf backwards. Media counts are 8 VAE decodes, 56 MP4 saves, 64 MP4
 reads, and 224 VAE encodes. Each counter records attempted and completed calls.
+The parent process tees child output to the live notebook and stage log. Its
+progress file keeps the cumulative call snapshot and current case/stage/arm/view;
+child launch failures and both stage exit codes remain attached to the fixed
+case rows.
 
 ## Evidence ceiling
 
