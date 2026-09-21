@@ -5,10 +5,17 @@
 ## 版本与输入
 
 - 基线：`29c634c251c879e37cbe674a23b89d0052553377`。
+- 分支：`dev/flow-tube-uniform-tanh`；最终可执行/notebook 审查版本 N3：`081266cab1eb2839a26d7db6e24ea41b3315348e`。
 - 初始源码提交 S：`5dc70aa3f6918bc4f29acdf01e1b570be0ce7b46`；缺资产分母修复 S2：`5934a46e965d584a9fee4c75d5e029cfca1e6e47`；无仓库导入的 notebook 定位修复 S3：`3dd3d0ec7c69dd67fcd6e7acf94ae0f3434ba084`。
 - notebook：`notebooks/flow_tube_uniform_tanh_colab.ipynb`，固定 pin=S3，首代码单元严格为独立两行 Drive mount；Run all 只有固定实验，无模式菜单或硬件白名单。
 - 固定模型 revision：`0fad780a534b6463e45facd96134c9f345acfa5b`。历史 response-selection source 的 revision 为 null，因此不声称历史权重身份相同。
 - 固定输入 run：`flow_tube_response_selection_20260921T013844126172Z`。2026-09-21 只读 Drive 元数据检查确认 run 目录与两个 case 目录均列出 generation/config/book/prompt/negative/OFF_nodes/OFF_snapshots；未在该检查中下载大张量或重验 hash。用户运行时由 runner 对旧 manifest 逐文件 hash，并核对 saved44 input/history fingerprint；缺失或不匹配保留失败。
+
+## 审计后发布入口（尚未执行）
+
+- notebook 默认首选输入：`/content/drive/MyDrive/Video-WM/FlowTubeResponseSelection/flow_tube_response_selection_20260921T013844126172Z`；若该目录不存在，纯标准库 locator 搜索同名唯一目录。缺文件由 runner 记录固定失败分母；多个同名目录明确报歧义。
+- 默认输出：`/content/drive/MyDrive/Video-WM/FlowTubeUniformTanh/flow_tube_uniform_tanh_<UTC>`。
+- 拟发布 Colab 链接：[固定 N3 notebook](https://colab.research.google.com/github/RICHAAARC/SC-SSTW/blob/081266cab1eb2839a26d7db6e24ea41b3315348e/notebooks/flow_tube_uniform_tanh_colab.ipynb)。当前提交尚未 push，此链接在上级发布审计与实际 push 前不构成可用发布入口。
 
 ## 固定方法与预算
 
@@ -30,7 +37,7 @@
 
 ## 同版本审查
 
-- A2 方法审查：对 N=`9d6a3e2e8af4bf6c9942f37caf9c75517d36c8d5` PASS，无方法阻断；固定 R*、受控 live history 重算、预算/非主张与无新 future-budget 依赖均符合任务卡。S2 未改变 runtime/config 方法语义。
-- A3 实现/证据初审：唯一 P1 是原 notebook `valid_source` 在 OUTPUT/runner 前要求两个 case×7文件全齐，缺资产时丢失10/30/120分母；S2 已关闭此项。N2 改为从 kernel 外部 cwd 导入 clone 内 runner，但未设置 `sys.path`，A3 实际复现 `ModuleNotFoundError: experiments` 并新增入口 P1。S3 删除该导入，把同一纯标准库定位片段直接生成进 notebook；改变项复核待写入。
-- A4 综合：待写入。
-- A5 里程碑审计：待写入。
+- A2 方法审查：对 N=`9d6a3e2e8af4bf6c9942f37caf9c75517d36c8d5` PASS，无方法阻断；固定 R*、受控 live history 重算、预算/非主张与无新 future-budget 依赖均符合任务卡。S2/S3 未改变 runtime/config 方法核心，该 PASS 适用于最终 N3 的方法范围。
+- A3 实现/证据审查：初审 P1 是原 notebook `valid_source` 在 OUTPUT/runner 前要求两个 case×7文件全齐，缺资产时丢失10/30/120分母；S2 已关闭。N2 从 kernel 外部 cwd 导入 clone 内 runner，A3 实际复现 `ModuleNotFoundError: experiments` 并新增入口 P1；S3 改为纯标准库内联定位。A3 对 N3 最终 PASS：两项 P1 均关闭，无剩余问题；复核了 clean HEAD/diff、缺失不筛选、外部 cwd 同源与实际 notebook locator、pin=S3 和代码 AST。
+- A4 综合：PASS，A2/A3 无未决分歧，N3 可交 A5。依据为14项原套回归、1项最终 locator 定向验证、上级真实顶层缺输入0模型调用证据，以及方法核心 byte 不变；结论保持 CPU/fake 工程上限。
+- A5 里程碑审计：PASS，无阻断，N3 可回交上级发布审计。独立核对 source pin、历史 oracle `R*` 及 SINGLE/MULTI 分配、真实受控 history 上的第二控制、47..49 自由尾程、10/30/120/4 固定分母、84/52/12/4/12预算、缺输入0模型调用和 import-free notebook 均一致；未把 CPU/fake 提升为 GPU、真实模型或科学结果。
