@@ -10,6 +10,7 @@ import torch
 from main.tube_state import projection_margin, state_clock
 from runtime.wan import tube_retention
 from experiments.wan_state_clock import flow_tube_uniform_tanh_run as run
+from scripts import build_flow_tube_uniform_tanh_notebook as notebook_builder
 from test_flow_tube_state_guidance import Model, book, native
 
 pytestmark = pytest.mark.unit
@@ -205,15 +206,22 @@ def test_real_cli_module_entry_retains_missing_source_failure(tmp_path):
     assert result["actual_calls"]["transformer_attempted"] == 0
 
 
-def test_locator_passes_incomplete_or_absent_run_to_fixed_runner(tmp_path):
+def test_notebook_locator_runs_outside_repo_and_preserves_missing_assets(monkeypatch, tmp_path):
+    outside = tmp_path / "outside"
+    outside.mkdir()
+    monkeypatch.chdir(outside)
     preferred = tmp_path / "Video-WM" / "FlowTubeResponseSelection" / run.SOURCE_RUN
     preferred.mkdir(parents=True)
-    assert run.locate_source_run(tmp_path) == preferred.resolve()
+    namespace = {"DRIVE_ROOT": tmp_path}
+    exec(notebook_builder.LOCATOR_SOURCE, namespace)
+    assert namespace["INPUT"] == preferred.resolve()
     preferred.rmdir()
-    assert run.locate_source_run(tmp_path) == preferred.resolve()
+    namespace = {"DRIVE_ROOT": tmp_path}
+    exec(notebook_builder.LOCATOR_SOURCE, namespace)
+    assert namespace["INPUT"] == preferred.resolve()
     first = tmp_path / "archive-a" / run.SOURCE_RUN
     second = tmp_path / "archive-b" / run.SOURCE_RUN
     first.mkdir(parents=True)
     second.mkdir(parents=True)
     with pytest.raises(RuntimeError, match="Ambiguous"):
-        run.locate_source_run(tmp_path)
+        exec(notebook_builder.LOCATOR_SOURCE, {"DRIVE_ROOT": tmp_path})

@@ -6,6 +6,16 @@ import subprocess
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
+LOCATOR_SOURCE = """SOURCE_RUN = 'flow_tube_response_selection_20260921T013844126172Z'
+preferred = DRIVE_ROOT / 'Video-WM' / 'FlowTubeResponseSelection' / SOURCE_RUN
+candidates = [path.resolve() for path in DRIVE_ROOT.rglob(SOURCE_RUN) if path.is_dir()]
+unique = []
+for path in candidates:
+    if path not in unique: unique.append(path)
+if len(unique) > 1:
+    raise RuntimeError(f'Ambiguous {SOURCE_RUN} directories: {unique}')
+INPUT = unique[0] if unique else preferred.resolve()
+"""
 
 
 def build(source_commit=None):
@@ -57,11 +67,8 @@ if version('torch') != '2.11.0+cu128':
 subprocess.run([sys.executable, '-m', 'pip', 'install', 'diffusers==0.40.0', 'transformers', 'accelerate', 'ftfy', 'sentencepiece', 'safetensors', 'huggingface_hub', 'numpy', 'Pillow'], check=True)
 subprocess.run([sys.executable, '-c', "import torch,diffusers; assert str(torch.__version__) == '2.11.0+cu128', torch.__version__; assert diffusers.__version__ == '0.40.0', diffusers.__version__"], check=True)
 """)
-    cell("code", "fixed-experiment", """from experiments.wan_state_clock.flow_tube_uniform_tanh_run import locate_source_run
-DRIVE_ROOT = Path('/content/drive/MyDrive')
-SOURCE_RUN = 'flow_tube_response_selection_20260921T013844126172Z'
-INPUT = locate_source_run(DRIVE_ROOT, SOURCE_RUN)
-OUTPUT = DRIVE_ROOT / 'Video-WM' / 'FlowTubeUniformTanh' / RUN_ID
+    cell("code", "fixed-experiment", """DRIVE_ROOT = Path('/content/drive/MyDrive')
+""" + LOCATOR_SOURCE + """OUTPUT = DRIVE_ROOT / 'Video-WM' / 'FlowTubeUniformTanh' / RUN_ID
 OUTPUT.parent.mkdir(parents=True, exist_ok=True)
 ARCHIVE = OUTPUT.parent / (RUN_ID + '.source.zip')
 subprocess.run(['git', '-C', str(SOURCE), 'archive', '--format=zip', '--output', str(ARCHIVE), SOURCE_COMMIT], check=True)
