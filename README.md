@@ -46,10 +46,10 @@ python -m experiments.wan_state_clock.integrated_payload_run \
 
 The original `experiments.wan_state_clock.run` remains available as the exact
 legacy terminal state-clock entrypoint. The fixed Colab notebook pins source S4
-`7ad4d9425bfb246b1cd5e4f95aab0c08de521df2` at notebook N4
-`909b7ae7a82e58d99704a50ba63c5ccc8ead6f81`:
+`7ad4d9425bfb246b1cd5e4f95aab0c08de521df2` at notebook N5
+`7cfe2e73807486700b6d62728fdb6cfccddbaf11`:
 
-https://colab.research.google.com/github/RICHAAARC/SC-SSTW/blob/909b7ae7a82e58d99704a50ba63c5ccc8ead6f81/notebooks/integrated_payload_v1_colab.ipynb
+https://colab.research.google.com/github/RICHAAARC/SC-SSTW/blob/7cfe2e73807486700b6d62728fdb6cfccddbaf11/notebooks/integrated_payload_v1_colab.ipynb
 
 Its output directory is
 `/content/drive/MyDrive/Video-WM/SC-SSTW-Core-Integration/integrated_payload_v1_<UTC timestamp>`.

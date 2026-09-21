@@ -2,7 +2,7 @@
 
 - Candidate branch: `dev/sc-sstw-core-integration`
 - Canonical-protocol source S4: `7ad4d9425bfb246b1cd5e4f95aab0c08de521df2`
-- Source-bound notebook N4: `909b7ae7a82e58d99704a50ba63c5ccc8ead6f81`
+- Source-bound notebook N5: `7cfe2e73807486700b6d62728fdb6cfccddbaf11`
 - Current review state: A2 and A3 passed D4 with no remaining blocker; the upper-level reviewer accepted D5 and authorized `main` publication
 - Pre-repair R1--R3 source S3: `8da1687c05a86bb320bcee67bb084bcf020068a7`
 - Previous N2 review: A2/A3/A4/A5 passed
@@ -89,13 +89,22 @@ approval likewise does not extend to the new Partial3 receiver or public API.
 Upper-level review task `01a0c2b5-515d-7c23-b01f-a3221ed6de2a` accepted D5,
 including the A2/A3 R1--R3 repairs, and explicitly authorized publication of the
 complete integrated core to `main`. This publication commit contains the
-accepted S4/N4 binding; final `main` and remote hashes and GitHub byte
+accepted S4/N5 binding; final `main` and remote hashes and GitHub byte
 verification belong to the publisher's release handback. At D5 no push or
 authoritative `main` modification had occurred, so this card does not claim the
 remote is already published.
 
 Fixed Colab URL:
-https://colab.research.google.com/github/RICHAAARC/SC-SSTW/blob/909b7ae7a82e58d99704a50ba63c5ccc8ead6f81/notebooks/integrated_payload_v1_colab.ipynb
+https://colab.research.google.com/github/RICHAAARC/SC-SSTW/blob/7cfe2e73807486700b6d62728fdb6cfccddbaf11/notebooks/integrated_payload_v1_colab.ipynb
 
 Fixed output root:
 `/content/drive/MyDrive/Video-WM/SC-SSTW-Core-Integration/integrated_payload_v1_<UTC timestamp>`.
+
+
+## Notebook installation repair (2026-09-22)
+
+Notebook N5 restores the installation commands from successful Uniform-Tanh notebook e41afef: torch 2.11.0+cu128 (install torch 2.11.0 with torchvision from the cu128 index if needed), diffusers 0.40.0, and the original dependency list including unrestricted transformers and NumPy. It prints full pip output and package versions and uses fresh subprocesses for version/CUDA checks. Source S4 and the 4/8/56/224 protocol are unchanged.
+
+Official package metadata confirms that all 35 stable transformers versions permitted by the removed >=4.49,<5 restriction require huggingface-hub<1.0, whereas diffusers 0.40.0 requires >=1.23,<2. This proves an incompatible installation specification; the original user pip ERROR text was not recovered, and no complete Colab installation or model execution was performed here.
+
+Two notebook checks and targeted stub paths passed; the generated artifact and builder are consistent. The fixed N5 notebook and generator were fetched from GitHub and compared byte-for-byte with local Git objects after publication.

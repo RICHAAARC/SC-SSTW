@@ -81,9 +81,9 @@ behavior only. They do not establish payload recovery after real generation,
 quality, generalization, FPR, or paper readiness.
 
 The accepted immutable binding is source S4
-`7ad4d9425bfb246b1cd5e4f95aab0c08de521df2` and notebook N4
-`909b7ae7a82e58d99704a50ba63c5ccc8ead6f81`. The fixed user-run notebook is
-https://colab.research.google.com/github/RICHAAARC/SC-SSTW/blob/909b7ae7a82e58d99704a50ba63c5ccc8ead6f81/notebooks/integrated_payload_v1_colab.ipynb
+`7ad4d9425bfb246b1cd5e4f95aab0c08de521df2` and notebook N5
+`7cfe2e73807486700b6d62728fdb6cfccddbaf11`. The fixed user-run notebook is
+https://colab.research.google.com/github/RICHAAARC/SC-SSTW/blob/7cfe2e73807486700b6d62728fdb6cfccddbaf11/notebooks/integrated_payload_v1_colab.ipynb
 and writes under
 `/content/drive/MyDrive/Video-WM/SC-SSTW-Core-Integration/integrated_payload_v1_<UTC timestamp>`.
 Remote publication and byte verification are reported separately by the release
