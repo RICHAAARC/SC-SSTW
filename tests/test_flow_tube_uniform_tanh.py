@@ -212,6 +212,10 @@ def test_notebook_locator_runs_outside_repo_and_preserves_missing_assets(monkeyp
     monkeypatch.chdir(outside)
     preferred = tmp_path / "Video-WM" / "FlowTubeResponseSelection" / run.SOURCE_RUN
     preferred.mkdir(parents=True)
+    def forbid_scan(*args, **kwargs):
+        raise AssertionError('Fixed input must not enumerate Drive directories')
+    for method in ('rglob', 'glob', 'iterdir'):
+        monkeypatch.setattr(type(tmp_path), method, forbid_scan)
     namespace = {"DRIVE_ROOT": tmp_path}
     exec(notebook_builder.LOCATOR_SOURCE, namespace)
     assert namespace["INPUT"] == preferred.resolve()
@@ -223,5 +227,13 @@ def test_notebook_locator_runs_outside_repo_and_preserves_missing_assets(monkeyp
     second = tmp_path / "archive-b" / run.SOURCE_RUN
     first.mkdir(parents=True)
     second.mkdir(parents=True)
-    with pytest.raises(RuntimeError, match="Ambiguous"):
-        exec(notebook_builder.LOCATOR_SOURCE, {"DRIVE_ROOT": tmp_path})
+    namespace = {"DRIVE_ROOT": tmp_path}
+    exec(notebook_builder.LOCATOR_SOURCE, namespace)
+    assert namespace["INPUT"] == preferred
+    assert len(namespace["missing_inputs"]) == 14
+    for case in run.CASES:
+        (preferred / case).mkdir(parents=True)
+        for name in namespace["required_names"]:
+            (preferred / case / name).touch()
+    exec(notebook_builder.LOCATOR_SOURCE, namespace)
+    assert namespace["missing_inputs"] == []

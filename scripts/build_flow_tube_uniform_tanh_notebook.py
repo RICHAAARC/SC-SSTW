@@ -7,14 +7,18 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 LOCATOR_SOURCE = """SOURCE_RUN = 'flow_tube_response_selection_20260921T013844126172Z'
-preferred = DRIVE_ROOT / 'Video-WM' / 'FlowTubeResponseSelection' / SOURCE_RUN
-candidates = [path.resolve() for path in DRIVE_ROOT.rglob(SOURCE_RUN) if path.is_dir()]
-unique = []
-for path in candidates:
-    if path not in unique: unique.append(path)
-if len(unique) > 1:
-    raise RuntimeError(f'Ambiguous {SOURCE_RUN} directories: {unique}')
-INPUT = unique[0] if unique else preferred.resolve()
+# Drive parent chain and both cases were verified before notebook publication.
+INPUT = DRIVE_ROOT / 'Video-WM' / 'FlowTubeResponseSelection' / SOURCE_RUN
+print('Fixed input:', INPUT, flush=True)
+required_names = ('generation.json', 'config.json', 'codebook.npz',
+                  'OFF_nodes.pt', 'OFF_snapshots.pt', 'prompt.pt', 'negative.pt')
+missing_inputs = [str(INPUT / case / name)
+                  for case in ('dev_p0_s0', 'dev_p1_s0') for name in required_names
+                  if not (INPUT / case / name).is_file()]
+if missing_inputs:
+    print('Missing fixed inputs (runner will record failures):', missing_inputs, flush=True)
+else:
+    print('Fixed inputs present: 14/14; runner will verify hashes.', flush=True)
 """
 
 
@@ -73,6 +77,7 @@ OUTPUT.parent.mkdir(parents=True, exist_ok=True)
 ARCHIVE = OUTPUT.parent / (RUN_ID + '.source.zip')
 subprocess.run(['git', '-C', str(SOURCE), 'archive', '--format=zip', '--output', str(ARCHIVE), SOURCE_COMMIT], check=True)
 LOG = OUTPUT.parent / (RUN_ID + '.launcher.log')
+print('Output:', OUTPUT, 'Launcher log:', LOG, flush=True)
 command = [sys.executable, '-u', '-m', 'experiments.wan_state_clock.flow_tube_uniform_tanh_run', '--source', str(INPUT), '--output', str(OUTPUT)]
 with LOG.open('w') as log:
     process = subprocess.Popen(command, cwd=SOURCE, start_new_session=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, bufsize=1)

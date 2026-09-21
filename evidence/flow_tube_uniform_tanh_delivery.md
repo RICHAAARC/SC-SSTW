@@ -2,6 +2,16 @@
 
 状态：上级最终发布审计已接受，候选分支已 push，固定源码和 notebook 的远端内容已核验；未运行 GPU、真实模型、Colab 或 Drive 写入。
 
+## 2026-09-21 固定输入路径修正
+
+按用户要求移除 notebook 和生成器中的整个 MyDrive 递归搜索。现在直接使用下述固定路径，仅对两个 case 的七个明确文件名执行存在性检查并打印结果；缺失仍交给原 runner 落盘失败，不搜索替代目录。实验源码继续固定为 `3dd3d0ec7c69dd67fcd6e7acf94ae0f3434ba084`，实验方法和分母未改变。
+
+发布前通过 Drive 元数据核对了父目录链：My Drive → Video-WM (`1JvuNbrLs6Mo0yoPPgeYBuiVvd2UvCglA`) → FlowTubeResponseSelection (`14HdbCA53U8p0g9D11o87sLC4nCLCSOw-`) → run (`1ueeNOt9uI_d9E92S0YG51LvcEQbA2XEK`)。两个 case (`1wBMnpoLgXG-h0h-vfWv9yVp8FgYUlc6A`、`134f-wQ4zB6z1dVvfImHzcz_EAaxNcVlS`) 的 generation.json、config.json、codebook.npz、OFF_nodes.pt、OFF_snapshots.pt、prompt.pt、negative.pt 均存在且非空，共14/14。此次未下载大张量，内容 hash 仍由运行器校验。
+
+以下 N3 发布和审查记录保留为历史；其递归 locator 已被本次固定路径修正替代。新版 notebook 开始执行时同时打印输入、输出和 launcher 日志路径。
+
+修正验证：`pytest -q tests/test_flow_tube_uniform_tanh.py -k notebook_locator` 为1 passed、5 deselected；测试禁止 rglob/glob/iterdir，确认其他目录同名副本不影响固定输入，缺14文件和14文件齐全两种情形均符合预期。全部代码单元 AST、独立两行 mount、无执行输出、固定 S3 pin 与无目录扫描检查通过，`git diff --check` 通过。未执行 GPU/Colab。
+
 ## 版本与输入
 
 - 基线：`29c634c251c879e37cbe674a23b89d0052553377`。
@@ -13,7 +23,7 @@
 
 ## 已发布入口
 
-- notebook 预期输入路径：`/content/drive/MyDrive/Video-WM/FlowTubeResponseSelection/flow_tube_response_selection_20260921T013844126172Z`。纯标准库 locator 每次均在整个 `MyDrive` 下递归搜索同名 run 目录；唯一结果交给 runner，零结果回退上述预期路径，多个不同结果明确报歧义。缺文件由 runner 记录固定失败分母。
+- notebook 固定输入路径：`/content/drive/MyDrive/Video-WM/FlowTubeResponseSelection/flow_tube_response_selection_20260921T013844126172Z`。直接使用该路径，无递归搜索、无替代目录选择。缺文件由 runner 记录固定失败分母。
 - 默认输出：`/content/drive/MyDrive/Video-WM/FlowTubeUniformTanh/flow_tube_uniform_tanh_<UTC>`。
 - 已发布 Colab 链接：[固定 N3 notebook](https://colab.research.google.com/github/RICHAAARC/SC-SSTW/blob/081266cab1eb2839a26d7db6e24ea41b3315348e/notebooks/flow_tube_uniform_tanh_colab.ipynb)。固定 notebook pin 为 S3；由用户 Run all，agent 未执行 Colab。
 - 2026-09-21 发布核验：仅推送 `dev/flow-tube-uniform-tanh`；GitHub raw 读取的 N3 notebook 及 S3 runner/config/runtime/builder/tests 六份文件均与本地对应 Git 对象逐字节相等。远端 notebook 的两行 Drive mount、S3 pin 与无输出状态一致。notebook SHA256：`8fa3d535d0f27b4c7bb874ce36c905f1094be122cc991481cb1683620d554061`。远端 `main` 在发布前后均为 `3f0a5fafa7c2aa56fbc69bed17649accf49ae152`。
