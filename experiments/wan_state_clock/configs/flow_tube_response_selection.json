@@ -1,0 +1,67 @@
+{
+  "base_config": {
+    "protocol": "state_clock_v1",
+    "terminal_mode": "generate_new",
+    "edit_source_frame": 90,
+    "model": {
+      "id": "Wan-AI/Wan2.1-T2V-1.3B-Diffusers",
+      "revision": null
+    },
+    "generation": {
+      "role": "one_terminal_feedback_diagnostic",
+      "prompt": "locked camera, a single small red sailboat gliding slowly across a calm lake, gentle ripples, stable daylight, no people, no cuts",
+      "negative_prompt": "text, watermark, logo, camera motion, cuts, multiple objects, flicker",
+      "seed": 20260916,
+      "height": 320,
+      "width": 512,
+      "frames": 181,
+      "fps": 8,
+      "steps": 50,
+      "guidance_scale": 5.0,
+      "max_sequence_length": 512
+    },
+    "key_utf8": "WanProjection-first-validation-key-v1",
+    "output_drive_parent": "/content/drive/MyDrive/Video-WM/FlowTubeTerminalFeedback"
+  },
+  "development": [
+    {
+      "id": "dev_p0_s0",
+      "prompt": "locked camera, a single small red sailboat gliding slowly across a calm lake, gentle ripples, stable daylight, no people, no cuts",
+      "seed": 20260916
+    },
+    {
+      "id": "dev_p1_s0",
+      "prompt": "locked camera, a single yellow tram moving slowly along a straight tree-lined street, stable overcast daylight, no people, no cuts",
+      "seed": 20260916
+    }
+  ],
+  "arms": [
+    "OFF",
+    "LOCAL_A",
+    "LOCAL_B",
+    "RESPONSE_A",
+    "RESPONSE_B"
+  ],
+  "write_indices": [
+    46
+  ],
+  "name": "flow_tube_response_selection",
+  "protocol": "T46 finite amplitude +/- response; same epsilon; loss-only selection; independent formal replay",
+  "calls_per_case": {
+    "transformer": 148,
+    "scheduler_step": 84,
+    "unit_response_probe_step": 2,
+    "terminal_backward": 0,
+    "vae_decode": 5,
+    "mp4_save": 5,
+    "vae_encode": 20
+  },
+  "decision": {
+    "tau_relative": 1e-06,
+    "eligible": "loss0-loss_side > tau",
+    "both_tie": "plus",
+    "none": "zero formal continuation",
+    "missing": "failed response slot"
+  },
+  "scope": "two existing development cases; future LAST budget oracle; no independent holdout/FPR/trajectory-success claim"
+}
