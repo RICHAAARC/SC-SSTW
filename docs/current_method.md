@@ -1,7 +1,7 @@
-# Current integrated candidate
+# Current integrated method
 
 The adopted historical method remains available through
-`experiments.wan_state_clock.run`. The new integrated candidate uses fresh
+`experiments.wan_state_clock.run`. The integrated method uses fresh
 prompt/seed noise, runs the native Wan trajectory to state 44, and forks OFF,
 SINGLE46, and MULTI44_46 paths. SINGLE46 receives the complete fixed native
 response budget `0.042943312697648145`; MULTI44_46 receives half at each step.
@@ -74,7 +74,17 @@ path. It selects the aggregate payload first, then combines that payload's
 matched-path window evidence and runs RM decoding, so different view winners
 cannot substitute unrelated hard evidence.
 
-This tree contains no GPU/model result for the integrated candidate. CPU/fake
+This complete engineering integration is the method accepted for publication
+to `main`. It contains no GPU/model result for the new integrated method. CPU/fake
 tests establish code, call accounting, lifecycle, blindness, and denominator
 behavior only. They do not establish payload recovery after real generation,
 quality, generalization, FPR, or paper readiness.
+
+The accepted immutable binding is source S4
+`7ad4d9425bfb246b1cd5e4f95aab0c08de521df2` and notebook N4
+`909b7ae7a82e58d99704a50ba63c5ccc8ead6f81`. The fixed user-run notebook is
+https://colab.research.google.com/github/RICHAAARC/SC-SSTW/blob/main/notebooks/integrated_payload_v1_colab.ipynb
+and writes under
+`/content/drive/MyDrive/Video-WM/SC-SSTW-Core-Integration/integrated_payload_v1_<UTC timestamp>`.
+Remote publication and byte verification are reported separately by the release
+publisher.

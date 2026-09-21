@@ -3,7 +3,7 @@
 - Candidate branch: `dev/sc-sstw-core-integration`
 - Canonical-protocol source S4: `7ad4d9425bfb246b1cd5e4f95aab0c08de521df2`
 - Source-bound notebook N4: `909b7ae7a82e58d99704a50ba63c5ccc8ead6f81`
-- Current review state: A2 and A3 passed D4 with no remaining blocker; upper-level final `main` audit pending
+- Current review state: A2 and A3 passed D4 with no remaining blocker; the upper-level reviewer accepted D5 and authorized `main` publication
 - Pre-repair R1--R3 source S3: `8da1687c05a86bb320bcee67bb084bcf020068a7`
 - Previous N2 review: A2/A3/A4/A5 passed
   `5c28961a927d2479048eea9a659eda3d435a8d78`; that approval predates S3 and
@@ -83,8 +83,19 @@ clean-leaf backwards.
 
 No GPU, Wan model, Colab, Drive, or remote run was executed. There is no real
 attack-recovery, quality, FPR, or generalization result for S4. The historical
-two-message 4/4 result applies only to its exact older method. S4 must first be
-published by the upper-level release process before the pinned notebook can run
-from the configured remote. Nothing was pushed and authoritative `main` was not
-modified. The current A2/A3 pass covers D4 only; the upper-level final `main`
-audit remains pending.
+two-message 4/4 result applies only to its exact older method. The previous A5
+approval likewise does not extend to the new Partial3 receiver or public API.
+
+Upper-level review task `01a0c2b5-515d-7c23-b01f-a3221ed6de2a` accepted D5,
+including the A2/A3 R1--R3 repairs, and explicitly authorized publication of the
+complete integrated core to `main`. This publication commit contains the
+accepted S4/N4 binding; final `main` and remote hashes and GitHub byte
+verification belong to the publisher's release handback. At D5 no push or
+authoritative `main` modification had occurred, so this card does not claim the
+remote is already published.
+
+Fixed Colab URL:
+https://colab.research.google.com/github/RICHAAARC/SC-SSTW/blob/main/notebooks/integrated_payload_v1_colab.ipynb
+
+Fixed output root:
+`/content/drive/MyDrive/Video-WM/SC-SSTW-Core-Integration/integrated_payload_v1_<UTC timestamp>`.
