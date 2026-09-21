@@ -3,10 +3,11 @@
 - Candidate branch: `dev/sc-sstw-core-integration`
 - Canonical-protocol source S4: `7ad4d9425bfb246b1cd5e4f95aab0c08de521df2`
 - Source-bound notebook N4: `909b7ae7a82e58d99704a50ba63c5ccc8ead6f81`
-- Current review state: A2 passed D3 R1/R3; A3 directed review of the S4 R2 repair pending
+- Current review state: A2 and A3 passed D4 with no remaining blocker; upper-level final `main` audit pending
 - Pre-repair R1--R3 source S3: `8da1687c05a86bb320bcee67bb084bcf020068a7`
 - Previous N2 review: A2/A3/A4/A5 passed
-  `5c28961a927d2479048eea9a659eda3d435a8d78`; that approval predates S3
+  `5c28961a927d2479048eea9a659eda3d435a8d78`; that approval predates S3 and
+  its A5 result does not approve the new Partial3 receiver or public API
 
 ## R1--R3 repair
 
@@ -68,6 +69,15 @@ clean-leaf backwards.
   omitted-count generation, and fixed-runner protocol checks remained valid.
   After binding S4, the notebook checks passed 2/2. These are
   CPU/synthetic/stub engineering checks only.
+- A2 confirmed that `payload_codec` did not change from D3 to D4, so its R1/R3
+  pass remains applicable. It also confirmed canonical equality and fixed-runner
+  consistency without rerunning tests.
+- A3 enumerated all 21 canonical leaf fields: every single-field value change
+  and an extra field were rejected. Its same-ID wrong-CRF plus frozen-calibration
+  counterexample reached zero VAE, read, and decide calls and could not return
+  `DETECTED`; canonical prompt/seed input and the fixed runner remained valid.
+  Ten directed pytest checks passed, and the notebook's first mount cell and S4
+  source pin were correct.
 
 ## Pending evidence and scope
 
@@ -76,4 +86,5 @@ attack-recovery, quality, FPR, or generalization result for S4. The historical
 two-message 4/4 result applies only to its exact older method. S4 must first be
 published by the upper-level release process before the pinned notebook can run
 from the configured remote. Nothing was pushed and authoritative `main` was not
-modified.
+modified. The current A2/A3 pass covers D4 only; the upper-level final `main`
+audit remains pending.
