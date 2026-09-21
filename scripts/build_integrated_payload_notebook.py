@@ -4,7 +4,7 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-SOURCE_SHA = "129fc66baf18067774807e74054f6b2fc2e1788f"
+SOURCE_SHA = "b914c7387d22cb722f4f37e0d0f0592a0ef0ba08"
 REPOSITORY = "https://github.com/RICHAAARC/SC-SSTW.git"
 OUTPUT = Path(__file__).parents[1] / "notebooks" / "integrated_payload_v1_colab.ipynb"
 

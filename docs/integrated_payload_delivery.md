@@ -1,8 +1,9 @@
 # Integrated Payload V1 delivery card
 
 - Candidate branch: `dev/sc-sstw-core-integration`
-- Source S2: pending freeze
-- Notebook N2: pending source binding
+- Source S2: `b914c7387d22cb722f4f37e0d0f0592a0ef0ba08`
+- Notebook N2: the source-binding commit containing this card; exact SHA is
+  reported in the freeze handoff because a commit cannot embed its own SHA
 - Review state: A2/A3 repair applied; fresh same-version review pending
 
 ## Delivered change
@@ -23,8 +24,10 @@ launch failures, fixed slots, live tee output, and cumulative progress.
 
 ## Validation
 
-Pending final S2/N2 test run. The fixed denominator remains 4 fresh cases,
-8 arms, 56 saved views, and 224 receiver encodes.
+The affected integrated test file passed 14/14 after the final progress/status
+change. The complete project suite passed 28/28 during the repair cycle. The
+fixed denominator remains 4 fresh cases, 8 arms, 56 saved views, and 224
+receiver encodes. Final notebook pin/reproducibility checks run at N2.
 
 ## Pending external evidence
 
