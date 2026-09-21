@@ -4,7 +4,7 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-SOURCE_SHA = "b914c7387d22cb722f4f37e0d0f0592a0ef0ba08"
+SOURCE_SHA = "8da1687c05a86bb320bcee67bb084bcf020068a7"
 REPOSITORY = "https://github.com/RICHAAARC/SC-SSTW.git"
 OUTPUT = Path(__file__).parents[1] / "notebooks" / "integrated_payload_v1_colab.ipynb"
 
@@ -31,7 +31,8 @@ def build():
             "Run all cells once. This fixed candidate creates four fresh Wan prompt/seed cases, "
             "freezes calibration from two independent OFF sources, then evaluates OFF, SINGLE46, "
             "and MULTI44_46 on two new sources carrying payloads `0x5` and `0xa`. It writes 56 "
-            "saved views and performs 224 four-phase receiver encodes. No mode or strength scan is exposed."
+            "saved views and performs 224 four-phase receiver encodes with the bound Partial3-V2 receiver. "
+            "No mode or strength scan is exposed."
         ),
         code(
             "import subprocess, sys\n"
