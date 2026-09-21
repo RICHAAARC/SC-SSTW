@@ -1,9 +1,10 @@
 # Integrated Payload V1 delivery card
 
 - Candidate branch: `dev/sc-sstw-core-integration`
-- R1--R3 source S3: `8da1687c05a86bb320bcee67bb084bcf020068a7`
-- Source-bound notebook N3: `a26c44f969e12f2078a0d11abf1954e38cae2549`
-- Current review state: A2/A3 directed review of this R1--R3 revision pending
+- Canonical-protocol source S4: `7ad4d9425bfb246b1cd5e4f95aab0c08de521df2`
+- Source-bound notebook N4: `909b7ae7a82e58d99704a50ba63c5ccc8ead6f81`
+- Current review state: A2 passed D3 R1/R3; A3 directed review of the S4 R2 repair pending
+- Pre-repair R1--R3 source S3: `8da1687c05a86bb320bcee67bb084bcf020068a7`
 - Previous N2 review: A2/A3/A4/A5 passed
   `5c28961a927d2479048eea9a659eda3d435a8d78`; that approval predates S3
 
@@ -25,6 +26,12 @@ experiment imports the same public 44/46 writer and four-phase receiver. The
 receiver rebuilds its codebook and has no writer-terminal, trajectory, truth,
 or saved-codebook input. Missing or mismatched protocol/key calibration retains
 ranking but returns `UNCALIBRATED` and no payload.
+S4 closes the remaining R2 protocol-identity gap: public generation and receive
+now require the entire canonical JSON, including every method, model,
+generation, and media field. Keeping the same protocol ID while changing or
+omitting a field is rejected before model loading. The fixed runner checks its
+overlapping model, generation, payload, and control fields against that same
+canonical document.
 
 R3 stores hard-window evidence on every payload's best path. Crop aggregation
 ranks a payload, combines only that payload's matched-path evidence across the
@@ -55,13 +62,18 @@ clean-leaf backwards.
   from payload 13's per-view path evidence.
 - The affected integrated file passed 19/19. The one authorized complete CPU
   suite passed 33/33. After pinning S3, notebook plus public-entry checks passed
-  4/4. These are CPU/synthetic/stub engineering checks only.
+  4/4. These are the D3 validation results and were not rerun for S4.
+- S4's directed set passed 12/12: seven same-ID value mutations and one missing
+  field were rejected before VAE loading; canonical public writer/receiver,
+  omitted-count generation, and fixed-runner protocol checks remained valid.
+  After binding S4, the notebook checks passed 2/2. These are
+  CPU/synthetic/stub engineering checks only.
 
 ## Pending evidence and scope
 
 No GPU, Wan model, Colab, Drive, or remote run was executed. There is no real
-attack-recovery, quality, FPR, or generalization result for S3. The historical
-two-message 4/4 result applies only to its exact older method. S3 must first be
+attack-recovery, quality, FPR, or generalization result for S4. The historical
+two-message 4/4 result applies only to its exact older method. S4 must first be
 published by the upper-level release process before the pinned notebook can run
 from the configured remote. Nothing was pushed and authoritative `main` was not
 modified.
