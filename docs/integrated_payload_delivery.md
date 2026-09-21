@@ -95,7 +95,7 @@ authoritative `main` modification had occurred, so this card does not claim the
 remote is already published.
 
 Fixed Colab URL:
-https://colab.research.google.com/github/RICHAAARC/SC-SSTW/blob/main/notebooks/integrated_payload_v1_colab.ipynb
+https://colab.research.google.com/github/RICHAAARC/SC-SSTW/blob/909b7ae7a82e58d99704a50ba63c5ccc8ead6f81/notebooks/integrated_payload_v1_colab.ipynb
 
 Fixed output root:
 `/content/drive/MyDrive/Video-WM/SC-SSTW-Core-Integration/integrated_payload_v1_<UTC timestamp>`.

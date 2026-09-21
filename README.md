@@ -49,7 +49,7 @@ legacy terminal state-clock entrypoint. The fixed Colab notebook pins source S4
 `7ad4d9425bfb246b1cd5e4f95aab0c08de521df2` at notebook N4
 `909b7ae7a82e58d99704a50ba63c5ccc8ead6f81`:
 
-https://colab.research.google.com/github/RICHAAARC/SC-SSTW/blob/main/notebooks/integrated_payload_v1_colab.ipynb
+https://colab.research.google.com/github/RICHAAARC/SC-SSTW/blob/909b7ae7a82e58d99704a50ba63c5ccc8ead6f81/notebooks/integrated_payload_v1_colab.ipynb
 
 Its output directory is
 `/content/drive/MyDrive/Video-WM/SC-SSTW-Core-Integration/integrated_payload_v1_<UTC timestamp>`.
