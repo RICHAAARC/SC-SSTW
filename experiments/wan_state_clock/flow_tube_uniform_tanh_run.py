@@ -71,6 +71,23 @@ def guard(source, output):
     return source, output
 
 
+def locate_source_run(drive_root, source_run=SOURCE_RUN):
+    """Locate the exact run directory without gating its case/file completeness."""
+    drive_root = Path(drive_root)
+    preferred = drive_root / "Video-WM" / "FlowTubeResponseSelection" / source_run
+    candidates = [path.resolve() for path in drive_root.rglob(source_run) if path.is_dir()]
+    unique = []
+    for path in candidates:
+        if path not in unique:
+            unique.append(path)
+    if len(unique) > 1:
+        raise RuntimeError(f"Ambiguous {source_run} directories: {unique}")
+    if unique:
+        return unique[0]
+    # Passing the expected absent path into run_all preserves all fixed failed slots.
+    return preferred.resolve()
+
+
 def validate_manifest(manifest):
     if manifest["name"] != "flow_tube_uniform_tanh" or manifest["protocol"] != "Uniform-Tanh-44/46":
         raise ValueError("wrong fixed protocol")

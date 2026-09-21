@@ -203,3 +203,17 @@ def test_real_cli_module_entry_retains_missing_source_failure(tmp_path):
     assert result["status"] == "WITH_RETAINED_FAILURES"
     assert all(item["status"] == "FAILED" for item in result["videos"].values())
     assert result["actual_calls"]["transformer_attempted"] == 0
+
+
+def test_locator_passes_incomplete_or_absent_run_to_fixed_runner(tmp_path):
+    preferred = tmp_path / "Video-WM" / "FlowTubeResponseSelection" / run.SOURCE_RUN
+    preferred.mkdir(parents=True)
+    assert run.locate_source_run(tmp_path) == preferred.resolve()
+    preferred.rmdir()
+    assert run.locate_source_run(tmp_path) == preferred.resolve()
+    first = tmp_path / "archive-a" / run.SOURCE_RUN
+    second = tmp_path / "archive-b" / run.SOURCE_RUN
+    first.mkdir(parents=True)
+    second.mkdir(parents=True)
+    with pytest.raises(RuntimeError, match="Ambiguous"):
+        run.locate_source_run(tmp_path)

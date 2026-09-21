@@ -57,20 +57,10 @@ if version('torch') != '2.11.0+cu128':
 subprocess.run([sys.executable, '-m', 'pip', 'install', 'diffusers==0.40.0', 'transformers', 'accelerate', 'ftfy', 'sentencepiece', 'safetensors', 'huggingface_hub', 'numpy', 'Pillow'], check=True)
 subprocess.run([sys.executable, '-c', "import torch,diffusers; assert str(torch.__version__) == '2.11.0+cu128', torch.__version__; assert diffusers.__version__ == '0.40.0', diffusers.__version__"], check=True)
 """)
-    cell("code", "fixed-experiment", """DRIVE_ROOT = Path('/content/drive/MyDrive')
+    cell("code", "fixed-experiment", """from experiments.wan_state_clock.flow_tube_uniform_tanh_run import locate_source_run
+DRIVE_ROOT = Path('/content/drive/MyDrive')
 SOURCE_RUN = 'flow_tube_response_selection_20260921T013844126172Z'
-preferred = DRIVE_ROOT / 'Video-WM' / 'FlowTubeResponseSelection' / SOURCE_RUN
-def valid_source(path):
-    required = ('generation.json', 'config.json', 'codebook.npz', 'prompt.pt', 'negative.pt', 'OFF_nodes.pt', 'OFF_snapshots.pt')
-    return path.is_dir() and all((path / case).is_dir() and all((path / case / name).is_file() for name in required) for case in ('dev_p0_s0', 'dev_p1_s0'))
-candidates = [preferred] if valid_source(preferred) else [path for path in DRIVE_ROOT.rglob(SOURCE_RUN) if valid_source(path)]
-unique = []
-for path in candidates:
-    resolved = path.resolve()
-    if resolved not in unique: unique.append(resolved)
-if len(unique) != 1:
-    raise FileNotFoundError(f'Expected exactly one complete {SOURCE_RUN}; found {len(unique)}: {unique}')
-INPUT = unique[0]
+INPUT = locate_source_run(DRIVE_ROOT, SOURCE_RUN)
 OUTPUT = DRIVE_ROOT / 'Video-WM' / 'FlowTubeUniformTanh' / RUN_ID
 OUTPUT.parent.mkdir(parents=True, exist_ok=True)
 ARCHIVE = OUTPUT.parent / (RUN_ID + '.source.zip')
