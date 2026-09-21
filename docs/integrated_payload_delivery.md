@@ -1,52 +1,67 @@
 # Integrated Payload V1 delivery card
 
 - Candidate branch: `dev/sc-sstw-core-integration`
-- Source S2: `b914c7387d22cb722f4f37e0d0f0592a0ef0ba08`
-- Notebook N2: `5c28961a927d2479048eea9a659eda3d435a8d78`
-- Review state: A2, A3, A4, and A5 passed N2 with no remaining blocker
+- R1--R3 source S3: `8da1687c05a86bb320bcee67bb084bcf020068a7`
+- Source-bound notebook N3: `a26c44f969e12f2078a0d11abf1954e38cae2549`
+- Current review state: A2/A3 directed review of this R1--R3 revision pending
+- Previous N2 review: A2/A3/A4/A5 passed
+  `5c28961a927d2479048eea9a659eda3d435a8d78`; that approval predates S3
 
-## Delivered change
+## R1--R3 repair
 
-The candidate integrates fresh Wan generation, four-bit RM payload and explicit
-pilots, fixed-budget SINGLE46/MULTI44_46 control, seven persisted views per arm,
-four-phase blind receive, fixed-gain state search, independent OFF calibration,
-per-view and crop/source decisions, and unknown rejection. Protocol eligibility
-requires all four receiver phases even when a partial raw ranking exists.
+R1 adds receiver protocol `SC-SSTW-Payload-RM13-Partial3-V2`. Complete
+four-group emissions keep the original numerical path. Exactly-three-group
+windows project only observed temporal components and clip once, without zero
+fill, `4/3`, or energy rescaling; fewer groups are erased. Full blocks, partial
+blocks, and observed components are reported separately. Scores, `q`, hard
+evidence, aggregation weights, and calibration use the same component support.
+Four completed phase encodes remain a separate formal view-eligibility rule.
 
-Calibration freezes or records `UNCALIBRATED` before evaluation. A failed
-calibration does not remove the fixed evaluation rows; it prevents every
-existence decision from returning `DETECTED` or a payload. Calibration OFF rows
-are labeled threshold-construction samples, not held-out FPR evidence.
+R2 adds the reusable `runtime.wan.integrated_core` API and
+`runtime.wan.integrated_cli`. A user can generate an MP4 from prompt, seed, any
+payload `0..15`, key, and the standalone protocol, or receive an MP4 from only
+its path, key, explicit protocol, and optional calibration. The fixed `[5,10]`
+experiment imports the same public 44/46 writer and four-phase receiver. The
+receiver rebuilds its codebook and has no writer-terminal, trajectory, truth,
+or saved-codebook input. Missing or mismatched protocol/key calibration retains
+ranking but returns `UNCALIBRATED` and no payload.
 
-The subprocess path preserves stage logs, generate/media exit codes, parent
-launch failures, fixed slots, live tee output, and cumulative progress.
+R3 stores hard-window evidence on every payload's best path. Crop aggregation
+ranks a payload, combines only that payload's matched-path evidence across the
+three received crop files, then runs RM decoding. View-global winners cannot
+supply evidence for a different payload.
+
+The earlier phase eligibility, retained generate/media exits and logs, live
+stdout tee, predeclared failure slots, calibration-source decision shape, and
+`UNCALIBRATED` evaluation fallback remain. The fixed denominator and call plan
+remain 4 cases, 8 arms, 56 saved views, 224 receiver encodes, 448 transformer
+forwards, 224 scheduler steps, and 6 each of zero shadows, unit probes, and CPU
+clean-leaf backwards.
 
 ## Validation
 
-The affected integrated test file passed 14/14 after the final progress/status
-change. The complete project suite passed 28/28 during the repair cycle. The
-fixed denominator remains 4 fresh cases, 8 arms, 56 saved views, and 224
-receiver encodes. The source-pin notebook and affected integrated checks passed
-16/16 after binding N2. This documentation-only final commit does not claim a
-new run of the complete 28-test suite.
+- R1 structural regression enumerated all 1,428 `scale=[5,4]` paths for the
+  145-frame SPEED5_4 geometry; every path has all eight data windows usable with
+  three or four groups. The nominal path has group counts
+  `[3,4,3,3,3,4,3,3]`. A controlled synthetic observation passed the complete
+  blind search and recovered payload 13. A separate check proves the four-group
+  projection remains exactly the original calculation.
+- R2 CPU stubs called the real public orchestration without a count callback,
+  passed payload 13 into the real control boundary, and exercised independent
+  MP4 receive with no writer artifacts. A one-phase failure kept raw `SCORED`
+  ranking but produced formal `INVALID` and no payload.
+- R3's counterexample gives the three views different global payload winners
+  `(1,2,3)` while payload 13 wins the aggregate; the decoder recovers 13 only
+  from payload 13's per-view path evidence.
+- The affected integrated file passed 19/19. The one authorized complete CPU
+  suite passed 33/33. After pinning S3, notebook plus public-entry checks passed
+  4/4. These are CPU/synthetic/stub engineering checks only.
 
-A2 closed four-phase eligibility, preservation of both stage exit codes, and
-the calibration-source decision shape; its two directed checks passed. A3
-confirmed that a real `g0` raw `SCORED` result becomes formal `INVALID` when the
-other phases are absent, and checked successful, spawn-failure, and
-missing-result fixed slots plus real subprocess stdout/stderr tee behavior;
-seven directed checks passed. A4 found no unresolved synthesis disagreement.
-A5 independently checked the fresh prefix-44 path, live histories at 44/46,
-blind receiver signature and truth-only-after-decision reporting, four-phase
-eligibility, no payload under `UNCALIBRATED`, the 4/8/56/224 denominator,
-failure retention, and the source-bound Run-all notebook; all milestone checks
-passed.
+## Pending evidence and scope
 
-## Pending external evidence
-
-GPU, Wan model, Colab, Drive, remote publication, real attack recovery,
-quality, generalization, and FPR evaluation were not executed. The notebook can
-run only after S2 is published to the configured remote. The A5 result supports
-handoff to the upper-level final `main` audit only; it is not scientific
-evidence. Nothing in this candidate was pushed, and authoritative `main` was
-not modified.
+No GPU, Wan model, Colab, Drive, or remote run was executed. There is no real
+attack-recovery, quality, FPR, or generalization result for S3. The historical
+two-message 4/4 result applies only to its exact older method. S3 must first be
+published by the upper-level release process before the pinned notebook can run
+from the configured remote. Nothing was pushed and authoritative `main` was not
+modified.
