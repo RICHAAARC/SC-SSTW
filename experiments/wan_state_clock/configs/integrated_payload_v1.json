@@ -51,6 +51,7 @@
     "data_windows": [1, 2, 3, 4, 6, 7, 8, 9],
     "pilot_windows": [0, 5, 10],
     "pilot_loss_weight": 0.25,
+    "partial_window_min_groups": 3,
     "temperature": 1
   },
   "control": {

@@ -58,6 +58,8 @@ nibble, key, and a public protocol file and produces an MP4 through the same
 and optional calibration; it does not read writer terminals, trajectories,
 truth, or saved codebooks. The fixed experiment imports these entrypoints while
 retaining its `[0x5,0xa]` roster and fixed denominators.
+The explicit protocol must exactly equal the canonical public JSON; the same ID
+does not authorize changed model, generation, method, or media fields.
 
 The fixed roster is two calibration OFF contents and two evaluation contents
 carrying payloads `0x5` and `0xa`. Evaluation generates OFF, SINGLE46, and

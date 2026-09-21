@@ -30,15 +30,15 @@ def load_protocol(path: str | Path | None = None) -> dict:
 
 
 def validate_protocol(protocol: dict) -> None:
-    if protocol.get("receiver_protocol_id") != payload_codec.RECEIVER_PROTOCOL_ID:
-        raise ValueError("unsupported receiver protocol")
-    generation = protocol.get("generation", {})
-    if (generation.get("frames"), generation.get("steps")) != (181, 50):
-        raise ValueError("the public writer requires the fixed 181-frame/50-step Wan protocol")
-    if protocol.get("control", {}).get("R_star") != payload_control.R_STAR:
-        raise ValueError("fixed control budget mismatch")
-    if protocol.get("payload", {}).get("pilot_loss_weight") != payload_codec.PILOT_LOSS_WEIGHT:
-        raise ValueError("fixed pilot coefficient mismatch")
+    """Require the complete canonical method/model/media definition.
+
+    Prompt and seed are deliberately absent from this document and are supplied
+    to :func:`generation_config`.  Every persisted protocol field is fixed;
+    sharing only the receiver ID is not calibration-compatible.
+    """
+    canonical = load_protocol()
+    if not isinstance(protocol, dict) or protocol != canonical:
+        raise ValueError("protocol must exactly match the canonical integrated payload protocol")
 
 
 def generation_config(protocol: dict, prompt: str, seed: int) -> dict:

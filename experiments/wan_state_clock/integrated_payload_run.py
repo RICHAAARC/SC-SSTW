@@ -103,6 +103,11 @@ def validate_manifest(config: dict) -> None:
     integrated_core.validate_protocol(public)
     if config["model"] != public["model"] or config["generation"] != public["generation"]:
         raise ValueError("fixed experiment must reuse the public model/generation protocol")
+    public_payload = public["payload"]
+    if any(config["payload"].get(key) != value for key, value in public_payload.items()):
+        raise ValueError("fixed experiment must reuse the public payload protocol")
+    if any(config["control"].get(key) != value for key, value in public["control"].items()):
+        raise ValueError("fixed experiment must reuse the public control protocol")
 
 
 def case_config(config: dict, case: dict) -> dict:

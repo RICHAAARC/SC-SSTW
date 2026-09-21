@@ -1,6 +1,7 @@
 """CPU/fake checks for the integrated four-bit writer/receiver candidate."""
 from __future__ import annotations
 
+import copy
 import inspect
 from pathlib import Path
 from types import SimpleNamespace
@@ -346,6 +347,43 @@ def test_public_receive_uses_only_mp4_key_protocol_calibration_and_partial_never
     assert result["detection"]["status"] == "SCORED"
     assert result["formal_detection"]["status"] == "INVALID"
     assert result["decision"]["status"] == "INVALID" and result["decision"]["payload"] is None
+
+
+@pytest.mark.parametrize(("field_path", "replacement", "delete"), (
+    (("model", "revision"), "wrong-revision", False),
+    (("generation", "height"), 256, False),
+    (("generation", "width"), 256, False),
+    (("generation", "guidance_scale"), 1.0, False),
+    (("payload", "code"), "uncoded", False),
+    (("payload", "partial_window_min_groups"), 2, False),
+    (("video", "crf"), 51, False),
+    (("video", "codec"), None, True),
+))
+def test_same_id_protocol_mutations_are_rejected_before_receiver_model_load(
+        monkeypatch, field_path, replacement, delete):
+    protocol = copy.deepcopy(integrated_core.load_protocol())
+    node = protocol
+    for key in field_path[:-1]:
+        node = node[key]
+    if delete:
+        del node[field_path[-1]]
+    else:
+        node[field_path[-1]] = replacement
+    assert protocol["receiver_protocol_id"] == payload_codec.RECEIVER_PROTOCOL_ID
+    loads = []
+    monkeypatch.setattr(integrated_core, "load_frozen_vae", lambda config: loads.append(config))
+    with pytest.raises(ValueError, match="exactly match"):
+        integrated_core.receive_pixels(torch.zeros(1, 1, 1, 3), b"key", protocol, None)
+    assert loads == []
+
+
+def test_fixed_runner_manifest_reuses_canonical_partial_protocol():
+    config = run.load(run.MANIFEST)
+    run.validate_manifest(config)
+    changed = copy.deepcopy(config)
+    changed["payload"]["partial_window_min_groups"] = 2
+    with pytest.raises(ValueError, match="public payload protocol"):
+        run.validate_manifest(changed)
 
 
 def complete_view(detection=None):

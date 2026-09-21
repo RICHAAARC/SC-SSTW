@@ -89,6 +89,9 @@ transformer before loading the VAE. `receive_mp4` accepts only a received MP4,
 key, explicit protocol, and optional calibration; it rebuilds the codebook from
 the key and never reads a writer terminal, trajectory, truth, or saved codebook.
 The standalone protocol is `runtime/wan/integrated_payload_protocol.json`.
+The public API accepts that complete canonical document only; retaining its ID
+while changing or omitting any method, model, generation, or media field is
+rejected before model loading or receive work begins.
 
 ```bash
 python -m runtime.wan.integrated_cli generate \
