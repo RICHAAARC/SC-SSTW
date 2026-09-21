@@ -33,6 +33,15 @@ coefficient allocates direction within that budget and is not added strength.
 The hard decoder accepts only a unique word satisfying `2e+s<4`, where `e` is
 the number of wrong visible data windows and `s` the erased data windows.
 
+Receiver protocol `SC-SSTW-Payload-RM13-Partial3-V2` keeps the original
+four-group emission calculation exactly. For a window with exactly three
+observable temporal groups, it sums only the corresponding three
+`direction[slot]` projections and clips once. It never fills the missing group,
+multiplies by `4/3`, or rescales energy; zero, one, or two groups erase the
+window. Records distinguish full blocks, partial blocks, and observed
+components. Matched score, `q`, hard evidence, crop weights, and calibration use
+the same observed-component support. This statistic requires a new threshold.
+
 ## Blind receiver and decisions
 
 Each payload defines eleven keyed phase states. Data-window phases are negated
@@ -55,7 +64,10 @@ seven saved views, and the three-crop sequence aggregate. Missing or failed
 members invalidate that source and leave the run uncalibrated. Raw rankings from
 partial phase sets are retained for diagnosis, but only a `SCORED` view with all
 four phase rows `COMPLETE` is eligible for aggregation, calibration, or a
-decision. If calibration is unavailable, the fixed evaluation cases still run
+decision. Four completed VAE phase calls and a three-or-four-group usable
+window are separate conditions: the first admits a view to the protocol; the
+second determines whether a clock-path window contributes or is erased. If
+calibration is unavailable, the fixed evaluation cases still run
 to preserve payload/attack denominators; every existence decision is
 `UNCALIBRATED` and returns no payload.
 
@@ -63,6 +75,37 @@ After freezing, the two calibration OFF sources receive the same per-view,
 crop-aggregate, and source decision fields as evaluation arms. They are marked
 `THRESHOLD_CONSTRUCTION_SAMPLE_NOT_HELDOUT_FPR`; their rejection is a mechanical
 consequence of the max-plus-guard rule, not held-out negative evidence.
+The frozen record binds the receiver protocol ID and a non-secret key
+identifier. A missing or mismatched binding leaves ranking visible but returns
+`UNCALIBRATED` with no payload. Applying this source-max threshold to one
+standalone video is conservative and does not claim the seven-view family ran.
+
+## Public core API and CLI
+
+`runtime.wan.integrated_core.generate_video` maps a prompt, seed, arbitrary
+payload `0..15`, and key to an MP4 through the same fresh prefix-44 and
+SINGLE46/MULTI44_46 controller as the fixed experiment. It releases the
+transformer before loading the VAE. `receive_mp4` accepts only a received MP4,
+key, explicit protocol, and optional calibration; it rebuilds the codebook from
+the key and never reads a writer terminal, trajectory, truth, or saved codebook.
+The standalone protocol is `runtime/wan/integrated_payload_protocol.json`.
+
+```bash
+python -m runtime.wan.integrated_cli generate \
+  --prompt "locked camera, a red sailboat crossing calm water" --seed 42 \
+  --payload 0xd --key example-key \
+  --protocol runtime/wan/integrated_payload_protocol.json \
+  --arm MULTI44_46 --output /tmp/marked.mp4
+
+python -m runtime.wan.integrated_cli receive \
+  --input-mp4 /tmp/received.mp4 --key example-key \
+  --protocol runtime/wan/integrated_payload_protocol.json \
+  --calibration /path/to/calibration.json --output /tmp/receive.json
+```
+
+Omitting `--calibration` retains raw ranking and produces `UNCALIBRATED` with
+no payload. The fixed `[0x5,0xa]` Run-all roster imports these functions rather
+than carrying a second branch or receiver implementation.
 
 ## Fixed GPU candidate
 
@@ -80,7 +123,10 @@ OFF/SINGLE46/MULTI44_46 for each of two evaluation sources. Each arm saves:
 Every saved MP4 is read back and independently VAE-encoded at phases 0, 1, 2,
 and 3. The predeclared denominator is 4 fresh cases, 8 arms, 56 views, and 224
 receiver encodes. The three crop files are real received assets; aggregation
-does not slice an already encoded full latent.
+does not slice an already encoded full latent. Aggregation ranks a payload from
+that payload's per-view best paths, then combines hard evidence from those same
+paths before RM decoding. It never combines global-winner evidence from one
+payload with another payload's score.
 
 The planned model-side counts are 4 generation preparations, 448 transformer
 forwards, 224 main native scheduler steps, 6 zero shadows, 6 unit probes, and 6
@@ -96,6 +142,11 @@ case rows.
 The fixed candidate has not been run on GPU, Wan, Colab, or Drive in this
 delivery. The earlier two-content/two-message 4/4 development result supports
 only its exact historical method. The new payload, pilot, state receiver,
-calibration, attacks, and new roster require the user-run notebook. No baseline,
+partial-three-group statistic, calibration, attacks, and new roster require the
+user-run notebook. CPU checks establish that every one of the 1,428 fixed
+`scale=[5,4]` paths has eight data windows with at least three groups for the
+145-frame speed geometry, and that a controlled synthetic full blind search can
+recover a payload. This is structural evidence, not real SPEED5_4 attack
+success. No baseline,
 large-FPR, quality-blind-review, generalization, or paper claim is part of this
 candidate.

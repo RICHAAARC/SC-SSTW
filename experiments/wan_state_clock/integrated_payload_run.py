@@ -18,14 +18,13 @@ import sys
 import traceback
 from pathlib import Path
 
-import numpy as np
 import torch
 
 from main.tube_state import payload_codec
-from runtime.wan import payload_control, trajectory
-from runtime.wan.generation import load_frozen_vae, prepare_generation
+from runtime.wan import integrated_core, payload_control, trajectory
+from runtime.wan.generation import load_frozen_vae
 from runtime.wan.io import dump, encode_rgb, read_mp4
-from runtime.wan.vae import _clear_cache, decode_normalized_latent, reencode_rgb24_readback
+from runtime.wan.vae import _clear_cache, decode_normalized_latent
 
 MANIFEST = Path(__file__).parent / "configs" / "integrated_payload_v1.json"
 MODULE = "experiments.wan_state_clock.integrated_payload_run"
@@ -98,6 +97,12 @@ def validate_manifest(config: dict) -> None:
         raise ValueError("fixed nonbinary evaluation payload roster mismatch")
     if config["control"]["R_star"] != R_STAR or config["payload"]["pilot_loss_weight"] != payload_codec.PILOT_LOSS_WEIGHT:
         raise ValueError("fixed control/pilot constants mismatch")
+    if config.get("receiver_protocol_id") != payload_codec.RECEIVER_PROTOCOL_ID:
+        raise ValueError("fixed partial-window receiver protocol mismatch")
+    public = integrated_core.load_protocol()
+    integrated_core.validate_protocol(public)
+    if config["model"] != public["model"] or config["generation"] != public["generation"]:
+        raise ValueError("fixed experiment must reuse the public model/generation protocol")
 
 
 def case_config(config: dict, case: dict) -> dict:
@@ -121,36 +126,6 @@ def _counter(result: dict):
         if kind == "transformer" and completed and result["actual_calls"][key] % 20 == 0:
             print(f"progress model_step_pairs_completed={result['actual_calls'][key] // 2}", flush=True)
     return count
-
-
-def _branch(pipe, z44, snapshot44, prompt, negative, dtype, guidance, controls, book, payload, count):
-    z = z44.to(next(pipe.transformer.parameters()).device)
-    scheduler = copy.deepcopy(snapshot44)
-    control_rows = []
-    gradient_rows = []
-    probe_rows = []
-    arrays = {}
-    per_step = R_STAR / len(controls) if controls else None
-    for index in range(44, 50):
-        velocity = trajectory.velocity(pipe, z, scheduler, prompt, negative, dtype, guidance, index, count)
-        if index in controls:
-            zero_next, _ = trajectory.zero_step(scheduler, z, velocity, index, count, "zero_shadow_step")
-            sigma = float(scheduler.sigmas[index])
-            raw, gradient = payload_control.clean_direction(z - sigma * velocity, book, payload, count)
-            gradient["index"] = index
-            unit, epsilon, probe = payload_control.prepare_direction(
-                scheduler, z, velocity, zero_next, raw, per_step, index, count,
-            )
-            z, scheduler, row, tensors = payload_control.controlled_step(
-                scheduler, z, velocity, zero_next, unit, epsilon, per_step, index, count,
-            )
-            control_rows.append(row)
-            gradient_rows.append(gradient)
-            probe_rows.append(probe)
-            arrays[str(index)] = tensors
-        else:
-            z = trajectory.native_step(scheduler, z, velocity, index, count)
-    return z.detach().cpu(), control_rows, gradient_rows, probe_rows, arrays
 
 
 def generate_case(case_id: str, config_path, output) -> dict:
@@ -179,46 +154,41 @@ def generate_case(case_id: str, config_path, output) -> dict:
         save()
 
     count = _counter(result)
-    pipe = initial = prompt = negative = None
     print(f"progress case={case_id} stage=generate", flush=True)
     try:
         result["source_commit"] = subprocess.check_output(["git", "rev-parse", "HEAD"], text=True).strip()
         result["source_files_sha256"] = {
             str(path): sha(path) for path in (
                 Path(__file__), MANIFEST, Path(payload_codec.__file__), Path(payload_control.__file__),
-                Path(trajectory.__file__), Path(sys.modules[prepare_generation.__module__].__file__),
+                Path(trajectory.__file__), Path(integrated_core.__file__),
             )
         }
-        count("generation", False)
-        pipe, initial, prompt, negative, dtype = prepare_generation(result["config"], load_vae=False)
-        count("generation", True)
-        result["fresh_generation"]["initial_noise_fingerprint"] = trajectory.fingerprint(initial)
-        z44, snapshot44 = trajectory.prefix44(
-            pipe, initial, prompt, negative, dtype, result["config"]["generation"]["guidance_scale"], count,
-        )
-        result["fresh_generation"]["state44_fingerprint"] = trajectory.fingerprint(z44)
-        book = payload_codec.codebook(config["key_utf8"].encode())
-        np.savez(output / "payload_codebook.npz", **book)
         payload = payload_codec.parse_payload(case.get("payload", 0))
+        arm_names = {arm: ("OFF" if arm == "OFF" else ("SINGLE46" if arm.startswith("SINGLE") else "MULTI44_46")) for arm in case_arms(case)}
+        generated = integrated_core.generate_payload_terminals(
+            result["config"], payload, config["key_utf8"].encode(), tuple(arm_names.values()), count,
+        )
+        result["fresh_generation"]["initial_noise_fingerprint"] = generated["initial_noise_fingerprint"]
+        result["fresh_generation"]["state44_fingerprint"] = generated["state44_fingerprint"]
         for arm in case_arms(case):
             result["progress"] = {"case": case_id, "stage": "generate", "arm": arm}
             print(f"progress case={case_id} stage=generate arm={arm}", flush=True)
             item = result["videos"][arm]
             try:
-                controls = () if arm == "OFF" else ((46,) if arm.startswith("SINGLE") else (44, 46))
-                terminal, rows, gradients, probes, arrays = _branch(
-                    pipe, z44, snapshot44, prompt, negative, dtype,
-                    result["config"]["generation"]["guidance_scale"], controls, book, payload, count,
-                )
+                branch = generated["arms"][arm_names[arm]]
+                if branch["status"] != "GENERATED":
+                    raise RuntimeError(branch["error"])
+                terminal = branch["terminal"]
                 torch.save(terminal, output / f"{arm}_terminal.pt")
                 array_path = output / "control_tensors" / arm
                 array_path.mkdir(parents=True, exist_ok=True)
-                for index, tensors in arrays.items():
+                for index, tensors in branch["control_tensors"].items():
                     torch.save(tensors, array_path / f"step{index}.pt")
                 item.update(status="GENERATED", payload=None if arm == "OFF" else payload,
-                            control_steps=rows, clean_gradients=gradients, unit_probes=probes,
-                            cumulative_native_response=payload_control.cumulative(rows),
-                            terminal_fingerprint=trajectory.fingerprint(terminal),
+                            control_steps=branch["control_steps"], clean_gradients=branch["clean_gradients"],
+                            unit_probes=branch["unit_probes"],
+                            cumulative_native_response=branch["cumulative_native_response"],
+                            terminal_fingerprint=branch["terminal_fingerprint"],
                             terminal_path=f"{arm}_terminal.pt")
             except Exception as exc:
                 item["status"] = "FAILED_GENERATION"
@@ -227,9 +197,6 @@ def generate_case(case_id: str, config_path, output) -> dict:
     except Exception as exc:
         fail("generation_setup", exc)
     finally:
-        if pipe is not None:
-            pipe.transformer = None
-        pipe = initial = prompt = negative = None
         release()
     result["status"] = "GENERATION_COMPLETE" if all(item["status"] == "GENERATED" for item in result["videos"].values()) and not result["failures"] else "WITH_RETAINED_FAILURES"
     result["resources_generation"] = {
@@ -289,8 +256,10 @@ def media_case(case_id: str, config_path, output) -> dict:
     print(f"progress case={case_id} stage=media", flush=True)
     save()
     try:
-        vae = load_frozen_vae(case_config(config, case))
-        book = {key: value for key, value in np.load(output / "payload_codebook.npz").items()}
+        protocol = integrated_core.load_protocol()
+        integrated_core.validate_protocol(protocol)
+        vae = load_frozen_vae(protocol)
+        key = config["key_utf8"].encode()
         for arm in case_arms(case):
             result["progress"] = {"case": case_id, "stage": "media", "arm": arm}
             print(f"progress case={case_id} stage=media arm={arm}", flush=True)
@@ -321,38 +290,24 @@ def media_case(case_id: str, config_path, output) -> dict:
                     encode_rgb(attacked, path, config["generation"]["fps"], 18)
                     count("mp4_save", True)
                     view_row.update(status="VIDEO_PERSISTED", path=str(path.relative_to(output)), frames=int(attacked.shape[0]))
-                    count("mp4_read", False)
-                    pixels = read_mp4(path)
-                    count("mp4_read", True)
-                    observations = {}
-                    for phase in PHASES:
-                        phase_row = view_row["observations"][str(phase)]
-                        encoded = None
-                        try:
-                            shifted = pixels[phase:]
-                            groups = (len(shifted) - 1) // 4
-                            used = 1 + 4 * groups
-                            count("vae_encode", False)
-                            encoded = reencode_rgb24_readback(vae, shifted[:used]).detach().cpu()
-                            count("vae_encode", True)
-                            latent_path = output / "observations" / arm / view / f"g{phase}.pt"
-                            latent_path.parent.mkdir(parents=True, exist_ok=True)
-                            torch.save(encoded, latent_path)
-                            observations[phase] = encoded.numpy()
-                            phase_row.update(status="COMPLETE", frames_used=used, tail_discarded=len(shifted) - used,
-                                             path=str(latent_path.relative_to(output)))
-                        except Exception as exc:
-                            phase_row.update(status="FAILED", error=repr(exc))
-                            fail(f"receive/{arm}/{view}/g{phase}", exc)
-                        finally:
-                            encoded = None
-                            _clear_cache(vae)
-                            release()
-                            save()
-                    detection = payload_codec.read(observations, book)
-                    view_row["detection"] = detection
-                    dump(output / "detections" / arm / f"{view}.json", detection)
-                    view_row["status"] = "SCORED" if len(observations) == 4 and detection["status"] == "SCORED" else "PARTIAL_OR_FAILED"
+                    def persist_phase(phase, encoded, phase_row):
+                        print(f"progress case={case_id} stage=media arm={arm} view={view} phase={phase}", flush=True)
+                        latent_path = output / "observations" / arm / view / f"g{phase}.pt"
+                        latent_path.parent.mkdir(parents=True, exist_ok=True)
+                        torch.save(encoded, latent_path)
+                        phase_row["path"] = str(latent_path.relative_to(output))
+
+                    received = integrated_core.receive_mp4(
+                        path, key, protocol, None, vae=vae, count=count, on_phase=persist_phase,
+                    )
+                    view_row["observations"] = received["observations"]
+                    view_row["detection"] = received["detection"]
+                    for phase, phase_row in received["observations"].items():
+                        if phase_row.get("status") != "COMPLETE":
+                            result["failures"].append({"stage": f"receive/{arm}/{view}/g{phase}",
+                                                       "error": phase_row.get("error", "phase failed")})
+                    dump(output / "detections" / arm / f"{view}.json", received["detection"])
+                    view_row["status"] = received["status"]
                 except Exception as exc:
                     view_row.update(status="FAILED", error=repr(exc))
                     fail(f"media/{arm}/{view}", exc)
@@ -383,17 +338,7 @@ def media_case(case_id: str, config_path, output) -> dict:
 def eligible_detection(view_row: dict) -> dict:
     """Adapt raw ranking to the protocol: all four phase rows must complete."""
     raw = view_row.get("detection") or {"status": "INVALID"}
-    phases = view_row.get("observations", {})
-    incomplete = [str(phase) for phase in PHASES if phases.get(str(phase), {}).get("status") != "COMPLETE"]
-    if view_row.get("status") != "SCORED" or incomplete or raw.get("status") != "SCORED":
-        return {
-            "status": "INVALID",
-            "reason": "VIEW_NOT_PROTOCOL_ELIGIBLE",
-            "view_status": view_row.get("status"),
-            "incomplete_phases": incomplete,
-            "raw_detection_status": raw.get("status"),
-        }
-    return raw
+    return integrated_core.eligible_detection(view_row.get("status"), view_row.get("observations", {}), raw)
 
 
 def _arm_source_record(item: dict) -> tuple[dict, dict]:
@@ -525,7 +470,10 @@ def run_all(config_path, output) -> dict:
             item["source_max_statistic"] = source_row
             if arm == "OFF":
                 calibration_rows.append(source_row | {"case_id": case["id"]})
-    calibration = payload_codec.freeze_calibration(calibration_rows, config["calibration"]["guard"])
+    calibration = payload_codec.freeze_calibration(
+        calibration_rows, config["calibration"]["guard"],
+        protocol_id=config["receiver_protocol_id"], key_id=payload_codec.key_identifier(config["key_utf8"].encode()),
+    )
     result["calibration"] = calibration
     dump(output / "calibration.json", calibration)
     for case in calibration_cases:

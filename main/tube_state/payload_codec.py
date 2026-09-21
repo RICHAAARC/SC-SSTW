@@ -8,6 +8,7 @@ counted as target-versus-rival evidence.
 from __future__ import annotations
 
 import itertools
+import hashlib
 import math
 from typing import Iterable
 
@@ -25,6 +26,12 @@ PILOT_WINDOWS = (0, 5, 10)
 PILOT_LOSS_WEIGHT = 0.25
 EVENT_COST = state_clock.EDIT_COST
 FIXED_VIEWS = ("FULL", "CROP0_129", "CROP4_129", "CROP8_129", "DELETE90", "SPEED5_4", "REENCODE")
+RECEIVER_PROTOCOL_ID = "SC-SSTW-Payload-RM13-Partial3-V2"
+
+
+def key_identifier(key: bytes) -> str:
+    """Non-secret binding used to prevent applying thresholds from another key."""
+    return hashlib.sha256(b"SC-SSTW/receiver-key-id/v1\0" + key).hexdigest()[:16]
 
 
 def parse_payload(value: int | str) -> int:
@@ -125,6 +132,8 @@ def codebook(key: bytes) -> dict:
     for window in DATA_WINDOWS:
         data_mask[window * SUPPORTS_PER_WINDOW:(window + 1) * SUPPORTS_PER_WINDOW] = True
     return {
+        "receiver_protocol_id": RECEIVER_PROTOCOL_ID,
+        "key_id": key_identifier(key),
         "directions": base["directions"],
         "sync": base["sync"],
         "polarity": polarity,
@@ -178,12 +187,26 @@ def payload_sync_loss(z, book: dict, payload: int):
 def _emission(observations: dict, book: dict, window: int, g: int, num: int, den: int, offset: int) -> dict:
     z = observations.get(g)
     selected = [None] * 4 if z is None else carrier.allocation(z.shape[2] - 1, g, num, den, offset)[4 * window:4 * window + 4]
-    if any(value is None for value in selected):
-        return {"valid": False, "selected": selected}
-    data = np.take(z[0], [value + 1 for value in selected], axis=1).transpose(1, 0, 2, 3)
-    data = data.reshape(4, 16, 10, 4, 16, 4).transpose(2, 4, 0, 1, 3, 5).reshape(SUPPORTS_PER_WINDOW, 1024)
+    group_count = sum(value is not None for value in selected)
+    if group_count < 3:
+        return {"valid": False, "selected": selected, "group_count": group_count,
+                "support_kind": "INVALID", "observed_components": 0}
     sl = slice(window * SUPPORTS_PER_WINDOW, (window + 1) * SUPPORTS_PER_WINDOW)
-    values = np.einsum("ij,ij->i", data.astype(np.float64), book["directions"][sl].astype(np.float64))
+    if group_count == 4:
+        # Preserve the successful complete-window numerical path exactly.
+        data = np.take(z[0], [value + 1 for value in selected], axis=1).transpose(1, 0, 2, 3)
+        data = data.reshape(4, 16, 10, 4, 16, 4).transpose(2, 4, 0, 1, 3, 5).reshape(SUPPORTS_PER_WINDOW, 1024)
+        values = np.einsum("ij,ij->i", data.astype(np.float64), book["directions"][sl].astype(np.float64))
+    else:
+        directions = book["directions"][sl].astype(np.float64).reshape(SUPPORTS_PER_WINDOW, 4, 256)
+        values = np.zeros(SUPPORTS_PER_WINDOW, dtype=np.float64)
+        # Sum only the three physical temporal components and clip once.  There
+        # is no zero imputation, 4/3 multiplier, or energy rescaling.
+        for slot, value in enumerate(selected):
+            if value is None:
+                continue
+            component = z[0, :, value + 1].reshape(16, 10, 4, 16, 4).transpose(1, 3, 0, 2, 4).reshape(SUPPORTS_PER_WINDOW, 256)
+            values += np.einsum("ij,ij->i", component.astype(np.float64), directions[:, slot])
     clipped = np.clip(values, -1.0, 1.0)
     common = book["common"][sl]
     common_corr = float(np.mean(clipped * common))
@@ -191,6 +214,11 @@ def _emission(observations: dict, book: dict, window: int, g: int, num: int, den
     return {
         "valid": True,
         "selected": selected,
+        "group_count": group_count,
+        "support_kind": "FULL" if group_count == 4 else "PARTIAL3",
+        "full_blocks": SUPPORTS_PER_WINDOW if group_count == 4 else 0,
+        "partial_blocks": SUPPORTS_PER_WINDOW if group_count == 3 else 0,
+        "observed_components": SUPPORTS_PER_WINDOW * group_count,
         "common_correlation": common_corr,
         "q": [float(decoded[::2].mean()), float(decoded[1::2].mean())],
         "hard_bit": None if common_corr == 0.0 else int(common_corr < 0),
@@ -220,22 +248,34 @@ def read(observations: dict, book: dict) -> dict:
         valid_pilot = [window for window in PILOT_WINDOWS if windows[window]["valid"]]
         if not valid_data:
             continue
-        pilot_score = float(np.mean([windows[window]["common_correlation"] for window in valid_pilot])) if valid_pilot else -1.0
+        pilot_weights = np.asarray([windows[window]["observed_components"] for window in valid_pilot], dtype=float)
+        pilot_score = float(np.average([windows[window]["common_correlation"] for window in valid_pilot], weights=pilot_weights)) if valid_pilot else -1.0
         penalty = EVENT_COST if path["delta"] else 0.0
         row_path = dict(path, origins=origins, valid_data_windows=valid_data, valid_pilot_windows=valid_pilot)
         qs = np.asarray([window.get("q", [0.0, 0.0]) for window in windows], dtype=float)
         valid = [bool(window["valid"]) for window in windows]
         path_best = None
         for payload in range(PAYLOAD_COUNT):
-            data_score = float(np.mean([windows[window]["payload_scores"][payload] for window in valid_data]))
+            data_weights = np.asarray([windows[window]["observed_components"] for window in valid_data], dtype=float)
+            data_score = float(np.average([windows[window]["payload_scores"][payload] for window in valid_data], weights=data_weights))
             matched_score = (data_score + PILOT_LOSS_WEIGHT * pilot_score) / (1.0 + PILOT_LOSS_WEIGHT)
             observer = state_clock.observe(qs, valid, book["states"][payload], book["steps"][payload])
             score = matched_score - state_clock.INNOVATION_WEIGHT * observer["innovation_mean"] - penalty
+            hard = [windows[window].get("hard_bit") for window in DATA_WINDOWS]
+            evidence = [windows[window].get("common_correlation") for window in DATA_WINDOWS]
+            evidence_weights = [windows[window].get("observed_components", 0) for window in DATA_WINDOWS]
             row = row_path | {"payload": payload, "score": score, "matched_score": matched_score,
                               "state_innovation_mean": observer["innovation_mean"],
                               "data_score": data_score, "pilot_score": pilot_score,
-                              "matched_data_supports": SUPPORTS_PER_WINDOW * len(valid_data),
-                              "matched_pilot_supports": SUPPORTS_PER_WINDOW * len(valid_pilot)}
+                              "matched_data_blocks": SUPPORTS_PER_WINDOW * len(valid_data),
+                              "matched_pilot_blocks": SUPPORTS_PER_WINDOW * len(valid_pilot),
+                              "matched_data_components": int(data_weights.sum()),
+                              "matched_pilot_components": int(pilot_weights.sum()),
+                              "hard_data_bits": hard, "hard_window_evidence": evidence,
+                              "hard_window_component_weights": evidence_weights,
+                              "decoder": rm_decode(hard),
+                              "full_data_blocks": sum(windows[window].get("full_blocks", 0) for window in DATA_WINDOWS),
+                              "partial_data_blocks": sum(windows[window].get("partial_blocks", 0) for window in DATA_WINDOWS)}
             if best_by_payload[payload] is None or _rank(row) < _rank(best_by_payload[payload]):
                 best_by_payload[payload] = row
             if best_overall is None or _rank(row) < _rank(best_overall):
@@ -245,17 +285,8 @@ def read(observations: dict, book: dict) -> dict:
         compact_candidates.append(path_best)
     ranked = sorted((row for row in best_by_payload if row is not None), key=_rank)
     if best_overall is None:
-        return {"status": "INVALID", "reason": "NO_COMPLETE_DATA_WINDOW", "best": None, "best_by_payload": {}, "decoder": None}
-    best_path = best_overall
-    hard = []
-    evidence = []
-    for window in DATA_WINDOWS:
-        delta = best_path["delta"] if window >= best_path["boundary"] else 0
-        g = (best_path["g"] - delta) % 4
-        emission = cache[(window, g, *best_path["scale"], best_path["offset"] + delta)]
-        hard.append(emission.get("hard_bit"))
-        evidence.append(emission.get("common_correlation"))
-    decoder = rm_decode(hard)
+        return {"status": "INVALID", "reason": "NO_USABLE_DATA_WINDOW", "best": None, "best_by_payload": {}, "decoder": None,
+                "receiver_protocol_id": book.get("receiver_protocol_id", RECEIVER_PROTOCOL_ID), "key_id": book.get("key_id")}
     top_tie = len(ranked) > 1 and abs(ranked[0]["score"] - ranked[1]["score"]) <= 1e-12
     return {
         "status": "SCORED",
@@ -264,9 +295,12 @@ def read(observations: dict, book: dict) -> dict:
         "best": best_overall,
         "best_by_payload": {str(row["payload"]): row for row in ranked},
         "top_payload_unique": not top_tie,
-        "hard_data_bits": hard,
-        "hard_window_evidence": evidence,
-        "decoder": decoder,
+        "hard_data_bits": best_overall["hard_data_bits"],
+        "hard_window_evidence": best_overall["hard_window_evidence"],
+        "hard_window_component_weights": best_overall["hard_window_component_weights"],
+        "decoder": best_overall["decoder"],
+        "receiver_protocol_id": book.get("receiver_protocol_id", RECEIVER_PROTOCOL_ID),
+        "key_id": book.get("key_id"),
         "existence_statistic": best_overall["score"],
         "statistic_definition": "max over 16 payloads and all fixed clock paths of normalized data+0.25*pilot matched score minus 0.05 fixed-gain state innovation and event cost",
     }
@@ -289,27 +323,47 @@ def aggregate_crop_views(detections: dict[str, dict]) -> dict:
         rows = [present[name]["best_by_payload"].get(str(payload)) for name in names]
         if any(row is None for row in rows):
             continue
-        weights = np.asarray([row["matched_data_supports"] + row["matched_pilot_supports"] for row in rows], dtype=float)
+        weights = np.asarray([
+            row.get("matched_data_components", row.get("matched_data_blocks", row.get("matched_data_supports", 0)) * 4) +
+            row.get("matched_pilot_components", row.get("matched_pilot_blocks", row.get("matched_pilot_supports", 0)) * 4)
+            for row in rows
+        ], dtype=float)
         score = float(np.average([row["score"] for row in rows], weights=weights))
-        scores.append({"payload": payload, "score": score, "view_scores": {name: rows[index]["score"] for index, name in enumerate(names)}})
+        combined_evidence = []
+        combined_weights = []
+        for bit_index in range(8):
+            pairs = []
+            for row in rows:
+                value = row["hard_window_evidence"][bit_index]
+                weight = row.get("hard_window_component_weights", [640] * 8)[bit_index]
+                if value is not None and math.isfinite(value) and value != 0.0 and weight > 0:
+                    pairs.append((value, weight))
+            combined_evidence.append(None if not pairs else float(np.average([p[0] for p in pairs], weights=[p[1] for p in pairs])))
+            combined_weights.append(sum(p[1] for p in pairs))
+        hard = [None if value is None or value == 0.0 else int(value < 0) for value in combined_evidence]
+        scores.append({"payload": payload, "score": score,
+                       "view_scores": {name: rows[index]["score"] for index, name in enumerate(names)},
+                       "hard_data_bits": hard, "hard_window_evidence": combined_evidence,
+                       "hard_window_component_weights": combined_weights, "decoder": rm_decode(hard)})
     scores.sort(key=lambda row: (-row["score"], row["payload"]))
-    combined_evidence = []
-    for bit_index in range(8):
-        values = [present[name]["hard_window_evidence"][bit_index] for name in names]
-        visible = [value for value in values if value is not None and math.isfinite(value) and value != 0.0]
-        combined_evidence.append(None if not visible else float(np.mean(visible)))
-    hard = [None if value is None or value == 0.0 else int(value < 0) for value in combined_evidence]
-    decoder = rm_decode(hard)
+    winner = scores[0] if scores else None
+    protocol_ids = {present[name].get("receiver_protocol_id") for name in names}
+    key_ids = {present[name].get("key_id") for name in names}
+    binding_ok = len(protocol_ids) == 1 and len(key_ids) == 1
     return {
-        "status": "SCORED" if scores else "INVALID",
+        "status": "SCORED" if scores and binding_ok else "INVALID",
         "views": list(names),
-        "best": scores[0] if scores else None,
+        "best": winner,
         "best_by_payload": {str(row["payload"]): row for row in scores},
         "top_payload_unique": len(scores) < 2 or abs(scores[0]["score"] - scores[1]["score"]) > 1e-12,
-        "hard_data_bits": hard,
-        "hard_window_evidence": combined_evidence,
-        "decoder": decoder,
-        "existence_statistic": scores[0]["score"] if scores else None,
+        "hard_data_bits": None if winner is None else winner["hard_data_bits"],
+        "hard_window_evidence": None if winner is None else winner["hard_window_evidence"],
+        "hard_window_component_weights": None if winner is None else winner["hard_window_component_weights"],
+        "decoder": None if winner is None else winner["decoder"],
+        "existence_statistic": winner["score"] if winner else None,
+        "receiver_protocol_id": next(iter(protocol_ids)) if len(protocol_ids) == 1 else None,
+        "key_id": next(iter(key_ids)) if len(key_ids) == 1 else None,
+        "reason": None if binding_ok else "VIEW_PROTOCOL_OR_KEY_BINDING_MISMATCH",
         "statistic_definition": "support-weighted aggregation of three independently saved and VAE-encoded 129-frame crop views",
     }
 
@@ -326,18 +380,30 @@ def source_max_statistic(detections: dict[str, dict], crop_aggregate: dict) -> d
     if any(not math.isfinite(value) for _, value in rows):
         return {"status": "INVALID", "statistic": None, "winning_view": None, "reason": "nonfinite fixed-view statistic"}
     name, value = max(rows, key=lambda item: (item[1], item[0]))
+    bindings = {(detections[view].get("receiver_protocol_id"), detections[view].get("key_id")) for view in FIXED_VIEWS}
+    bindings.add((crop_aggregate.get("receiver_protocol_id"), crop_aggregate.get("key_id")))
+    if len(bindings) != 1:
+        return {"status": "INVALID", "statistic": None, "winning_view": None,
+                "reason": "fixed search family protocol/key binding mismatch"}
+    protocol_id, key_id = next(iter(bindings))
     return {"status": "SCORED", "statistic": float(value), "winning_view": name,
+            "receiver_protocol_id": protocol_id, "key_id": key_id,
             "definition": "source-level max over fixed saved views and the fixed crop-sequence aggregate after payload/path maximization"}
 
 
-def freeze_calibration(source_rows: list[dict], guard: float = 1e-6) -> dict:
+def freeze_calibration(source_rows: list[dict], guard: float = 1e-6, *, protocol_id: str | None = None,
+                       key_id: str | None = None) -> dict:
     if not math.isfinite(guard) or guard <= 0:
         raise ValueError("calibration guard must be positive and finite")
-    if len(source_rows) != 2 or any(row.get("status") != "SCORED" or not math.isfinite(row.get("statistic", math.nan)) for row in source_rows):
+    protocol_id = protocol_id or RECEIVER_PROTOCOL_ID
+    bindings_match = all(row.get("receiver_protocol_id") == protocol_id and row.get("key_id") == key_id for row in source_rows)
+    if len(source_rows) != 2 or not bindings_match or any(row.get("status") != "SCORED" or not math.isfinite(row.get("statistic", math.nan)) for row in source_rows):
         return {"status": "UNCALIBRATED", "threshold": None, "sources": source_rows,
-                "reason": "two complete independent OFF calibration sources required"}
+                "receiver_protocol_id": protocol_id, "key_id": key_id,
+                "reason": "two complete independent OFF calibration sources with matching protocol and key binding required"}
     maximum = max(row["statistic"] for row in source_rows)
     return {"status": "FROZEN", "threshold": float(maximum + guard), "guard": guard, "sources": source_rows,
+            "receiver_protocol_id": protocol_id, "key_id": key_id,
             "source_count": 2, "empirical_rank_resolution": "1/3", "claim": "functional independent-OFF calibration only; no low-FPR estimate"}
 
 
@@ -348,6 +414,9 @@ def decide(detection: dict, calibration: dict | None) -> dict:
         return {"status": "INVALID", "payload": None}
     if not calibration or calibration.get("status") != "FROZEN":
         return {"status": "UNCALIBRATED", "payload": None, "ranked_payload": ranking["payload"]}
+    if calibration.get("receiver_protocol_id") != detection.get("receiver_protocol_id") or calibration.get("key_id") != detection.get("key_id"):
+        return {"status": "UNCALIBRATED", "payload": None, "ranked_payload": ranking["payload"],
+                "reason": "calibration protocol/key binding mismatch"}
     threshold = calibration.get("threshold")
     statistic = detection.get("existence_statistic")
     if not isinstance(threshold, (int, float)) or not math.isfinite(threshold) or not isinstance(statistic, (int, float)) or not math.isfinite(statistic):

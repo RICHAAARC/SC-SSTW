@@ -10,7 +10,7 @@ import pytest
 import torch
 
 from main.tube_state import payload_codec, projection_margin, state_clock
-from runtime.wan import payload_control, trajectory
+from runtime.wan import integrated_core, payload_control, trajectory
 from experiments.wan_state_clock import integrated_payload_run as run
 
 pytestmark = pytest.mark.unit
@@ -87,18 +87,81 @@ def test_blind_receiver_recovers_nonbinary_payload_and_real_crop_erasures(monkey
     assert None in crop_detection["hard_data_bits"]
 
 
+def test_speed5_4_all_paths_have_eight_three_or_four_group_data_windows_and_synthetic_read():
+    paths = [path for path in state_clock.clock_paths() if path["scale"] == [5, 4]]
+    usable = []
+    for path in paths:
+        counts = []
+        for window in payload_codec.DATA_WINDOWS:
+            delta = path["delta"] if window >= path["boundary"] else 0
+            g = (path["g"] - delta) % 4
+            groups = (36, 35, 35, 35)[g]
+            selected = projection_margin.allocation(groups, g, *path["scale"], path["offset"] + delta)[4 * window:4 * window + 4]
+            counts.append(sum(value is not None for value in selected))
+        usable.append(sum(count >= 3 for count in counts))
+    assert len(paths) == 1428
+    assert usable == [8] * 1428
+
+    book = payload_codec.codebook(b"speed-structure")
+    payload = 13
+    path = {"g": 0, "scale": [5, 4], "offset": 0, "boundary": 11, "delta": 0}
+    z = np.zeros((1, 16, 37, 40, 64), dtype=np.float32)
+    group_counts = []
+    for window in range(payload_codec.WINDOWS):
+        selected = projection_margin.allocation(36, 0, 5, 4, 0)[4 * window:4 * window + 4]
+        group_counts.append(sum(value is not None for value in selected))
+        sl = slice(160 * window, 160 * (window + 1))
+        directions = book["directions"][sl].reshape(160, 4, 256)
+        for slot, value in enumerate(selected):
+            if value is None:
+                continue
+            component = 100.0 * directions[:, slot] * book["codes"][payload, sl, None]
+            z[0, :, value + 1] = component.reshape(10, 16, 16, 4, 4).transpose(2, 0, 3, 1, 4).reshape(16, 40, 64)
+    assert [group_counts[index] for index in payload_codec.DATA_WINDOWS] == [3, 4, 3, 3, 3, 4, 3, 3]
+    detected = payload_codec.read({0: z}, book)
+    assert detected["best"]["payload"] == payload
+    assert detected["decoder"]["payload"] == payload
+    assert detected["best"]["full_data_blocks"] == 320
+    assert detected["best"]["partial_data_blocks"] == 960
+    assert detected["best"]["matched_data_components"] == 320 * 4 + 960 * 3
+
+
+def test_four_group_emission_preserves_original_complete_projection_exactly():
+    book = payload_codec.codebook(b"complete-compatibility")
+    z = marked_latent(book, 7)
+    emission = payload_codec._emission({0: z}, book, 3, 0, 1, 1, 0)
+    selected = projection_margin.allocation(45, 0, 1, 1, 0)[12:16]
+    data = np.take(z[0], [value + 1 for value in selected], axis=1).transpose(1, 0, 2, 3)
+    data = data.reshape(4, 16, 10, 4, 16, 4).transpose(2, 4, 0, 1, 3, 5).reshape(160, 1024)
+    sl = slice(480, 640)
+    expected = np.einsum("ij,ij->i", data.astype(np.float64), book["directions"][sl].astype(np.float64))
+    assert emission["support_kind"] == "FULL" and emission["observed_components"] == 640
+    assert emission["common_correlation"] == float(np.mean(np.clip(expected, -1, 1) * book["common"][sl]))
+
+
 def fake_detection(payload=5, score=0.8, missing_bits=()):
     word = payload_codec.rm_encode(payload).tolist()
     evidence = [(-1.0 if bit else 1.0) for bit in word]
     for index in missing_bits:
         evidence[index] = None
         word[index] = None
-    rows = {str(value): {"payload": value, "score": score - abs(value - payload) * 0.01,
-                         "matched_data_supports": 960, "matched_pilot_supports": 480} for value in range(16)}
+    rows = {}
+    for value in range(16):
+        candidate_word = payload_codec.rm_encode(value).tolist()
+        candidate_evidence = [(-1.0 if bit else 1.0) for bit in candidate_word]
+        rows[str(value)] = {"payload": value, "score": score - abs(value - payload) * 0.01,
+                            "matched_data_supports": 960, "matched_pilot_supports": 480,
+                            "matched_data_components": 3840, "matched_pilot_components": 1920,
+                            "hard_data_bits": candidate_word, "hard_window_evidence": candidate_evidence,
+                            "hard_window_component_weights": [640] * 8,
+                            "decoder": payload_codec.rm_decode(candidate_word)}
     return {"status": "SCORED", "best": rows[str(payload)], "best_by_payload": rows,
             "top_payload_unique": True, "existence_statistic": score,
             "hard_data_bits": word, "hard_window_evidence": evidence,
-            "decoder": payload_codec.rm_decode(word)}
+            "hard_window_component_weights": [640 if bit is not None else 0 for bit in word],
+            "decoder": payload_codec.rm_decode(word),
+            "receiver_protocol_id": payload_codec.RECEIVER_PROTOCOL_ID,
+            "key_id": payload_codec.key_identifier(b"SC-SSTW-integrated-payload-v1-key")}
 
 
 def test_crop_aggregate_runs_ecc_and_fixed_calibration_never_shrinks_denominator():
@@ -117,6 +180,21 @@ def test_crop_aggregate_runs_ecc_and_fixed_calibration_never_shrinks_denominator
     assert invalid["status"] == "INVALID"
     calibration = payload_codec.freeze_calibration([source, invalid])
     assert calibration["status"] == "UNCALIBRATED"
+
+
+def test_crop_aggregate_uses_selected_payload_paths_when_view_winners_differ():
+    detections = {}
+    for index, name in enumerate(("CROP0_129", "CROP4_129", "CROP8_129")):
+        detection = fake_detection(index + 1, 0.8)
+        target = detection["best_by_payload"]["13"]
+        target["score"] = 1.0 - index * 0.01
+        detection["best"] = detection["best_by_payload"][str(index + 1)]
+        detection["hard_window_evidence"] = detection["best"]["hard_window_evidence"]
+        detections[name] = detection
+    aggregate = payload_codec.aggregate_crop_views(detections)
+    assert [detections[name]["best"]["payload"] for name in detections] == [1, 2, 3]
+    assert aggregate["best"]["payload"] == 13
+    assert aggregate["decoder"]["payload"] == 13
 
 
 class FakeScheduler:
@@ -194,7 +272,7 @@ def test_same_history_unit_probe_budget_and_source_history_are_exact():
 
 def test_generate_calibration_case_is_fresh_and_uses_no_saved_cache(monkeypatch, tmp_path, capsys):
     pipe = SimpleNamespace(scheduler=FakeScheduler(), transformer=FakeTransformer())
-    monkeypatch.setattr(run, "prepare_generation", lambda config, load_vae=False: (
+    monkeypatch.setattr(integrated_core, "prepare_generation", lambda config, load_vae=False: (
         pipe, torch.zeros(1, 1, 2, 2, 2), torch.tensor(1.0), torch.tensor(-1.0), torch.float32,
     ))
     result = run.generate_case("cal_off_p0_s1", run.MANIFEST, tmp_path / "fresh")
@@ -210,6 +288,64 @@ def test_generate_calibration_case_is_fresh_and_uses_no_saved_cache(monkeypatch,
     console = capsys.readouterr().out
     assert "stage=generate arm=OFF" in console
     assert "model_step_pairs_completed=50" in console
+
+
+def test_public_writer_default_count_passes_payload_13_to_control(monkeypatch):
+    pipe = SimpleNamespace(scheduler=FakeScheduler(), transformer=FakeTransformer())
+    pipe.scheduler.step_index = 44
+    z44 = torch.zeros(1, 1, 46, 1, 1)
+    monkeypatch.setattr(integrated_core, "prepare_generation", lambda config, load_vae=False: (
+        pipe, z44.clone(), torch.tensor(1.0), torch.tensor(-1.0), torch.float32,
+    ))
+    monkeypatch.setattr(trajectory, "prefix44", lambda *args: (z44.clone(), copy_scheduler(pipe.scheduler)))
+    seen = []
+
+    def clean_direction(clean, book, payload, count):
+        seen.append(payload)
+        return torch.ones_like(clean), {"loss": 0.0}
+
+    monkeypatch.setattr(payload_control, "clean_direction", clean_direction)
+    config = integrated_core.generation_config(integrated_core.load_protocol(), "public prompt", 9)
+    result = integrated_core.generate_payload_terminals(config, 13, b"public-key", ("SINGLE46",))
+    assert result["arms"]["SINGLE46"]["status"] == "GENERATED"
+    assert seen == [13]
+
+
+def copy_scheduler(scheduler):
+    import copy
+    return copy.deepcopy(scheduler)
+
+
+def test_public_receive_uses_only_mp4_key_protocol_calibration_and_partial_never_detects(monkeypatch, tmp_path):
+    protocol = integrated_core.load_protocol()
+    mp4 = tmp_path / "received.mp4"
+    mp4.write_bytes(b"received-only")
+
+    class VAE(torch.nn.Module):
+        def __init__(self):
+            super().__init__(); self.weight = torch.nn.Parameter(torch.ones(1))
+
+    monkeypatch.setattr(integrated_core, "read_mp4", lambda path: torch.zeros(10, 2, 2, 3))
+    monkeypatch.setattr(integrated_core, "load_frozen_vae", lambda config: VAE())
+    calls = 0
+    def phase_encode(vae, rgb):
+        nonlocal calls
+        calls += 1
+        if calls == 2:
+            raise RuntimeError("g1 failed")
+        return torch.zeros(1, 16, 3, 40, 64)
+    monkeypatch.setattr(integrated_core, "reencode_rgb24_readback", phase_encode)
+    raw = fake_detection(13, 0.9)
+    raw["key_id"] = payload_codec.key_identifier(b"public-key")
+    monkeypatch.setattr(payload_codec, "read", lambda observations, book: raw)
+    calibration = {"status": "FROZEN", "threshold": 0.1,
+                   "receiver_protocol_id": payload_codec.RECEIVER_PROTOCOL_ID,
+                   "key_id": payload_codec.key_identifier(b"public-key")}
+    result = integrated_core.receive_mp4(mp4, b"public-key", protocol, calibration)
+    assert tuple(inspect.signature(integrated_core.receive_mp4).parameters)[:4] == ("mp4_path", "key", "protocol", "calibration")
+    assert result["detection"]["status"] == "SCORED"
+    assert result["formal_detection"]["status"] == "INVALID"
+    assert result["decision"]["status"] == "INVALID" and result["decision"]["payload"] is None
 
 
 def complete_view(detection=None):
@@ -365,8 +501,9 @@ def test_media_attack_chain_has_seven_saved_views_and_four_phases(monkeypatch, t
 
     monkeypatch.setattr(run, "encode_rgb", save_video)
     monkeypatch.setattr(run, "read_mp4", lambda path: cache[str(path)].clone())
-    monkeypatch.setattr(run, "reencode_rgb24_readback", lambda vae, value: torch.zeros(1, 1, 2, 2, 2))
-    monkeypatch.setattr(run.payload_codec, "read", lambda observations, codebook: fake_detection(5, 0.4))
+    monkeypatch.setattr(integrated_core, "read_mp4", lambda path: cache[str(path)].clone())
+    monkeypatch.setattr(integrated_core, "reencode_rgb24_readback", lambda vae, value: torch.zeros(1, 1, 2, 2, 2))
+    monkeypatch.setattr(payload_codec, "read", lambda observations, codebook: fake_detection(5, 0.4))
     result = run.media_case(case["id"], run.MANIFEST, root)
     assert result["status"] == "EXECUTION_COMPLETE", result["failures"]
     assert result["actual_calls"]["mp4_save_completed"] == 7

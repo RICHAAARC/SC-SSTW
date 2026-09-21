@@ -26,6 +26,13 @@ The receiver accepts only four phase observations and a public codebook; prompt,
 truth, original latent, writer evidence, and edit truth are absent. Truth joins
 happen after ranking and existence decisions.
 
+The current receiver protocol adds the frozen historical three-group emission:
+four groups retain the original calculation; exactly three sum only observed
+slot projections and clip once; fewer groups erase the window. Full and partial
+blocks are separate, and scores and aggregate evidence use observed-component
+weights. This changes the statistic and requires a threshold bound to
+`SC-SSTW-Payload-RM13-Partial3-V2` and the receiver key identifier.
+
 Two independent OFF sources are generated and fully received before the
 threshold is frozen. Each source statistic is the maximum over all 16 messages,
 clock paths, seven saved views, and the fixed three-crop aggregate. Any missing
@@ -44,6 +51,14 @@ aggregation, source maximization, or existence decisions only when the view is
 `SCORED` and all four phase rows are `COMPLETE`. Partial raw rankings therefore
 cannot freeze a threshold or return a payload.
 
+Reusable entrypoints live in `runtime.wan.integrated_core`, with CLI
+`python -m runtime.wan.integrated_cli`. The writer accepts prompt, seed, any
+nibble, key, and a public protocol file and produces an MP4 through the same
+44/46 control. The independent receiver accepts an MP4, key, explicit protocol,
+and optional calibration; it does not read writer terminals, trajectories,
+truth, or saved codebooks. The fixed experiment imports these entrypoints while
+retaining its `[0x5,0xa]` roster and fixed denominators.
+
 The fixed roster is two calibration OFF contents and two evaluation contents
 carrying payloads `0x5` and `0xa`. Evaluation generates OFF, SINGLE46, and
 MULTI44_46 for each content. Every arm persists FULL, three actual 129-frame
@@ -51,6 +66,11 @@ crop MP4s, DELETE90, SPEED5_4, and a second-generation REENCODE. Every saved
 view receives four independent VAE phase encodes. The denominator is four fresh
 cases, eight arms, 56 saved views, and 224 receiver encodes; failures and
 missing rows remain in place.
+
+The three-crop aggregate stores compact evidence for each payload's own best
+path. It selects the aggregate payload first, then combines that payload's
+matched-path window evidence and runs RM decoding, so different view winners
+cannot substitute unrelated hard evidence.
 
 This tree contains no GPU/model result for the integrated candidate. CPU/fake
 tests establish code, call accounting, lifecycle, blindness, and denominator
