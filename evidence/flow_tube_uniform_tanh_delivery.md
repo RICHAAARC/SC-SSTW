@@ -1,6 +1,6 @@
 # Uniform-Tanh-44/46 交付卡
 
-状态：源码与 notebook 已准备；未 push，未运行 GPU、真实模型、Colab 或 Drive 写入。
+状态：上级最终发布审计已接受，候选分支已 push，固定源码和 notebook 的远端内容已核验；未运行 GPU、真实模型、Colab 或 Drive 写入。
 
 ## 版本与输入
 
@@ -11,11 +11,12 @@
 - 固定模型 revision：`0fad780a534b6463e45facd96134c9f345acfa5b`。历史 response-selection source 的 revision 为 null，因此不声称历史权重身份相同。
 - 固定输入 run：`flow_tube_response_selection_20260921T013844126172Z`。2026-09-21 只读 Drive 元数据检查确认 run 目录与两个 case 目录均列出 generation/config/book/prompt/negative/OFF_nodes/OFF_snapshots；未在该检查中下载大张量或重验 hash。用户运行时由 runner 对旧 manifest 逐文件 hash，并核对 saved44 input/history fingerprint；缺失或不匹配保留失败。
 
-## 审计后发布入口（尚未执行）
+## 已发布入口
 
-- notebook 默认首选输入：`/content/drive/MyDrive/Video-WM/FlowTubeResponseSelection/flow_tube_response_selection_20260921T013844126172Z`；若该目录不存在，纯标准库 locator 搜索同名唯一目录。缺文件由 runner 记录固定失败分母；多个同名目录明确报歧义。
+- notebook 预期输入路径：`/content/drive/MyDrive/Video-WM/FlowTubeResponseSelection/flow_tube_response_selection_20260921T013844126172Z`。纯标准库 locator 每次均在整个 `MyDrive` 下递归搜索同名 run 目录；唯一结果交给 runner，零结果回退上述预期路径，多个不同结果明确报歧义。缺文件由 runner 记录固定失败分母。
 - 默认输出：`/content/drive/MyDrive/Video-WM/FlowTubeUniformTanh/flow_tube_uniform_tanh_<UTC>`。
-- 拟发布 Colab 链接：[固定 N3 notebook](https://colab.research.google.com/github/RICHAAARC/SC-SSTW/blob/081266cab1eb2839a26d7db6e24ea41b3315348e/notebooks/flow_tube_uniform_tanh_colab.ipynb)。当前提交尚未 push，此链接在上级发布审计与实际 push 前不构成可用发布入口。
+- 已发布 Colab 链接：[固定 N3 notebook](https://colab.research.google.com/github/RICHAAARC/SC-SSTW/blob/081266cab1eb2839a26d7db6e24ea41b3315348e/notebooks/flow_tube_uniform_tanh_colab.ipynb)。固定 notebook pin 为 S3；由用户 Run all，agent 未执行 Colab。
+- 2026-09-21 发布核验：仅推送 `dev/flow-tube-uniform-tanh`；GitHub raw 读取的 N3 notebook 及 S3 runner/config/runtime/builder/tests 六份文件均与本地对应 Git 对象逐字节相等。远端 notebook 的两行 Drive mount、S3 pin 与无输出状态一致。notebook SHA256：`8fa3d535d0f27b4c7bb874ce36c905f1094be122cc991481cb1683620d554061`。远端 `main` 在发布前后均为 `3f0a5fafa7c2aa56fbc69bed17649accf49ae152`。
 
 ## 固定方法与预算
 
