@@ -11,7 +11,7 @@ remain reproducibility records and are not imported by this tree.
 
 ## Status
 
-At the original four-bit handoff, engineering integration was accepted for `main` and real execution was pending. The subsequent user run `integrated_payload_v1_20260921T163637378085Z` completed with partial recovery: 2/4 marked sources and 8/28 marked views. These four-bit results do not validate the new fixed-key candidate.
+At the original four-bit handoff, engineering integration was accepted for `main` and real execution was pending. The subsequent user run `integrated_payload_v1_20260921T163637378085Z` completed with partial recovery: 2/4 marked branches across two evaluation contents and 8/28 marked views. These four-bit results do not validate the new fixed-key candidate.
 The older two-message Uniform-Tanh run is positive development evidence for its
 exact writer and receiver only. It does not validate the integrated core's 16-code
 payload, pilots, receiver, calibration, attacks, or new content roster.

@@ -1,7 +1,7 @@
 """Build the fixed development candidate notebook; GPU execution belongs to the user."""
 import json
 from pathlib import Path
-SOURCE_SHA = '58776e57905b2b50de232b76a89101ae7229713a'
+SOURCE_SHA = '14596cf6301cd11242400ed617254ff3e537f65b'
 ROOT = Path(__file__).parents[1]
 OUTPUT = ROOT / 'notebooks/flow_fixed_key_v1_colab.ipynb'
 

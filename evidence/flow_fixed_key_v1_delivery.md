@@ -6,4 +6,6 @@
 - New fixed-template correlation objective and Partial3 existence/calibration are unrun candidates, not inherited real-run success.
 - Same-run environment audit is outside the repo at `diagnostics/project-status-20260921/flow_fixed_key_v1_release/same_run_environment_check.json`. Old run logs confirm Python3.13 package paths and completed generation; exact dependency versions were not recorded and are not inferred. Successful N5 dependency argv retained. New setup/environment receipts provide future version evidence.
 - 11 directed CPU/stub checks passed, including notebook AST/reproducibility/installation argv. No package installation, GPU/model/VAE/Colab/Drive execution.
-- Source publication and final notebook SHA binding await same-version reviews and superior audit.
+- A2 method and A3 implementation/entry reviews PASS on `9bd80f9841eb34111f9faaf26347d9f43d99ba13`; source `14596cf6301cd11242400ed617254ff3e537f65b` differs only in README/receipt text. Superior publication audit accepted.
+- Source `14596cf6301cd11242400ed617254ff3e537f65b` published to `dev/flow-fixed-key-v1` first; the final notebook is immutably bound to that source. Notebook JSON structure, cell AST, and builder reproducibility were checked; the optional nbformat package was unavailable, so no library schema-validation claim is made.
+- A3 final source-pin and in-memory notebook byte comparison PASS; A4 synthesis and A5 milestone audit PASS. Final binding check: 1 passed, 10 deselected; no full-suite repetition or external experiment.
