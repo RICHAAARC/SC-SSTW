@@ -1,0 +1,76 @@
+{
+  "name": "window_state_mse_v1_paired",
+  "protocol": "SC-SSTW-Window-State-MSE-V1-Paired",
+  "receiver_protocol_id": "SC-SSTW-Fixed-Key-11Window-V1",
+  "split_receiver_protocol_id": "SC-SSTW-Receiver-Split-V1",
+  "model": {
+    "id": "Wan-AI/Wan2.1-T2V-1.3B-Diffusers",
+    "revision": "0fad780a534b6463e45facd96134c9f345acfa5b"
+  },
+  "generation": {
+    "height": 320,
+    "width": 512,
+    "frames": 181,
+    "fps": 8,
+    "steps": 50,
+    "guidance_scale": 5.0,
+    "max_sequence_length": 512,
+    "negative_prompt": "text, watermark, logo, camera motion, cuts, multiple objects, flicker"
+  },
+  "key_utf8": "WanProjection-first-validation-key-v1",
+  "cases": [
+    {
+      "id": "cal_off_p0_s1",
+      "role": "calibration_off",
+      "prompt": "locked camera, a single blue rowboat moving slowly across a quiet pond, stable morning light, no people, no cuts",
+      "seed": 20260917
+    },
+    {
+      "id": "cal_off_p1_s1",
+      "role": "calibration_off",
+      "prompt": "locked camera, a single green bus moving slowly along a straight empty road, stable cloudy light, no people, no cuts",
+      "seed": 20260918
+    },
+    {
+      "id": "eval_p2_s2",
+      "role": "evaluation",
+      "prompt": "locked camera, a single orange kayak gliding slowly across calm water, stable daylight, no people, no cuts",
+      "seed": 20260919,
+      "previous_development_case_id": "eval_p2_s2_m5"
+    },
+    {
+      "id": "eval_p3_s3",
+      "role": "evaluation",
+      "prompt": "locked camera, a single white delivery van moving slowly along a straight empty street, stable overcast daylight, no people, no cuts",
+      "seed": 20260920,
+      "previous_development_case_id": "eval_p3_s3_ma"
+    }
+  ],
+  "calibration_arms": ["OFF"],
+  "evaluation_arms": [
+    "OFF",
+    "LEGACY_SINGLE46",
+    "MSE_SINGLE46",
+    "LEGACY_MULTI44_46",
+    "MSE_MULTI44_46"
+  ],
+  "writer_objectives": {
+    "LEGACY": "fixed-marker-11-window-tanh-mean",
+    "MSE": "window-state-mse-v1"
+  },
+  "control": {
+    "R_star": 0.042943312697648145,
+    "single46_per_step": 0.042943312697648145,
+    "multi44_46_per_step": 0.021471656348824072,
+    "meaning": "cumulative native response RMS: SINGLE46 full amount; MULTI44/46 equal halves"
+  },
+  "views": ["FULL", "DELETE90", "SPEED5_4"],
+  "receivers": ["ORIGINAL", "C1_MATCHED_CONFIRM", "C2_STATE_CONFIRM"],
+  "calibration": {
+    "source_count": 2,
+    "guard": 1e-06,
+    "rule": "per receiver: maximum over three fixed views for each of two calibration OFF sources, then maximum across sources plus guard",
+    "claim": "functional independent-OFF calibration only; empirical rank resolution 1/3, no low-FPR claim"
+  },
+  "evidence_ceiling": "same-run paired development evidence with retained failures; no independent generalization, low-FPR, quality, or capacity claim; process completion is not a method PASS"
+}

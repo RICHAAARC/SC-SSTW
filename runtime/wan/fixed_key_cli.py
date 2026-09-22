@@ -5,6 +5,7 @@ import argparse
 import json
 from pathlib import Path
 
+from runtime.wan import fixed_key_control
 from runtime.wan.fixed_key_core import generate_video, load_protocol, receive_mp4
 from runtime.wan.io import dump
 
@@ -21,6 +22,8 @@ def main(argv=None):
     writer.add_argument("--key", required=True)
     writer.add_argument("--protocol", required=True); writer.add_argument("--output", required=True)
     writer.add_argument("--arm", choices=("SINGLE46", "MULTI44_46"), default="MULTI44_46")
+    writer.add_argument("--objective", choices=fixed_key_control.OBJECTIVES,
+                        default=fixed_key_control.DEFAULT_OBJECTIVE)
     receiver = sub.add_parser("receive")
     receiver.add_argument("--input-mp4", required=True); receiver.add_argument("--key", required=True)
     receiver.add_argument("--protocol", required=True); receiver.add_argument("--calibration")
@@ -28,7 +31,8 @@ def main(argv=None):
     args = parser.parse_args(argv)
     protocol = load_protocol(args.protocol)
     if args.command == "generate":
-        result = generate_video(args.prompt, args.seed, args.key.encode(), args.output, protocol, args.arm)
+        result = generate_video(args.prompt, args.seed, args.key.encode(), args.output, protocol, args.arm,
+                                objective=args.objective)
         dump(Path(args.output).with_suffix(".writer.json"), result)
     else:
         result = receive_mp4(args.input_mp4, args.key.encode(), protocol, None if args.calibration is None else _json(args.calibration))

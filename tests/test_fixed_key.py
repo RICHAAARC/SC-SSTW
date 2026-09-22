@@ -11,7 +11,8 @@ import numpy as np
 import pytest
 import torch
 from main.tube_state import fixed_key as fk, projection_margin as carrier, state_clock
-from runtime.wan import fixed_key_core as core, fixed_key_control as control, trajectory
+from runtime.wan import fixed_key_cli, fixed_key_core as core, fixed_key_control as control, trajectory, window_state_mse
+from runtime.wan.io import dump
 from experiments.wan_state_clock import flow_fixed_key_run as run
 
 pytestmark = pytest.mark.unit
@@ -36,6 +37,66 @@ def test_exact_legacy_template_and_all_window_gradient(book):
     assert torch.count_nonzero(g[:,:,(0,45)])==0
     p=fk.torch_projections(z,torch.as_tensor(book['directions']))
     torch.testing.assert_close(loss,-(p.tanh()*torch.as_tensor(book['code'])).mean(),rtol=0,atol=0)
+
+def test_window_state_mse_formula_and_projection_finite_difference(book):
+    p=torch.linspace(-.7,.7,1760,dtype=torch.float64,requires_grad=True)
+    loss,means=window_state_mse.loss_from_projections(p,book)
+    signed=(p.tanh()*torch.as_tensor(book['sync']*book['polarity'],dtype=torch.float64)).reshape(11,160)
+    expected=torch.stack((signed[:,0::2].mean(1),signed[:,1::2].mean(1)),1)
+    target=torch.as_tensor(book['states'],dtype=torch.float64)
+    torch.testing.assert_close(means,expected,rtol=0,atol=1e-15)
+    torch.testing.assert_close(loss,(expected-target).square().mean(),rtol=0,atol=1e-15)
+    gradient,=torch.autograd.grad(loss,p)
+    expanded=(means-target)[:,None,:].expand(11,80,2).reshape(-1)
+    analytic=(2/1760)*expanded*torch.as_tensor(book['sync']*book['polarity'],dtype=torch.float64)*(1-p.tanh().square())
+    torch.testing.assert_close(gradient,analytic,rtol=1e-12,atol=1e-14)
+    index=317;epsilon=1e-6
+    with torch.no_grad():
+        plus=p.detach().clone();minus=p.detach().clone();plus[index]+=epsilon;minus[index]-=epsilon
+        numerical=(window_state_mse.loss_from_projections(plus,book)[0]-window_state_mse.loss_from_projections(minus,book)[0])/(2*epsilon)
+    assert gradient[index]==pytest.approx(float(numerical),rel=1e-7,abs=1e-8)
+
+def test_window_state_mse_reweights_unbalanced_axes_and_matches_legacy_for_equal_gap(book):
+    sync=torch.as_tensor(book['sync'],dtype=torch.float64);polarity=torch.as_tensor(book['polarity'],dtype=torch.float64)
+    states=torch.as_tensor(book['states'],dtype=torch.float64).reshape(11,2)
+    state_per_block=states[:,None,:].expand(11,80,2).reshape(-1)
+    torch.testing.assert_close(torch.as_tensor(book['code'],dtype=torch.float64),state_per_block*sync*polarity,rtol=0,atol=0)
+    aligned=torch.atanh(.8*state_per_block*sync*polarity)
+    unbalanced=aligned.clone();unbalanced[:160:2]=0.
+    unbalanced.requires_grad_()
+    means=window_state_mse.state_means_from_projections(unbalanced,book)
+    torch.testing.assert_close(means[0,0],torch.zeros((),dtype=torch.float64),rtol=0,atol=1e-15)
+    torch.testing.assert_close(means[0,1],.8*states[0,1],rtol=0,atol=1e-14)
+    torch.testing.assert_close(means[1:],.8*states[1:],rtol=0,atol=1e-14)
+    old=-(unbalanced.tanh()*torch.as_tensor(book['code'],dtype=torch.float64)).mean()
+    new,_=window_state_mse.loss_from_projections(unbalanced,book)
+    old_gradient,=torch.autograd.grad(old,unbalanced,retain_graph=True)
+    new_gradient,=torch.autograd.grad(new,unbalanced)
+    old_groups=old_gradient.abs().reshape(11,160)
+    new_groups=new_gradient.abs().reshape(11,160)
+    old_ratio=old_groups[0,0::2].mean()/old_groups[1,0::2].mean()
+    new_ratio=new_groups[0,0::2].mean()/new_groups[1,0::2].mean()
+    assert new_ratio > old_ratio*4
+    common_gap=torch.atanh(.4*state_per_block*sync*polarity).detach().requires_grad_(True)
+    legacy=-(common_gap.tanh()*torch.as_tensor(book['code'],dtype=torch.float64)).mean()
+    state_loss,common_means=window_state_mse.loss_from_projections(common_gap,book)
+    torch.testing.assert_close(common_means,.4*states,rtol=0,atol=1e-14)
+    legacy_gradient,=torch.autograd.grad(legacy,common_gap,retain_graph=True)
+    state_gradient,=torch.autograd.grad(state_loss,common_gap)
+    torch.testing.assert_close(state_gradient/state_gradient.norm(),legacy_gradient/legacy_gradient.norm(),rtol=1e-12,atol=1e-12)
+
+def test_window_state_mse_clean_leaf_support_and_descent(book):
+    clean=torch.zeros(carrier.SHAPE,dtype=torch.float32)
+    raw,record=control.clean_direction(clean,book,objective=control.WINDOW_STATE_MSE_OBJECTIVE)
+    assert record['objective']==control.WINDOW_STATE_MSE_OBJECTIVE
+    assert record['objective_identity']['states']=='existing +/-1 fixed codebook states'
+    assert torch.isfinite(raw).all() and torch.count_nonzero(raw)>0
+    assert torch.count_nonzero(raw[:,:,(0,45)])==0
+    with torch.no_grad():
+        before=window_state_mse.loss(clean.double(),book)[0]
+        step=1e-3/raw.abs().max()
+        after=window_state_mse.loss(clean.double()+step*raw.double(),book)[0]
+    assert after < before
 
 def test_full_projection_and_native_identity_score_share_definition(book):
     z=marked(book);row=fk.score_path({0:z},book,fk.REFERENCE_PATHS['IDENTITY'])
@@ -114,6 +175,90 @@ class FakeScheduler:
 class FakeTransformer(torch.nn.Module):
     def __init__(self):super().__init__();self.weight=torch.nn.Parameter(torch.ones(1))
     def forward(self,hidden_states,**kwargs):return (hidden_states*.1+self.weight*.01,)
+
+def test_explicit_window_state_objective_routes_on_comparable_fake_histories(monkeypatch):
+    def make_pipe():
+        return SimpleNamespace(scheduler=FakeScheduler(),transformer=FakeTransformer())
+    monkeypatch.setattr(core,'prepare_generation',lambda *a,**k:(make_pipe(),torch.zeros(carrier.SHAPE),torch.tensor(1.),torch.tensor(-1.),torch.float32))
+    snapshots=[];pending=[];captured=[]
+    original_prefix=trajectory.prefix44
+    def prefix(*args,**kwargs):
+        z44,snapshot=original_prefix(*args,**kwargs)
+        snapshots.append((snapshot,trajectory.fingerprint(vars(snapshot))))
+        return z44,snapshot
+    monkeypatch.setattr(trajectory,'prefix44',prefix)
+    original_velocity=trajectory.velocity
+    def velocity(pipe,z,scheduler,prompt,negative,dtype,guidance,index,count):
+        value=original_velocity(pipe,z,scheduler,prompt,negative,dtype,guidance,index,count)
+        if index in (44,46):pending.append((index,z.detach().clone(),value.detach().clone(),float(scheduler.sigmas[index])))
+        return value
+    monkeypatch.setattr(trajectory,'velocity',velocity)
+    original_direction=control.clean_direction
+    def direction(clean,book,count=None,*,objective=control.DEFAULT_OBJECTIVE):
+        index,z,velocity_value,sigma=pending.pop()
+        expected=z-sigma*velocity_value
+        torch.testing.assert_close(clean,expected,rtol=0,atol=0)
+        if objective==control.WINDOW_STATE_MSE_OBJECTIVE:
+            captured.append((index,clean.detach().clone()))
+        return original_direction(clean,book,count,objective=objective)
+    monkeypatch.setattr(control,'clean_direction',direction)
+    config=core.generation_config(core.load_protocol(),'fixed prompt',17)
+    implicit=core.generate_key_terminals(config,KEY,('SINGLE46','MULTI44_46'))
+    legacy=core.generate_key_terminals(config,KEY,('SINGLE46','MULTI44_46'),objective=control.DEFAULT_OBJECTIVE)
+    state=core.generate_key_terminals(config,KEY,('SINGLE46','MULTI44_46'),objective=control.WINDOW_STATE_MSE_OBJECTIVE)
+    assert implicit['initial_noise_fingerprint']==legacy['initial_noise_fingerprint']
+    assert implicit['state44_fingerprint']==legacy['state44_fingerprint']
+    for arm in implicit['arms']:
+        torch.testing.assert_close(implicit['arms'][arm]['terminal'],legacy['arms'][arm]['terminal'],rtol=0,atol=0)
+    assert legacy['initial_noise_fingerprint']==state['initial_noise_fingerprint']
+    assert legacy['state44_fingerprint']==state['state44_fingerprint']
+    assert legacy['writer_objective']['id']==control.DEFAULT_OBJECTIVE
+    assert state['writer_objective']['id']==control.WINDOW_STATE_MSE_OBJECTIVE
+    for result,objective in ((legacy,control.DEFAULT_OBJECTIVE),(state,control.WINDOW_STATE_MSE_OBJECTIVE)):
+        for arm in result['arms'].values():
+            assert arm['status']=='GENERATED'
+            assert all(row['objective']==objective for row in arm['clean_gradients'])
+            assert arm['cumulative_native_response']['actual_D']['support']['sum_rms']==pytest.approx(control.R_STAR,rel=2e-5)
+        single=result['arms']['SINGLE46']['control_steps'];multi=result['arms']['MULTI44_46']['control_steps']
+        assert [row['target_D_support_rms'] for row in single]==[control.R_STAR]
+        assert [row['target_D_support_rms'] for row in multi]==[control.R_STAR/2]*2
+        for row in single+multi:
+            assert row['actual_D']['support_rms']==pytest.approx(row['target_D_support_rms'],rel=2e-5)
+    assert [row['index'] for row in state['arms']['MULTI44_46']['control_steps']]==[44,46]
+    assert [index for index,_ in captured]==[46,44,46]
+    assert not torch.equal(captured[1][1],captured[2][1])
+    assert all(trajectory.fingerprint(vars(snapshot))==before for snapshot,before in snapshots)
+
+def test_cli_exposes_explicit_writer_objective(monkeypatch,tmp_path):
+    seen={}
+    monkeypatch.setattr(fixed_key_cli,'load_protocol',lambda path:core.load_protocol())
+    def generate(prompt,seed,key,output,protocol,arm,*,objective):
+        seen.update(prompt=prompt,seed=seed,key=key,output=output,protocol=protocol,arm=arm,objective=objective)
+        return {'status':'VIDEO_PERSISTED'}
+    monkeypatch.setattr(fixed_key_cli,'generate_video',generate)
+    result=fixed_key_cli.main(['generate','--prompt','p','--seed','7','--key','k','--protocol','protocol.json',
+                               '--output',str(tmp_path/'out.mp4'),'--objective',control.WINDOW_STATE_MSE_OBJECTIVE])
+    assert result['status']=='VIDEO_PERSISTED'
+    assert seen['objective']==control.WINDOW_STATE_MSE_OBJECTIVE
+
+def test_public_writer_routes_window_state_objective_and_persists_identity(monkeypatch,tmp_path):
+    def make_pipe():
+        return SimpleNamespace(scheduler=FakeScheduler(),transformer=FakeTransformer())
+    class FakeVAE(torch.nn.Module):
+        def __init__(self):super().__init__();self.weight=torch.nn.Parameter(torch.ones(1))
+    saved_media=[]
+    monkeypatch.setattr(core,'prepare_generation',lambda *a,**k:(make_pipe(),torch.zeros(carrier.SHAPE),torch.tensor(1.),torch.tensor(-1.),torch.float32))
+    monkeypatch.setattr(core,'load_frozen_vae',lambda config:FakeVAE())
+    monkeypatch.setattr(core,'decode_normalized_latent',lambda vae,terminal:torch.zeros(181,1,1,3))
+    monkeypatch.setattr(core,'encode_rgb',lambda rgb,path,fps,crf:saved_media.append((rgb.shape,path,fps,crf)))
+    output=tmp_path/'writer.mp4'
+    result=core.generate_video('fixed prompt',17,KEY,output,core.load_protocol(),'SINGLE46',objective=control.WINDOW_STATE_MSE_OBJECTIVE)
+    assert result['status']=='VIDEO_PERSISTED'
+    assert result['writer']['objective']['id']==control.WINDOW_STATE_MSE_OBJECTIVE
+    assert all(row['objective']==control.WINDOW_STATE_MSE_OBJECTIVE for row in result['writer']['clean_gradients'])
+    assert saved_media==[((181,1,1,3),output,8,18)]
+    record=tmp_path/'writer.json';dump(record,result)
+    assert json.loads(record.read_text())['writer']['objective']['id']==control.WINDOW_STATE_MSE_OBJECTIVE
 
 def test_fresh_shared_prefix_live_second_control_counts_and_budget(monkeypatch):
     pipe=SimpleNamespace(scheduler=FakeScheduler(),transformer=FakeTransformer())

@@ -1,0 +1,11 @@
+command: /home/richar/projects/CEG-WM/alive/CEG-WM/.venv/bin/python -m pytest tests/test_fixed_key.py -q -k "not notebook"
+result: 16 passed, 1 deselected in 9.78s
+scope: CPU formula, fixed-key controller, fake scheduler/model, and stub VAE/media routing only; no model, VAE, GPU, download, notebook, roster, or shared OFF execution.
+
+command: /home/richar/projects/CEG-WM/alive/CEG-WM/.venv/bin/python -m pytest tests/test_fixed_key.py tests/test_window_state_mse_paired.py -q
+result: 24 passed in 15.80s
+scope: prior CPU checks plus paired five-fork fake generation, single-read/shared-observation media stubs, three-receiver calibration/reporting/failure retention, exact call accounting, and notebook stdlib structure/AST/argv/return-code stubs; no model, VAE, GPU, download, real media, Colab, or Drive execution.
+
+command: /home/richar/projects/CEG-WM/alive/CEG-WM/.venv/bin/python -m pytest tests/test_window_state_mse_paired.py -q -k manifest_denominators_source_receipt_and_frozen_receiver
+result: 1 passed, 6 deselected in 0.73s
+scope: receipt-only repair after the 24-test run; verifies the paired runner receipt directly identifies payload_control, generation, integrated_core, io, and vae module files, plus the frozen receiver hash. No model, media, notebook, or external execution.

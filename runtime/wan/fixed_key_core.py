@@ -24,6 +24,13 @@ from runtime.wan.vae import _clear_cache, decode_normalized_latent, reencode_rgb
 
 PROTOCOL_PATH = Path(__file__).with_name("fixed_key_protocol.json")
 CONTROL_ARMS = {"OFF": (), "SINGLE46": (46,), "MULTI44_46": (44, 46)}
+PAIRED_ARM_SPECS = {
+    "OFF": ((), None),
+    "LEGACY_SINGLE46": ((46,), fixed_key_control.DEFAULT_OBJECTIVE),
+    "MSE_SINGLE46": ((46,), fixed_key_control.WINDOW_STATE_MSE_OBJECTIVE),
+    "LEGACY_MULTI44_46": ((44, 46), fixed_key_control.DEFAULT_OBJECTIVE),
+    "MSE_MULTI44_46": ((44, 46), fixed_key_control.WINDOW_STATE_MSE_OBJECTIVE),
+}
 
 
 def load_protocol(path: str | Path | None = None) -> dict:
@@ -61,7 +68,7 @@ def _count(count: Callable[[str, bool], None] | None, kind: str, completed: bool
 
 
 def _marker_branch(pipe, z44, snapshot44, prompt, negative, dtype, guidance, controls,
-                    book, count):
+                    book, count, objective=fixed_key_control.DEFAULT_OBJECTIVE):
     z = z44.to(next(pipe.transformer.parameters()).device)
     scheduler = copy.deepcopy(snapshot44)
     control_rows, gradient_rows, probe_rows, arrays = [], [], [], {}
@@ -71,7 +78,13 @@ def _marker_branch(pipe, z44, snapshot44, prompt, negative, dtype, guidance, con
         if index in controls:
             zero_next, _ = trajectory.zero_step(scheduler, z, velocity, index, count, "zero_shadow_step")
             sigma = float(scheduler.sigmas[index])
-            raw, gradient = fixed_key_control.clean_direction(z - sigma * velocity, book, count)
+            clean = z - sigma * velocity
+            # Preserve the legacy positional call for existing integrations that
+            # monkeypatch the historical three-argument default objective.
+            if objective == fixed_key_control.DEFAULT_OBJECTIVE:
+                raw, gradient = fixed_key_control.clean_direction(clean, book, count)
+            else:
+                raw, gradient = fixed_key_control.clean_direction(clean, book, count, objective=objective)
             gradient["index"] = index
             unit, epsilon, probe = fixed_key_control.prepare_direction(
                 scheduler, z, velocity, zero_next, raw, per_step, index, count,
@@ -88,12 +101,14 @@ def _marker_branch(pipe, z44, snapshot44, prompt, negative, dtype, guidance, con
 
 def generate_key_terminals(config: dict, key: bytes,
                                arms: Iterable[str] = ("MULTI44_46",),
-                               count: Callable[[str, bool], None] | None = None) -> dict:
+                               count: Callable[[str, bool], None] | None = None,
+                               *, objective: str = fixed_key_control.DEFAULT_OBJECTIVE) -> dict:
     """Run fresh noise through the shared 44/46 writer and return CPU terminals with nominal marker evidence."""
     count = count or (lambda kind, completed: None)
     arms = tuple(arms)
     if not arms or any(arm not in CONTROL_ARMS for arm in arms):
         raise ValueError("arms must be selected from OFF, SINGLE46, MULTI44_46")
+    objective_record = fixed_key_control.objective_identity(objective)
     _count(count, "generation", False)
     pipe, initial, prompt, negative, dtype = prepare_generation(config, load_vae=False)
     _count(count, "generation", True)
@@ -107,7 +122,7 @@ def generate_key_terminals(config: dict, key: bytes,
             try:
                 terminal, controls, gradients, probes, arrays = _marker_branch(
                     pipe, z44, snapshot44, prompt, negative, dtype,
-                    config["generation"]["guidance_scale"], CONTROL_ARMS[arm], book, count,
+                    config["generation"]["guidance_scale"], CONTROL_ARMS[arm], book, count, objective,
                 )
                 rows[arm] = {"status": "GENERATED", "terminal": terminal, "control_steps": controls,
                              "clean_gradients": gradients, "unit_probes": probes, "control_tensors": arrays,
@@ -116,7 +131,7 @@ def generate_key_terminals(config: dict, key: bytes,
                              "nominal_terminal": fixed_key.nominal_record(terminal, book, include_state=True)}
             except Exception as exc:
                 rows[arm] = {"status": "FAILED_GENERATION", "error": repr(exc)}
-        return {"arms": rows, "book": book,
+        return {"arms": rows, "book": book, "writer_objective": objective_record,
                 "initial_noise_fingerprint": trajectory.fingerprint(initial),
                 "state44_fingerprint": trajectory.fingerprint(z44)}
     finally:
@@ -125,13 +140,66 @@ def generate_key_terminals(config: dict, key: bytes,
         _release()
 
 
+def generate_paired_key_terminals(config: dict, key: bytes,
+                                  count: Callable[[str, bool], None] | None = None) -> dict:
+    """Generate the fixed OFF/legacy/MSE five-fork comparison from one state 44."""
+    count = count or (lambda kind, completed: None)
+    pipe = None
+    _count(count, "generation", False)
+    pipe, initial, prompt, negative, dtype = prepare_generation(config, load_vae=False)
+    _count(count, "generation", True)
+    try:
+        z44, snapshot44 = trajectory.prefix44(
+            pipe, initial, prompt, negative, dtype, config["generation"]["guidance_scale"], count,
+        )
+        snapshot_fingerprint = trajectory.fingerprint(vars(snapshot44))
+        book = fixed_key.codebook(key)
+        rows = {}
+        for arm, (controls, objective) in PAIRED_ARM_SPECS.items():
+            try:
+                branch_objective = objective or fixed_key_control.DEFAULT_OBJECTIVE
+                terminal, control_rows, gradients, probes, arrays = _marker_branch(
+                    pipe, z44.clone(), snapshot44, prompt, negative, dtype,
+                    config["generation"]["guidance_scale"], controls, book, count, branch_objective,
+                )
+                if trajectory.fingerprint(vars(snapshot44)) != snapshot_fingerprint:
+                    raise RuntimeError("paired branch polluted source scheduler snapshot")
+                rows[arm] = {
+                    "status": "GENERATED",
+                    "terminal": terminal,
+                    "writer_objective": None if objective is None else fixed_key_control.objective_identity(objective),
+                    "control_steps": control_rows,
+                    "clean_gradients": gradients,
+                    "unit_probes": probes,
+                    "control_tensors": arrays,
+                    "cumulative_native_response": fixed_key_control.cumulative(control_rows),
+                    "terminal_fingerprint": trajectory.fingerprint(terminal),
+                    "nominal_terminal": fixed_key.nominal_record(terminal, book, include_state=True),
+                }
+            except Exception as exc:
+                rows[arm] = {"status": "FAILED_GENERATION", "error": repr(exc)}
+        return {
+            "arms": rows,
+            "book": book,
+            "initial_noise_fingerprint": trajectory.fingerprint(initial),
+            "state44_fingerprint": trajectory.fingerprint(z44),
+            "scheduler44_fingerprint": snapshot_fingerprint,
+        }
+    finally:
+        if pipe is not None:
+            pipe.transformer = None
+        pipe = initial = prompt = negative = None
+        _release()
+
+
 def generate_video(prompt: str, seed: int, key: bytes,
                    output_path: str | Path, protocol: dict | None = None,
-                   arm: str = "MULTI44_46", count: Callable[[str, bool], None] | None = None) -> dict:
+                   arm: str = "MULTI44_46", count: Callable[[str, bool], None] | None = None,
+                   *, objective: str = fixed_key_control.DEFAULT_OBJECTIVE) -> dict:
     """Public writer: prompt/seed/key to one persisted MP4."""
     protocol = copy.deepcopy(protocol or load_protocol())
     config = generation_config(protocol, prompt, seed)
-    generated = generate_key_terminals(config, key, (arm,), count)
+    generated = generate_key_terminals(config, key, (arm,), count, objective=objective)
     if generated["arms"][arm]["status"] != "GENERATED":
         raise RuntimeError(generated["arms"][arm]["error"])
     terminal = generated["arms"][arm].pop("terminal")
@@ -148,6 +216,7 @@ def generate_video(prompt: str, seed: int, key: bytes,
         terminal = vae = None
         _release()
     writer = {key: value for key, value in generated["arms"][arm].items() if key != "control_tensors"}
+    writer["objective"] = generated["writer_objective"]
     return {"status": "VIDEO_PERSISTED", "path": str(Path(output_path)),
             "arm": arm, "receiver_protocol_id": protocol["receiver_protocol_id"],
             "key_id": fixed_key.key_identifier(key), "writer": writer}
