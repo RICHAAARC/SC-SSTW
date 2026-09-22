@@ -1,0 +1,101 @@
+{
+  "receiver_protocol_id": "SC-SSTW-Fixed-Key-11Window-V1",
+  "model": {
+    "id": "Wan-AI/Wan2.1-T2V-1.3B-Diffusers",
+    "revision": "0fad780a534b6463e45facd96134c9f345acfa5b"
+  },
+  "generation": {
+    "height": 320,
+    "width": 512,
+    "frames": 181,
+    "fps": 8,
+    "steps": 50,
+    "guidance_scale": 5.0,
+    "max_sequence_length": 512,
+    "negative_prompt": "text, watermark, logo, camera motion, cuts, multiple objects, flicker"
+  },
+  "control": {
+    "R_star": 0.042943312697648145,
+    "single46_per_step": 0.042943312697648145,
+    "multi44_46_per_step": 0.021471656348824072
+  },
+  "video": {
+    "codec": "libx264",
+    "pixel_format": "yuv420p",
+    "crf": 18
+  },
+  "marker": {
+    "template": "legacy-state-clock-message0",
+    "windows": 11,
+    "support_count": 1760,
+    "temperature": 1,
+    "objective": "negative mean fixed-code tanh projection",
+    "score": "component-weighted mean fixed-code clipped projection - 0.05 innovation - 0.002 event",
+    "path_count": 4284,
+    "partial_window_min_groups": 3,
+    "template_definition": "state_clock.codebook(key)[codes][0]",
+    "context": "wan_projection_state_clock_v1",
+    "clip": [
+      -1,
+      1
+    ],
+    "matched_weighting": "observed physical components: 640/full window, 480/partial3 window",
+    "innovation_weighting": "11 windows equally weighted, q direction normalized; missing window innovation 1",
+    "innovation_weight": 0.05,
+    "event_cost": 0.002,
+    "minimum_path_support": "at least one usable >=3-group window; zero usable windows INVALID"
+  },
+  "receiver": {
+    "phases": [
+      0,
+      1,
+      2,
+      3
+    ],
+    "scales": [
+      [
+        4,
+        5
+      ],
+      [
+        1,
+        1
+      ],
+      [
+        5,
+        4
+      ]
+    ],
+    "offsets": [
+      -8,
+      -7,
+      -6,
+      -5,
+      -4,
+      -3,
+      -2,
+      -1,
+      0,
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8
+    ],
+    "events": "none or one +/-1 event at boundaries 1..10",
+    "path_count": 4284,
+    "formal_phase_requirement": "all four saved encodes COMPLETE",
+    "views": [
+      "FULL",
+      "DELETE90",
+      "SPEED5_4"
+    ],
+    "source_statistic": "max over the complete three-view and 4284-path family",
+    "calibration_sources": 2,
+    "calibration_guard": 1e-06,
+    "diagnostics": "fixed reference paths are reporting-only; never alter blind path maximum or threshold"
+  }
+}

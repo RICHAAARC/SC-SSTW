@@ -1,0 +1,88 @@
+{
+  "name": "flow_fixed_key_v1",
+  "protocol": "SC-SSTW-Flow-Fixed-Key-V1",
+  "receiver_protocol_id": "SC-SSTW-Fixed-Key-11Window-V1",
+  "model": {
+    "id": "Wan-AI/Wan2.1-T2V-1.3B-Diffusers",
+    "revision": "0fad780a534b6463e45facd96134c9f345acfa5b"
+  },
+  "generation": {
+    "height": 320,
+    "width": 512,
+    "frames": 181,
+    "fps": 8,
+    "steps": 50,
+    "guidance_scale": 5.0,
+    "max_sequence_length": 512,
+    "negative_prompt": "text, watermark, logo, camera motion, cuts, multiple objects, flicker"
+  },
+  "key_utf8": "WanProjection-first-validation-key-v1",
+  "cases": [
+    {
+      "id": "cal_off_p0_s1",
+      "role": "calibration_off",
+      "prompt": "locked camera, a single blue rowboat moving slowly across a quiet pond, stable morning light, no people, no cuts",
+      "seed": 20260917
+    },
+    {
+      "id": "cal_off_p1_s1",
+      "role": "calibration_off",
+      "prompt": "locked camera, a single green bus moving slowly along a straight empty road, stable cloudy light, no people, no cuts",
+      "seed": 20260918
+    },
+    {
+      "id": "eval_p2_s2",
+      "role": "evaluation",
+      "prompt": "locked camera, a single orange kayak gliding slowly across calm water, stable daylight, no people, no cuts",
+      "seed": 20260919,
+      "previous_development_case_id": "eval_p2_s2_m5"
+    },
+    {
+      "id": "eval_p3_s3",
+      "role": "evaluation",
+      "prompt": "locked camera, a single white delivery van moving slowly along a straight empty street, stable overcast daylight, no people, no cuts",
+      "seed": 20260920,
+      "previous_development_case_id": "eval_p3_s3_ma"
+    }
+  ],
+  "control": {
+    "R_star": 0.042943312697648145,
+    "single46_per_step": 0.042943312697648145,
+    "multi44_46_per_step": 0.021471656348824072,
+    "meaning": "cumulative native response RMS: SINGLE46 full amount; MULTI44/46 equal halves"
+  },
+  "views": [
+    "FULL",
+    "DELETE90",
+    "SPEED5_4"
+  ],
+  "calibration": {
+    "source_count": 2,
+    "guard": 1e-06,
+    "rule": "maximum over all fixed clock paths and all three saved views per independent OFF source, plus guard",
+    "claim": "functional independent-OFF calibration only; empirical rank resolution 1/3, no low-FPR claim"
+  },
+  "evidence_ceiling": "unrun fixed-key candidate; reused development prompts/seeds generated afresh; historical A/B and four-bit results do not validate this fixed-marker objective or existence calibration",
+  "marker": {
+    "template": "legacy-state-clock-message0",
+    "windows": 11,
+    "support_count": 1760,
+    "temperature": 1,
+    "objective": "negative mean fixed-code tanh projection",
+    "score": "component-weighted mean fixed-code clipped projection - 0.05 innovation - 0.002 event",
+    "path_count": 4284,
+    "partial_window_min_groups": 3,
+    "template_definition": "state_clock.codebook(key)[codes][0]",
+    "context": "wan_projection_state_clock_v1",
+    "clip": [
+      -1,
+      1
+    ],
+    "matched_weighting": "observed physical components: 640/full window, 480/partial3 window",
+    "innovation_weighting": "11 windows equally weighted, q direction normalized; missing window innovation 1",
+    "innovation_weight": 0.05,
+    "event_cost": 0.002,
+    "minimum_path_support": "at least one usable >=3-group window; zero usable windows INVALID"
+  },
+  "roster_role": "development mechanism validation; two independent calibration OFF cases are separate from two evaluation cases, not new-content generalization"
+}
