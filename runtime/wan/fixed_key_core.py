@@ -116,6 +116,7 @@ def generate_key_terminals(config: dict, key: bytes,
         z44, snapshot44 = trajectory.prefix44(
             pipe, initial, prompt, negative, dtype, config["generation"]["guidance_scale"], count,
         )
+        snapshot_fingerprint = trajectory.fingerprint(vars(snapshot44))
         book = fixed_key.codebook(key)
         rows = {}
         for arm in arms:
@@ -124,6 +125,8 @@ def generate_key_terminals(config: dict, key: bytes,
                     pipe, z44, snapshot44, prompt, negative, dtype,
                     config["generation"]["guidance_scale"], CONTROL_ARMS[arm], book, count, objective,
                 )
+                if trajectory.fingerprint(vars(snapshot44)) != snapshot_fingerprint:
+                    raise RuntimeError("fixed-key branch polluted source scheduler snapshot")
                 rows[arm] = {"status": "GENERATED", "terminal": terminal, "control_steps": controls,
                              "clean_gradients": gradients, "unit_probes": probes, "control_tensors": arrays,
                              "cumulative_native_response": fixed_key_control.cumulative(controls),
@@ -133,7 +136,8 @@ def generate_key_terminals(config: dict, key: bytes,
                 rows[arm] = {"status": "FAILED_GENERATION", "error": repr(exc)}
         return {"arms": rows, "book": book, "writer_objective": objective_record,
                 "initial_noise_fingerprint": trajectory.fingerprint(initial),
-                "state44_fingerprint": trajectory.fingerprint(z44)}
+                "state44_fingerprint": trajectory.fingerprint(z44),
+                "scheduler44_fingerprint": snapshot_fingerprint}
     finally:
         pipe.transformer = None
         pipe = initial = prompt = negative = None

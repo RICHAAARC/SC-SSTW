@@ -1,0 +1,28 @@
+{
+  "status": "EXECUTION_COMPLETE",
+  "execution_kind": "fixed_24_view_saved_tensor_cpu_development_replay",
+  "base_commit": "8aff4025fd0f8dd656091bf83af1311263f4d99c",
+  "receiver_sha256": "3d503b1411cfa79cc483ff7b6f76e47c02d2ed684a49d35a886b27a7fb1fbc14",
+  "replay_sha256": "8c4868716bbe125ecb34c9b58dff25f163d0122dc8a85545f8cd502f4e53ee63",
+  "spec_sha256": "8755b1c4626206bafc7c804d359d7d3137da7f758533ab69dd55aa8b3d9eab6f",
+  "python": "/home/richar/projects/CEG-WM/alive/CEG-WM/.venv/bin/python",
+  "workers": 4,
+  "omp_num_threads": 1,
+  "mkl_num_threads": 1,
+  "fixed_searches": 408,
+  "fixed_path_attempts": 1747872,
+  "started_utc": "2026-09-23T01:12:30.233151+00:00",
+  "completed_utc": "2026-09-23T01:28:07.435015+00:00",
+  "actual_views_scored": 24,
+  "actual_baseline_reproduction_pass": 24,
+  "actual_searches": 408,
+  "actual_path_attempts": 1747872,
+  "retained_failures": 0,
+  "input_tensor_receipt_sha256": "0e3a7b2e5dfbb64e598366992b422753bb27a94e6ec36886d7588e1507a5a8cf",
+  "input_tensor_receipt_check": {
+    "expected": 96,
+    "files": 96,
+    "sha256_mismatches": 0
+  },
+  "note": "These hashes bind the executed replay. The final receiver later added failure-path reporting fields without changing the successful scoring path; the fixed replay was not rerun."
+}

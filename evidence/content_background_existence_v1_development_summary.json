@@ -1,0 +1,88 @@
+{
+  "status": "EXECUTION_COMPLETE",
+  "evidence_kind": "same-batch saved-tensor CPU development replay",
+  "base_commit": "8aff4025fd0f8dd656091bf83af1311263f4d99c",
+  "executed_code_binding": {
+    "receiver_sha256": "3d503b1411cfa79cc483ff7b6f76e47c02d2ed684a49d35a886b27a7fb1fbc14",
+    "replay_sha256": "8c4868716bbe125ecb34c9b58dff25f163d0122dc8a85545f8cd502f4e53ee63",
+    "spec_sha256": "8755b1c4626206bafc7c804d359d7d3137da7f758533ab69dd55aa8b3d9eab6f"
+  },
+  "final_source_after_failure_reporting_fix": {
+    "receiver_sha256": "d743a82a60927d4d48aae6645aad6c39463b6a3d3fe80f264505cf28b67c4e68",
+    "difference_from_executed_receiver": "On INVALID outcomes only, preserve the successful correct-key detection/score and actual fixed-search/path counts. The successful scoring formula and path are unchanged. All 24 executed rows were SCORED; independent recomputation matched mean, population std, and Z below 1e-12, so the fixed replay was not rerun."
+  },
+  "fixed_denominator": {
+    "sources": 4,
+    "physical_source_arms": 8,
+    "views": 24,
+    "phase_tensors": 96,
+    "keys_per_view": 17,
+    "blind_searches": 408,
+    "path_attempts": 1747872
+  },
+  "completion": {
+    "views_scored": "24/24",
+    "correct_key_baseline_reproduction": "24/24 PASS",
+    "blind_searches": "408/408",
+    "path_attempts": "1747872/1747872",
+    "retained_failures": 0,
+    "wall_seconds_four_workers": 936.67,
+    "sum_view_seconds": 3301.50,
+    "view_seconds_range": [93.60, 170.46]
+  },
+  "input_integrity": {
+    "receipt_sha256": "0e3a7b2e5dfbb64e598366992b422753bb27a94e6ec36886d7588e1507a5a8cf",
+    "expected_tensors": 96,
+    "files_checked": 96,
+    "sha256_mismatches": 0
+  },
+  "development_calibration": {
+    "source_count": 2,
+    "threshold": -0.8699531680108334,
+    "guard": 0.000001,
+    "claim": "same-batch two-source development diagnostic only; this is not the fixed four-source new-run calibration"
+  },
+  "evaluation_counts": {
+    "CONTENT_BACKGROUND_Z": {
+      "off_views_detected": "3/6",
+      "marked_views_detected": "12/12",
+      "off_source_arms_detected": "1/2",
+      "marked_source_arms_detected": "4/4",
+      "failure_location": "all three p3 OFF views and the p3 OFF source-arm remain detected"
+    },
+    "ORIGINAL": {
+      "off_views_detected": "5/6",
+      "marked_views_detected": "12/12",
+      "off_source_arms_detected": "2/2",
+      "marked_source_arms_detected": "4/4"
+    },
+    "C1_MATCHED_CONFIRM": {
+      "off_views_detected": "0/6",
+      "marked_views_detected": "4/12",
+      "off_source_arms_detected": "0/2",
+      "marked_source_arms_detected": "2/4"
+    },
+    "C2_STATE_CONFIRM": {
+      "off_views_detected": "0/6",
+      "marked_views_detected": "4/12",
+      "off_source_arms_detected": "0/2",
+      "marked_source_arms_detected": "2/4"
+    }
+  },
+  "view_decision_overlap_candidate_vs_baselines": {
+    "ORIGINAL": {
+      "off_6": {"both": 3, "candidate_only": 0, "baseline_only": 2, "neither": 1, "invalid": 0},
+      "marked_12": {"both": 12, "candidate_only": 0, "baseline_only": 0, "neither": 0, "invalid": 0}
+    },
+    "C1_MATCHED_CONFIRM": {
+      "off_6": {"both": 0, "candidate_only": 3, "baseline_only": 0, "neither": 3, "invalid": 0},
+      "marked_12": {"both": 4, "candidate_only": 8, "baseline_only": 0, "neither": 0, "invalid": 0}
+    },
+    "C2_STATE_CONFIRM": {
+      "off_6": {"both": 0, "candidate_only": 3, "baseline_only": 0, "neither": 3, "invalid": 0},
+      "marked_12": {"both": 4, "candidate_only": 8, "baseline_only": 0, "neither": 0, "invalid": 0}
+    }
+  },
+  "method_result": "The normalized candidate reduces same-batch ORIGINAL OFF detections from 5/6 to 3/6 while retaining 12/12 marked detections, but it does not separate p3 OFF. This is not sufficient to claim method success.",
+  "evidence_ceiling": "No new-source, GPU, model, media-generation, independent FPR, generalization, quality, capacity, or causal background-removal claim. Raw S and normalized Z are in different units and are not compared by magnitude."
+}

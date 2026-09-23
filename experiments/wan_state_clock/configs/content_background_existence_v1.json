@@ -1,0 +1,125 @@
+{
+  "name": "content_background_existence_v1",
+  "protocol": "SC-SSTW-Content-Background-Existence-V1",
+  "receiver_protocol_id": "SC-SSTW-Content-Background-Existence-V1",
+  "original_receiver_protocol_id": "SC-SSTW-Fixed-Key-11Window-V1",
+  "split_receiver_protocol_id": "SC-SSTW-Receiver-Split-V1",
+  "roster_sha256": "4347827e8f6bb5cd8cae76d86241249d159eef45408e890bced40e5aad2d2bf3",
+  "model": {
+    "id": "Wan-AI/Wan2.1-T2V-1.3B-Diffusers",
+    "revision": "0fad780a534b6463e45facd96134c9f345acfa5b"
+  },
+  "generation": {
+    "height": 320,
+    "width": 512,
+    "frames": 181,
+    "fps": 8,
+    "steps": 50,
+    "guidance_scale": 5.0,
+    "max_sequence_length": 512,
+    "negative_prompt": "text, watermark, logo, camera motion, cuts, multiple objects, flicker"
+  },
+  "key_utf8": "WanProjection-first-validation-key-v1",
+  "cases": [
+    {
+      "id": "new_cal_c0_s1",
+      "role": "calibration_off",
+      "prompt": "locked camera, a single red tram moving slowly along a straight empty city street, stable daylight, no people, no cuts",
+      "seed": 2026092301
+    },
+    {
+      "id": "new_cal_c1_s2",
+      "role": "calibration_off",
+      "prompt": "locked camera, a single yellow sailboat drifting slowly across a quiet lake, stable morning light, no people, no cuts",
+      "seed": 2026092302
+    },
+    {
+      "id": "new_cal_c2_s3",
+      "role": "calibration_off",
+      "prompt": "locked camera, a single brown horse walking slowly across a flat grassy field, stable cloudy light, no people, no cuts",
+      "seed": 2026092303
+    },
+    {
+      "id": "new_cal_c3_s4",
+      "role": "calibration_off",
+      "prompt": "locked camera, a single silver sedan moving slowly along a straight empty country road, stable overcast daylight, no people, no cuts",
+      "seed": 2026092304
+    },
+    {
+      "id": "new_eval_e0_s5",
+      "role": "evaluation",
+      "prompt": "locked camera, a single purple canoe gliding slowly across a calm river, stable afternoon light, no people, no cuts",
+      "seed": 2026092305
+    },
+    {
+      "id": "new_eval_e1_s6",
+      "role": "evaluation",
+      "prompt": "locked camera, a single turquoise cargo truck moving slowly along a straight empty road, stable daylight, no people, no cuts",
+      "seed": 2026092306
+    },
+    {
+      "id": "new_eval_e2_s7",
+      "role": "evaluation",
+      "prompt": "locked camera, a single black dog walking slowly across an empty park lawn, stable cloudy light, no people, no cuts",
+      "seed": 2026092307
+    },
+    {
+      "id": "new_eval_e3_s8",
+      "role": "evaluation",
+      "prompt": "locked camera, a single orange tractor moving slowly across a flat harvested field, stable morning light, no people, no cuts",
+      "seed": 2026092308
+    }
+  ],
+  "calibration_arms": ["OFF"],
+  "evaluation_arms": ["OFF", "SINGLE46", "MULTI44_46"],
+  "writer_objectives": {
+    "OFF": "OFF_NO_WRITER_OBJECTIVE",
+    "SINGLE46": "fixed-marker-11-window-tanh-mean",
+    "MULTI44_46": "fixed-marker-11-window-tanh-mean"
+  },
+  "control": {
+    "R_star": 0.042943312697648145,
+    "single46_per_step": 0.042943312697648145,
+    "multi44_46_per_step": 0.021471656348824072,
+    "meaning": "cumulative native response RMS: SINGLE46 full amount; MULTI44/46 equal halves"
+  },
+  "views": ["FULL", "DELETE90", "SPEED5_4"],
+  "receivers": ["ORIGINAL", "C1_MATCHED_CONFIRM", "C2_STATE_CONFIRM", "CONTENT_BACKGROUND_Z"],
+  "calibration": {
+    "source_count": 4,
+    "guard": 0.000001,
+    "rank_resolution": "1/5",
+    "rule": "per receiver: maximum over three fixed views for each of four calibration OFF sources, then maximum across sources plus guard",
+    "claim": "functional independent-OFF calibration only; no low-FPR claim"
+  },
+  "fixed_denominator": {
+    "fresh_sources": 8,
+    "calibration_sources": 4,
+    "evaluation_sources": 4,
+    "physical_source_arms": 16,
+    "saved_attack_views": 48,
+    "receiver_phase_encodes": 192,
+    "evaluation_OFF_views": 12,
+    "evaluation_marked_views": 24,
+    "evaluation_OFF_source_arms": 4,
+    "evaluation_marked_source_arms": 8
+  },
+  "expected_complete_calls": {
+    "generation": 8,
+    "transformer": 896,
+    "scheduler_step": 448,
+    "zero_shadow_step": 12,
+    "unit_response_probe_step": 12,
+    "clean_leaf_backward": 12,
+    "vae_decode": 16,
+    "mp4_save": 48,
+    "mp4_read": 48,
+    "vae_encode": 192
+  },
+  "candidate_search_accounting": {
+    "keys_per_view": 17,
+    "full_blind_searches": 816,
+    "path_attempts": 3495744
+  },
+  "evidence_ceiling": "fixed new-source user-run validation with retained failures; no low-FPR, generalization, quality, capacity, or causal background-removal claim"
+}
