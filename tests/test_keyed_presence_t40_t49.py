@@ -135,9 +135,8 @@ def test_parent_runs_nine_calibrators_before_any_evaluation_and_retains_failures
         raise OSError("planned child launch failure")
     monkeypatch.setattr(run, "_child", fail)
     result = run.run_all(run.MANIFEST, tmp_path / "run")
-    assert len(attempts) == 26
+    assert len(attempts) == 18
     assert all(cid.startswith("c") for cid, _ in attempts[:18])
-    assert all(cid.startswith("s") for cid, _ in attempts[18:])
     assert result["calibration"]["C2_STATE_CONFIRM"]["status"] == "UNCALIBRATED"
     assert result["target_summary"]["INVALID_OFF"] == 4
     assert result["target_summary"]["FPR"] is None
@@ -147,6 +146,10 @@ def test_parent_runs_nine_calibrators_before_any_evaluation_and_retains_failures
     assert result["cases"]["c01"]["actual_calls"]["transformer_attempted"] == 7
     assert result["cases"]["c01"]["last_child_progress"] == {"stage": "prefix40"}
     assert sum(len(parts) for source in result["raw_layer_changes"].values() for arm in source.values() for parts in arm.values()) == 180
+    assert result["fixed_denominator"]["evaluation_raw_adjacent_changes"] == 180
+    assert all(result["cases"][c]["status"] == "NOT_RUN_UNCALIBRATED" for c in ("s0", "s1", "s2", "s3"))
+    assert all(v["receivers"]["C2_STATE_CONFIRM"]["decision"]["status"] == "UNCALIBRATED"
+               for c in ("s0", "s1", "s2", "s3") for v in result["cases"][c]["videos"].values())
 
 
 def test_parent_freezes_full_c2_before_eval_and_only_target_controls_pass(monkeypatch, tmp_path):
@@ -164,6 +167,10 @@ def test_parent_freezes_full_c2_before_eval_and_only_target_controls_pass(monkey
         order.append((case_id, stage))
         record = run.empty_case(case, config)
         record["status"] = "GENERATION_COMPLETE" if stage == "generate" else "EXECUTION_COMPLETE"
+        if case_id == "c01":
+            record["actual_calls"]["transformer_attempted"] = 1
+            run.dump(path / "progress.json", {"status": record["status"], "progress": {"stage": stage},
+                "actual_calls": {"transformer_attempted": 7 if stage == "generate" else 2}})
         if case["role"] == "evaluation":
             assert run.load(root / "calibration.json")["C2_STATE_CONFIRM"]["status"] == "FROZEN"
         if stage == "media":
@@ -174,6 +181,8 @@ def test_parent_freezes_full_c2_before_eval_and_only_target_controls_pass(monkey
                         receiver_protocol_id=fixed_key.PROTOCOL_ID if receiver == "ORIGINAL" else fixed_key_split_receiver.PROTOCOL_ID)
                 if arm == "T49_ONLY":
                     video["receivers"]["ORIGINAL"].update(status="INVALID", statistic=None)
+                if case_id == "c09":
+                    video["receivers"]["ORIGINAL"].update(status="INVALID", statistic=None)
         run.dump(path / ("generation.json" if stage == "generate" else "result.json"), record)
         return 0
     monkeypatch.setattr(run, "_child", child)
@@ -181,9 +190,34 @@ def test_parent_freezes_full_c2_before_eval_and_only_target_controls_pass(monkey
     assert all(case_id.startswith("c") for case_id, _ in order[:18])
     assert all(case_id.startswith("s") for case_id, _ in order[18:])
     assert result["calibration"]["C2_STATE_CONFIRM"]["status"] == "FROZEN"
+    assert result["calibration"]["ORIGINAL"]["status"] == "UNCALIBRATED"
     assert result["target_summary"]["target_pass"]
     assert result["target_summary"]["TPR"] == 1 and result["target_summary"]["FPR"] == 0
     assert all(result["cases"][c]["videos"]["T49_ONLY"]["receivers"]["ORIGINAL"]["decision"]["status"] == "INVALID" for c in ("s0", "s1", "s2", "s3"))
+    assert result["cases"]["c01"]["actual_calls"]["transformer_attempted"] == 7
+
+
+def test_corrupt_child_json_and_valid_progress_keep_slots_and_finish(monkeypatch, tmp_path):
+    attempted = []
+    def child(command, log):
+        case_id = command[command.index("--case-id") + 1]
+        stage = command[command.index("--stage") + 1]
+        attempted.append((case_id, stage))
+        path = Path(command[command.index("--output") + 1]); path.mkdir(parents=True, exist_ok=True)
+        if case_id == "c01" and stage == "generate":
+            (path / "generation.json").write_text("{")
+            run.dump(path / "progress.json", {"status": "GENERATION_RUNNING", "progress": {"stage": "prefix40"},
+                "actual_calls": {"transformer_attempted": 7}})
+            return -9
+        return 1
+    monkeypatch.setattr(run, "_child", child)
+    result = run.run_all(run.MANIFEST, tmp_path / "corrupt")
+    assert len(attempted) == 18
+    assert result["status"] == "WITH_RETAINED_FAILURES"
+    assert result["cases"]["c01"]["actual_calls"]["transformer_attempted"] == 7
+    assert any("child result unreadable" in f["error"] for f in result["failures"])
+    assert result["target_summary"]["FPR"] is None
+    assert len([v for c in result["cases"].values() for v in c["videos"].values()]) == 29
 
 
 def test_media_worker_saves_raster_and_observation_hashes_without_changing_blind_input(monkeypatch, tmp_path):
@@ -234,6 +268,26 @@ def test_media_worker_saves_raster_and_observation_hashes_without_changing_blind
         assert item["artifacts"]["rgb8_no_codec"]["sha256"]
         assert item["artifacts"]["received_rgb"]["sha256"]
         assert all(item["phases"][str(g)]["sha256"] for g in range(4))
+
+    calibration_case = next(c for c in config["cases"] if c["id"] == "c01")
+    calibration_root = tmp_path / "c01"; calibration_root.mkdir()
+    calibration_record = run.empty_case(calibration_case, config)
+    calibration_record["config"] = run.case_config(config, calibration_case)
+    off = calibration_record["videos"]["OFF"]
+    off["status"] = "GENERATED"
+    run._artifact(torch.zeros(1, 16, 45, 40, 64), calibration_root / "terminals" / "OFF.pt", off, "terminal")
+    run.dump(calibration_root / "generation.json", calibration_record)
+    def phase_save_failed_but_observation_retained(pixels, vae, count, on_phase):
+        obs, rows = phases(pixels, vae, count, on_phase)
+        rows["2"] = {"status": "FAILED", "error": "persist failed after in-memory encode"}
+        return obs, rows
+    monkeypatch.setattr(run, "encode_four_phases", phase_save_failed_but_observation_retained)
+    failed = run.media_case("c01", run.MANIFEST, calibration_root)
+    assert len(received) == 5  # The blind scorer never sees the incomplete persisted view.
+    assert failed["videos"]["OFF"]["receivers"]["C2_STATE_CONFIRM"]["status"] == "INVALID"
+    assert run.freeze_calibration({"c01": failed, **{
+        c["id"]: run.empty_case(c, config) for c in config["cases"] if c["role"] == "calibration_off" and c["id"] != "c01"}},
+        config, "spec")["C2_STATE_CONFIRM"]["status"] == "UNCALIBRATED"
 
 
 def test_builder_requires_source_sha_and_emits_single_run_all_path(tmp_path):

@@ -28,7 +28,7 @@
     "steps": {"T44_46": [44, 46], "T40_48": [40, 41, 42, 43, 44, 45, 46, 47, 48], "T40_49": [40, 41, 42, 43, 44, 45, 46, 47, 48, 49], "T49_ONLY": [49]}
   },
   "receiver": {"primary": "C2_STATE_CONFIRM", "descriptive": ["ORIGINAL", "C1_MATCHED_CONFIRM"], "view": "FULL", "paths": 4284, "phases": [0, 1, 2, 3], "calibration_sources": 9, "evaluation_sources": 4, "calibration_guard": 0.000001, "rule": "C2 FULL score > max nine independent OFF FULL C2 scores plus guard; four marked detected and four valid OFF rejected"},
-  "fixed_denominator": {"sources": 13, "calibration_off": 9, "evaluation_sources": 4, "physical_videos": 29, "evaluation_layer_partition": 240, "evaluation_marked_off_pairs": 192, "evaluation_adjacent_pair_changes": 144, "vae_encode": 156},
+  "fixed_denominator": {"sources": 13, "calibration_off": 9, "evaluation_sources": 4, "physical_videos": 29, "evaluation_layer_partition": 240, "evaluation_marked_off_pairs": 192, "evaluation_raw_adjacent_changes": 180, "evaluation_adjacent_pair_changes": 144, "vae_encode": 156},
   "fixed_calls": {"generation": 13, "transformer": 1620, "scheduler_step": 810, "zero_shadow_step": 88, "unit_response_probe_step": 88, "clean_leaf_backward": 88, "vae_decode": 29, "mp4_save": 29, "mp4_read": 29, "vae_encode": 156},
   "claim": "fixed-key H0/H1 presence on four predeclared sources; no quality, identity, payload, low-FPR or extra multistep-gain claim"
 }

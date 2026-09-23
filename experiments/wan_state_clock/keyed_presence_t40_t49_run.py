@@ -7,6 +7,7 @@ import hashlib
 import importlib.metadata
 import json
 import math
+import os
 import platform
 import resource
 import shutil
@@ -22,7 +23,7 @@ from runtime.wan import keyed_presence_t40_t49 as writer
 from runtime.wan import fixed_key_control, generation, io, media_channel_retention as retention, payload_control, trajectory, vae as vae_adapter
 from runtime.wan.generation import load_frozen_vae
 from runtime.wan.integrated_core import encode_four_phases
-from runtime.wan.io import dump, encode_rgb, read_mp4
+from runtime.wan.io import dump as shared_dump, encode_rgb, read_mp4
 from runtime.wan.vae import decode_normalized_latent, quantize_rgb8_no_codec, reencode_rgb24_readback, _clear_cache
 
 MANIFEST = Path(__file__).parent / "configs" / "keyed_presence_t40_t49_v1.json"
@@ -31,6 +32,14 @@ RECEIVERS = ("C2_STATE_CONFIRM", "ORIGINAL", "C1_MATCHED_CONFIRM")
 LAYERS = ("TERMINAL", "FLOAT_RGB_REENCODE", "RGB8_NO_CODEC_REENCODE", "MP4_G0")
 PARTITIONS = retention.PARTITIONS
 PHASES = (0, 1, 2, 3)
+
+
+def dump(path, value):
+    """Publish one complete JSON snapshot; an interrupted write leaves the old file."""
+    path = Path(path)
+    temporary = path.with_name(path.name + f".{os.getpid()}.tmp")
+    shared_dump(temporary, value)
+    temporary.replace(path)
 
 
 def load(path):
@@ -246,11 +255,17 @@ def media_case(case_id, config_path, output):
                 item["phases"] = phase_rows
                 if case["role"] == "evaluation" and 0 in observations:
                     score_layer(item["layers"]["MP4_G0"], torch.from_numpy(observations[0]), book)
-                rows, original, split = score_blind(observations, key, spec_sha)
+                phase_complete = all(phase_rows.get(str(g), {}).get("status") == "COMPLETE" for g in PHASES)
+                if phase_complete:
+                    rows, original, split = score_blind(observations, key, spec_sha)
+                else:
+                    rows = {name: {"status": "INVALID", "statistic": None, "decision": None,
+                                   "reason": "one or more MP4 phase observations were not persisted COMPLETE"} for name in RECEIVERS}
+                    original = split = {"status": "INVALID", "reason": "incomplete persisted MP4 phases"}
                 item["receivers"] = rows
                 dump(output / "detections" / arm / "original.json", original)
                 dump(output / "detections" / arm / "split.json", split)
-                item["status"] = "MEDIA_COMPLETE" if all(r["status"] == "SCORED" for r in rows.values()) and all(phase_rows.get(str(g), {}).get("status") == "COMPLETE" for g in PHASES) and (case["role"] != "evaluation" or all(layer["status"] == "SCORED" for layer in item["layers"].values())) else "PARTIAL_OR_FAILED"
+                item["status"] = "MEDIA_COMPLETE" if phase_complete and all(r["status"] == "SCORED" for r in rows.values()) and (case["role"] != "evaluation" or all(layer["status"] == "SCORED" for layer in item["layers"].values())) else "PARTIAL_OR_FAILED"
                 if item["status"] != "MEDIA_COMPLETE":
                     result["failures"].append({"stage": f"media/{arm}", "error": "one or more fixed layer/phase/receiver slots failed"})
             except Exception as exc:
@@ -415,13 +430,35 @@ def run_all(config_path, output):
                 result["failures"].append({"case_id": case_id, "stage": stage, "error": repr(exc), "log": str(log)})
             path = output / case_id / ("generation.json" if stage == "generate" else "result.json")
             if path.exists():
-                current = load(path)
-                previous = result["cases"][case_id]
-                current["stage_logs"] = previous["stage_logs"]
-                current["parent_failures"] = previous["parent_failures"]
-                for key in ("generate_exit_code", "media_exit_code"):
-                    if key in previous: current[key] = previous[key]
-                result["cases"][case_id] = current
+                try:
+                    current = load(path)
+                    if (not isinstance(current, dict) or current.get("case_id") != case_id
+                        or current.get("role") != case["role"]
+                        or not isinstance(current.get("videos"), dict)
+                        or set(current["videos"]) != set(arms_for(case, config))
+                        or not isinstance(current.get("actual_calls"), dict)
+                        or not isinstance(current.get("failures"), list)
+                        or any(not isinstance(video, dict) or set(video.get("receivers", {})) != set(RECEIVERS)
+                            or set(video.get("layers", {})) != set(LAYERS)
+                            or set(video.get("phases", {})) != {str(g) for g in PHASES}
+                            for video in current["videos"].values())):
+                        raise ValueError("child result lacks required case fields")
+                except Exception as exc:
+                    previous = result["cases"][case_id]
+                    previous["status"] = "FAILED_CHILD_RESULT_INVALID"
+                    failure = {"case_id": case_id, "stage": stage, "error": "child result unreadable: " + repr(exc),
+                               "path": str(path.relative_to(output)), "log": str(log.relative_to(output))}
+                    previous["parent_failures"].append(failure)
+                    result["failures"].append(failure)
+                else:
+                    previous = result["cases"][case_id]
+                    current["stage_logs"] = previous["stage_logs"]
+                    current["parent_failures"] = previous["parent_failures"]
+                    for key, value in previous.get("actual_calls", {}).items():
+                        current["actual_calls"][key] = max(current["actual_calls"].get(key, 0), value)
+                    for key in ("generate_exit_code", "media_exit_code"):
+                        if key in previous: current[key] = previous[key]
+                    result["cases"][case_id] = current
             else:
                 result["cases"][case_id]["status"] = "FAILED_CHILD_RESULT_MISSING"
                 failure = {"case_id": case_id, "stage": stage, "error": "child result missing", "log": str(log)}
@@ -459,12 +496,22 @@ def run_all(config_path, output):
         item = result["cases"][case["id"]]["videos"]["OFF"]
         attach_decisions(item, calibration, case_role="calibration_off", arm="OFF")
     dump(output / "result.json", result)
-    for case in config["cases"]:
-        if case["role"] == "evaluation": execute(case)
-    for case in config["cases"]:
-        if case["role"] != "evaluation": continue
-        for arm, item in result["cases"][case["id"]]["videos"].items():
-            attach_decisions(item, calibration, case_role="evaluation", arm=arm)
+    if calibration["C2_STATE_CONFIRM"]["status"] == "FROZEN":
+        for case in config["cases"]:
+            if case["role"] == "evaluation": execute(case)
+        for case in config["cases"]:
+            if case["role"] != "evaluation": continue
+            for arm, item in result["cases"][case["id"]]["videos"].items():
+                attach_decisions(item, calibration, case_role="evaluation", arm=arm)
+    else:
+        for case in config["cases"]:
+            if case["role"] != "evaluation": continue
+            case_result = result["cases"][case["id"]]
+            case_result["status"] = "NOT_RUN_UNCALIBRATED"
+            for item in case_result["videos"].values():
+                for row in item["receivers"].values():
+                    row.update(status="UNCALIBRATED", statistic=None,
+                               decision={"status": "UNCALIBRATED", "detected": None})
     result["raw_layer_changes"] = raw_layer_changes(result["cases"], config)
     result["paired_diagnostics"] = paired_diagnostics(result["cases"], config)
     result["target_summary"] = summarize_target(result["cases"], config, calibration)
