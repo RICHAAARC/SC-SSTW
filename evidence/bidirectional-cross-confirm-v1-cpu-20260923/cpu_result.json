@@ -1,0 +1,1214 @@
+{
+  "status": "PASS",
+  "started_utc": "2026-09-23T01:22:43.777613+00:00",
+  "completed_utc": "2026-09-23T01:24:59.367608+00:00",
+  "execution": "CPU-only read-only replay; no model, VAE, GPU, media, or new experiment execution",
+  "source_files_sha256": {
+    "bidirectional_receiver": "cb10a560002f944bd6e00d3159e82e118a3bf792e5d17ab7aa1ad8762c8c2bfe",
+    "existing_split_receiver": "c69cb4ac718d9f30744a562fa9f6d549de4926fa71686e52d5df408d519ec641",
+    "fixed_key": "43053c60f34037dea268a4f7543f44321de0ca92ad37e33ccdaafeacf3c91182"
+  },
+  "inputs": {
+    "tensor_root": "/home/richar/projects/Video-WM/diagnostics/project-status-20260921/flow_fixed_key_v1_20260922T014420975188Z/receiver_split_v1/tensors",
+    "old_result": "/home/richar/projects/Video-WM/diagnostics/project-status-20260921/flow_fixed_key_v1_20260922T014420975188Z/receiver_split_v1/candidate_result.json",
+    "old_result_sha256": "fe638c8a3de35c49e552878994e021c4eaee274c36bf70e85adaf0d0adc207f2",
+    "tensor_views": 24,
+    "tensor_phases": 96
+  },
+  "full_grid": {
+    "views_scored": 24,
+    "expected_views": 24,
+    "paths_per_direction_per_view": 4284,
+    "a_to_b_full_field_equivalence_passed": 24,
+    "joint_role_swap": {
+      "status": "PASS",
+      "view": "eval_p2_s2/SINGLE46/SPEED5_4",
+      "kind": "joint observation spatial-row and matching codebook support permutation",
+      "checks": {
+        "candidate_mean_preserved": true,
+        "A_direction_equals_original_B": true,
+        "B_direction_equals_original_A": true,
+        "both_full_grid_attempts_4284": true
+      }
+    }
+  },
+  "development_calibration": {
+    "kind": "same frozen two-source batch diagnosis only; not the new formal four-source program",
+    "candidate_source_scores": {
+      "cal_off_p0_s1": -0.0552202025922387,
+      "cal_off_p1_s1": -0.032317013856470435
+    },
+    "candidate_threshold": -0.032316013856470434,
+    "single_C2_threshold": -0.03703816605559639
+  },
+  "summary": {
+    "candidate_OFF_detected": 0,
+    "candidate_OFF_denominator": 6,
+    "single_C2_OFF_detected": 0,
+    "single_C2_OFF_denominator": 6,
+    "candidate_marked_detected": 6,
+    "candidate_marked_denominator": 12,
+    "single_C2_marked_detected": 4,
+    "single_C2_marked_denominator": 12
+  },
+  "p2_SPEED5_4": {
+    "eval_p2_s2/MULTI44_46/SPEED5_4": {
+      "status": "SCORED",
+      "seconds": 5.136626945000899,
+      "candidate_blind_score": -0.020903878173282618,
+      "candidate_directional_blind_C2": {
+        "A_LOCATE_B_CONFIRM": -0.04148456692391449,
+        "B_LOCATE_A_CONFIRM": -0.0003231894226507475
+      },
+      "candidate_fixed_reference_score": 0.0018264233951265762,
+      "candidate_directional_fixed_reference_C2": {
+        "A_LOCATE_B_CONFIRM": -0.02322320453550699,
+        "B_LOCATE_A_CONFIRM": 0.026876051325760143
+      },
+      "candidate_blind_minus_reference_gap": -0.022730301568409196,
+      "single_C2_blind_score": -0.04148456692391449,
+      "single_C2_fixed_reference_score": -0.02322320453550699,
+      "single_C2_blind_minus_reference_gap": -0.018261362388407497,
+      "a_to_b_existing_split_equivalence": {
+        "status": "PASS",
+        "checks": {
+          "selection": true,
+          "confirmation": true,
+          "confirmation_scores": true,
+          "fixed_path_diagnostics": true,
+          "alignment_reporting_only": true
+        }
+      },
+      "candidate_threshold_same_batch_development_only": -0.032316013856470434,
+      "candidate_blind_margin": 0.011412135683187816,
+      "candidate_fixed_reference_margin": 0.03414243725159701,
+      "candidate_decision": "DETECTED",
+      "single_C2_threshold": -0.03703816605559639,
+      "single_C2_blind_margin": -0.004446400868318094,
+      "single_C2_fixed_reference_margin": 0.013814961520089403,
+      "single_C2_decision": "REJECTED"
+    },
+    "eval_p2_s2/SINGLE46/SPEED5_4": {
+      "status": "SCORED",
+      "seconds": 4.507784506000462,
+      "candidate_blind_score": -0.024775542660560014,
+      "candidate_directional_blind_C2": {
+        "A_LOCATE_B_CONFIRM": -0.045828689275173196,
+        "B_LOCATE_A_CONFIRM": -0.0037223960459468342
+      },
+      "candidate_fixed_reference_score": -0.005664315380096652,
+      "candidate_directional_fixed_reference_C2": {
+        "A_LOCATE_B_CONFIRM": -0.0341553690797967,
+        "B_LOCATE_A_CONFIRM": 0.0228267383196034
+      },
+      "candidate_blind_minus_reference_gap": -0.019111227280463362,
+      "single_C2_blind_score": -0.045828689275173196,
+      "single_C2_fixed_reference_score": -0.0341553690797967,
+      "single_C2_blind_minus_reference_gap": -0.011673320195376494,
+      "a_to_b_existing_split_equivalence": {
+        "status": "PASS",
+        "checks": {
+          "selection": true,
+          "confirmation": true,
+          "confirmation_scores": true,
+          "fixed_path_diagnostics": true,
+          "alignment_reporting_only": true
+        }
+      },
+      "candidate_threshold_same_batch_development_only": -0.032316013856470434,
+      "candidate_blind_margin": 0.00754047119591042,
+      "candidate_fixed_reference_margin": 0.026651698476373782,
+      "candidate_decision": "DETECTED",
+      "single_C2_threshold": -0.03703816605559639,
+      "single_C2_blind_margin": -0.008790523219576803,
+      "single_C2_fixed_reference_margin": 0.002882796975799691,
+      "single_C2_decision": "REJECTED"
+    }
+  },
+  "p3_marked": {
+    "eval_p3_s3/MULTI44_46/DELETE90": {
+      "status": "SCORED",
+      "seconds": 5.15782310400391,
+      "candidate_blind_score": -0.04204354852879635,
+      "candidate_directional_blind_C2": {
+        "A_LOCATE_B_CONFIRM": -0.07741863095705094,
+        "B_LOCATE_A_CONFIRM": -0.006668466100541752
+      },
+      "candidate_fixed_reference_score": -0.017689168280518423,
+      "candidate_directional_fixed_reference_C2": {
+        "A_LOCATE_B_CONFIRM": -0.05323188818875815,
+        "B_LOCATE_A_CONFIRM": 0.017853551627721308
+      },
+      "candidate_blind_minus_reference_gap": -0.024354380248277924,
+      "single_C2_blind_score": -0.07741863095705094,
+      "single_C2_fixed_reference_score": -0.05323188818875815,
+      "single_C2_blind_minus_reference_gap": -0.024186742768292788,
+      "a_to_b_existing_split_equivalence": {
+        "status": "PASS",
+        "checks": {
+          "selection": true,
+          "confirmation": true,
+          "confirmation_scores": true,
+          "fixed_path_diagnostics": true,
+          "alignment_reporting_only": true
+        }
+      },
+      "candidate_threshold_same_batch_development_only": -0.032316013856470434,
+      "candidate_blind_margin": -0.009727534672325913,
+      "candidate_fixed_reference_margin": 0.014626845575952011,
+      "candidate_decision": "REJECTED",
+      "single_C2_threshold": -0.03703816605559639,
+      "single_C2_blind_margin": -0.04038046490145455,
+      "single_C2_fixed_reference_margin": -0.01619372213316176,
+      "single_C2_decision": "REJECTED"
+    },
+    "eval_p3_s3/MULTI44_46/FULL": {
+      "status": "SCORED",
+      "seconds": 6.146949928996037,
+      "candidate_blind_score": -0.03893352791324677,
+      "candidate_directional_blind_C2": {
+        "A_LOCATE_B_CONFIRM": -0.07501558610590728,
+        "B_LOCATE_A_CONFIRM": -0.0028514697205862614
+      },
+      "candidate_fixed_reference_score": -0.017652650033477765,
+      "candidate_directional_fixed_reference_C2": {
+        "A_LOCATE_B_CONFIRM": -0.054148748127722565,
+        "B_LOCATE_A_CONFIRM": 0.018843448060767036
+      },
+      "candidate_blind_minus_reference_gap": -0.021280877879769008,
+      "single_C2_blind_score": -0.07501558610590728,
+      "single_C2_fixed_reference_score": -0.054148748127722565,
+      "single_C2_blind_minus_reference_gap": -0.020866837978184713,
+      "a_to_b_existing_split_equivalence": {
+        "status": "PASS",
+        "checks": {
+          "selection": true,
+          "confirmation": true,
+          "confirmation_scores": true,
+          "fixed_path_diagnostics": true,
+          "alignment_reporting_only": true
+        }
+      },
+      "candidate_threshold_same_batch_development_only": -0.032316013856470434,
+      "candidate_blind_margin": -0.0066175140567763385,
+      "candidate_fixed_reference_margin": 0.01466336382299267,
+      "candidate_decision": "REJECTED",
+      "single_C2_threshold": -0.03703816605559639,
+      "single_C2_blind_margin": -0.037977420050310885,
+      "single_C2_fixed_reference_margin": -0.017110582072126172,
+      "single_C2_decision": "REJECTED"
+    },
+    "eval_p3_s3/MULTI44_46/SPEED5_4": {
+      "status": "SCORED",
+      "seconds": 4.383343856003194,
+      "candidate_blind_score": -0.03384367113692903,
+      "candidate_directional_blind_C2": {
+        "A_LOCATE_B_CONFIRM": -0.07257911499294355,
+        "B_LOCATE_A_CONFIRM": 0.004891772719085493
+      },
+      "candidate_fixed_reference_score": -0.020714012137423295,
+      "candidate_directional_fixed_reference_C2": {
+        "A_LOCATE_B_CONFIRM": -0.0394382358472065,
+        "B_LOCATE_A_CONFIRM": -0.0019897884276400893
+      },
+      "candidate_blind_minus_reference_gap": -0.013129658999505734,
+      "single_C2_blind_score": -0.07257911499294355,
+      "single_C2_fixed_reference_score": -0.0394382358472065,
+      "single_C2_blind_minus_reference_gap": -0.033140879145737046,
+      "a_to_b_existing_split_equivalence": {
+        "status": "PASS",
+        "checks": {
+          "selection": true,
+          "confirmation": true,
+          "confirmation_scores": true,
+          "fixed_path_diagnostics": true,
+          "alignment_reporting_only": true
+        }
+      },
+      "candidate_threshold_same_batch_development_only": -0.032316013856470434,
+      "candidate_blind_margin": -0.0015276572804585956,
+      "candidate_fixed_reference_margin": 0.011602001719047138,
+      "candidate_decision": "REJECTED",
+      "single_C2_threshold": -0.03703816605559639,
+      "single_C2_blind_margin": -0.035540948937347154,
+      "single_C2_fixed_reference_margin": -0.0024000697916101085,
+      "single_C2_decision": "REJECTED"
+    },
+    "eval_p3_s3/SINGLE46/DELETE90": {
+      "status": "SCORED",
+      "seconds": 4.930779226997402,
+      "candidate_blind_score": -0.040836084791784,
+      "candidate_directional_blind_C2": {
+        "A_LOCATE_B_CONFIRM": -0.076964003668248,
+        "B_LOCATE_A_CONFIRM": -0.004708165915319995
+      },
+      "candidate_fixed_reference_score": -0.022653433202084135,
+      "candidate_directional_fixed_reference_C2": {
+        "A_LOCATE_B_CONFIRM": -0.0604589858787211,
+        "B_LOCATE_A_CONFIRM": 0.015152119474552835
+      },
+      "candidate_blind_minus_reference_gap": -0.018182651589699866,
+      "single_C2_blind_score": -0.076964003668248,
+      "single_C2_fixed_reference_score": -0.0604589858787211,
+      "single_C2_blind_minus_reference_gap": -0.0165050177895269,
+      "a_to_b_existing_split_equivalence": {
+        "status": "PASS",
+        "checks": {
+          "selection": true,
+          "confirmation": true,
+          "confirmation_scores": true,
+          "fixed_path_diagnostics": true,
+          "alignment_reporting_only": true
+        }
+      },
+      "candidate_threshold_same_batch_development_only": -0.032316013856470434,
+      "candidate_blind_margin": -0.008520070935313567,
+      "candidate_fixed_reference_margin": 0.009662580654386299,
+      "candidate_decision": "REJECTED",
+      "single_C2_threshold": -0.03703816605559639,
+      "single_C2_blind_margin": -0.03992583761265161,
+      "single_C2_fixed_reference_margin": -0.02342081982312471,
+      "single_C2_decision": "REJECTED"
+    },
+    "eval_p3_s3/SINGLE46/FULL": {
+      "status": "SCORED",
+      "seconds": 5.007398050001939,
+      "candidate_blind_score": -0.037888848584158356,
+      "candidate_directional_blind_C2": {
+        "A_LOCATE_B_CONFIRM": -0.07259575170364387,
+        "B_LOCATE_A_CONFIRM": -0.003181945464672849
+      },
+      "candidate_fixed_reference_score": -0.017600256865457,
+      "candidate_directional_fixed_reference_C2": {
+        "A_LOCATE_B_CONFIRM": -0.053859747246881244,
+        "B_LOCATE_A_CONFIRM": 0.018659233515967242
+      },
+      "candidate_blind_minus_reference_gap": -0.020288591718701357,
+      "single_C2_blind_score": -0.07259575170364387,
+      "single_C2_fixed_reference_score": -0.053859747246881244,
+      "single_C2_blind_minus_reference_gap": -0.01873600445676262,
+      "a_to_b_existing_split_equivalence": {
+        "status": "PASS",
+        "checks": {
+          "selection": true,
+          "confirmation": true,
+          "confirmation_scores": true,
+          "fixed_path_diagnostics": true,
+          "alignment_reporting_only": true
+        }
+      },
+      "candidate_threshold_same_batch_development_only": -0.032316013856470434,
+      "candidate_blind_margin": -0.0055728347276879225,
+      "candidate_fixed_reference_margin": 0.014715756991013434,
+      "candidate_decision": "REJECTED",
+      "single_C2_threshold": -0.03703816605559639,
+      "single_C2_blind_margin": -0.03555758564804747,
+      "single_C2_fixed_reference_margin": -0.01682158119128485,
+      "single_C2_decision": "REJECTED"
+    },
+    "eval_p3_s3/SINGLE46/SPEED5_4": {
+      "status": "SCORED",
+      "seconds": 4.373329248999653,
+      "candidate_blind_score": -0.04141493931214255,
+      "candidate_directional_blind_C2": {
+        "A_LOCATE_B_CONFIRM": -0.0700461270900496,
+        "B_LOCATE_A_CONFIRM": -0.0127837515342355
+      },
+      "candidate_fixed_reference_score": -0.02512681362875973,
+      "candidate_directional_fixed_reference_C2": {
+        "A_LOCATE_B_CONFIRM": -0.04495563810155181,
+        "B_LOCATE_A_CONFIRM": -0.005297989155967648
+      },
+      "candidate_blind_minus_reference_gap": -0.016288125683382823,
+      "single_C2_blind_score": -0.0700461270900496,
+      "single_C2_fixed_reference_score": -0.04495563810155181,
+      "single_C2_blind_minus_reference_gap": -0.0250904889884978,
+      "a_to_b_existing_split_equivalence": {
+        "status": "PASS",
+        "checks": {
+          "selection": true,
+          "confirmation": true,
+          "confirmation_scores": true,
+          "fixed_path_diagnostics": true,
+          "alignment_reporting_only": true
+        }
+      },
+      "candidate_threshold_same_batch_development_only": -0.032316013856470434,
+      "candidate_blind_margin": -0.009098925455672119,
+      "candidate_fixed_reference_margin": 0.007189200227710704,
+      "candidate_decision": "REJECTED",
+      "single_C2_threshold": -0.03703816605559639,
+      "single_C2_blind_margin": -0.03300796103445321,
+      "single_C2_fixed_reference_margin": -0.007917472045955415,
+      "single_C2_decision": "REJECTED"
+    }
+  },
+  "views": {
+    "cal_off_p0_s1/OFF/DELETE90": {
+      "status": "SCORED",
+      "seconds": 4.952443232003134,
+      "candidate_blind_score": -0.05901008241054239,
+      "candidate_directional_blind_C2": {
+        "A_LOCATE_B_CONFIRM": -0.07187132338164771,
+        "B_LOCATE_A_CONFIRM": -0.046148841439437066
+      },
+      "candidate_fixed_reference_score": -0.03673510590100949,
+      "candidate_directional_fixed_reference_C2": {
+        "A_LOCATE_B_CONFIRM": -0.05320970648001933,
+        "B_LOCATE_A_CONFIRM": -0.020260505321999647
+      },
+      "candidate_blind_minus_reference_gap": -0.022274976509532897,
+      "single_C2_blind_score": -0.07187132338164771,
+      "single_C2_fixed_reference_score": -0.05320970648001933,
+      "single_C2_blind_minus_reference_gap": -0.018661616901628382,
+      "a_to_b_existing_split_equivalence": {
+        "status": "PASS",
+        "checks": {
+          "selection": true,
+          "confirmation": true,
+          "confirmation_scores": true,
+          "fixed_path_diagnostics": true,
+          "alignment_reporting_only": true
+        }
+      },
+      "candidate_threshold_same_batch_development_only": -0.032316013856470434,
+      "candidate_blind_margin": -0.026694068554071956,
+      "candidate_fixed_reference_margin": -0.004419092044539059,
+      "candidate_decision": "REJECTED",
+      "single_C2_threshold": -0.03703816605559639,
+      "single_C2_blind_margin": -0.03483315732605132,
+      "single_C2_fixed_reference_margin": -0.01617154042442294,
+      "single_C2_decision": "REJECTED"
+    },
+    "cal_off_p0_s1/OFF/FULL": {
+      "status": "SCORED",
+      "seconds": 5.020167314003629,
+      "candidate_blind_score": -0.06200081526640121,
+      "candidate_directional_blind_C2": {
+        "A_LOCATE_B_CONFIRM": -0.07786565108213278,
+        "B_LOCATE_A_CONFIRM": -0.04613597945066964
+      },
+      "candidate_fixed_reference_score": -0.033446500896485015,
+      "candidate_directional_fixed_reference_C2": {
+        "A_LOCATE_B_CONFIRM": -0.04951750123585259,
+        "B_LOCATE_A_CONFIRM": -0.017375500557117445
+      },
+      "candidate_blind_minus_reference_gap": -0.028554314369916192,
+      "single_C2_blind_score": -0.07786565108213278,
+      "single_C2_fixed_reference_score": -0.04951750123585259,
+      "single_C2_blind_minus_reference_gap": -0.028348149846280188,
+      "a_to_b_existing_split_equivalence": {
+        "status": "PASS",
+        "checks": {
+          "selection": true,
+          "confirmation": true,
+          "confirmation_scores": true,
+          "fixed_path_diagnostics": true,
+          "alignment_reporting_only": true
+        }
+      },
+      "candidate_threshold_same_batch_development_only": -0.032316013856470434,
+      "candidate_blind_margin": -0.029684801409930774,
+      "candidate_fixed_reference_margin": -0.0011304870400145814,
+      "candidate_decision": "REJECTED",
+      "single_C2_threshold": -0.03703816605559639,
+      "single_C2_blind_margin": -0.04082748502653639,
+      "single_C2_fixed_reference_margin": -0.0124793351802562,
+      "single_C2_decision": "REJECTED"
+    },
+    "cal_off_p0_s1/OFF/SPEED5_4": {
+      "status": "SCORED",
+      "seconds": 4.622945893002907,
+      "candidate_blind_score": -0.0552202025922387,
+      "candidate_directional_blind_C2": {
+        "A_LOCATE_B_CONFIRM": -0.06704263908021912,
+        "B_LOCATE_A_CONFIRM": -0.04339776610425828
+      },
+      "candidate_fixed_reference_score": -0.03895268956908414,
+      "candidate_directional_fixed_reference_C2": {
+        "A_LOCATE_B_CONFIRM": -0.051623744976559555,
+        "B_LOCATE_A_CONFIRM": -0.02628163416160872
+      },
+      "candidate_blind_minus_reference_gap": -0.01626751302315456,
+      "single_C2_blind_score": -0.06704263908021912,
+      "single_C2_fixed_reference_score": -0.051623744976559555,
+      "single_C2_blind_minus_reference_gap": -0.01541889410365957,
+      "a_to_b_existing_split_equivalence": {
+        "status": "PASS",
+        "checks": {
+          "selection": true,
+          "confirmation": true,
+          "confirmation_scores": true,
+          "fixed_path_diagnostics": true,
+          "alignment_reporting_only": true
+        }
+      },
+      "candidate_threshold_same_batch_development_only": -0.032316013856470434,
+      "candidate_blind_margin": -0.022904188735768265,
+      "candidate_fixed_reference_margin": -0.006636675712613706,
+      "candidate_decision": "REJECTED",
+      "single_C2_threshold": -0.03703816605559639,
+      "single_C2_blind_margin": -0.03000447302462273,
+      "single_C2_fixed_reference_margin": -0.014585578920963162,
+      "single_C2_decision": "REJECTED"
+    },
+    "cal_off_p1_s1/OFF/DELETE90": {
+      "status": "SCORED",
+      "seconds": 5.311561057998915,
+      "candidate_blind_score": -0.03725695859900667,
+      "candidate_directional_blind_C2": {
+        "A_LOCATE_B_CONFIRM": -0.03863667563197263,
+        "B_LOCATE_A_CONFIRM": -0.03587724156604071
+      },
+      "candidate_fixed_reference_score": -0.060978590278256264,
+      "candidate_directional_fixed_reference_C2": {
+        "A_LOCATE_B_CONFIRM": -0.07370109977236511,
+        "B_LOCATE_A_CONFIRM": -0.048256080784147413
+      },
+      "candidate_blind_minus_reference_gap": 0.023721631679249594,
+      "single_C2_blind_score": -0.03863667563197263,
+      "single_C2_fixed_reference_score": -0.07370109977236511,
+      "single_C2_blind_minus_reference_gap": 0.03506442414039248,
+      "a_to_b_existing_split_equivalence": {
+        "status": "PASS",
+        "checks": {
+          "selection": true,
+          "confirmation": true,
+          "confirmation_scores": true,
+          "fixed_path_diagnostics": true,
+          "alignment_reporting_only": true
+        }
+      },
+      "candidate_threshold_same_batch_development_only": -0.032316013856470434,
+      "candidate_blind_margin": -0.0049409447425362366,
+      "candidate_fixed_reference_margin": -0.02866257642178583,
+      "candidate_decision": "REJECTED",
+      "single_C2_threshold": -0.03703816605559639,
+      "single_C2_blind_margin": -0.0015985095763762364,
+      "single_C2_fixed_reference_margin": -0.036662933716768716,
+      "single_C2_decision": "REJECTED"
+    },
+    "cal_off_p1_s1/OFF/FULL": {
+      "status": "SCORED",
+      "seconds": 5.007527386995207,
+      "candidate_blind_score": -0.032317013856470435,
+      "candidate_directional_blind_C2": {
+        "A_LOCATE_B_CONFIRM": -0.04068901695656228,
+        "B_LOCATE_A_CONFIRM": -0.023945010756378587
+      },
+      "candidate_fixed_reference_score": -0.05873016709582594,
+      "candidate_directional_fixed_reference_C2": {
+        "A_LOCATE_B_CONFIRM": -0.07133488864041249,
+        "B_LOCATE_A_CONFIRM": -0.04612544555123939
+      },
+      "candidate_blind_minus_reference_gap": 0.026413153239355502,
+      "single_C2_blind_score": -0.04068901695656228,
+      "single_C2_fixed_reference_score": -0.07133488864041249,
+      "single_C2_blind_minus_reference_gap": 0.030645871683850204,
+      "a_to_b_existing_split_equivalence": {
+        "status": "PASS",
+        "checks": {
+          "selection": true,
+          "confirmation": true,
+          "confirmation_scores": true,
+          "fixed_path_diagnostics": true,
+          "alignment_reporting_only": true
+        }
+      },
+      "candidate_threshold_same_batch_development_only": -0.032316013856470434,
+      "candidate_blind_margin": -1.000000000001e-06,
+      "candidate_fixed_reference_margin": -0.026414153239355503,
+      "candidate_decision": "REJECTED",
+      "single_C2_threshold": -0.03703816605559639,
+      "single_C2_blind_margin": -0.0036508509009658893,
+      "single_C2_fixed_reference_margin": -0.03429672258481609,
+      "single_C2_decision": "REJECTED"
+    },
+    "cal_off_p1_s1/OFF/SPEED5_4": {
+      "status": "SCORED",
+      "seconds": 4.245042258000467,
+      "candidate_blind_score": -0.03244792073081834,
+      "candidate_directional_blind_C2": {
+        "A_LOCATE_B_CONFIRM": -0.037039166055596394,
+        "B_LOCATE_A_CONFIRM": -0.027856675406040296
+      },
+      "candidate_fixed_reference_score": -0.058384438799987885,
+      "candidate_directional_fixed_reference_C2": {
+        "A_LOCATE_B_CONFIRM": -0.06883829914864692,
+        "B_LOCATE_A_CONFIRM": -0.04793057845132885
+      },
+      "candidate_blind_minus_reference_gap": 0.025936518069169544,
+      "single_C2_blind_score": -0.037039166055596394,
+      "single_C2_fixed_reference_score": -0.06883829914864692,
+      "single_C2_blind_minus_reference_gap": 0.031799133093050526,
+      "a_to_b_existing_split_equivalence": {
+        "status": "PASS",
+        "checks": {
+          "selection": true,
+          "confirmation": true,
+          "confirmation_scores": true,
+          "fixed_path_diagnostics": true,
+          "alignment_reporting_only": true
+        }
+      },
+      "candidate_threshold_same_batch_development_only": -0.032316013856470434,
+      "candidate_blind_margin": -0.00013190687434790765,
+      "candidate_fixed_reference_margin": -0.02606842494351745,
+      "candidate_decision": "REJECTED",
+      "single_C2_threshold": -0.03703816605559639,
+      "single_C2_blind_margin": -1.000000000001e-06,
+      "single_C2_fixed_reference_margin": -0.03180013309305053,
+      "single_C2_decision": "REJECTED"
+    },
+    "eval_p2_s2/MULTI44_46/DELETE90": {
+      "status": "SCORED",
+      "seconds": 4.985140158998547,
+      "candidate_blind_score": 0.03917986125204457,
+      "candidate_directional_blind_C2": {
+        "A_LOCATE_B_CONFIRM": 0.009784740074405525,
+        "B_LOCATE_A_CONFIRM": 0.06857498242968361
+      },
+      "candidate_fixed_reference_score": 0.03917986125204457,
+      "candidate_directional_fixed_reference_C2": {
+        "A_LOCATE_B_CONFIRM": 0.009784740074405525,
+        "B_LOCATE_A_CONFIRM": 0.06857498242968361
+      },
+      "candidate_blind_minus_reference_gap": 0.0,
+      "single_C2_blind_score": 0.009784740074405525,
+      "single_C2_fixed_reference_score": 0.009784740074405525,
+      "single_C2_blind_minus_reference_gap": 0.0,
+      "a_to_b_existing_split_equivalence": {
+        "status": "PASS",
+        "checks": {
+          "selection": true,
+          "confirmation": true,
+          "confirmation_scores": true,
+          "fixed_path_diagnostics": true,
+          "alignment_reporting_only": true
+        }
+      },
+      "candidate_threshold_same_batch_development_only": -0.032316013856470434,
+      "candidate_blind_margin": 0.071495875108515,
+      "candidate_fixed_reference_margin": 0.071495875108515,
+      "candidate_decision": "DETECTED",
+      "single_C2_threshold": -0.03703816605559639,
+      "single_C2_blind_margin": 0.046822906130001916,
+      "single_C2_fixed_reference_margin": 0.046822906130001916,
+      "single_C2_decision": "DETECTED"
+    },
+    "eval_p2_s2/MULTI44_46/FULL": {
+      "status": "SCORED",
+      "seconds": 5.116940085004899,
+      "candidate_blind_score": 0.0417416168324993,
+      "candidate_directional_blind_C2": {
+        "A_LOCATE_B_CONFIRM": 0.011191791511344062,
+        "B_LOCATE_A_CONFIRM": 0.07229144215365454
+      },
+      "candidate_fixed_reference_score": 0.0417416168324993,
+      "candidate_directional_fixed_reference_C2": {
+        "A_LOCATE_B_CONFIRM": 0.011191791511344062,
+        "B_LOCATE_A_CONFIRM": 0.07229144215365454
+      },
+      "candidate_blind_minus_reference_gap": 0.0,
+      "single_C2_blind_score": 0.011191791511344062,
+      "single_C2_fixed_reference_score": 0.011191791511344062,
+      "single_C2_blind_minus_reference_gap": 0.0,
+      "a_to_b_existing_split_equivalence": {
+        "status": "PASS",
+        "checks": {
+          "selection": true,
+          "confirmation": true,
+          "confirmation_scores": true,
+          "fixed_path_diagnostics": true,
+          "alignment_reporting_only": true
+        }
+      },
+      "candidate_threshold_same_batch_development_only": -0.032316013856470434,
+      "candidate_blind_margin": 0.07405763068896973,
+      "candidate_fixed_reference_margin": 0.07405763068896973,
+      "candidate_decision": "DETECTED",
+      "single_C2_threshold": -0.03703816605559639,
+      "single_C2_blind_margin": 0.04822995756694046,
+      "single_C2_fixed_reference_margin": 0.04822995756694046,
+      "single_C2_decision": "DETECTED"
+    },
+    "eval_p2_s2/MULTI44_46/SPEED5_4": {
+      "status": "SCORED",
+      "seconds": 5.136626945000899,
+      "candidate_blind_score": -0.020903878173282618,
+      "candidate_directional_blind_C2": {
+        "A_LOCATE_B_CONFIRM": -0.04148456692391449,
+        "B_LOCATE_A_CONFIRM": -0.0003231894226507475
+      },
+      "candidate_fixed_reference_score": 0.0018264233951265762,
+      "candidate_directional_fixed_reference_C2": {
+        "A_LOCATE_B_CONFIRM": -0.02322320453550699,
+        "B_LOCATE_A_CONFIRM": 0.026876051325760143
+      },
+      "candidate_blind_minus_reference_gap": -0.022730301568409196,
+      "single_C2_blind_score": -0.04148456692391449,
+      "single_C2_fixed_reference_score": -0.02322320453550699,
+      "single_C2_blind_minus_reference_gap": -0.018261362388407497,
+      "a_to_b_existing_split_equivalence": {
+        "status": "PASS",
+        "checks": {
+          "selection": true,
+          "confirmation": true,
+          "confirmation_scores": true,
+          "fixed_path_diagnostics": true,
+          "alignment_reporting_only": true
+        }
+      },
+      "candidate_threshold_same_batch_development_only": -0.032316013856470434,
+      "candidate_blind_margin": 0.011412135683187816,
+      "candidate_fixed_reference_margin": 0.03414243725159701,
+      "candidate_decision": "DETECTED",
+      "single_C2_threshold": -0.03703816605559639,
+      "single_C2_blind_margin": -0.004446400868318094,
+      "single_C2_fixed_reference_margin": 0.013814961520089403,
+      "single_C2_decision": "REJECTED"
+    },
+    "eval_p2_s2/OFF/DELETE90": {
+      "status": "SCORED",
+      "seconds": 5.542660796003474,
+      "candidate_blind_score": -0.04947273635328374,
+      "candidate_directional_blind_C2": {
+        "A_LOCATE_B_CONFIRM": -0.07870743381046254,
+        "B_LOCATE_A_CONFIRM": -0.020238038896104947
+      },
+      "candidate_fixed_reference_score": -0.028487983287439123,
+      "candidate_directional_fixed_reference_C2": {
+        "A_LOCATE_B_CONFIRM": -0.05486340021206927,
+        "B_LOCATE_A_CONFIRM": -0.0021125663628089753
+      },
+      "candidate_blind_minus_reference_gap": -0.020984753065844616,
+      "single_C2_blind_score": -0.07870743381046254,
+      "single_C2_fixed_reference_score": -0.05486340021206927,
+      "single_C2_blind_minus_reference_gap": -0.023844033598393266,
+      "a_to_b_existing_split_equivalence": {
+        "status": "PASS",
+        "checks": {
+          "selection": true,
+          "confirmation": true,
+          "confirmation_scores": true,
+          "fixed_path_diagnostics": true,
+          "alignment_reporting_only": true
+        }
+      },
+      "candidate_threshold_same_batch_development_only": -0.032316013856470434,
+      "candidate_blind_margin": -0.017156722496813305,
+      "candidate_fixed_reference_margin": 0.0038280305690313113,
+      "candidate_decision": "REJECTED",
+      "single_C2_threshold": -0.03703816605559639,
+      "single_C2_blind_margin": -0.041669267754866145,
+      "single_C2_fixed_reference_margin": -0.01782523415647288,
+      "single_C2_decision": "REJECTED"
+    },
+    "eval_p2_s2/OFF/FULL": {
+      "status": "SCORED",
+      "seconds": 5.040969765999762,
+      "candidate_blind_score": -0.05112360708256905,
+      "candidate_directional_blind_C2": {
+        "A_LOCATE_B_CONFIRM": -0.06546103077265647,
+        "B_LOCATE_A_CONFIRM": -0.03678618339248163
+      },
+      "candidate_fixed_reference_score": -0.026489548769514773,
+      "candidate_directional_fixed_reference_C2": {
+        "A_LOCATE_B_CONFIRM": -0.05045521721717623,
+        "B_LOCATE_A_CONFIRM": -0.002523880321853314
+      },
+      "candidate_blind_minus_reference_gap": -0.024634058313054277,
+      "single_C2_blind_score": -0.06546103077265647,
+      "single_C2_fixed_reference_score": -0.05045521721717623,
+      "single_C2_blind_minus_reference_gap": -0.015005813555480238,
+      "a_to_b_existing_split_equivalence": {
+        "status": "PASS",
+        "checks": {
+          "selection": true,
+          "confirmation": true,
+          "confirmation_scores": true,
+          "fixed_path_diagnostics": true,
+          "alignment_reporting_only": true
+        }
+      },
+      "candidate_threshold_same_batch_development_only": -0.032316013856470434,
+      "candidate_blind_margin": -0.018807593226098616,
+      "candidate_fixed_reference_margin": 0.005826465086955661,
+      "candidate_decision": "REJECTED",
+      "single_C2_threshold": -0.03703816605559639,
+      "single_C2_blind_margin": -0.028422864717060077,
+      "single_C2_fixed_reference_margin": -0.013417051161579839,
+      "single_C2_decision": "REJECTED"
+    },
+    "eval_p2_s2/OFF/SPEED5_4": {
+      "status": "SCORED",
+      "seconds": 4.577262272003281,
+      "candidate_blind_score": -0.04737614443052371,
+      "candidate_directional_blind_C2": {
+        "A_LOCATE_B_CONFIRM": -0.06903237188571586,
+        "B_LOCATE_A_CONFIRM": -0.025719916975331554
+      },
+      "candidate_fixed_reference_score": -0.028567615873790534,
+      "candidate_directional_fixed_reference_C2": {
+        "A_LOCATE_B_CONFIRM": -0.05018303965247389,
+        "B_LOCATE_A_CONFIRM": -0.006952192095107175
+      },
+      "candidate_blind_minus_reference_gap": -0.018808528556733175,
+      "single_C2_blind_score": -0.06903237188571586,
+      "single_C2_fixed_reference_score": -0.05018303965247389,
+      "single_C2_blind_minus_reference_gap": -0.018849332233241964,
+      "a_to_b_existing_split_equivalence": {
+        "status": "PASS",
+        "checks": {
+          "selection": true,
+          "confirmation": true,
+          "confirmation_scores": true,
+          "fixed_path_diagnostics": true,
+          "alignment_reporting_only": true
+        }
+      },
+      "candidate_threshold_same_batch_development_only": -0.032316013856470434,
+      "candidate_blind_margin": -0.015060130574053275,
+      "candidate_fixed_reference_margin": 0.0037483979826799,
+      "candidate_decision": "REJECTED",
+      "single_C2_threshold": -0.03703816605559639,
+      "single_C2_blind_margin": -0.031994205830119464,
+      "single_C2_fixed_reference_margin": -0.0131448735968775,
+      "single_C2_decision": "REJECTED"
+    },
+    "eval_p2_s2/SINGLE46/DELETE90": {
+      "status": "SCORED",
+      "seconds": 5.125796562002506,
+      "candidate_blind_score": -0.017753835582492213,
+      "candidate_directional_blind_C2": {
+        "A_LOCATE_B_CONFIRM": -0.00494700670960975,
+        "B_LOCATE_A_CONFIRM": -0.030560664455374677
+      },
+      "candidate_fixed_reference_score": 0.0217743164938156,
+      "candidate_directional_fixed_reference_C2": {
+        "A_LOCATE_B_CONFIRM": -0.00494700670960975,
+        "B_LOCATE_A_CONFIRM": 0.04849563969724095
+      },
+      "candidate_blind_minus_reference_gap": -0.03952815207630782,
+      "single_C2_blind_score": -0.00494700670960975,
+      "single_C2_fixed_reference_score": -0.00494700670960975,
+      "single_C2_blind_minus_reference_gap": 0.0,
+      "a_to_b_existing_split_equivalence": {
+        "status": "PASS",
+        "checks": {
+          "selection": true,
+          "confirmation": true,
+          "confirmation_scores": true,
+          "fixed_path_diagnostics": true,
+          "alignment_reporting_only": true
+        }
+      },
+      "candidate_threshold_same_batch_development_only": -0.032316013856470434,
+      "candidate_blind_margin": 0.01456217827397822,
+      "candidate_fixed_reference_margin": 0.054090330350286035,
+      "candidate_decision": "DETECTED",
+      "single_C2_threshold": -0.03703816605559639,
+      "single_C2_blind_margin": 0.03209115934598664,
+      "single_C2_fixed_reference_margin": 0.03209115934598664,
+      "single_C2_decision": "DETECTED"
+    },
+    "eval_p2_s2/SINGLE46/FULL": {
+      "status": "SCORED",
+      "seconds": 5.176831235999998,
+      "candidate_blind_score": 0.02556477875911462,
+      "candidate_directional_blind_C2": {
+        "A_LOCATE_B_CONFIRM": -0.0025378442129704686,
+        "B_LOCATE_A_CONFIRM": 0.053667401731199715
+      },
+      "candidate_fixed_reference_score": 0.02556477875911462,
+      "candidate_directional_fixed_reference_C2": {
+        "A_LOCATE_B_CONFIRM": -0.0025378442129704686,
+        "B_LOCATE_A_CONFIRM": 0.053667401731199715
+      },
+      "candidate_blind_minus_reference_gap": 0.0,
+      "single_C2_blind_score": -0.0025378442129704686,
+      "single_C2_fixed_reference_score": -0.0025378442129704686,
+      "single_C2_blind_minus_reference_gap": 0.0,
+      "a_to_b_existing_split_equivalence": {
+        "status": "PASS",
+        "checks": {
+          "selection": true,
+          "confirmation": true,
+          "confirmation_scores": true,
+          "fixed_path_diagnostics": true,
+          "alignment_reporting_only": true
+        }
+      },
+      "candidate_threshold_same_batch_development_only": -0.032316013856470434,
+      "candidate_blind_margin": 0.057880792615585056,
+      "candidate_fixed_reference_margin": 0.057880792615585056,
+      "candidate_decision": "DETECTED",
+      "single_C2_threshold": -0.03703816605559639,
+      "single_C2_blind_margin": 0.03450032184262593,
+      "single_C2_fixed_reference_margin": 0.03450032184262593,
+      "single_C2_decision": "DETECTED"
+    },
+    "eval_p2_s2/SINGLE46/SPEED5_4": {
+      "status": "SCORED",
+      "seconds": 4.507784506000462,
+      "candidate_blind_score": -0.024775542660560014,
+      "candidate_directional_blind_C2": {
+        "A_LOCATE_B_CONFIRM": -0.045828689275173196,
+        "B_LOCATE_A_CONFIRM": -0.0037223960459468342
+      },
+      "candidate_fixed_reference_score": -0.005664315380096652,
+      "candidate_directional_fixed_reference_C2": {
+        "A_LOCATE_B_CONFIRM": -0.0341553690797967,
+        "B_LOCATE_A_CONFIRM": 0.0228267383196034
+      },
+      "candidate_blind_minus_reference_gap": -0.019111227280463362,
+      "single_C2_blind_score": -0.045828689275173196,
+      "single_C2_fixed_reference_score": -0.0341553690797967,
+      "single_C2_blind_minus_reference_gap": -0.011673320195376494,
+      "a_to_b_existing_split_equivalence": {
+        "status": "PASS",
+        "checks": {
+          "selection": true,
+          "confirmation": true,
+          "confirmation_scores": true,
+          "fixed_path_diagnostics": true,
+          "alignment_reporting_only": true
+        }
+      },
+      "candidate_threshold_same_batch_development_only": -0.032316013856470434,
+      "candidate_blind_margin": 0.00754047119591042,
+      "candidate_fixed_reference_margin": 0.026651698476373782,
+      "candidate_decision": "DETECTED",
+      "single_C2_threshold": -0.03703816605559639,
+      "single_C2_blind_margin": -0.008790523219576803,
+      "single_C2_fixed_reference_margin": 0.002882796975799691,
+      "single_C2_decision": "REJECTED"
+    },
+    "eval_p3_s3/MULTI44_46/DELETE90": {
+      "status": "SCORED",
+      "seconds": 5.15782310400391,
+      "candidate_blind_score": -0.04204354852879635,
+      "candidate_directional_blind_C2": {
+        "A_LOCATE_B_CONFIRM": -0.07741863095705094,
+        "B_LOCATE_A_CONFIRM": -0.006668466100541752
+      },
+      "candidate_fixed_reference_score": -0.017689168280518423,
+      "candidate_directional_fixed_reference_C2": {
+        "A_LOCATE_B_CONFIRM": -0.05323188818875815,
+        "B_LOCATE_A_CONFIRM": 0.017853551627721308
+      },
+      "candidate_blind_minus_reference_gap": -0.024354380248277924,
+      "single_C2_blind_score": -0.07741863095705094,
+      "single_C2_fixed_reference_score": -0.05323188818875815,
+      "single_C2_blind_minus_reference_gap": -0.024186742768292788,
+      "a_to_b_existing_split_equivalence": {
+        "status": "PASS",
+        "checks": {
+          "selection": true,
+          "confirmation": true,
+          "confirmation_scores": true,
+          "fixed_path_diagnostics": true,
+          "alignment_reporting_only": true
+        }
+      },
+      "candidate_threshold_same_batch_development_only": -0.032316013856470434,
+      "candidate_blind_margin": -0.009727534672325913,
+      "candidate_fixed_reference_margin": 0.014626845575952011,
+      "candidate_decision": "REJECTED",
+      "single_C2_threshold": -0.03703816605559639,
+      "single_C2_blind_margin": -0.04038046490145455,
+      "single_C2_fixed_reference_margin": -0.01619372213316176,
+      "single_C2_decision": "REJECTED"
+    },
+    "eval_p3_s3/MULTI44_46/FULL": {
+      "status": "SCORED",
+      "seconds": 6.146949928996037,
+      "candidate_blind_score": -0.03893352791324677,
+      "candidate_directional_blind_C2": {
+        "A_LOCATE_B_CONFIRM": -0.07501558610590728,
+        "B_LOCATE_A_CONFIRM": -0.0028514697205862614
+      },
+      "candidate_fixed_reference_score": -0.017652650033477765,
+      "candidate_directional_fixed_reference_C2": {
+        "A_LOCATE_B_CONFIRM": -0.054148748127722565,
+        "B_LOCATE_A_CONFIRM": 0.018843448060767036
+      },
+      "candidate_blind_minus_reference_gap": -0.021280877879769008,
+      "single_C2_blind_score": -0.07501558610590728,
+      "single_C2_fixed_reference_score": -0.054148748127722565,
+      "single_C2_blind_minus_reference_gap": -0.020866837978184713,
+      "a_to_b_existing_split_equivalence": {
+        "status": "PASS",
+        "checks": {
+          "selection": true,
+          "confirmation": true,
+          "confirmation_scores": true,
+          "fixed_path_diagnostics": true,
+          "alignment_reporting_only": true
+        }
+      },
+      "candidate_threshold_same_batch_development_only": -0.032316013856470434,
+      "candidate_blind_margin": -0.0066175140567763385,
+      "candidate_fixed_reference_margin": 0.01466336382299267,
+      "candidate_decision": "REJECTED",
+      "single_C2_threshold": -0.03703816605559639,
+      "single_C2_blind_margin": -0.037977420050310885,
+      "single_C2_fixed_reference_margin": -0.017110582072126172,
+      "single_C2_decision": "REJECTED"
+    },
+    "eval_p3_s3/MULTI44_46/SPEED5_4": {
+      "status": "SCORED",
+      "seconds": 4.383343856003194,
+      "candidate_blind_score": -0.03384367113692903,
+      "candidate_directional_blind_C2": {
+        "A_LOCATE_B_CONFIRM": -0.07257911499294355,
+        "B_LOCATE_A_CONFIRM": 0.004891772719085493
+      },
+      "candidate_fixed_reference_score": -0.020714012137423295,
+      "candidate_directional_fixed_reference_C2": {
+        "A_LOCATE_B_CONFIRM": -0.0394382358472065,
+        "B_LOCATE_A_CONFIRM": -0.0019897884276400893
+      },
+      "candidate_blind_minus_reference_gap": -0.013129658999505734,
+      "single_C2_blind_score": -0.07257911499294355,
+      "single_C2_fixed_reference_score": -0.0394382358472065,
+      "single_C2_blind_minus_reference_gap": -0.033140879145737046,
+      "a_to_b_existing_split_equivalence": {
+        "status": "PASS",
+        "checks": {
+          "selection": true,
+          "confirmation": true,
+          "confirmation_scores": true,
+          "fixed_path_diagnostics": true,
+          "alignment_reporting_only": true
+        }
+      },
+      "candidate_threshold_same_batch_development_only": -0.032316013856470434,
+      "candidate_blind_margin": -0.0015276572804585956,
+      "candidate_fixed_reference_margin": 0.011602001719047138,
+      "candidate_decision": "REJECTED",
+      "single_C2_threshold": -0.03703816605559639,
+      "single_C2_blind_margin": -0.035540948937347154,
+      "single_C2_fixed_reference_margin": -0.0024000697916101085,
+      "single_C2_decision": "REJECTED"
+    },
+    "eval_p3_s3/OFF/DELETE90": {
+      "status": "SCORED",
+      "seconds": 5.009120675000304,
+      "candidate_blind_score": -0.04770348525988506,
+      "candidate_directional_blind_C2": {
+        "A_LOCATE_B_CONFIRM": -0.07864814488203606,
+        "B_LOCATE_A_CONFIRM": -0.016758825637734058
+      },
+      "candidate_fixed_reference_score": -0.02811079329776391,
+      "candidate_directional_fixed_reference_C2": {
+        "A_LOCATE_B_CONFIRM": -0.060100162012721364,
+        "B_LOCATE_A_CONFIRM": 0.0038785754171935475
+      },
+      "candidate_blind_minus_reference_gap": -0.019592691962121152,
+      "single_C2_blind_score": -0.07864814488203606,
+      "single_C2_fixed_reference_score": -0.060100162012721364,
+      "single_C2_blind_minus_reference_gap": -0.018547982869314694,
+      "a_to_b_existing_split_equivalence": {
+        "status": "PASS",
+        "checks": {
+          "selection": true,
+          "confirmation": true,
+          "confirmation_scores": true,
+          "fixed_path_diagnostics": true,
+          "alignment_reporting_only": true
+        }
+      },
+      "candidate_threshold_same_batch_development_only": -0.032316013856470434,
+      "candidate_blind_margin": -0.015387471403414628,
+      "candidate_fixed_reference_margin": 0.004205220558706525,
+      "candidate_decision": "REJECTED",
+      "single_C2_threshold": -0.03703816605559639,
+      "single_C2_blind_margin": -0.041609978826439666,
+      "single_C2_fixed_reference_margin": -0.02306199595712497,
+      "single_C2_decision": "REJECTED"
+    },
+    "eval_p3_s3/OFF/FULL": {
+      "status": "SCORED",
+      "seconds": 4.808504616004939,
+      "candidate_blind_score": -0.04558021316187815,
+      "candidate_directional_blind_C2": {
+        "A_LOCATE_B_CONFIRM": -0.07581686058390967,
+        "B_LOCATE_A_CONFIRM": -0.015343565739846634
+      },
+      "candidate_fixed_reference_score": -0.02250782531465471,
+      "candidate_directional_fixed_reference_C2": {
+        "A_LOCATE_B_CONFIRM": -0.054591850059678565,
+        "B_LOCATE_A_CONFIRM": 0.009576199430369144
+      },
+      "candidate_blind_minus_reference_gap": -0.02307238784722344,
+      "single_C2_blind_score": -0.07581686058390967,
+      "single_C2_fixed_reference_score": -0.054591850059678565,
+      "single_C2_blind_minus_reference_gap": -0.021225010524231105,
+      "a_to_b_existing_split_equivalence": {
+        "status": "PASS",
+        "checks": {
+          "selection": true,
+          "confirmation": true,
+          "confirmation_scores": true,
+          "fixed_path_diagnostics": true,
+          "alignment_reporting_only": true
+        }
+      },
+      "candidate_threshold_same_batch_development_only": -0.032316013856470434,
+      "candidate_blind_margin": -0.013264199305407717,
+      "candidate_fixed_reference_margin": 0.009808188541815723,
+      "candidate_decision": "REJECTED",
+      "single_C2_threshold": -0.03703816605559639,
+      "single_C2_blind_margin": -0.03877869452831328,
+      "single_C2_fixed_reference_margin": -0.017553684004082172,
+      "single_C2_decision": "REJECTED"
+    },
+    "eval_p3_s3/OFF/SPEED5_4": {
+      "status": "SCORED",
+      "seconds": 4.2944644980016164,
+      "candidate_blind_score": -0.03940245802356697,
+      "candidate_directional_blind_C2": {
+        "A_LOCATE_B_CONFIRM": -0.07811665398270738,
+        "B_LOCATE_A_CONFIRM": -0.0006882620644265616
+      },
+      "candidate_fixed_reference_score": -0.029070324925017627,
+      "candidate_directional_fixed_reference_C2": {
+        "A_LOCATE_B_CONFIRM": -0.04922076022585145,
+        "B_LOCATE_A_CONFIRM": -0.008919889624183806
+      },
+      "candidate_blind_minus_reference_gap": -0.010332133098549343,
+      "single_C2_blind_score": -0.07811665398270738,
+      "single_C2_fixed_reference_score": -0.04922076022585145,
+      "single_C2_blind_minus_reference_gap": -0.02889589375685593,
+      "a_to_b_existing_split_equivalence": {
+        "status": "PASS",
+        "checks": {
+          "selection": true,
+          "confirmation": true,
+          "confirmation_scores": true,
+          "fixed_path_diagnostics": true,
+          "alignment_reporting_only": true
+        }
+      },
+      "candidate_threshold_same_batch_development_only": -0.032316013856470434,
+      "candidate_blind_margin": -0.007086444167096535,
+      "candidate_fixed_reference_margin": 0.0032456889314528073,
+      "candidate_decision": "REJECTED",
+      "single_C2_threshold": -0.03703816605559639,
+      "single_C2_blind_margin": -0.04107848792711099,
+      "single_C2_fixed_reference_margin": -0.012182594170255058,
+      "single_C2_decision": "REJECTED"
+    },
+    "eval_p3_s3/SINGLE46/DELETE90": {
+      "status": "SCORED",
+      "seconds": 4.930779226997402,
+      "candidate_blind_score": -0.040836084791784,
+      "candidate_directional_blind_C2": {
+        "A_LOCATE_B_CONFIRM": -0.076964003668248,
+        "B_LOCATE_A_CONFIRM": -0.004708165915319995
+      },
+      "candidate_fixed_reference_score": -0.022653433202084135,
+      "candidate_directional_fixed_reference_C2": {
+        "A_LOCATE_B_CONFIRM": -0.0604589858787211,
+        "B_LOCATE_A_CONFIRM": 0.015152119474552835
+      },
+      "candidate_blind_minus_reference_gap": -0.018182651589699866,
+      "single_C2_blind_score": -0.076964003668248,
+      "single_C2_fixed_reference_score": -0.0604589858787211,
+      "single_C2_blind_minus_reference_gap": -0.0165050177895269,
+      "a_to_b_existing_split_equivalence": {
+        "status": "PASS",
+        "checks": {
+          "selection": true,
+          "confirmation": true,
+          "confirmation_scores": true,
+          "fixed_path_diagnostics": true,
+          "alignment_reporting_only": true
+        }
+      },
+      "candidate_threshold_same_batch_development_only": -0.032316013856470434,
+      "candidate_blind_margin": -0.008520070935313567,
+      "candidate_fixed_reference_margin": 0.009662580654386299,
+      "candidate_decision": "REJECTED",
+      "single_C2_threshold": -0.03703816605559639,
+      "single_C2_blind_margin": -0.03992583761265161,
+      "single_C2_fixed_reference_margin": -0.02342081982312471,
+      "single_C2_decision": "REJECTED"
+    },
+    "eval_p3_s3/SINGLE46/FULL": {
+      "status": "SCORED",
+      "seconds": 5.007398050001939,
+      "candidate_blind_score": -0.037888848584158356,
+      "candidate_directional_blind_C2": {
+        "A_LOCATE_B_CONFIRM": -0.07259575170364387,
+        "B_LOCATE_A_CONFIRM": -0.003181945464672849
+      },
+      "candidate_fixed_reference_score": -0.017600256865457,
+      "candidate_directional_fixed_reference_C2": {
+        "A_LOCATE_B_CONFIRM": -0.053859747246881244,
+        "B_LOCATE_A_CONFIRM": 0.018659233515967242
+      },
+      "candidate_blind_minus_reference_gap": -0.020288591718701357,
+      "single_C2_blind_score": -0.07259575170364387,
+      "single_C2_fixed_reference_score": -0.053859747246881244,
+      "single_C2_blind_minus_reference_gap": -0.01873600445676262,
+      "a_to_b_existing_split_equivalence": {
+        "status": "PASS",
+        "checks": {
+          "selection": true,
+          "confirmation": true,
+          "confirmation_scores": true,
+          "fixed_path_diagnostics": true,
+          "alignment_reporting_only": true
+        }
+      },
+      "candidate_threshold_same_batch_development_only": -0.032316013856470434,
+      "candidate_blind_margin": -0.0055728347276879225,
+      "candidate_fixed_reference_margin": 0.014715756991013434,
+      "candidate_decision": "REJECTED",
+      "single_C2_threshold": -0.03703816605559639,
+      "single_C2_blind_margin": -0.03555758564804747,
+      "single_C2_fixed_reference_margin": -0.01682158119128485,
+      "single_C2_decision": "REJECTED"
+    },
+    "eval_p3_s3/SINGLE46/SPEED5_4": {
+      "status": "SCORED",
+      "seconds": 4.373329248999653,
+      "candidate_blind_score": -0.04141493931214255,
+      "candidate_directional_blind_C2": {
+        "A_LOCATE_B_CONFIRM": -0.0700461270900496,
+        "B_LOCATE_A_CONFIRM": -0.0127837515342355
+      },
+      "candidate_fixed_reference_score": -0.02512681362875973,
+      "candidate_directional_fixed_reference_C2": {
+        "A_LOCATE_B_CONFIRM": -0.04495563810155181,
+        "B_LOCATE_A_CONFIRM": -0.005297989155967648
+      },
+      "candidate_blind_minus_reference_gap": -0.016288125683382823,
+      "single_C2_blind_score": -0.0700461270900496,
+      "single_C2_fixed_reference_score": -0.04495563810155181,
+      "single_C2_blind_minus_reference_gap": -0.0250904889884978,
+      "a_to_b_existing_split_equivalence": {
+        "status": "PASS",
+        "checks": {
+          "selection": true,
+          "confirmation": true,
+          "confirmation_scores": true,
+          "fixed_path_diagnostics": true,
+          "alignment_reporting_only": true
+        }
+      },
+      "candidate_threshold_same_batch_development_only": -0.032316013856470434,
+      "candidate_blind_margin": -0.009098925455672119,
+      "candidate_fixed_reference_margin": 0.007189200227710704,
+      "candidate_decision": "REJECTED",
+      "single_C2_threshold": -0.03703816605559639,
+      "single_C2_blind_margin": -0.03300796103445321,
+      "single_C2_fixed_reference_margin": -0.007917472045955415,
+      "single_C2_decision": "REJECTED"
+    }
+  },
+  "failures": [],
+  "evidence_ceiling": "existing same-batch CPU development diagnosis; not independent validation, real GPU resource evidence, or science"
+}

@@ -1,0 +1,11 @@
+# Bidirectional-Cross-Confirm-V1 fixed route
+
+This route keeps the existing fixed key, 11-window clock grid (4,284 paths), checkerboard A/B partition, state weight, legacy writer, and three persisted views. It adds exactly one receiver candidate.
+
+For direction A→B, partition A performs the blind locator search and partition B evaluates C2 on that selected path. For direction B→A, partition B independently performs the same blind locator search and partition A evaluates C2 on that selected path. The candidate statistic for one view is the arithmetic mean of the two held-out C2 scores. If either direction is invalid, the view candidate is INVALID. There is no maximum, OR rule, direction selection, direction-independence claim, or confirmation-end re-search. The two held-out C1 values are retained as diagnostics only and cannot enter the candidate statistic or decision.
+
+ORIGINAL, C1_MATCHED_CONFIRM, and C2_STATE_CONFIRM remain the existing single-direction baselines. All four receivers consume the same four phase observations per saved view. They receive no writer evidence, marked label, arm truth, expected attack path, or fixed reference during blind detection. Fixed reference alignment and scores are attached only after the blind result for reporting.
+
+The fixed new-source roster has four calibration OFF sources and four evaluation sources. Every evaluation source has OFF, SINGLE46, and MULTI44_46 physical arms, each persisted as FULL, DELETE90, and SPEED5_4. This gives 16 physical source-arms, 48 saved views, and 192 phase encodes. Each receiver freezes its own threshold only after all four calibration sources and all three views per source are valid: max over views per source, then max over four sources plus `1e-6`. Evaluation never contributes to calibration.
+
+The complete planned calls are 8 generation, 896 transformer, 448 scheduler, 12 each zero-shadow/unit-probe/backward, 16 decode, 48 MP4 save/read, and 192 VAE encode. All attempted/completed calls, source/config/code identity, seeds, failures, missing slots, and resource observations are persisted. The notebook is a user-run fixed Run-all workflow; implementation/static/CPU checks do not establish real GPU resource use or scientific success.

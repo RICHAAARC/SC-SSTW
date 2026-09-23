@@ -1,0 +1,161 @@
+{
+  "status": "PASS",
+  "inputs": {
+    "cpu_result": "evidence/bidirectional-cross-confirm-v1-cpu-20260923/cpu_result.json",
+    "baseline_result": "/home/richar/projects/Video-WM/diagnostics/project-status-20260921/flow_fixed_key_v1_20260922T014420975188Z/receiver_split_v1/baseline_result.json",
+    "split_result": "/home/richar/projects/Video-WM/diagnostics/project-status-20260921/flow_fixed_key_v1_20260922T014420975188Z/receiver_split_v1/candidate_result.json"
+  },
+  "evaluation_denominators_per_receiver": {
+    "OFF_views": 6,
+    "marked_views": 12,
+    "OFF_source_arms": 2,
+    "marked_source_arms": 4
+  },
+  "all_four_receiver_evaluation": {
+    "ORIGINAL": {
+      "views": {
+        "OFF": {
+          "DETECTED": 5,
+          "REJECTED": 1,
+          "INVALID": 0,
+          "UNCALIBRATED": 0
+        },
+        "marked": {
+          "DETECTED": 12,
+          "REJECTED": 0,
+          "INVALID": 0,
+          "UNCALIBRATED": 0
+        }
+      },
+      "source_arms": {
+        "OFF": {
+          "DETECTED": 2,
+          "REJECTED": 0,
+          "INVALID": 0,
+          "UNCALIBRATED": 0
+        },
+        "marked": {
+          "DETECTED": 4,
+          "REJECTED": 0,
+          "INVALID": 0,
+          "UNCALIBRATED": 0
+        }
+      }
+    },
+    "C1_MATCHED_CONFIRM": {
+      "views": {
+        "OFF": {
+          "DETECTED": 0,
+          "REJECTED": 6,
+          "INVALID": 0,
+          "UNCALIBRATED": 0
+        },
+        "marked": {
+          "DETECTED": 4,
+          "REJECTED": 8,
+          "INVALID": 0,
+          "UNCALIBRATED": 0
+        }
+      },
+      "source_arms": {
+        "OFF": {
+          "DETECTED": 0,
+          "REJECTED": 2,
+          "INVALID": 0,
+          "UNCALIBRATED": 0
+        },
+        "marked": {
+          "DETECTED": 2,
+          "REJECTED": 2,
+          "INVALID": 0,
+          "UNCALIBRATED": 0
+        }
+      }
+    },
+    "C2_STATE_CONFIRM": {
+      "views": {
+        "OFF": {
+          "DETECTED": 0,
+          "REJECTED": 6,
+          "INVALID": 0,
+          "UNCALIBRATED": 0
+        },
+        "marked": {
+          "DETECTED": 4,
+          "REJECTED": 8,
+          "INVALID": 0,
+          "UNCALIBRATED": 0
+        }
+      },
+      "source_arms": {
+        "OFF": {
+          "DETECTED": 0,
+          "REJECTED": 2,
+          "INVALID": 0,
+          "UNCALIBRATED": 0
+        },
+        "marked": {
+          "DETECTED": 2,
+          "REJECTED": 2,
+          "INVALID": 0,
+          "UNCALIBRATED": 0
+        }
+      }
+    },
+    "BIDIRECTIONAL_C2_MEAN": {
+      "views": {
+        "OFF": {
+          "DETECTED": 0,
+          "REJECTED": 6,
+          "INVALID": 0,
+          "UNCALIBRATED": 0
+        },
+        "marked": {
+          "DETECTED": 6,
+          "REJECTED": 6,
+          "INVALID": 0,
+          "UNCALIBRATED": 0
+        }
+      },
+      "source_arms": {
+        "OFF": {
+          "DETECTED": 0,
+          "REJECTED": 2,
+          "INVALID": 0,
+          "UNCALIBRATED": 0
+        },
+        "marked": {
+          "DETECTED": 2,
+          "REJECTED": 2,
+          "INVALID": 0,
+          "UNCALIBRATED": 0
+        }
+      }
+    }
+  },
+  "p2_SPEED5_4_signed_gaps": {
+    "eval_p2_s2/MULTI44_46/SPEED5_4": {
+      "single_C2_blind_minus_reference_gap": -0.018261362388407497,
+      "candidate_blind_minus_reference_gap": -0.022730301568409196,
+      "single_C2_blind_margin": -0.004446400868318094,
+      "candidate_blind_margin": 0.011412135683187816,
+      "single_C2_fixed_reference_margin": 0.013814961520089403,
+      "candidate_fixed_reference_margin": 0.03414243725159701
+    },
+    "eval_p2_s2/SINGLE46/SPEED5_4": {
+      "single_C2_blind_minus_reference_gap": -0.011673320195376494,
+      "candidate_blind_minus_reference_gap": -0.019111227280463362,
+      "single_C2_blind_margin": -0.008790523219576803,
+      "candidate_blind_margin": 0.00754047119591042,
+      "single_C2_fixed_reference_margin": 0.002882796975799691,
+      "candidate_fixed_reference_margin": 0.026651698476373782
+    }
+  },
+  "p3": {
+    "single_C2_fixed_reference_pass": 0,
+    "candidate_fixed_reference_pass": 6,
+    "candidate_blind_pass": 0,
+    "denominator": 6
+  },
+  "evidence_ceiling": "existing same-batch CPU development diagnosis; not independent validation, real GPU resource evidence, or science"
+}

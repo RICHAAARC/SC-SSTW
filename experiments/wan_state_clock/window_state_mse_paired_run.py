@@ -137,6 +137,31 @@ def case_config(config, case):
     return result
 
 
+def generation_call_plan(case):
+    return {
+        "generation": 1,
+        "transformer": 100 if case["role"] == "calibration_off" else 148,
+        "scheduler_step": 50 if case["role"] == "calibration_off" else 74,
+        "zero_shadow_step": 0 if case["role"] == "calibration_off" else 6,
+        "unit_response_probe_step": 0 if case["role"] == "calibration_off" else 6,
+        "clean_leaf_backward": 0 if case["role"] == "calibration_off" else 6,
+    }
+
+
+def generate_case_terminals(result, config, case, count):
+    if case["role"] == "calibration_off":
+        return fixed_key_core.generate_key_terminals(
+            result["config"], config["key_utf8"].encode(), ("OFF",), count,
+        )
+    return fixed_key_core.generate_paired_key_terminals(
+        result["config"], config["key_utf8"].encode(), count,
+    )
+
+
+def branch_writer_objective(branch, case, generated):
+    return branch.get("writer_objective")
+
+
 def _counter(result):
     def snapshot():
         return {
@@ -181,14 +206,7 @@ def generate_case(case_id, config_path, output):
             "source_cache_inputs": [], "prompt": case["prompt"], "seed": case["seed"],
             "initial_noise": "NEW",
         },
-        fixed_calls={
-            "generation": 1,
-            "transformer": 100 if case["role"] == "calibration_off" else 148,
-            "scheduler_step": 50 if case["role"] == "calibration_off" else 74,
-            "zero_shadow_step": 0 if case["role"] == "calibration_off" else 6,
-            "unit_response_probe_step": 0 if case["role"] == "calibration_off" else 6,
-            "clean_leaf_backward": 0 if case["role"] == "calibration_off" else 6,
-        },
+        fixed_calls=generation_call_plan(case),
         _progress_path=str(output / "progress.json"),
     )
 
@@ -205,14 +223,7 @@ def generate_case(case_id, config_path, output):
     try:
         result["source_commit"] = subprocess.check_output(["git", "rev-parse", "HEAD"], text=True).strip()
         result["source_files_sha256"] = {str(path): sha(path) for path in _source_files()}
-        if case["role"] == "calibration_off":
-            generated = fixed_key_core.generate_key_terminals(
-                result["config"], config["key_utf8"].encode(), ("OFF",), count,
-            )
-        else:
-            generated = fixed_key_core.generate_paired_key_terminals(
-                result["config"], config["key_utf8"].encode(), count,
-            )
+        generated = generate_case_terminals(result, config, case, count)
         for name in ("initial_noise_fingerprint", "state44_fingerprint", "scheduler44_fingerprint"):
             if name in generated:
                 result["fresh_generation"][name] = generated[name]
@@ -230,7 +241,7 @@ def generate_case(case_id, config_path, output):
                 tensor_root.mkdir(parents=True, exist_ok=True)
                 for index, tensors in branch["control_tensors"].items():
                     torch.save(tensors, tensor_root / f"step{index}.pt")
-                writer_objective = branch.get("writer_objective")
+                writer_objective = branch_writer_objective(branch, case, generated)
                 if writer_objective is None and case["role"] == "calibration_off":
                     writer_objective = None
                 item.update(
