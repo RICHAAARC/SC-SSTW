@@ -1,0 +1,69 @@
+{
+  "case_id": "eval_p2_s2",
+  "case_keys": [
+    "status", "case_id", "role", "videos", "actual_calls", "failures", "config",
+    "source_commit", "source_files_sha256", "fresh_generation", "fixed_calls", "progress",
+    "resources_generation", "resources_media", "stage_logs", "generate_exit_code", "media_exit_code"
+  ],
+  "source_commit": "8aff4025fd0f8dd656091bf83af1311263f4d99c",
+  "config_generation": {
+    "height": 320,
+    "width": 512,
+    "frames": 181,
+    "fps": 8,
+    "steps": 50,
+    "guidance_scale": 5,
+    "max_sequence_length": 512,
+    "negative_prompt": "text, watermark, logo, camera motion, cuts, multiple objects, flicker",
+    "prompt": "locked camera, a single orange kayak gliding slowly across calm water, stable daylight, no people, no cuts",
+    "seed": 20260919
+  },
+  "arm_keys": [
+    "status", "arm", "views", "receiver_source_decisions", "writer_objective",
+    "nominal_terminal", "control_steps", "clean_gradients", "unit_probes",
+    "cumulative_native_response", "terminal_fingerprint", "terminal_path", "reporting_only"
+  ],
+  "arm": {
+    "terminal_fingerprint": "bfa52f6bd0e3381689647e12321aa92e772eaf59bff07f88bb52f1d5278d4c59",
+    "terminal_path": "OFF_terminal.pt",
+    "views": {
+      "FULL": {
+        "status": "SCORED",
+        "observations": {
+          "0": {
+            "status": "COMPLETE",
+            "frames_used": 181,
+            "tail_discarded": 0,
+            "path": "observations/OFF/FULL/g0.pt",
+            "sha256": "eda26060c9fabc6a2f40de42d455e44d5c92a1aad055df30d26de4fdea5b4034"
+          },
+          "1": {
+            "status": "COMPLETE",
+            "frames_used": 177,
+            "tail_discarded": 3,
+            "path": "observations/OFF/FULL/g1.pt",
+            "sha256": "cf93062c59e780e09e02aa0fa5a6a273a92a5a93b276ca73fb8d1f0365ff4c2e"
+          },
+          "2": {
+            "status": "COMPLETE",
+            "frames_used": 177,
+            "tail_discarded": 2,
+            "path": "observations/OFF/FULL/g2.pt",
+            "sha256": "2fd213fbbb154d1507d07676c7996afdb96ff4d497296de46fc20daa19c025dc"
+          },
+          "3": {
+            "status": "COMPLETE",
+            "frames_used": 177,
+            "tail_discarded": 1,
+            "path": "observations/OFF/FULL/g3.pt",
+            "sha256": "44a50bd09005763e8b394e111c33a16695ec5e20d6d5ab8c8372f78c4d68d8d9"
+          }
+        },
+        "path": "received_videos/OFF/FULL.mp4",
+        "sha256": "030da23e7f23ac46a1731d5d4962241479a164f1482b21589a9bbe35fc1f2d02",
+        "frames": 181
+      }
+    }
+  },
+  "provenance": "Exact field/value excerpt supplied from the audited retained Drive result.json; tensor/media bytes are not embedded."
+}

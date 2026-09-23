@@ -1,0 +1,49 @@
+{
+  "experiment_id": "Media-Channel-Retention-V1",
+  "input_root": "/content/drive/MyDrive/Video-WM/Window-State-MSE-V1/window_state_mse_v1_20260922T174349464768Z",
+  "output_parent": "/content/drive/MyDrive/Video-WM/Media-Channel-Retention-V1",
+  "input_source_commit": "8aff4025fd0f8dd656091bf83af1311263f4d99c",
+  "input_result": {
+    "sha256": "d2492462482b3be4285ababaa6ae3486307e0db56f08ccc7f17e4ede89f89859",
+    "size_bytes": 11832195,
+    "drive_file_id": "1nuzBuywYWnvvlE0dptqRo6C4B2hpBxoO",
+    "drive_modified_time": "2026-09-22T19:22:04.124Z"
+  },
+  "key_utf8": "WanProjection-first-validation-key-v1",
+  "cases": ["eval_p2_s2", "eval_p3_s3"],
+  "input_seeds": {"eval_p2_s2": 20260919, "eval_p3_s3": 20260920},
+  "arms": [
+    "OFF",
+    "LEGACY_SINGLE46",
+    "MSE_SINGLE46",
+    "LEGACY_MULTI44_46",
+    "MSE_MULTI44_46"
+  ],
+  "marked_arms": [
+    "LEGACY_SINGLE46",
+    "MSE_SINGLE46",
+    "LEGACY_MULTI44_46",
+    "MSE_MULTI44_46"
+  ],
+  "layers": [
+    "TERMINAL",
+    "FLOAT_RGB_REENCODE",
+    "RGB8_NO_CODEC_REENCODE",
+    "EXISTING_MP4_G0"
+  ],
+  "partitions": ["TOTAL", "A", "B"],
+  "identity_path": {"g": 0, "scale": [1, 1], "offset": 0, "boundary": 11, "delta": 0},
+  "expected_shapes": {
+    "latent": [1, 16, 46, 40, 64],
+    "decoded_rgb": [181, 320, 512, 3]
+  },
+  "call_plan": {"vae_encode": 20},
+  "fixed_denominator": {
+    "trajectories": 10,
+    "layer_partition_slots": 120,
+    "marked_off_increment_slots": 96,
+    "adjacent_increment_change_slots": 72
+  },
+  "numeric_near_zero_epsilon": 1e-12,
+  "evidence_ceiling": "same-run diagnostic of fixed retained artifacts; no new generation, decode, MP4 production, attack, calibration, threshold, blind receiver decision, quality, generalization, FPR, or capacity claim"
+}
