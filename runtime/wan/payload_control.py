@@ -40,9 +40,9 @@ def clean_direction(clean, book: dict, payload: int, count=None):
 
 
 @torch.no_grad()
-def prepare_direction(snapshot, z, v, zero_next, raw, target, index, count):
+def prepare_direction(snapshot, z, v, zero_next, raw, target, index, count, *, allowed_steps=CONTROL_STEPS):
     before = trajectory.fingerprint(vars(snapshot))
-    if index not in CONTROL_STEPS or snapshot.step_index != index:
+    if index not in allowed_steps or snapshot.step_index != index:
         raise ValueError("invalid control cursor")
     sigma = float(snapshot.sigmas[index])
     if not math.isfinite(sigma) or sigma <= 0 or not math.isfinite(target) or target <= 0:
@@ -84,6 +84,8 @@ def controlled_step(snapshot, z, v, zero_next, unit, epsilon, target, index, cou
     after, history = trajectory.zero_step(snapshot, z, controlled_velocity, index, count)
     actual = trajectory.measures(after - zero_next)
     relative_error = abs(actual["support_rms"] - target) / target
+    if not all(math.isfinite(value) for value in actual.values()) or not math.isfinite(relative_error):
+        raise FloatingPointError("nonfinite actual native response")
     if relative_error > 2e-5:
         raise RuntimeError("fixed native-response budget mismatch")
     if trajectory.fingerprint(vars(snapshot)) != before:

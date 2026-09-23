@@ -1,0 +1,34 @@
+{
+  "name": "keyed_presence_t40_t49_v1",
+  "protocol": "SC-SSTW-Keyed-Presence-T40-T49-V1",
+  "adopted_stage1_draft_sha256": "bbe67da2f52bb4b466a7d602e2db268c3804e9c6cf7e3dfff45cb0f1f9d609b2",
+  "model": {"id": "Wan-AI/Wan2.1-T2V-1.3B-Diffusers", "revision": "0fad780a534b6463e45facd96134c9f345acfa5b"},
+  "generation": {"height": 320, "width": 512, "frames": 181, "fps": 8, "steps": 50, "guidance_scale": 5.0, "max_sequence_length": 512, "negative_prompt": "text, watermark, logo, camera motion, cuts, multiple objects, flicker"},
+  "key_utf8": "WanProjection-first-validation-key-v1",
+  "cases": [
+    {"id": "c01", "role": "calibration_off", "seed": 2026102401, "prompt": "locked camera, a single orange buoy bobbing slowly in a quiet harbor, stable daylight, no people, no cuts"},
+    {"id": "c02", "role": "calibration_off", "seed": 2026102402, "prompt": "locked camera, a single wooden waterwheel turning slowly beside a stream, stable daylight, no people, no cuts"},
+    {"id": "c03", "role": "calibration_off", "seed": 2026102403, "prompt": "locked camera, a single white swan gliding slowly across a pond, stable daylight, no people, no cuts"},
+    {"id": "c04", "role": "calibration_off", "seed": 2026102404, "prompt": "locked camera, a single orange forklift moving slowly across an empty yard, stable daylight, no people, no cuts"},
+    {"id": "c05", "role": "calibration_off", "seed": 2026102405, "prompt": "locked camera, a single green combine harvester moving slowly across a field, stable daylight, no people, no cuts"},
+    {"id": "c06", "role": "calibration_off", "seed": 2026102406, "prompt": "locked camera, a single black toy car rolling slowly across a wooden table, stable daylight, no people, no cuts"},
+    {"id": "c07", "role": "calibration_off", "seed": 2026102407, "prompt": "locked camera, a single red windsock fluttering gently on a pole, stable daylight, no people, no cuts"},
+    {"id": "c08", "role": "calibration_off", "seed": 2026102408, "prompt": "locked camera, a single striped beach ball rolling slowly across sand, stable daylight, no people, no cuts"},
+    {"id": "c09", "role": "calibration_off", "seed": 2026102409, "prompt": "locked camera, a single small blue robot moving slowly along a garden path, stable daylight, no people, no cuts"},
+    {"id": "s0", "role": "evaluation", "seed": 2026102301, "prompt": "locked camera, a single silver wind turbine rotating slowly on a grassy open hill, stable cloudy daylight, no people, no cuts"},
+    {"id": "s1", "role": "evaluation", "seed": 2026102302, "prompt": "locked camera, a single yellow rubber duck bobbing gently on clear pond water, stable daylight, no people, no cuts"},
+    {"id": "s2", "role": "evaluation", "seed": 2026102303, "prompt": "locked camera, a single brown fox walking slowly across a flat empty meadow, stable overcast daylight, no people, no cuts"},
+    {"id": "s3", "role": "evaluation", "seed": 2026102304, "prompt": "locked camera, a single blue toy car rolling slowly across a plain wooden tabletop, stable indoor light, no people, no cuts"}
+  ],
+  "calibration_arms": ["OFF"],
+  "evaluation_arms": ["OFF", "T44_46", "T40_48", "T40_49", "T49_ONLY"],
+  "control": {
+    "R_star": 0.042943312697648145,
+    "budget_semantics": "sum of per-step same-input same-history native controlled-minus-zero support RMS",
+    "steps": {"T44_46": [44, 46], "T40_48": [40, 41, 42, 43, 44, 45, 46, 47, 48], "T40_49": [40, 41, 42, 43, 44, 45, 46, 47, 48, 49], "T49_ONLY": [49]}
+  },
+  "receiver": {"primary": "C2_STATE_CONFIRM", "descriptive": ["ORIGINAL", "C1_MATCHED_CONFIRM"], "view": "FULL", "paths": 4284, "phases": [0, 1, 2, 3], "calibration_sources": 9, "evaluation_sources": 4, "calibration_guard": 0.000001, "rule": "C2 FULL score > max nine independent OFF FULL C2 scores plus guard; four marked detected and four valid OFF rejected"},
+  "fixed_denominator": {"sources": 13, "calibration_off": 9, "evaluation_sources": 4, "physical_videos": 29, "evaluation_layer_partition": 240, "evaluation_marked_off_pairs": 192, "evaluation_adjacent_pair_changes": 144, "vae_encode": 156},
+  "fixed_calls": {"generation": 13, "transformer": 1620, "scheduler_step": 810, "zero_shadow_step": 88, "unit_response_probe_step": 88, "clean_leaf_backward": 88, "vae_decode": 29, "mp4_save": 29, "mp4_read": 29, "vae_encode": 156},
+  "claim": "fixed-key H0/H1 presence on four predeclared sources; no quality, identity, payload, low-FPR or extra multistep-gain claim"
+}
