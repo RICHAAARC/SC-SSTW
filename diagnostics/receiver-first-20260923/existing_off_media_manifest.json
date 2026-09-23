@@ -1,0 +1,65 @@
+{
+  "status": "RECORDED_HASH_IDENTITY_ONLY_MEDIA_BYTES_NOT_READ",
+  "run": "content_background_existence_v1_20260923T024543022721Z",
+  "drive_relative_run_root": "Video-WM/Content-Background-Existence-V1/content_background_existence_v1_20260923T024543022721Z",
+  "physical_off_mp4_count": 8,
+  "distinct_recorded_sha256_count": 8,
+  "rows": [
+    {
+      "id": "new_cal_c0_s1",
+      "role": "calibration_off",
+      "sha256": "c3785587edd9405fd56c0cdc61b65f39a7ce85be71779c7184cc464d9e8f5243",
+      "frames": 181,
+      "path": "received_videos/OFF/FULL.mp4"
+    },
+    {
+      "id": "new_cal_c1_s2",
+      "role": "calibration_off",
+      "sha256": "9fd2b6201e3a6b5e9df5d53a47fc324de5b45e56c7a0bbc196c92ca7bbe8f0c7",
+      "frames": 181,
+      "path": "received_videos/OFF/FULL.mp4"
+    },
+    {
+      "id": "new_cal_c2_s3",
+      "role": "calibration_off",
+      "sha256": "addb4b8ebb320ad825bf6a37708f2835e86300b652ce8dc7c6631b2d1542a8f8",
+      "frames": 181,
+      "path": "received_videos/OFF/FULL.mp4"
+    },
+    {
+      "id": "new_cal_c3_s4",
+      "role": "calibration_off",
+      "sha256": "b35481e2ee5269dc9d360cf3d0f68a25c1df4a850374f3ba7aaa9f9935560b7a",
+      "frames": 181,
+      "path": "received_videos/OFF/FULL.mp4"
+    },
+    {
+      "id": "new_eval_e0_s5",
+      "role": "evaluation",
+      "sha256": "3fa14b0f502cf4cddf8c2ab51515d3af484767ec00bda5ec8866ecb597290806",
+      "frames": 181,
+      "path": "received_videos/OFF/FULL.mp4"
+    },
+    {
+      "id": "new_eval_e1_s6",
+      "role": "evaluation",
+      "sha256": "0377bb72698767fb6bbf807db3522be7af639b69d8524a8b671a12f44dc559e5",
+      "frames": 181,
+      "path": "received_videos/OFF/FULL.mp4"
+    },
+    {
+      "id": "new_eval_e2_s7",
+      "role": "evaluation",
+      "sha256": "a0f7e16013093573571488e2152d21dca63cdc1b5d3eeef8429916cfefda24af",
+      "frames": 181,
+      "path": "received_videos/OFF/FULL.mp4"
+    },
+    {
+      "id": "new_eval_e3_s8",
+      "role": "evaluation",
+      "sha256": "7223c250573a2cf17aaf5c0d45644ef82e3b3c18a5e489eb757e3a8f77d125be",
+      "frames": 181,
+      "path": "received_videos/OFF/FULL.mp4"
+    }
+  ]
+}
