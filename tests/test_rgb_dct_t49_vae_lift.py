@@ -3,8 +3,11 @@ from __future__ import annotations
 
 import inspect
 import ast
+import importlib.metadata
 import json
 import subprocess
+import sys
+import types
 from pathlib import Path
 from types import SimpleNamespace
 
@@ -325,6 +328,67 @@ def test_temporary_notebook_builder_binds_one_source_and_run_all(tmp_path):
     assert "experiments.wan_state_clock.rgb_dct_t49_vae_lift_run" in text
     assert text.count("'--output', str(OUTPUT)") == 1
     assert "--config" not in text and "--arm" not in text and "--key" not in text
+
+
+@pytest.mark.parametrize(
+    ("installed_torch", "cuda_available", "expect_torch_install", "expect_failure"),
+    [("2.11.0+cu130", True, False, False),
+     ("2.11.0+cu128", True, False, False),
+     (None, True, True, False),
+     ("2.11.1+cu130", True, True, False),
+     ("2.11.0+cu130", False, False, True)],
+)
+def test_install_cell_accepts_cu130_without_suffix_gate_and_checks_cuda(
+    tmp_path, monkeypatch, installed_torch, cuda_available, expect_torch_install, expect_failure,
+):
+    path = builder.build("b" * 40, tmp_path / "temporary-install-check.ipynb")
+    notebook = json.loads(path.read_text())
+    code = ["".join(cell["source"]) for cell in notebook["cells"] if cell["cell_type"] == "code"]
+    install = code[2][code[2].index("import importlib.metadata, subprocess, sys"):]
+    ast.parse(install)
+    assert "if (version('torch') or '').split('+', 1)[0] != '2.11.0':" in install
+    assert "2.11.0+cu128" not in install
+    assert "str(torch.__version__).split('+', 1)[0] == '2.11.0'" in install
+    assert "assert torch.cuda.is_available()" in install
+    assert "assert diffusers.__version__ == '0.40.0'" in install
+    assert "from diffusers import WanPipeline, AutoencoderKLWan" in install
+    assert "python=sys.version" in code[4]
+    assert "torch_cuda_runtime=torch.version.cuda" in code[4]
+    assert "device=(torch.cuda.get_device_name(0)" in code[4]
+
+    fake_torch = types.ModuleType("torch")
+    fake_torch.__version__ = installed_torch or "2.11.0+cu128"
+    fake_torch.cuda = types.SimpleNamespace(is_available=lambda: cuda_available)
+    fake_diffusers = types.ModuleType("diffusers")
+    fake_diffusers.__version__ = "0.40.0"
+    fake_diffusers.WanPipeline = type("WanPipeline", (), {})
+    fake_diffusers.AutoencoderKLWan = type("AutoencoderKLWan", (), {})
+    monkeypatch.setitem(sys.modules, "torch", fake_torch)
+    monkeypatch.setitem(sys.modules, "diffusers", fake_diffusers)
+    current = {"torch": installed_torch}
+    monkeypatch.setattr(importlib.metadata, "version", lambda name: (
+        current["torch"] if name == "torch" else "0.40.0" if name == "diffusers" else "test-version"
+    ))
+    commands = []
+
+    def fake_logged_run(command, **kwargs):
+        commands.append(command)
+        if "torch==2.11.0" in command:
+            current["torch"] = "2.11.0+cu128"
+            fake_torch.__version__ = current["torch"]
+        if "-c" in command:
+            exec(command[-1], {"__name__": "__main__"})
+
+    if expect_failure:
+        with pytest.raises(AssertionError, match="CUDA torch required"):
+            exec(install, {"logged_run": fake_logged_run})
+    else:
+        exec(install, {"logged_run": fake_logged_run})
+    torch_installs = [cmd for cmd in commands if any(
+        isinstance(arg, str) and arg.startswith("torch==") for arg in cmd
+    )]
+    assert bool(torch_installs) is expect_torch_install
+    assert any("diffusers==0.40.0" in cmd for cmd in commands)
 
 
 def test_timeout_kills_each_worker_group_and_retains_all_eight_slots(tmp_path, monkeypatch):

@@ -1,4 +1,4 @@
-"""Build one immutable-source Run-all Colab notebook after S2 is published."""
+"""Build one immutable-source Run-all Colab notebook after source publication."""
 from __future__ import annotations
 
 import argparse
@@ -14,6 +14,22 @@ DEFAULT_OUTPUT = ROOT / "notebooks/rgb_dct_t49_vae_lift_v1_colab.ipynb"
 def _code(source: str, index: int) -> dict:
     return dict(cell_type="code", execution_count=None, metadata={}, outputs=[],
                 source=source.splitlines(keepends=True), id=f"rgb-dct-t49-{index}")
+
+
+def _install_source(golden: dict) -> str:
+    source = "".join(golden["cells"][2]["source"]).replace("subprocess.run(", "logged_run(")
+    old_condition = "if version('torch') != '2.11.0+cu128':"
+    old_assertion = "assert str(torch.__version__) == '2.11.0+cu128', torch.__version__"
+    old_import = "import importlib.metadata, sys, torch, diffusers"
+    if (source.count(old_condition) != 1 or source.count(old_assertion) != 1
+            or source.count(old_import) != 1):
+        raise ValueError("golden installation template changed")
+    return (source.replace(old_condition,
+                           "if (version('torch') or '').split('+', 1)[0] != '2.11.0':", 1)
+            .replace(old_assertion,
+                     "assert str(torch.__version__).split('+', 1)[0] == '2.11.0', torch.__version__\n"
+                     "assert torch.cuda.is_available(), 'CUDA torch required'", 1)
+            .replace(old_import, old_import + "\nfrom diffusers import WanPipeline, AutoencoderKLWan", 1))
 
 
 def build(source_sha: str, output: str | Path | None = None) -> Path:
@@ -48,7 +64,7 @@ def logged_run(command, *, cwd=None, env=None, check=True):
         raise subprocess.CalledProcessError(returncode, command)
     return subprocess.CompletedProcess(command, returncode)
 """
-    install = "".join(golden["cells"][2]["source"]).replace("subprocess.run(", "logged_run(")
+    install = _install_source(golden)
     checkout = """REPO = Path('/content/SC-SSTW-RGB-DCT-T49-' + stamp)
 logged_run(['git', 'clone', '--filter=blob:none', 'https://github.com/RICHAAARC/SC-SSTW.git', str(REPO)])
 logged_run(['git', '-C', str(REPO), 'fetch', 'origin', 'dev/rgb-dct-temporal-balanced-v1'])
@@ -62,7 +78,8 @@ print('source commit:', actual, flush=True)
     environment = """import importlib.metadata, shutil, torch, numpy, diffusers
 environment_receipt = dict(
     ffmpeg=shutil.which('ffmpeg'), ffprobe=shutil.which('ffprobe'),
-    torch=torch.__version__, numpy=numpy.__version__, diffusers=diffusers.__version__,
+    python=sys.version, torch=torch.__version__, torch_cuda_runtime=torch.version.cuda,
+    numpy=numpy.__version__, diffusers=diffusers.__version__,
     cuda_available=torch.cuda.is_available(),
     device=(torch.cuda.get_device_name(0) if torch.cuda.is_available() else None),
 )
