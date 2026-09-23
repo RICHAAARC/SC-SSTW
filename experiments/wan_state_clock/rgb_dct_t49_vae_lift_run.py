@@ -181,7 +181,7 @@ class Store:
                     for slot in case["slots"].values()]
         self.data["scored_media_slots"] = statuses.count("SCORED")
         self.data["pending_media_slots"] = statuses.count("PENDING")
-        self.data["attempted_media_slots"] = 8 - self.data["pending_media_slots"]
+        self.data["attempted_media_slots"] = self.data["calls"]["mp4_save"]["attempted"]
         self.data["invalid_media_slots"] = 8 - self.data["scored_media_slots"] - self.data["pending_media_slots"]
         self.data["scored_frames"] = sum(
             slot["frames_used"] for case in self.data["cases"].values()

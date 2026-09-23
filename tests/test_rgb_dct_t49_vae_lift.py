@@ -194,6 +194,8 @@ def test_two_fixed_sources_keep_negative_stops_and_call_ceiling(tmp_path, monkey
     assert store.data["calls"]["transformer"]["attempted"] == 200
     assert store.data["native_scheduler_calls"]["attempted"] == 101
     assert store.data["scored_media_slots"] == 6 and store.data["invalid_media_slots"] == 2
+    assert store.data["attempted_media_slots"] == 6
+    assert all(store.case(c)["slots"]["NATIVE_PLUS"]["score"] is None for c in trial.CASE_IDS)
     assert all(store.data["calls"][kind]["attempted"] <= cap for kind, cap in trial.PLAN.items())
 
 
@@ -286,6 +288,7 @@ def test_two_source_positive_path_uses_numpy_rgb_and_fixed_full_budget(tmp_path)
     trial.finalize_experiment(store)
     assert store.data["status"] == "DEVELOPMENT_CONTROLLABILITY_OBSERVED"
     assert store.data["scored_media_slots"] == 8
+    assert store.data["attempted_media_slots"] == 8
     assert store.data["scored_frames"] == 1448
     assert store.data["calls"]["generation"] == {"attempted": 2, "completed": 2}
     assert store.data["calls"]["transformer"] == {"attempted": 200, "completed": 200}
@@ -350,8 +353,10 @@ def test_timeout_kills_each_worker_group_and_retains_all_eight_slots(tmp_path, m
     trial._supervise(output, config, "c" * 40)
     result = json.loads((output / "result.json").read_text())
     assert len(killed) == 2
-    assert result["attempted_media_slots"] == result["invalid_media_slots"] == 8
+    assert result["attempted_media_slots"] == 0
+    assert result["invalid_media_slots"] == 8
     assert result["pending_media_slots"] == 0
     assert result["status"] == "INCOMPLETE_ENGINEERING_INVALID"
     assert all(slot["status"] == "NOT_RUN_RESOURCE_FAILURE"
                for case in result["cases"].values() for slot in case["slots"].values())
+    assert result["calls"]["mp4_save"] == {"attempted": 0, "completed": 0}
