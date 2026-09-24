@@ -48,7 +48,8 @@ def test_fixed_config_denominator_threshold_and_blind_signatures(tmp_path):
         trial.decide(float("nan"), 0.2)
 
 
-def _fake_supervision(tmp_path, monkeypatch, scores, *, invalid=None, zero=None):
+def _fake_supervision(tmp_path, monkeypatch, scores, *, invalid=None, zero=None,
+                      nan_cal=False):
     config = trial.load_config()
     output = tmp_path / "fixed"
     output.mkdir()
@@ -101,7 +102,11 @@ def _fake_supervision(tmp_path, monkeypatch, scores, *, invalid=None, zero=None)
         def decode(self, terminal):
             self.store.count("vae_decode", False)
             self.store.count("vae_decode", True)
-            return np.array([0.5], dtype=np.float32)
+            value = (float("nan") if nan_cal and
+                     self.store.active_case in trial.CAL_IDS else 0.5)
+            return np.broadcast_to(
+                np.array(value, dtype=np.float32).reshape(1, 1, 1, 1),
+                trial.RGB_SHAPE)
 
         def encode(self, rgb):
             self.store.count("vae_encode", False)
@@ -155,6 +160,29 @@ def test_calibration_failure_retains_six_slots_and_skips_all_evaluation(tmp_path
     assert store.data["attempted_media_slots"] == 2
     assert store.data["calls"]["generation"]["attempted"] == 2
     assert store.data["calls"]["mp4_save"]["attempted"] == 2
+
+
+def test_nan_calibration_rgb_cannot_encode_score_or_freeze(tmp_path, monkeypatch):
+    scores = {(trial.CAL_IDS[0], "OFF"): 0.1,
+              (trial.CAL_IDS[1], "OFF"): 0.2}
+    store, workers, seen = _fake_supervision(
+        tmp_path, monkeypatch, scores, nan_cal=True)
+    assert workers == list(trial.CAL_IDS)
+    assert seen == []  # The fake receiver was never called.
+    assert store.data["calibration"] is None
+    assert not (store.path.parent / "calibration.json").exists()
+    assert all(store.case(case)["slots"]["OFF"]["status"] == "ENGINEERING_INVALID"
+               for case in trial.CAL_IDS)
+    assert all("finite RGB" in store.case(case)["slots"]["OFF"]["reason"]
+               for case in trial.CAL_IDS)
+    assert [slot["status"] for case_id in trial.EVAL_IDS
+            for slot in store.case(case_id)["slots"].values()] == [
+                "NOT_RUN_UNCALIBRATED"] * 4
+    assert store.data["status"] == "INCOMPLETE_UNCALIBRATED"
+    assert store.data["attempted_media_slots"] == 0
+    assert store.data["calls"]["mp4_save"]["attempted"] == 0
+    assert store.data["calls"]["score"]["attempted"] == 0
+    assert not list(store.path.parent.rglob("*.mp4"))
 
 
 def test_full_fake_blind_presence_freezes_before_eval_and_uses_full_budget(tmp_path, monkeypatch):

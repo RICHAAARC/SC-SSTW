@@ -21,7 +21,7 @@ from typing import Callable
 import numpy as np
 
 from main.tube_state import rgb_dct_presence as receiver
-from main.tube_state.rgb_dct_t49_carrier import AMPLITUDE, apply_carrier, lift_direction
+from main.tube_state.rgb_dct_t49_carrier import AMPLITUDE, RGB_SHAPE, apply_carrier, lift_direction
 from runtime.wan.rgb_dct_presence_adapter import score_mp4
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -288,6 +288,15 @@ def _encode_rgb_np(rgb: np.ndarray, path: Path, fps: int, crf: int) -> None:
     encode_rgb(torch.from_numpy(np.ascontiguousarray(rgb)), path, fps, crf)
 
 
+def _validate_rgb_for_mp4(rgb: np.ndarray) -> None:
+    if (not isinstance(rgb, np.ndarray) or rgb.shape != RGB_SHAPE
+            or rgb.dtype not in (np.dtype("float32"), np.dtype("float64"))):
+        raise ValueError("fixed float32/float64 [181,320,512,3] RGB required")
+    for frame in rgb:
+        if not np.isfinite(frame).all() or np.any(frame < 0) or np.any(frame > 1):
+            raise ValueError("finite RGB in [0,1] required before MP4 quantization")
+
+
 def _save_and_score(
     store: Store, case_id: str, arm: str, rgb: np.ndarray, key: bytes,
     config: dict, *, encode_fn: Callable = _encode_rgb_np,
@@ -299,6 +308,7 @@ def _save_and_score(
     slot.update(status="PREPARING", clipping=clipping)
     store.save()
     try:
+        _validate_rgb_for_mp4(rgb)
         store.count("mp4_save", False)
         encode_fn(rgb, path, config["media"]["fps"], config["media"]["crf"])
         store.count("mp4_save", True)
