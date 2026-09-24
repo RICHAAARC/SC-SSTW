@@ -39,6 +39,36 @@ def decode_normalized_latent(vae: Any, normalized_latent: Any) -> Any:
     return (decoded[0].permute(1, 2, 3, 0) / 2.0 + 0.5).clamp(0.0, 1.0)
 
 
+def decode_normalized_latent_with_grad(
+    vae: Any, normalized_latent: Any, *, decode_fn: Any = None,
+) -> Any:
+    """Decode one normalized latent while retaining its input gradient graph.
+
+    VAE parameters stay frozen. The caller owns graph disposal and must clear
+    the model cache only after autograd has completed.
+    """
+    import torch
+
+    if normalized_latent.ndim != 5 or normalized_latent.shape[0] != 1:
+        raise ValueError("gradient decode requires one [1,C,T,H,W] latent")
+    if not normalized_latent.requires_grad:
+        raise ValueError("gradient decode requires an input with requires_grad")
+    if any(parameter.requires_grad for parameter in vae.parameters()):
+        raise ValueError("gradient decode requires frozen VAE parameters")
+    mean, std = _scale_tensors(vae, normalized_latent)
+    _clear_cache(vae)
+    with torch.enable_grad():
+        raw = normalized_latent.to(torch.float32) * std + mean
+        decoded = (vae.decode(raw, return_dict=False)[0]
+                   if decode_fn is None else decode_fn(vae, raw))
+    if decoded.ndim != 5 or decoded.shape[:2] != (1, 3):
+        raise ValueError("frozen VAE did not return one [1,3,T,H,W] RGB video")
+    rgb = (decoded[0].permute(1, 2, 3, 0) / 2.0 + 0.5).clamp(0.0, 1.0)
+    if rgb.dtype != torch.float32 or not bool(torch.isfinite(rgb).all()):
+        raise FloatingPointError("gradient VAE decode must yield finite FP32 RGB")
+    return rgb
+
+
 def quantize_rgb8_no_codec(rgb: Any) -> Any:
     """Reuse the fixed RGB8 rounding before FFmpeg, without invoking FFmpeg.
 

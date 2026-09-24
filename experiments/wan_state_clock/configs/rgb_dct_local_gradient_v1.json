@@ -1,0 +1,124 @@
+{
+  "name": "rgb_dct_local_gradient_v1",
+  "protocol_sha256": "77bdaddecba9913c79e78f108f2f966bf286fe1a585d36a1e1459dab80ca80a3",
+  "receiver_baseline_source_sha": "c967db03767768871ba0cd3b49208aa308f51b48",
+  "receiver_spec_sha256": "cee183c3b64a6de23dfa9879810488d320985409db464cb0b70dbfb1709f1caa",
+  "baseline_receiver_spec_sha256": "0a8cc13d8f99fa87fa2ad8f6e34b953e091261763877b5e39863f179f317f00f",
+  "receiver_key_id": "785b91ae6b23bfc9",
+  "key_utf8": "WanProjection-first-validation-key-v1",
+  "model": {
+    "id": "Wan-AI/Wan2.1-T2V-1.3B-Diffusers",
+    "revision": "0fad780a534b6463e45facd96134c9f345acfa5b",
+    "transformer_dtype": "bfloat16",
+    "vae_dtype": "float32"
+  },
+  "runtime": {
+    "torch_base_version": "2.11.0",
+    "diffusers_version": "0.40.0",
+    "cuda_required": true,
+    "cuda_build_suffix_gate": false
+  },
+  "generation": {
+    "height": 320,
+    "width": 512,
+    "frames": 181,
+    "fps": 8,
+    "steps": 50,
+    "guidance_scale": 5.0,
+    "max_sequence_length": 512,
+    "negative_prompt": "text, watermark, logo, camera motion, cuts, multiple objects, flicker"
+  },
+  "cases": [
+    {
+      "id": "eval_clock_s2431",
+      "seed": 2026092431,
+      "prompt": "locked camera, a round wall clock with black hands on a plain white wall, steady indoor light, no people, no cuts"
+    },
+    {
+      "id": "eval_umbrella_s2432",
+      "seed": 2026092432,
+      "prompt": "locked camera, a yellow umbrella turning slowly against a plain gray background, steady soft light, no people, no cuts"
+    }
+  ],
+  "media": {
+    "fps": 8,
+    "crf": 18,
+    "codec": "libx264",
+    "pixel_format": "yuv420p",
+    "receiver_readback": "ffmpeg_rgb24"
+  },
+  "control": {
+    "local_indices": [44, 46, 48],
+    "single_reference_index": 49,
+    "target_D_support_rms": 0.042943312697648145,
+    "local_each_target_D_support_rms": 0.014314437565882715,
+    "latent_support_time": [1, 45],
+    "loss": "mean(relu(-q_g)^2)",
+    "proxy_q_atol": 1e-09,
+    "proxy_q_rtol": 1e-08,
+    "no_scan_retry_tuning_or_fallback": true
+  },
+  "checkpoint": {
+    "kind": "native causal-frame nonreentrant checkpoint with CPU boundary packing",
+    "latent_frames_per_decode": 46,
+    "gradient_decodes_per_source": 3,
+    "vae_chunk_forward_max_per_source": 138,
+    "vae_chunk_recompute_max_per_source": 138,
+    "spatial_tiling": false
+  },
+  "decision_rule": {
+    "statistic": "C=sum(q_g>0)",
+    "threshold": 24,
+    "rule": "C>=24:H1;C<24:H0",
+    "reference_calibration": false
+  },
+  "fixed_denominator": {
+    "sources": 2,
+    "mp4_score_slots": 6,
+    "frames": 1086
+  },
+  "per_source_call_plan_max": {
+    "generation": 1,
+    "transformer": 112,
+    "transformer_validation": 6,
+    "scheduler_step": 57,
+    "shadow_step": 4,
+    "unit_response_probe_step": 4,
+    "vae_decode": 6,
+    "vae_encode": 2,
+    "backward": 3,
+    "vae_chunk_forward": 138,
+    "vae_chunk_recompute": 138,
+    "mp4_save": 3,
+    "mp4_read": 3,
+    "score": 3,
+    "native_scheduler_total": 65,
+    "transformer_total": 118
+  },
+  "call_plan_max": {
+    "generation": 2,
+    "transformer": 224,
+    "transformer_validation": 12,
+    "scheduler_step": 114,
+    "shadow_step": 8,
+    "unit_response_probe_step": 8,
+    "vae_decode": 12,
+    "vae_encode": 4,
+    "backward": 6,
+    "vae_chunk_forward": 276,
+    "vae_chunk_recompute": 276,
+    "mp4_save": 6,
+    "mp4_read": 6,
+    "score": 6,
+    "native_scheduler_total": 130,
+    "transformer_total": 236
+  },
+  "resources": {
+    "case_timeout_seconds": 10800,
+    "worker_processes_per_case": 1,
+    "case_execution": "serial fresh child processes",
+    "vae_transformer_separate_phases": true,
+    "same_input_cfg_validations_per_case": 3
+  },
+  "evidence_ceiling": "Static and CPU validation establish execution readiness only; only a complete user-run six-slot original-MP4 result can support this fixed-batch method comparison."
+}
