@@ -78,6 +78,21 @@ class WanMultiBackend:
         self.phase_log.append(row)
         return row
 
+    def _phase_identity_record(self) -> dict:
+        """Device-independent identity of live conditioning and full histories."""
+        from runtime.wan import trajectory
+
+        return dict(
+            initial_noise=trajectory.fingerprint(self.initial_noise),
+            prompt=trajectory.fingerprint(self.prompt),
+            negative=trajectory.fingerprint(self.negative),
+            off_histories={index: trajectory.fingerprint(vars(snapshot))
+                           for index, snapshot in self.snapshots.items()},
+            multi46_history=(trajectory.fingerprint(vars(self.multi46["snapshot"]))
+                             if self.multi46 else None),
+            transformer_id=id(self.pipe.transformer),
+        )
+
     def prepare_off(self, artifact_dir: Path) -> dict:
         import torch
         from runtime.wan import trajectory
@@ -143,23 +158,13 @@ class WanMultiBackend:
 
     def to_vae_phase(self, name: str) -> dict:
         import torch
-        from runtime.wan import trajectory
         from runtime.wan.generation import load_frozen_vae
 
         if self.phase != "TRANSFORMER" or self.vae is not None:
             raise RuntimeError("VAE phase requires a live Transformer phase")
         started = time.perf_counter()
         previous_elapsed = started - self._phase_started
-        self._phase_identity = dict(
-            initial_noise=trajectory.fingerprint(self.initial_noise),
-            prompt=trajectory.fingerprint(self.prompt),
-            negative=trajectory.fingerprint(self.negative),
-            off_histories={index: trajectory.fingerprint(vars(snapshot))
-                           for index, snapshot in self.snapshots.items()},
-            multi46_history=(trajectory.fingerprint(vars(self.multi46["snapshot"]))
-                             if self.multi46 else None),
-            transformer_id=id(self.pipe.transformer),
-        )
+        self._phase_identity = self._phase_identity_record()
         model = self.pipe.transformer
         model.to(torch.device("cpu"))
         self.prompt = self.prompt.cpu()
@@ -182,7 +187,6 @@ class WanMultiBackend:
 
     def to_transformer_phase(self, name: str) -> dict:
         import torch
-        from runtime.wan import trajectory
         from runtime.wan.vae import _clear_cache
 
         if self.phase != "VAE":
@@ -198,16 +202,7 @@ class WanMultiBackend:
         self.negative = self.negative.to(torch.device("cuda"))
         if next(self.pipe.transformer.parameters()).device.type != "cuda":
             raise RuntimeError("Transformer did not resume on CUDA")
-        restored_identity = dict(
-            initial_noise=trajectory.fingerprint(self.initial_noise),
-            prompt=trajectory.fingerprint(self.prompt),
-            negative=trajectory.fingerprint(self.negative),
-            off_histories={index: trajectory.fingerprint(vars(snapshot))
-                           for index, snapshot in self.snapshots.items()},
-            multi46_history=(trajectory.fingerprint(vars(self.multi46["snapshot"]))
-                             if self.multi46 else None),
-            transformer_id=id(self.pipe.transformer),
-        )
+        restored_identity = self._phase_identity_record()
         if restored_identity != self._phase_identity:
             raise RuntimeError("noise/conditioning/scheduler identity changed across VAE phase")
         self.phase = "TRANSFORMER"

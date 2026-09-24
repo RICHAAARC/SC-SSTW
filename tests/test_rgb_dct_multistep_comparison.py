@@ -2,8 +2,10 @@
 from __future__ import annotations
 
 import copy
+import hashlib
 import json
 from pathlib import Path
+from types import SimpleNamespace
 
 import numpy as np
 import pytest
@@ -319,8 +321,9 @@ def test_history_move_and_shadow_copy_do_not_pollute_source():
             self.timesteps = torch.arange(50, dtype=torch.float32)
             self.sigmas = torch.linspace(1, 0, 51)
             self.step_index = 44
-            self.model_outputs = [torch.tensor([1.0]), torch.tensor([2.0])]
-            self.nested = {"history": [torch.tensor([3.0])]}
+            self.model_outputs = [torch.tensor([1.0], dtype=torch.bfloat16),
+                                  torch.tensor([2.0], dtype=torch.bfloat16)]
+            self.nested = {"history": [torch.tensor([3.0], dtype=torch.bfloat16)]}
         def step(self, v, timestep, z, return_dict=False):
             self.step_index += 1
             self.model_outputs.append(v.clone())
@@ -337,6 +340,53 @@ def test_history_move_and_shadow_copy_do_not_pollute_source():
     assert result.item() == pytest.approx(1.9)
     assert trajectory.fingerprint(vars(scheduler)) == before
     assert changed.step_index == 45 and counts == [("shadow_step", False), ("shadow_step", True)]
+
+
+def test_bfloat16_fingerprint_and_supported_dtype_bytes_are_stable():
+    for tensor in (torch.tensor(1.25, dtype=torch.float32),
+                   torch.arange(6, dtype=torch.float64).reshape(2, 3).T,
+                   torch.tensor([1, 2, 3], dtype=torch.int64),
+                   torch.tensor([True, False], dtype=torch.bool),
+                   torch.tensor([1 + 2j], dtype=torch.complex64)):
+        old_raw = tensor.detach().cpu().contiguous().numpy().tobytes()
+        old_record = dict(shape=list(tensor.shape), dtype=str(tensor.dtype),
+                          sha256=hashlib.sha256(old_raw).hexdigest())
+        assert trajectory._fingerprint_value(tensor) == old_record
+        old_encoded = json.dumps(old_record, sort_keys=True, separators=(",", ":")).encode()
+        assert trajectory.fingerprint(tensor) == hashlib.sha256(old_encoded).hexdigest()
+    for tensor in (torch.tensor(1.25, dtype=torch.bfloat16),
+                   torch.arange(6, dtype=torch.bfloat16).reshape(2, 3).T,
+                   torch.empty(0, dtype=torch.bfloat16)):
+        record = trajectory._fingerprint_value(tensor)
+        assert record["dtype"] == "torch.bfloat16" and record["shape"] == list(tensor.shape)
+        assert trajectory.fingerprint(tensor) == trajectory.fingerprint(tensor.clone())
+    value = torch.tensor([1.0, 2.0], dtype=torch.bfloat16)
+    changed = value.clone()
+    changed[0] = 1.5
+    assert trajectory.fingerprint(value) != trajectory.fingerprint(changed)
+
+
+def test_bfloat16_phase_identity_covers_prompt_and_full_scheduler_history():
+    backend = backend_module.WanMultiBackend(trial.load_config(), lambda *_: None)
+    backend.pipe = SimpleNamespace(transformer=object())
+    backend.initial_noise = torch.tensor([0.1], dtype=torch.float32)
+    backend.prompt = torch.tensor([[1.0, 2.0]], dtype=torch.bfloat16)
+    backend.negative = torch.tensor([[3.0, 4.0]], dtype=torch.bfloat16)
+    backend.snapshots = {
+        index: SimpleNamespace(step_index=index,
+            model_outputs=[torch.tensor([float(index)], dtype=torch.bfloat16)],
+            last_sample=torch.tensor([index / 50], dtype=torch.float32))
+        for index in (44, 46, 49)}
+    backend.multi46 = dict(snapshot=SimpleNamespace(step_index=46,
+        model_outputs=[torch.tensor([5.0], dtype=torch.bfloat16)],
+        last_sample=torch.tensor([0.8], dtype=torch.float32)))
+    before = backend._phase_identity_record()
+    backend.prompt = backend.prompt.clone()
+    backend.negative = backend.negative.clone()
+    backend.snapshots[44].model_outputs[0] = backend.snapshots[44].model_outputs[0].clone()
+    assert backend._phase_identity_record() == before
+    backend.snapshots[44].model_outputs[0][0] = 99.0
+    assert backend._phase_identity_record() != before
 
 
 def test_notebook_builder_static_binding(tmp_path):

@@ -24,7 +24,10 @@ def measures(value) -> dict:
 
 def _fingerprint_value(value):
     if torch.is_tensor(value):
-        raw = value.detach().cpu().contiguous().numpy().tobytes()
+        # NumPy cannot expose bfloat16 values. Reinterpret contiguous tensor
+        # storage as bytes; reshape handles scalar tensors as well. For NumPy
+        # supported dtypes these are the same bytes as .numpy().tobytes().
+        raw = value.detach().cpu().contiguous().reshape(-1).view(torch.uint8).numpy().tobytes()
         return {"shape": list(value.shape), "dtype": str(value.dtype), "sha256": hashlib.sha256(raw).hexdigest()}
     if isinstance(value, dict):
         return {str(key): _fingerprint_value(value[key]) for key in sorted(value, key=str)}
