@@ -1,0 +1,26 @@
+{
+  "name": "rgb_dct_terminal_gradient_v1",
+  "protocol_sha256": "a37fcbfa7b27250701f383bf60fdf648d4ef48838381749b61e9e0ac9a67b7c1",
+  "frozen_task_card_sha256": "d1ab995b1a1525e1996e1df9d670afe009a5a8a40a52f51e813ab2fbbdaff071",
+  "receiver_spec_sha256": "cee183c3b64a6de23dfa9879810488d320985409db464cb0b70dbfb1709f1caa",
+  "baseline_receiver_spec_sha256": "0a8cc13d8f99fa87fa2ad8f6e34b953e091261763877b5e39863f179f317f00f",
+  "receiver_key_id": "785b91ae6b23bfc9",
+  "key_utf8": "WanProjection-first-validation-key-v1",
+  "model": {"id": "Wan-AI/Wan2.1-T2V-1.3B-Diffusers", "revision": "0fad780a534b6463e45facd96134c9f345acfa5b", "transformer_dtype": "bfloat16", "vae_dtype": "float32"},
+  "runtime": {"torch_version_policy": "record_and_api_check", "cuda_build_suffix_policy": "record_only", "diffusers_version": "0.40.0"},
+  "generation": {"height": 320, "width": 512, "frames": 181, "fps": 8, "steps": 50, "guidance_scale": 5.0, "max_sequence_length": 512, "negative_prompt": "text, watermark, logo, camera motion, cuts, multiple objects, flicker"},
+  "cases": [
+    {"id": "eval_clock_s2431", "seed": 2026092431, "prompt": "locked camera, a round wall clock with black hands on a plain white wall, steady indoor light, no people, no cuts"},
+    {"id": "eval_umbrella_s2432", "seed": 2026092432, "prompt": "locked camera, a yellow umbrella turning slowly against a plain gray background, steady soft light, no people, no cuts"}
+  ],
+  "media": {"fps": 8, "crf": 18, "codec": "libx264", "pixel_format": "yuv420p", "receiver_readback": "ffmpeg_rgb24"},
+  "observation_layers": ["float_rgb", "rgb8_quantized", "mp4_rgb24"],
+  "proxy": {"loss": "mean(relu(-q_g)^2)", "frames": 181, "blocks": 160, "groups": 30, "numpy_rtol": 0.00002, "numpy_atol": 0.000002},
+  "control": {"gradient_index": 46, "reference_index": 49, "latent_support_time": [1, 45], "target_D_support_rms": 0.042943312697648145, "single_update": true, "no_scan_no_retry_no_fallback": true},
+  "decision_rule": {"statistic": "C=sum(q_g>0)", "threshold": 24, "rule": "C>=24:H1;C<24:H0", "mp4_only": true},
+  "fixed_denominator": {"sources": 2, "arms_per_source": 3, "mp4_score_slots": 6, "frames": 1086},
+  "call_plan_max": {"generation": 2, "transformer_prefix": 200, "scheduler_prefix": 100, "transformer_forecast": 12, "scheduler_forecast": 8, "vae_gradient_decode": 2, "vae_decode": 4, "vae_encode": 4, "vae_vjp": 2, "transformer_replay": 12, "scheduler_replay": 8, "tail_vjp": 2, "unit_response_probe_step": 4, "scheduler_response_shadow": 2, "scheduler_step": 4, "transformer_control_tail": 12, "scheduler_control_tail": 6, "mp4_save": 6, "mp4_read": 6, "score": 6},
+  "derived_call_totals": {"transformer": 236, "scheduler_and_probe": 132, "vae_decode": 6, "backward_vjp": 4},
+  "resources": {"case_timeout_seconds": 14400, "worker_processes_per_case": 1, "case_execution": "serial fresh child processes", "termination_grace_seconds": 10, "vae_transformer_separate_phases": true, "replay_limits_per_source": {"transformer_block": 256, "vae_chunk": 64}},
+  "evidence_ceiling": "static and CPU tests establish execution structure only; a future complete fixed six-slot GPU run can establish only two-source fixed-key mechanism behavior, not FPR, population detection, payload, video-quality pass, or general effectiveness"
+}
