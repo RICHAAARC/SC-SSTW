@@ -1,0 +1,25 @@
+{
+  "name": "rgb_dct_group_consistency_h0_h1_v1",
+  "protocol_sha256": "b11422eb59f8d2b80cffae239d92a64e14b6efd00bf372a694bf9f55a8aeb8d1",
+  "receiver_baseline_source_sha": "c967db03767768871ba0cd3b49208aa308f51b48",
+  "receiver_spec_sha256": "cee183c3b64a6de23dfa9879810488d320985409db464cb0b70dbfb1709f1caa",
+  "baseline_receiver_spec_sha256": "0a8cc13d8f99fa87fa2ad8f6e34b953e091261763877b5e39863f179f317f00f",
+  "receiver_key_id": "785b91ae6b23bfc9",
+  "key_utf8": "WanProjection-first-validation-key-v1",
+  "model": {"id": "Wan-AI/Wan2.1-T2V-1.3B-Diffusers", "revision": "0fad780a534b6463e45facd96134c9f345acfa5b", "transformer_dtype": "bfloat16", "vae_dtype": "float32"},
+  "generation": {"height": 320, "width": 512, "frames": 181, "fps": 8, "steps": 50, "guidance_scale": 5.0, "max_sequence_length": 512, "negative_prompt": "text, watermark, logo, camera motion, cuts, multiple objects, flicker"},
+  "cases": [
+    {"id": "ref_metronome_s2411", "seed": 2026092411, "prompt": "locked camera, a wooden metronome swinging steadily on a plain desk, stable indoor light, no people, no cuts", "role": "REF_OFF"},
+    {"id": "ref_pond_s2412", "seed": 2026092412, "prompt": "locked camera, gentle ripples spreading across a small pond beside still stones, stable daylight, no people, no cuts", "role": "REF_OFF"},
+    {"id": "eval_bicycle_s2413", "seed": 2026092413, "prompt": "locked camera, a blue bicycle rolling slowly along an empty paved path, stable daylight, no people, no cuts", "role": "EVAL"},
+    {"id": "eval_windmill_s2414", "seed": 2026092414, "prompt": "locked camera, a small white windmill turning slowly in a grassy field, stable daylight, no people, no cuts", "role": "EVAL"}
+  ],
+  "media": {"fps": 8, "crf": 18, "codec": "libx264", "pixel_format": "yuv420p", "receiver_readback": "ffmpeg_rgb24"},
+  "carrier": {"amplitude": 0.1, "rgb_channels": "same additive carrier in R, G, B", "positive_only_native_lift": true, "latent_support_time": [1, 45]},
+  "control": {"index": 49, "target_D_support_rms": 0.042943312697648145, "sigma50": 0.0, "no_gradient_no_scan_no_fallback": true},
+  "decision_rule": {"statistic": "C=sum(q_g>0)", "threshold": 24, "rule": "C>=24:H1;C<24:H0", "reference_calibration": false},
+  "fixed_denominator": {"sources": 4, "mp4_score_slots": 6, "frames": 1086},
+  "call_plan_max": {"generation": 4, "transformer": 400, "scheduler_step": 202, "unit_response_probe_step": 2, "native_scheduler_total": 204, "vae_decode": 6, "vae_encode": 4, "backward": 0, "mp4_save": 6, "mp4_read": 6, "score": 6},
+  "resources": {"case_timeout_seconds": 10800, "worker_processes_per_case": 1, "case_execution": "serial fresh child processes", "vae_after_transformer_release": true},
+  "evidence_ceiling": "two prespecified evaluation sources and two independent negative witnesses; no low FPR, population detection rate, video quality, payload, attribution, or multistep gain"
+}
