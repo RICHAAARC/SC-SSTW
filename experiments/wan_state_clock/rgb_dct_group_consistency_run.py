@@ -147,6 +147,10 @@ def initial_result(config: dict, output: Path, source_sha: str) -> dict:
         control_config=config["control"], decision_rule=config["decision_rule"],
         fixed_denominator=config["fixed_denominator"],
         call_plan_max=config["call_plan_max"],
+        call_completion_definition={
+            "mp4_read": "completed only for a valid full RGB24 readback with SCORED receiver output",
+            "score": "completed only for a valid full-media C score",
+        },
         resources_config=config["resources"],
         calls={kind: {"attempted": 0, "completed": 0} for kind in PLAN},
         attempted_media_slots=0, scored_media_slots=0, invalid_media_slots=0,
@@ -253,7 +257,6 @@ def _save_and_score(
                 or not all(isinstance(q, (int, float)) and math.isfinite(q)
                            for q in scored["group_scores"])
                 or sum(q > 0 for q in scored["group_scores"]) != scored["positive_groups"]
-                or scored.get("decision") != receiver.decide(scored["positive_groups"])
                 or slot["frames_used"] != 181
                 or scored.get("spec_sha256") != receiver.SPEC_SHA256
                 or scored.get("key_id") != config["receiver_key_id"]):

@@ -70,7 +70,7 @@ def _score_features(features: np.ndarray, spatial: np.ndarray,
         raise ArithmeticError("group score inconsistent with baseline S")
     positive_groups = sum(q > 0 for q in group_scores)
     return dict(score=score, group_scores=group_scores,
-                positive_groups=positive_groups, decision=decide(positive_groups),
+                positive_groups=positive_groups,
                 score_reconstructed=reconstructed)
 
 

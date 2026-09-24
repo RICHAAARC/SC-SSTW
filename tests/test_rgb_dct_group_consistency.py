@@ -31,9 +31,9 @@ def test_fixed_protocol_receiver_and_group_reduction():
     positive = receiver._score_features(features, spatial, temporal)
     negative = receiver._score_features(-features, spatial, temporal)
     zero = receiver._score_features(np.zeros_like(features), spatial, temporal)
-    assert (positive["positive_groups"], positive["decision"]) == (30, "H1")
-    assert (negative["positive_groups"], negative["decision"]) == (0, "H0")
-    assert (zero["positive_groups"], zero["decision"]) == (0, "H0")
+    assert positive["positive_groups"] == 30 and receiver.decide(positive["positive_groups"]) == "H1"
+    assert negative["positive_groups"] == 0 and receiver.decide(negative["positive_groups"]) == "H0"
+    assert zero["positive_groups"] == 0 and receiver.decide(zero["positive_groups"]) == "H0"
     assert abs(positive["score"] - positive["score_reconstructed"]) <= 1e-10
     assert receiver.decide(23) == "H0" and receiver.decide(24) == "H1"
     with pytest.raises(ValueError):
@@ -50,7 +50,7 @@ def test_single_read_adapter_and_invalid_is_not_h0(monkeypatch, tmp_path):
     scored = adapter.score_mp4(tmp_path / "FULL.mp4", key)
     assert len(calls) == 1
     assert scored["status"] == "SCORED" and scored["positive_groups"] == 0
-    assert scored["decision"] == "H0"
+    assert scored["decision"] is None
     monkeypatch.setattr(adapter, "read_mp4", lambda path: np.empty((180, 320, 512, 3)))
     invalid = adapter.score_mp4(tmp_path / "bad.mp4", key)
     assert invalid["status"] == "INVALID" and invalid["decision"] is None
@@ -79,7 +79,7 @@ def _fake_run(tmp_path, monkeypatch, counts, invalid=None):
         c = counts[(case_id, arm)]
         q = [1.0] * c + [-1.0] * (30 - c)
         return dict(status="SCORED", score=0.01 * c, group_scores=q,
-                    positive_groups=c, decision=receiver.decide(c), frames_used=181,
+                    positive_groups=c, frames_used=181,
                     spec_sha256=receiver.SPEC_SHA256, key_id=config["receiver_key_id"])
 
     class FakeBackend:
@@ -144,6 +144,7 @@ def test_fixed_six_slots_continue_after_ref_failure_and_report_misclassification
     assert [(e["case_id"], e["arm"]) for e in errors] == [(trial.EVAL_IDS[0], "OFF")]
     assert store.data["calls"]["generation"]["attempted"] == 4
     assert store.data["native_scheduler_calls"]["attempted"] == 204
+    assert "valid full" in store.data["call_completion_definition"]["mp4_read"]
 
 
 def test_complete_six_slots_threshold_and_call_caps(tmp_path, monkeypatch):
