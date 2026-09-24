@@ -1,0 +1,23 @@
+{
+  "name": "rgb_dct_multistep_comparison_v1",
+  "protocol_sha256": "24cda99b931eeb726b98c929e2dfeadfd44b0a17e4a171655cfe5f995e4e651f",
+  "receiver_baseline_source_sha": "c967db03767768871ba0cd3b49208aa308f51b48",
+  "receiver_spec_sha256": "cee183c3b64a6de23dfa9879810488d320985409db464cb0b70dbfb1709f1caa",
+  "baseline_receiver_spec_sha256": "0a8cc13d8f99fa87fa2ad8f6e34b953e091261763877b5e39863f179f317f00f",
+  "receiver_key_id": "785b91ae6b23bfc9",
+  "key_utf8": "WanProjection-first-validation-key-v1",
+  "model": {"id": "Wan-AI/Wan2.1-T2V-1.3B-Diffusers", "revision": "0fad780a534b6463e45facd96134c9f345acfa5b", "transformer_dtype": "bfloat16", "vae_dtype": "float32"},
+  "generation": {"height": 320, "width": 512, "frames": 181, "fps": 8, "steps": 50, "guidance_scale": 5.0, "max_sequence_length": 512, "negative_prompt": "text, watermark, logo, camera motion, cuts, multiple objects, flicker"},
+  "cases": [
+    {"id": "eval_kite_s2421", "seed": 2026092421, "prompt": "locked camera, a single red kite drifting steadily across a clear blue sky, stable daylight, no people, no cuts"},
+    {"id": "eval_pottery_s2422", "seed": 2026092422, "prompt": "locked camera, a blue ceramic vase rotating slowly on a plain display turntable, stable indoor light, no people, no cuts"}
+  ],
+  "media": {"fps": 8, "crf": 18, "codec": "libx264", "pixel_format": "yuv420p", "receiver_readback": "ffmpeg_rgb24"},
+  "carrier": {"amplitude": 0.1, "rgb_channels": "same additive carrier in R, G, B", "positive_only_native_lift": true, "latent_support_time": [1, 45]},
+  "control": {"single_indices": [49, 46], "multi_indices": [44, 46], "target_D_support_rms": 0.042943312697648145, "multi_each_target_D_support_rms": 0.021471656348824072, "sigma50": 0.0, "no_gradient_no_scan_no_fallback": true},
+  "decision_rule": {"statistic": "C=sum(q_g>0)", "threshold": 24, "rule": "C>=24:H1;C<24:H0", "reference_calibration": false},
+  "fixed_denominator": {"sources": 2, "mp4_score_slots": 8, "frames": 1448},
+  "call_plan_max": {"generation": 2, "transformer": 232, "transformer_validation": 12, "transformer_total": 244, "scheduler_step": 122, "shadow_step": 8, "unit_response_probe_step": 8, "native_scheduler_total": 138, "vae_decode": 14, "vae_encode": 16, "backward": 0, "mp4_save": 8, "mp4_read": 8, "score": 8},
+  "resources": {"case_timeout_seconds": 10800, "worker_processes_per_case": 1, "case_execution": "serial fresh child processes", "vae_transformer_separate_phases": true, "same_input_cfg_validations_per_case": 3},
+  "evidence_ceiling": "two prespecified sources and fixed key/model/codec mechanism comparison only; no low FPR, population detection rate, payload, video quality pass, or general multistep gain"
+}
