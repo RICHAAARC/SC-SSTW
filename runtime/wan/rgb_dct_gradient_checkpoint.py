@@ -180,9 +180,26 @@ class CheckpointLedger:
         ))
     def summary(self) -> dict:
         storage = self.boundary_spool.summary() if self.boundary_spool else None
+        receipts = [*self.boundary_storage_history]
+        if storage is not None:
+            receipts.append(storage)
+        aggregate = dict(
+            decodes=len(receipts), closed_decodes=len(self.boundary_storage_history),
+            d2h_bytes=sum(row["d2h_bytes"] for row in receipts),
+            h2d_bytes=sum(row["h2d_bytes"] for row in receipts),
+            disk_written_bytes=sum(row["disk_written_bytes"] for row in receipts),
+            disk_read_bytes=sum(row["disk_read_bytes"] for row in receipts),
+            files=sum(row["files"] for row in receipts),
+            disk_peak_bytes=max((row["disk_peak_bytes"] for row in receipts), default=0),
+            cpu_peak_packed_bytes=max((row["cpu_peak_packed_bytes"] for row in receipts),
+                                      default=0),
+            active_disk_live_bytes=storage["disk_live_bytes"] if storage else 0,
+            active_cpu_live_packed_bytes=storage["cpu_live_packed_bytes"] if storage else 0,
+        )
         return dict(limits=self.limits, cache_boundaries=self.boundaries,
                     boundary_storage=storage,
-                    boundary_storage_history=list(self.boundary_storage_history))
+                    boundary_storage_history=list(self.boundary_storage_history),
+                    boundary_storage_aggregate=aggregate)
 
     def release_boundary_storage(self):
         if self.boundary_spool is not None:

@@ -693,14 +693,11 @@ def _validate_output(output: Path) -> None:
         output.mkdir(exist_ok=False)
 
 
-def _run_worker(output: Path, config: dict, case_id: str) -> str | None:
+def _run_worker(output: Path, config: dict, case_id: str) -> dict:
     """Monitor child RSS and retain a parent-owned local spool on hard exit."""
     env = os.environ.copy()
     env["RGB_DCT_LOCAL_GRADIENT_INTERNAL_CASE"] = case_id
     local_root = Path("/content") if Path("/content").is_dir() else Path("/tmp")
-    spool_owner = tempfile.TemporaryDirectory(
-        prefix=f"wan-vae-worker-{case_id}-", dir=local_root)
-    env["RGB_DCT_BOUNDARY_SPOOL_ROOT"] = spool_owner.name
     command = [sys.executable, "-u", "-m", MODULE, "--output", str(output)]
     worker_log = output / f"{case_id}_worker.log"
     monitor_path = output / f"{case_id}_worker_monitor.json"
@@ -711,10 +708,14 @@ def _run_worker(output: Path, config: dict, case_id: str) -> str | None:
                    boundary_spool_cleanup="PENDING", termination=None,
                    timeout_seconds=config["resources"]["case_timeout_seconds"],
                    log_path=str(worker_log))
-    _atomic_json(monitor_path, receipt)
-    print("case start:", case_id, "log:", worker_log, flush=True)
+    spool_owner = None
     child = None
     try:
+        spool_owner = tempfile.TemporaryDirectory(
+            prefix=f"wan-vae-worker-{case_id}-", dir=local_root)
+        env["RGB_DCT_BOUNDARY_SPOOL_ROOT"] = spool_owner.name
+        _atomic_json(monitor_path, receipt)
+        print("case start:", case_id, "log:", worker_log, flush=True)
         with worker_log.open("w", encoding="utf-8") as stream:
             child = subprocess.Popen(command, cwd=ROOT, env=env, stdout=stream,
                                      stderr=subprocess.STDOUT, start_new_session=True)
@@ -769,7 +770,9 @@ def _run_worker(output: Path, config: dict, case_id: str) -> str | None:
                     except ProcessLookupError:
                         pass
     except BaseException as exc:
-        receipt.update(status="FAILED", error=f"WORKER_MONITOR_FAILED:{type(exc).__name__}:{exc}")
+        monitor_error = f"WORKER_MONITOR_FAILED:{type(exc).__name__}:{exc}"
+        receipt.update(status="FAILED", error=receipt["error"] or monitor_error,
+                       monitor_error=monitor_error)
     finally:
         if child is not None and child.poll() is None:
             try:
@@ -778,14 +781,24 @@ def _run_worker(output: Path, config: dict, case_id: str) -> str | None:
                 pass
             child.wait()
             receipt["termination"] = "MONITOR_ABORT_SIGKILL"
-        try:
-            spool_owner.cleanup()
-            receipt["boundary_spool_cleanup"] = "COMPLETED"
-        except Exception as exc:
-            receipt.update(status="FAILED", boundary_spool_cleanup="FAILED",
-                           error=f"BOUNDARY_SPOOL_CLEANUP:{type(exc).__name__}:{exc}")
+        if spool_owner is None:
+            receipt["boundary_spool_cleanup"] = "NOT_CREATED"
+        else:
+            try:
+                spool_owner.cleanup()
+                receipt["boundary_spool_cleanup"] = "COMPLETED"
+            except Exception as exc:
+                cleanup_error = f"BOUNDARY_SPOOL_CLEANUP:{type(exc).__name__}:{exc}"
+                receipt.update(status="FAILED", boundary_spool_cleanup="FAILED",
+                               error=receipt["error"] or cleanup_error,
+                               cleanup_error=cleanup_error)
         receipt["elapsed_seconds"] = time.monotonic() - started
-        _atomic_json(monitor_path, receipt)
+        try:
+            _atomic_json(monitor_path, receipt)
+        except Exception as exc:
+            write_error = f"WORKER_MONITOR_FINAL_WRITE:{type(exc).__name__}:{exc}"
+            receipt.update(status="FAILED", error=receipt["error"] or write_error,
+                           final_monitor_write_error=write_error)
     return receipt
 
 
@@ -816,7 +829,15 @@ def _supervise(output: Path, config: dict, source_sha: str,
     store = Store(result_path, initial_result(config, output, source_sha))
     store.save()
     for case_id in CASE_IDS:
-        receipt = worker_fn(output, config, case_id)
+        try:
+            receipt = worker_fn(output, config, case_id)
+        except Exception as exc:
+            receipt = dict(status="FAILED",
+                           error=f"WORKER_SUPERVISION_FAILED:{type(exc).__name__}:{exc}",
+                           exception_class=type(exc).__name__,
+                           traceback=traceback.format_exc(),
+                           parent_observed_peak_rss_kib=None,
+                           parent_observed_peak_spool_bytes=None)
         if isinstance(receipt, dict):
             failure = (receipt.get("error") or receipt.get("status")) if (
                 receipt.get("status") != "COMPLETED") else None

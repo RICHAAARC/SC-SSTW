@@ -376,12 +376,26 @@ def test_bounded_boundary_spool_preserves_views_and_three_sequential_vjps(
         actual.backward()
         assert torch.allclose(latent.grad, (2 * latent.detach().sin()
                                              * latent.detach().cos()))
+        active = ledger.summary()["boundary_storage_aggregate"]
+        assert active["decodes"] == len(ledger.boundary_storage_history) + 1
+        assert active["active_disk_live_bytes"] > 0
         ledger.release_boundary_storage()
-    history = ledger.summary()["boundary_storage_history"]
+    summary = ledger.summary()
+    history = summary["boundary_storage_history"]
     assert len(history) == 3 and all(row["closed"] for row in history)
     assert all(row["disk_peak_bytes"] > 0 and row["disk_live_bytes"] == 0
                for row in history)
     assert len(list(tmp_path.iterdir())) == 0
+    aggregate = summary["boundary_storage_aggregate"]
+    assert aggregate["decodes"] == aggregate["closed_decodes"] == 3
+    for name in ("d2h_bytes", "h2d_bytes", "disk_written_bytes",
+                 "disk_read_bytes", "files"):
+        assert aggregate[name] == sum(row[name] for row in history)
+    for name in ("disk_peak_bytes", "cpu_peak_packed_bytes"):
+        assert aggregate[name] == max(row[name] for row in history)
+    assert aggregate["d2h_bytes"] == aggregate["h2d_bytes"] == 0
+    assert aggregate["active_disk_live_bytes"] == 0
+    assert aggregate["active_cpu_live_packed_bytes"] == 0
     assert calls.count(("vae_chunk_forward", True)) == 3
     assert calls.count(("vae_chunk_recompute", True)) == 3
 
@@ -647,6 +661,97 @@ def test_parent_cleans_orphan_spool_on_sigkill_and_monitor_error(tmp_path, monke
     assert receipt["termination"] == "MONITOR_ABORT_SIGKILL"
     assert receipt["boundary_spool_cleanup"] == "COMPLETED"
     assert not roots[-1].exists()
+
+
+def test_worker_spool_creation_and_initial_monitor_write_failures_are_receipted(
+        tmp_path, monkeypatch):
+    original_tempdir = trial.tempfile.TemporaryDirectory
+    monkeypatch.setattr(trial.tempfile, "TemporaryDirectory", lambda **kwargs: (
+        _ for _ in ()).throw(OSError("spool creation failed")))
+    receipt = trial._run_worker(tmp_path, trial.load_config(), trial.CASE_IDS[0])
+    assert receipt["status"] == "FAILED"
+    assert "spool creation failed" in receipt["error"]
+    assert receipt["boundary_spool_cleanup"] == "NOT_CREATED"
+    assert json.loads((tmp_path / f"{trial.CASE_IDS[0]}_worker_monitor.json").read_text()) == receipt
+
+    roots = []
+
+    def tracked_tempdir(**kwargs):
+        owner = original_tempdir(**kwargs)
+        roots.append(Path(owner.name))
+        return owner
+
+    monkeypatch.setattr(trial.tempfile, "TemporaryDirectory", tracked_tempdir)
+    original_atomic = trial._atomic_json
+    calls = 0
+
+    def fail_first_monitor(path, data):
+        nonlocal calls
+        calls += 1
+        if calls == 1:
+            raise OSError("initial monitor write failed")
+        return original_atomic(path, data)
+
+    monkeypatch.setattr(trial, "_atomic_json", fail_first_monitor)
+    receipt = trial._run_worker(tmp_path, trial.load_config(), trial.CASE_IDS[1])
+    assert receipt["status"] == "FAILED"
+    assert "initial monitor write failed" in receipt["error"]
+    assert receipt["boundary_spool_cleanup"] == "COMPLETED"
+    assert roots and not roots[0].exists()
+    assert json.loads((tmp_path / f"{trial.CASE_IDS[1]}_worker_monitor.json").read_text()) == receipt
+
+
+def test_supervisor_exception_retains_fixed_six_invalid_slots(tmp_path):
+    output = tmp_path / "supervisor_failure"
+    output.mkdir()
+
+    def bad_worker(output, config, case_id):
+        raise OSError(f"worker preparation failed for {case_id}")
+
+    trial._supervise(output, trial.load_config(), "a" * 40, worker_fn=bad_worker)
+    result = json.loads((output / "result.json").read_text())
+    assert result["attempted_media_slots"] == result["invalid_media_slots"] == 6
+    assert result["pending_media_slots"] == result["scored_media_slots"] == 0
+    for case_id in trial.CASE_IDS:
+        case = result["cases"][case_id]
+        assert case["worker_receipt"]["status"] == "FAILED"
+        assert "worker preparation failed" in case["worker_receipt"]["error"]
+        assert all(slot["status"] == "NOT_RUN_WORKER_FAILURE" and slot["attempted"]
+                   for slot in case["slots"].values())
+
+
+def test_final_monitor_write_failure_returns_failed_receipt_and_cleans_spool(
+        tmp_path, monkeypatch):
+    roots = []
+
+    class FinishedWorker:
+        returncode = 0
+
+        def __init__(self, command, **kwargs):
+            root = Path(kwargs["env"]["RGB_DCT_BOUNDARY_SPOOL_ROOT"])
+            roots.append(root)
+            (root / "orphan-storage").write_bytes(b"checkpoint")
+
+        def poll(self):
+            return 0
+
+    monkeypatch.setattr(trial.subprocess, "Popen", FinishedWorker)
+    original_atomic = trial._atomic_json
+    calls = 0
+
+    def fail_final(path, data):
+        nonlocal calls
+        calls += 1
+        if calls == 2:
+            raise OSError("final monitor write failed")
+        return original_atomic(path, data)
+
+    monkeypatch.setattr(trial, "_atomic_json", fail_final)
+    receipt = trial._run_worker(tmp_path, trial.load_config(), trial.CASE_IDS[0])
+    assert receipt["status"] == "FAILED"
+    assert "final monitor write failed" in receipt["final_monitor_write_error"]
+    assert receipt["boundary_spool_cleanup"] == "COMPLETED"
+    assert roots and not roots[0].exists()
 
 
 def test_notebook_builder_static_binding_and_setup_failure_slots(tmp_path):
