@@ -4,6 +4,7 @@ from __future__ import annotations
 import copy
 import inspect
 import json
+from pathlib import Path
 from types import SimpleNamespace
 
 import numpy as np
@@ -416,7 +417,9 @@ def test_disk_boundary_exact_views_alias_and_gradient(monkeypatch):
     assert restored_b[0, 0].item() == -123.0
     assert spool.summary()["cpu_live_packed_bytes"] == 0
     assert spool.summary()["cpu_peak_packed_bytes"] <= 7
-    assert spool.summary()["d2h_bytes"] == source.untyped_storage().nbytes()
+    assert spool.summary()["disk_written_bytes"] == source.untyped_storage().nbytes()
+    assert spool.summary()["d2h_bytes"] == 0
+    assert spool.summary()["h2d_bytes"] == 0
     spool.close()
     assert list(spool.path.glob("storage-*")) == []
     assert spool.summary()["disk_live_bytes"] == 0
@@ -441,6 +444,57 @@ def test_disk_boundary_exact_views_alias_and_gradient(monkeypatch):
     assert receipt["cpu_peak_packed_bytes"] <= 7
     ledger.release_boundary_storage()
     assert ledger.summary()["boundary_storage"]["closed"]
+
+
+def test_parent_removes_orphan_spool_after_worker_exit(tmp_path, monkeypatch):
+    roots = []
+
+    class FinishedWorker:
+        returncode = 0
+
+        def __init__(self, command, **kwargs):
+            root = Path(kwargs["env"]["RGB_DCT_BOUNDARY_SPOOL_ROOT"])
+            roots.append(root)
+            (root / "orphan-storage").write_bytes(b"checkpoint")
+
+        def poll(self):
+            return 0
+
+    monkeypatch.setattr(trial.subprocess, "Popen", FinishedWorker)
+    receipt = trial._run_worker(tmp_path, trial.load_config(), trial.CASE_IDS[0])
+    assert receipt["status"] == "COMPLETED"
+    assert receipt["boundary_spool_cleanup"] == "COMPLETED"
+    assert len(roots) == 1 and not roots[0].exists()
+
+
+def test_parent_removes_orphan_spool_after_timeout(tmp_path, monkeypatch):
+    roots, signals = [], []
+
+    class TimedOutWorker:
+        pid = 123456
+        returncode = None
+
+        def __init__(self, command, **kwargs):
+            root = Path(kwargs["env"]["RGB_DCT_BOUNDARY_SPOOL_ROOT"])
+            roots.append(root)
+            (root / "orphan-storage").write_bytes(b"partial checkpoint")
+
+        def poll(self):
+            return self.returncode
+
+        def wait(self):
+            self.returncode = -9
+
+    monkeypatch.setattr(trial.subprocess, "Popen", TimedOutWorker)
+    monkeypatch.setattr(trial.os, "killpg", lambda pid, sig: signals.append(sig))
+    config = copy.deepcopy(trial.load_config())
+    config["resources"]["case_timeout_seconds"] = 0
+    config["resources"]["termination_grace_seconds"] = 0
+    receipt = trial._run_worker(tmp_path, config, trial.CASE_IDS[0])
+    assert receipt["status"] == "TIMEOUT"
+    assert receipt["boundary_spool_cleanup"] == "COMPLETED"
+    assert signals == [trial.signal.SIGTERM, trial.signal.SIGKILL]
+    assert len(roots) == 1 and not roots[0].exists()
 
 
 def test_disk_boundary_preflight_and_write_failure_cleanup(monkeypatch):

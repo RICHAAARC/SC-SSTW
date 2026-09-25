@@ -14,6 +14,7 @@ import resource
 import signal
 import subprocess
 import sys
+import tempfile
 import time
 import traceback
 from pathlib import Path
@@ -732,16 +733,23 @@ def _persist_worker_monitor(output: Path, case_id: str, receipt: dict) -> None:
 def _run_worker(output: Path, config: dict, case_id: str) -> dict:
     env = os.environ.copy()
     env["RGB_DCT_TERMINAL_GRADIENT_INTERNAL_CASE"] = case_id
+    local_root = Path("/content") if Path("/content").is_dir() else Path("/tmp")
+    spool_owner = tempfile.TemporaryDirectory(
+        prefix=f"wan-vae-worker-{case_id}-", dir=local_root
+    )
+    env["RGB_DCT_BOUNDARY_SPOOL_ROOT"] = spool_owner.name
     command = [sys.executable, "-u", "-m", MODULE, "--output", str(output)]
     worker_log = output / f"{case_id}_worker.log"
     started = time.monotonic()
     receipt = dict(
         status="STARTING", error=None, exit_code=None, elapsed_seconds=0.0,
-        parent_observed_peak_rss_kib=None, timeout_seconds=(
+        parent_observed_peak_rss_kib=None, boundary_spool_cleanup="PENDING",
+        timeout_seconds=(
             config["resources"]["case_timeout_seconds"]
         ), termination=None, log_path=str(worker_log),
     )
     _persist_worker_monitor(output, case_id, receipt)
+    child = None
     with worker_log.open("w", encoding="utf-8") as stream:
         try:
             child = subprocess.Popen(
@@ -799,6 +807,19 @@ def _run_worker(output: Path, config: dict, case_id: str) -> dict:
                 status="START_FAILED",
                 error=f"WORKER_START_FAILED:{type(exc).__name__}:{exc}",
             )
+    if child is not None and child.poll() is None:
+        try:
+            os.killpg(child.pid, signal.SIGKILL)
+        except ProcessLookupError:
+            pass
+        child.wait()
+        receipt.update(status="FAILED", error="WORKER_MONITOR_ABORTED")
+    try:
+        spool_owner.cleanup()
+        receipt["boundary_spool_cleanup"] = "COMPLETED"
+    except Exception as exc:
+        receipt.update(status="FAILED", boundary_spool_cleanup="FAILED",
+                       error=f"BOUNDARY_SPOOL_CLEANUP:{type(exc).__name__}:{exc}")
     receipt["elapsed_seconds"] = time.monotonic() - started
     _persist_worker_monitor(output, case_id, receipt)
     return receipt

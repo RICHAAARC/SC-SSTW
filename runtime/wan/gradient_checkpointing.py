@@ -21,7 +21,9 @@ class BoundarySpool:
     """Own exact checkpoint storage until its VAE VJP has finished."""
 
     def __init__(self):
-        root = Path("/content") if Path("/content").is_dir() else Path("/tmp")
+        root = Path(os.environ.get("RGB_DCT_BOUNDARY_SPOOL_ROOT") or (
+            "/content" if Path("/content").is_dir() else "/tmp"
+        ))
         free = shutil.disk_usage(root).free
         if free < EXPECTED_BOUNDARY_BYTES + DISK_FREE_MARGIN_BYTES:
             raise RuntimeError("VAE_BOUNDARY_DISK_PREFLIGHT")
@@ -60,7 +62,8 @@ class BoundarySpool:
                     chunk = raw[start:start + TRANSFER_BYTES].to("cpu", copy=True)
                     self._cpu_live(chunk.numel())
                     chunk.numpy().tofile(stream)
-                    self.d2h_bytes += chunk.numel()
+                    if device.type == "cuda":
+                        self.d2h_bytes += chunk.numel()
                     self.disk_written_bytes += chunk.numel()
                     del chunk
                     self._cpu_live(0)
@@ -88,7 +91,8 @@ class BoundarySpool:
                         raise IOError("VAE boundary storage truncated")
                     self._cpu_live(chunk.nbytes)
                     raw[start:start + length].copy_(torch.from_numpy(chunk))
-                    self.h2d_bytes += length
+                    if device.type == "cuda":
+                        self.h2d_bytes += length
                     self.disk_read_bytes += length
                     del chunk
                     self._cpu_live(0)
