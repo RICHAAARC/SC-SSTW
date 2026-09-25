@@ -176,7 +176,7 @@ def _slot(case_dir: Path, arm: str) -> dict:
         sha256=None, bytes=None, receiver_status=None,
         layers={
             name: dict(status="PENDING", reason=None, score=None,
-                       group_scores=None, positive_groups=None,
+                       group_scores=None, positive_groups=None, loss=None,
                        frames_used=0, decision=None)
             for name in ("float_rgb", "rgb8_quantized", "mp4_rgb24")
         },
@@ -306,14 +306,20 @@ def _quantized_rgb(rgb: np.ndarray) -> np.ndarray:
 
 def _layer_record(scored: dict) -> dict:
     q = scored.get("group_scores")
+    valid_q = (
+        isinstance(q, list) and len(q) == 30
+        and all(isinstance(value, (int, float)) and math.isfinite(value)
+                for value in q)
+    )
+    loss = (float(np.square(np.maximum(-np.asarray(q, dtype=np.float64), 0.0)).mean())
+            if valid_q else None)
     return dict(
         status=scored.get("status"), reason=scored.get("reason"),
         score=(float(scored["score"])
                if isinstance(scored.get("score"), (int, float)) else None),
-        group_scores=([float(value) for value in q]
-                      if isinstance(q, list) and len(q) == 30 else None),
+        group_scores=([float(value) for value in q] if valid_q else None),
         positive_groups=scored.get("positive_groups"),
-        frames_used=scored.get("frames_used", 0), decision=None,
+        frames_used=scored.get("frames_used", 0), loss=loss, decision=None,
     )
 
 
@@ -323,7 +329,8 @@ def _score_memory_layer(rgb: np.ndarray, key: bytes) -> dict:
     except Exception as exc:
         return dict(
             status="INVALID", reason=f"{type(exc).__name__}: {exc}", score=None,
-            group_scores=None, positive_groups=None, frames_used=0, decision=None,
+            group_scores=None, positive_groups=None, loss=None,
+            frames_used=0, decision=None,
         )
     return record
 
@@ -500,18 +507,18 @@ def _single49_lift(store: Store, case_id: str, off_rgb: np.ndarray, key: bytes,
     return masked
 
 
-def _gradient_effect(off_proxy: dict, marked_rgb: np.ndarray, key: bytes) -> dict:
-    """Record finite RGB loss and fixed group sign flips without selection."""
-    from main.tube_state.rgb_dct_terminal_gradient import numpy_proxy
-
-    marked = numpy_proxy(marked_rgb, key)
-    before = np.asarray(off_proxy["q"], dtype=np.float64)
-    after = marked["q"]
+def _gradient_effect(off_layer: dict, marked_layer: dict) -> dict:
+    """Compare the persisted NumPy float layers without extra receiver calls."""
+    if off_layer["status"] != "SCORED" or marked_layer["status"] != "SCORED":
+        raise ValueError("two scored float RGB layers required")
+    before = np.asarray(off_layer["group_scores"], dtype=np.float64)
+    after = np.asarray(marked_layer["group_scores"], dtype=np.float64)
     if before.shape != (30,) or after.shape != (30,):
         raise ValueError("full 30-group gradient diagnostic required")
     return dict(
-        off_loss=float(off_proxy["loss"]), marked_loss=marked["loss"],
-        actual_float_rgb_loss_delta=marked["loss"] - float(off_proxy["loss"]),
+        off_loss=float(off_layer["loss"]), marked_loss=float(marked_layer["loss"]),
+        actual_float_rgb_loss_delta=(float(marked_layer["loss"])
+                                     - float(off_layer["loss"])),
         off_q=[float(value) for value in before],
         marked_q=[float(value) for value in after],
         gain_groups=[int(i) for i in np.flatnonzero((before <= 0) & (after > 0))],
@@ -608,14 +615,17 @@ def run_case(store: Store, case_id: str, config: dict, backend,
                 case["stage"] = f"{arm}_DECODE_SAVE_READ_SCORE"
                 store.save()
                 rgb = backend.decode(backend.terminals[arm])
-                if arm == "TERMINAL49_RECEIVER":
-                    case["gradient_effect"] = _gradient_effect(case["proxy"], rgb, key)
-                    store.save()
                 _save_and_score(
                     store, case_id, arm, rgb, key, config,
                     encode_fn=encode_fn, score_fn=score_fn,
                     off_received=off_received,
                 )
+                if arm == "TERMINAL49_RECEIVER":
+                    case["gradient_effect"] = _gradient_effect(
+                        case["slots"]["OFF"]["layers"]["float_rgb"],
+                        case["slots"][arm]["layers"]["float_rgb"],
+                    )
+                    store.save()
             except Exception as exc:
                 _fail_arm(store, case_id, arm, case["stage"], exc)
     except Exception as exc:

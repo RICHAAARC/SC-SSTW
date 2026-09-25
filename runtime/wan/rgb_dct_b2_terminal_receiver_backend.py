@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import copy
+import math
 
 from main.tube_state.rgb_dct_t49_carrier import classify_unit_response
 from runtime.wan.rgb_dct_terminal_gradient_backend import (
@@ -93,20 +94,29 @@ class WanB2TerminalReceiverBackend(WanTerminalGradientBackend):
         if relative > 2e-5 or trajectory.fingerprint(vars(snapshot_cpu)) != before:
             raise RuntimeError("TERMINAL49 native response mismatch/history pollution")
         # The linear prediction and actual finite loss change are diagnostics only.
-        dot = float(torch.sum(
+        full_dot = float(torch.sum(
+            self.cotangent.to(device=device, dtype=torch.float64)
+            * delta.to(dtype=torch.float64)
+        ).item())
+        masked_dot = float(torch.sum(
             self.gradient.to(device=device, dtype=torch.float64)
             * delta.to(dtype=torch.float64)
         ).item())
+        endpoint_rms = float(torch.cat(
+            (delta[:, :, 0:1], delta[:, :, 45:46]), dim=2
+        ).double().square().mean().sqrt())
         metrics.update(
             epsilon=epsilon, actual_D=actual,
             response_relative_error=relative,
-            g_dot_actual_terminal_delta=dot,
+            g_dot_actual_terminal_delta=full_dot,
+            masked_g_dot_actual_terminal_delta=masked_dot,
+            endpoint_delta_rms=endpoint_rms,
             off_terminal_fingerprint=trajectory.fingerprint(off),
             terminal_fingerprint=trajectory.fingerprint(terminal),
             final_history_fingerprint=trajectory.fingerprint(vars(controlled_history)),
             terminal_from_off=actual,
         )
-        if not bool(torch.isfinite(torch.as_tensor(dot))) or dot >= 0:
+        if not (math.isfinite(full_dot) and math.isfinite(masked_dot)) or masked_dot >= 0:
             return "NON_DESCENT_DIRECTION", None, metrics
         self.terminals["TERMINAL49_RECEIVER"] = terminal.detach().cpu()
         return "READY", self.terminals["TERMINAL49_RECEIVER"], metrics

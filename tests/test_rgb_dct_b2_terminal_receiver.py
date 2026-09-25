@@ -42,6 +42,7 @@ def _tiny_backend(sign=-1):
     backend.nodes[49] = {"z": z, "v": v}
     backend.snapshots[49] = snapshot
     backend.off_terminal = off
+    backend.cotangent = torch.ones_like(z)
     backend.gradient = gradient
     return backend, counts, trajectory.fingerprint(vars(snapshot))
 
@@ -108,6 +109,23 @@ def test_initial_six_slots_and_fixed_identity(tmp_path):
                for slot in case["slots"].values())
 
 
+def test_each_scored_layer_retains_fixed_continuous_loss_and_float_flip():
+    off_q = [-2.0, 1.0] + [-1.0] * 28
+    marked_q = [0.5, -3.0] + [-1.0] * 28
+    off = trial._layer_record({"status": "SCORED", "group_scores": off_q,
+                               "positive_groups": 1, "frames_used": 181})
+    marked = trial._layer_record({"status": "SCORED", "group_scores": marked_q,
+                                  "positive_groups": 1, "frames_used": 181})
+    assert off["loss"] == pytest.approx((4 + 28) / 30)
+    assert marked["loss"] == pytest.approx((9 + 28) / 30)
+    effect = trial._gradient_effect(off, marked)
+    assert effect["gain_groups"] == [0]
+    assert effect["loss_groups"] == [1]
+    assert effect["actual_float_rgb_loss_delta"] == pytest.approx(5 / 30)
+    invalid = trial._layer_record({"status": "INVALID", "group_scores": None})
+    assert invalid["loss"] is None
+
+
 class FakeRunBackend:
     def __init__(self, store, *, bad_response=False):
         self.store = store
@@ -171,8 +189,12 @@ class FakeRunBackend:
         pass
 
 
-@pytest.mark.parametrize("bad_response", [False, True])
-def test_fake_six_slot_run_keeps_negative_direction_failure(tmp_path, monkeypatch, bad_response):
+@pytest.mark.parametrize("bad_response,bad_score", [
+    (False, False), (True, False), (False, True),
+])
+def test_fake_six_slot_run_keeps_negative_direction_failure(
+    tmp_path, monkeypatch, bad_response, bad_score,
+):
     config = trial.load_config()
     output = tmp_path / "run"
     output.mkdir()
@@ -182,13 +204,10 @@ def test_fake_six_slot_run_keeps_negative_direction_failure(tmp_path, monkeypatc
     monkeypatch.setattr(trial, "_paired_quality", lambda off, marked: {
         "rgb_rmse": 0.0, "rgb_psnr_infinite": True, "compared_frames": 181,
     })
-    monkeypatch.setattr(trial, "_gradient_effect", lambda off, rgb, key: {
-        "actual_float_rgb_loss_delta": -0.5, "gain_groups": [], "loss_groups": [],
-    })
     monkeypatch.setattr(trial, "_score_memory_layer", lambda rgb, key: {
         "status": "SCORED", "reason": None, "score": 0.0,
         "group_scores": [-1.0] * 30, "positive_groups": 0,
-        "frames_used": 181, "decision": None,
+        "loss": 1.0, "frames_used": 181, "decision": None,
     })
 
     def encode_fn(rgb, path, fps, crf):
@@ -196,7 +215,9 @@ def test_fake_six_slot_run_keeps_negative_direction_failure(tmp_path, monkeypatc
 
     def score_fn(path, key):
         arm = path.parent.name
-        c = 10 if arm == "OFF" else 27
+        case_id = path.parents[2].name
+        c = 10 if (arm == "OFF" or (bad_score and arm == "TERMINAL49_RECEIVER"
+                                      and case_id == trial.CASE_IDS[0])) else 27
         return ({
             "status": "SCORED", "reason": None, "score": c / 100,
             "group_scores": [1.0] * c + [-1.0] * (30 - c),
@@ -223,6 +244,11 @@ def test_fake_six_slot_run_keeps_negative_direction_failure(tmp_path, monkeypatc
         assert "NON_DESCENT_DIRECTION" in failed["reason"]
         assert result["status"] == "INCOMPLETE"
         assert result["scored_media_slots"] == 5
+    elif bad_score:
+        assert result["status"] == "FIXED_B2_TERMINAL_RECEIVER_NEGATIVE"
+        assert result["scored_media_slots"] == 6
+        assert result["scored_frames"] == 1086
+        assert result["cases"][trial.CASE_IDS[0]]["slots"]["TERMINAL49_RECEIVER"]["decision"] == "H0"
     else:
         assert result["status"] == "FIXED_B2_TERMINAL_RECEIVER_COMPLETE"
         assert result["scored_media_slots"] == 6
