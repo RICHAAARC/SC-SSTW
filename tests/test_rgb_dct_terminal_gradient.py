@@ -14,7 +14,9 @@ from experiments.wan_state_clock import rgb_dct_terminal_gradient_run as trial
 from main.tube_state import rgb_dct_group_consistency as receiver
 from main.tube_state import rgb_dct_terminal_gradient as proxy
 from runtime.wan import rgb_dct_terminal_gradient_backend as backend_module
-from runtime.wan.gradient_checkpointing import ReplayLedger, checkpoint_call
+from runtime.wan.gradient_checkpointing import (
+    BoundarySpool, BoundaryStorage, ReplayLedger, checkpoint_call,
+)
 
 
 pytestmark = pytest.mark.unit
@@ -389,6 +391,89 @@ def test_checkpoint_recompute_has_separate_attempted_completed_ledger():
     assert counts["recompute"] == {"attempted": 1, "completed": 1}
     assert source.grad is not None and torch.isfinite(source.grad).all()
     assert updates[-1]["counts"] == ledger.summary()["counts"]
+
+
+def test_disk_boundary_exact_views_alias_and_gradient(monkeypatch):
+    import runtime.wan.gradient_checkpointing as checkpoints
+
+    monkeypatch.setattr(checkpoints, "EXPECTED_BOUNDARY_BYTES", 0)
+    monkeypatch.setattr(checkpoints, "DISK_FREE_MARGIN_BYTES", 0)
+    monkeypatch.setattr(checkpoints, "TRANSFER_BYTES", 7)
+    spool = BoundarySpool()
+    source = torch.arange(24, dtype=torch.float64).reshape(4, 6)
+    view_a = source[:, 1:5]
+    view_b = source[1:3, 2:6]
+    storage = BoundaryStorage(spool)
+    packed_a, packed_b = storage.pack(view_a), storage.pack(view_b)
+    assert packed_a[0] == packed_b[0]
+    assert spool.summary()["files"] == 1
+    storage.copies.clear()
+    restored_a, restored_b = storage.unpack(packed_a), storage.unpack(packed_b)
+    assert torch.equal(restored_a, view_a)
+    assert torch.equal(restored_b, view_b)
+    assert restored_a.untyped_storage().data_ptr() == restored_b.untyped_storage().data_ptr()
+    restored_a[1, 1] = -123.0
+    assert restored_b[0, 0].item() == -123.0
+    assert spool.summary()["cpu_live_packed_bytes"] == 0
+    assert spool.summary()["cpu_peak_packed_bytes"] <= 7
+    assert spool.summary()["d2h_bytes"] == source.untyped_storage().nbytes()
+    spool.close()
+    assert list(spool.path.glob("storage-*")) == []
+    assert spool.summary()["disk_live_bytes"] == 0
+
+    def frame(value):
+        a = value[:, 1:5]
+        b = value[1:3, 2:6]
+        return (torch.sin(a).sum() + b.square().sum())
+
+    direct = source.detach().requires_grad_(True)
+    direct_value = frame(direct)
+    direct_grad, = torch.autograd.grad(direct_value, direct)
+    checkpointed = source.detach().requires_grad_(True)
+    ledger = ReplayLedger({"transformer_block": 0, "vae_chunk": 1})
+    ledger.new_decode()
+    value = checkpoint_call(ledger, "vae_chunk", frame, checkpointed)
+    grad, = torch.autograd.grad(value, checkpointed)
+    assert torch.equal(value, direct_value)
+    assert torch.equal(grad, direct_grad)
+    receipt = ledger.summary()["boundary_storage"]
+    assert receipt["disk_peak_bytes"] > 0
+    assert receipt["cpu_peak_packed_bytes"] <= 7
+    ledger.release_boundary_storage()
+    assert ledger.summary()["boundary_storage"]["closed"]
+
+
+def test_disk_boundary_preflight_and_write_failure_cleanup(monkeypatch):
+    import runtime.wan.gradient_checkpointing as checkpoints
+
+    monkeypatch.setattr(checkpoints, "EXPECTED_BOUNDARY_BYTES", 10**20)
+    with pytest.raises(RuntimeError, match="VAE_BOUNDARY_DISK_PREFLIGHT"):
+        BoundarySpool()
+    monkeypatch.setattr(checkpoints, "EXPECTED_BOUNDARY_BYTES", 0)
+    monkeypatch.setattr(checkpoints, "DISK_FREE_MARGIN_BYTES", 0)
+    monkeypatch.setattr(checkpoints, "DISK_LIMIT_BYTES", 1)
+    spool = BoundarySpool()
+    with pytest.raises(RuntimeError, match="VAE_BOUNDARY_DISK_BUDGET"):
+        BoundaryStorage(spool).pack(torch.arange(8, dtype=torch.float64))
+    assert spool.summary()["files"] == 0
+    assert spool.summary()["disk_live_bytes"] == 0
+    spool.close()
+
+    monkeypatch.setattr(checkpoints, "DISK_LIMIT_BYTES", 1024)
+    spool = BoundarySpool()
+    original = spool._cpu_live
+
+    def fail_transfer(amount):
+        if amount:
+            raise IOError("injected transfer failure")
+        original(amount)
+
+    monkeypatch.setattr(spool, "_cpu_live", fail_transfer)
+    with pytest.raises(IOError, match="injected transfer failure"):
+        BoundaryStorage(spool).pack(torch.arange(8, dtype=torch.float64))
+    assert list(spool.path.glob("storage-*")) == []
+    assert spool.summary()["disk_live_bytes"] == 0
+    spool.close()
 
 
 def test_complete_fake_run_has_six_scored_slots_and_exact_call_ledger(tmp_path, monkeypatch):

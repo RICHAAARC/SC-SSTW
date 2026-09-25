@@ -356,6 +356,7 @@ class WanTerminalGradientBackend:
             self.count("vae_vjp", True)
         finally:
             _clear_cache(self.vae)
+            self.replay_ledger.release_boundary_storage()
         if not bool(torch.isfinite(cotangent).all()):
             raise FloatingPointError("nonfinite VAE terminal cotangent")
         cotangent_measure = float(cotangent.detach().double().square().mean().sqrt())
@@ -618,6 +619,8 @@ class WanTerminalGradientBackend:
         from runtime.wan.vae import _clear_cache
         if self.vae is not None:
             _clear_cache(self.vae)
+        if self.replay_ledger is not None:
+            self.replay_ledger.release_boundary_storage()
         self.vae = None
         if self.pipe is not None and self.pipe.transformer is not None:
             disable_transformer_checkpointing(self.pipe.transformer)

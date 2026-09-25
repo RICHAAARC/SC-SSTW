@@ -2,6 +2,123 @@
 from __future__ import annotations
 
 from contextlib import nullcontext
+import os
+from pathlib import Path
+import shutil
+import tempfile
+import weakref
+
+
+TRANSFER_BYTES = 16 * 1024 * 1024
+DISK_LIMIT_BYTES = 80 * 1024**3
+DISK_FREE_MARGIN_BYTES = 2 * 1024**3
+# 46 causal chunks: about 0.70 GiB first + 45 * 1.44 GiB thereafter.
+# Reserve the complete disk budget before decoding, including headroom.
+EXPECTED_BOUNDARY_BYTES = DISK_LIMIT_BYTES
+
+
+class BoundarySpool:
+    """Own exact checkpoint storage until its VAE VJP has finished."""
+
+    def __init__(self):
+        root = Path("/content") if Path("/content").is_dir() else Path("/tmp")
+        free = shutil.disk_usage(root).free
+        if free < EXPECTED_BOUNDARY_BYTES + DISK_FREE_MARGIN_BYTES:
+            raise RuntimeError("VAE_BOUNDARY_DISK_PREFLIGHT")
+        self.directory = tempfile.TemporaryDirectory(
+            prefix="wan-vae-boundary-", dir=root
+        )
+        self.path = Path(self.directory.name)
+        self.disk_root = str(root)
+        self.disk_free_at_start_bytes = free
+        self.live_disk_bytes = self.peak_disk_bytes = 0
+        self.cpu_live_packed_bytes = self.cpu_peak_packed_bytes = 0
+        self.d2h_bytes = self.h2d_bytes = 0
+        self.disk_written_bytes = self.disk_read_bytes = 0
+        self.files = 0
+        self.closed = False
+
+    def _cpu_live(self, amount):
+        self.cpu_live_packed_bytes = amount
+        self.cpu_peak_packed_bytes = max(self.cpu_peak_packed_bytes, amount)
+
+    def pack(self, storage, device):
+        import torch
+
+        size = storage.nbytes()
+        if self.closed or self.live_disk_bytes + size > DISK_LIMIT_BYTES:
+            raise RuntimeError("VAE_BOUNDARY_DISK_BUDGET")
+        if shutil.disk_usage(self.path).free < size + DISK_FREE_MARGIN_BYTES:
+            raise RuntimeError("VAE_BOUNDARY_DISK_FREE")
+        fd, name = tempfile.mkstemp(dir=self.path, prefix="storage-")
+        raw = torch.empty(0, dtype=torch.uint8, device=device).set_(
+            storage, 0, (size,), (1,)
+        )
+        try:
+            with os.fdopen(fd, "wb") as stream:
+                for start in range(0, size, TRANSFER_BYTES):
+                    chunk = raw[start:start + TRANSFER_BYTES].to("cpu", copy=True)
+                    self._cpu_live(chunk.numel())
+                    chunk.numpy().tofile(stream)
+                    self.d2h_bytes += chunk.numel()
+                    self.disk_written_bytes += chunk.numel()
+                    del chunk
+                    self._cpu_live(0)
+            self.live_disk_bytes += size
+            self.peak_disk_bytes = max(self.peak_disk_bytes, self.live_disk_bytes)
+            self.files += 1
+            return (name, size)
+        except BaseException:
+            self._cpu_live(0)
+            os.unlink(name)
+            raise
+
+    def restore(self, record, device):
+        import numpy as np
+        import torch
+
+        name, size = record
+        raw = torch.empty(size, dtype=torch.uint8, device=device)
+        try:
+            with open(name, "rb") as stream:
+                for start in range(0, size, TRANSFER_BYTES):
+                    length = min(TRANSFER_BYTES, size - start)
+                    chunk = np.fromfile(stream, dtype=np.uint8, count=length)
+                    if len(chunk) != length:
+                        raise IOError("VAE boundary storage truncated")
+                    self._cpu_live(chunk.nbytes)
+                    raw[start:start + length].copy_(torch.from_numpy(chunk))
+                    self.h2d_bytes += length
+                    self.disk_read_bytes += length
+                    del chunk
+                    self._cpu_live(0)
+        except BaseException:
+            self._cpu_live(0)
+            raise
+        return raw
+
+    def summary(self):
+        return dict(cpu_live_packed_bytes=self.cpu_live_packed_bytes,
+                    cpu_peak_packed_bytes=self.cpu_peak_packed_bytes,
+                    cpu_transfer_buffer_limit_bytes=TRANSFER_BYTES,
+                    disk_live_bytes=self.live_disk_bytes,
+                    disk_peak_bytes=self.peak_disk_bytes,
+                    disk_limit_bytes=DISK_LIMIT_BYTES,
+                    preflight_boundary_bytes=EXPECTED_BOUNDARY_BYTES,
+                    disk_free_margin_bytes=DISK_FREE_MARGIN_BYTES,
+                    disk_root=self.disk_root,
+                    disk_free_at_start_bytes=self.disk_free_at_start_bytes,
+                    files=self.files, d2h_bytes=self.d2h_bytes,
+                    h2d_bytes=self.h2d_bytes,
+                    disk_written_bytes=self.disk_written_bytes,
+                    disk_read_bytes=self.disk_read_bytes, closed=self.closed)
+
+    def close(self):
+        if not self.closed:
+            self.directory.cleanup()
+            self.live_disk_bytes = 0
+            self.cpu_live_packed_bytes = 0
+            self.closed = True
 
 
 class ReplayLedger:
@@ -22,6 +139,8 @@ class ReplayLedger:
         }
         self.boundaries = {}
         self._seen_storage = {}
+        self.boundary_spool = None
+        self.boundary_storage_final = None
         self.callback = callback
 
     def _emit(self) -> None:
@@ -43,6 +162,8 @@ class ReplayLedger:
         self._emit()
 
     def new_decode(self) -> int:
+        if self.boundary_spool is None:
+            self.boundary_spool = BoundarySpool()
         index = len(self.boundaries)
         self.boundaries[index] = {
             phase: {"chunks": [], "unique_storage_bytes": 0}
@@ -75,14 +196,26 @@ class ReplayLedger:
         self._emit()
 
     def summary(self) -> dict:
-        return dict(limits=self.limits, counts=self.counts, cache_boundaries=self.boundaries)
+        storage = (self.boundary_spool.summary() if self.boundary_spool else
+                   self.boundary_storage_final)
+        return dict(limits=self.limits, counts=self.counts,
+                    cache_boundaries=self.boundaries, boundary_storage=storage)
+
+    def release_boundary_storage(self):
+        if self.boundary_spool is not None:
+            self.boundary_spool.close()
+            self.boundary_storage_final = self.boundary_spool.summary()
+            self.boundary_spool = None
+            self._emit()
 
 
 class BoundaryStorage:
-    """Pack alias-preserving checkpoint boundary storage on CPU."""
+    """Pack alias-preserving checkpoint boundary storage to bounded disk."""
 
-    def __init__(self):
+    def __init__(self, spool):
+        self.spool = spool
         self.copies = {}
+        self.restored = {}
 
     def pack(self, tensor):
         import torch
@@ -90,27 +223,23 @@ class BoundaryStorage:
         storage = tensor.untyped_storage()
         key = (tensor.device, storage.data_ptr(), storage.nbytes())
         if key not in self.copies:
-            raw = torch.empty(0, dtype=torch.uint8, device=tensor.device).set_(
-                storage, 0, (storage.nbytes(),), (1,)
-            )
-            self.copies[key] = raw.to(device="cpu", copy=True)
-        return (self.copies[key], tensor.device, tensor.dtype, tensor.storage_offset(),
+            self.copies[key] = (storage, self.spool.pack(storage, tensor.device))
+        return (self.copies[key][1], tensor.device, tensor.dtype, tensor.storage_offset(),
                 tuple(tensor.shape), tuple(tensor.stride()))
 
-    @staticmethod
-    def unpack(packed):
+    def unpack(self, packed):
         import torch
-        import weakref
 
-        raw, device, dtype, offset, shape, stride = packed
-        previous = getattr(raw, "_restored_view", lambda: None)()
-        storage = previous.untyped_storage() if previous is not None else raw.to(
-            device=device
-        ).untyped_storage()
+        record, device, dtype, offset, shape, stride = packed
+        live = [ref for ref in self.restored.get(record, ()) if ref() is not None]
+        previous = live[0]() if live else None
+        storage = (previous.untyped_storage() if previous is not None else
+                   self.spool.restore(record, device).untyped_storage())
         result = torch.empty(0, dtype=dtype, device=device).set_(
             storage, offset, shape, stride
         )
-        raw._restored_view = weakref.ref(result)
+        live.append(weakref.ref(result))
+        self.restored[record] = live
         return result
 
 
@@ -136,7 +265,7 @@ def checkpoint_call(ledger: ReplayLedger, kind: str, function, *args, boundary=N
         ledger.finish(kind, phase)
         return result
 
-    storage = BoundaryStorage() if kind == "vae_chunk" else None
+    storage = BoundaryStorage(ledger.boundary_spool) if kind == "vae_chunk" else None
     context = (torch.autograd.graph.saved_tensors_hooks(storage.pack, storage.unpack)
                if storage is not None else nullcontext())
     try:
