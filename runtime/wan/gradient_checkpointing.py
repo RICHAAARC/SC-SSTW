@@ -1,7 +1,6 @@
 """Bounded exact recomputation for the terminal-gradient Wan path."""
 from __future__ import annotations
 
-from contextlib import nullcontext
 import os
 from pathlib import Path
 import shutil
@@ -12,23 +11,26 @@ import weakref
 TRANSFER_BYTES = 16 * 1024 * 1024
 DISK_LIMIT_BYTES = 80 * 1024**3
 DISK_FREE_MARGIN_BYTES = 2 * 1024**3
-# 46 causal chunks: about 0.70 GiB first + 45 * 1.44 GiB thereafter.
-# Reserve the complete disk budget before decoding, including headroom.
+# VAE has 46 causal chunks: about 0.70 GiB first + 45 * 1.44 GiB later.
+# Reserve the complete per-phase disk budget before either phase, with headroom.
 EXPECTED_BOUNDARY_BYTES = DISK_LIMIT_BYTES
 
 
 class BoundarySpool:
-    """Own exact checkpoint storage until its VAE VJP has finished."""
+    """Own exact VAE or Transformer checkpoint storage until its VJP finishes."""
 
-    def __init__(self):
+    def __init__(self, kind="VAE"):
+        if kind not in ("VAE", "TRANSFORMER"):
+            raise ValueError("unknown boundary spool kind")
+        self.kind = kind
         root = Path(os.environ.get("RGB_DCT_BOUNDARY_SPOOL_ROOT") or (
             "/content" if Path("/content").is_dir() else "/tmp"
         ))
         free = shutil.disk_usage(root).free
         if free < EXPECTED_BOUNDARY_BYTES + DISK_FREE_MARGIN_BYTES:
-            raise RuntimeError("VAE_BOUNDARY_DISK_PREFLIGHT")
+            raise RuntimeError(f"{kind}_BOUNDARY_DISK_PREFLIGHT")
         self.directory = tempfile.TemporaryDirectory(
-            prefix="wan-vae-boundary-", dir=root
+            prefix=f"wan-{kind.lower()}-boundary-", dir=root
         )
         self.path = Path(self.directory.name)
         self.disk_root = str(root)
@@ -49,9 +51,9 @@ class BoundarySpool:
 
         size = storage.nbytes()
         if self.closed or self.live_disk_bytes + size > DISK_LIMIT_BYTES:
-            raise RuntimeError("VAE_BOUNDARY_DISK_BUDGET")
+            raise RuntimeError(f"{self.kind}_BOUNDARY_DISK_BUDGET")
         if shutil.disk_usage(self.path).free < size + DISK_FREE_MARGIN_BYTES:
-            raise RuntimeError("VAE_BOUNDARY_DISK_FREE")
+            raise RuntimeError(f"{self.kind}_BOUNDARY_DISK_FREE")
         fd, name = tempfile.mkstemp(dir=self.path, prefix="storage-")
         raw = torch.empty(0, dtype=torch.uint8, device=device).set_(
             storage, 0, (size,), (1,)
@@ -102,7 +104,8 @@ class BoundarySpool:
         return raw
 
     def summary(self):
-        return dict(cpu_live_packed_bytes=self.cpu_live_packed_bytes,
+        return dict(kind=self.kind,
+                    cpu_live_packed_bytes=self.cpu_live_packed_bytes,
                     cpu_peak_packed_bytes=self.cpu_peak_packed_bytes,
                     cpu_transfer_buffer_limit_bytes=TRANSFER_BYTES,
                     disk_live_bytes=self.live_disk_bytes,
@@ -145,6 +148,8 @@ class ReplayLedger:
         self._seen_storage = {}
         self.boundary_spool = None
         self.boundary_storage_final = None
+        self.transformer_spool = None
+        self.transformer_storage_final = None
         self.callback = callback
 
     def _emit(self) -> None:
@@ -176,6 +181,12 @@ class ReplayLedger:
         self._emit()
         return index
 
+    def start_transformer_storage(self):
+        if self.boundary_spool is not None or self.transformer_spool is not None:
+            raise RuntimeError("checkpoint boundary phases overlap")
+        self.transformer_spool = BoundarySpool("TRANSFORMER")
+        self._emit()
+
     def record_boundary(self, decode_id: int, phase: str, chunk_index: int, cache) -> None:
         unique, logical = {}, 0
         for value in cache:
@@ -202,14 +213,26 @@ class ReplayLedger:
     def summary(self) -> dict:
         storage = (self.boundary_spool.summary() if self.boundary_spool else
                    self.boundary_storage_final)
+        transformer_storage = (
+            self.transformer_spool.summary() if self.transformer_spool else
+            self.transformer_storage_final
+        )
         return dict(limits=self.limits, counts=self.counts,
-                    cache_boundaries=self.boundaries, boundary_storage=storage)
+                    cache_boundaries=self.boundaries, boundary_storage=storage,
+                    transformer_boundary_storage=transformer_storage)
 
     def release_boundary_storage(self):
         if self.boundary_spool is not None:
             self.boundary_spool.close()
             self.boundary_storage_final = self.boundary_spool.summary()
             self.boundary_spool = None
+            self._emit()
+
+    def release_transformer_storage(self):
+        if self.transformer_spool is not None:
+            self.transformer_spool.close()
+            self.transformer_storage_final = self.transformer_spool.summary()
+            self.transformer_spool = None
             self._emit()
 
 
@@ -269,19 +292,24 @@ def checkpoint_call(ledger: ReplayLedger, kind: str, function, *args, boundary=N
         ledger.finish(kind, phase)
         return result
 
-    storage = BoundaryStorage(ledger.boundary_spool) if kind == "vae_chunk" else None
-    context = (torch.autograd.graph.saved_tensors_hooks(storage.pack, storage.unpack)
-               if storage is not None else nullcontext())
+    spool = (ledger.boundary_spool if kind == "vae_chunk" else
+             ledger.transformer_spool if kind == "transformer_block" else None)
+    if spool is None:
+        raise RuntimeError(f"checkpoint boundary storage missing for {kind}")
+    storage = BoundaryStorage(spool)
+    # The outer hook packs the non-reentrant checkpoint's saved inputs. Its
+    # inner hook still owns the intra-block recomputation placeholders.
+    context = torch.autograd.graph.saved_tensors_hooks(storage.pack, storage.unpack)
     try:
         with context:
             return checkpoint(measured, *args, use_reentrant=False,
                               preserve_rng_state=True)
     finally:
-        if storage is not None:
-            storage.copies.clear()
+        storage.copies.clear()
 
 
 def enable_transformer_checkpointing(transformer, ledger: ReplayLedger) -> None:
+    ledger.start_transformer_storage()
     def counted(module, *args):
         return checkpoint_call(ledger, "transformer_block", module, *args)
     transformer.enable_gradient_checkpointing(gradient_checkpointing_func=counted)

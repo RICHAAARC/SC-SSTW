@@ -382,6 +382,7 @@ def test_checkpoint_recompute_has_separate_attempted_completed_ledger():
         {"transformer_block": 4, "vae_chunk": 1},
         callback=lambda summary: updates.append(copy.deepcopy(summary)),
     )
+    ledger.start_transformer_storage()
     source = torch.tensor([0.2, -0.4], dtype=torch.float64, requires_grad=True)
     result = checkpoint_call(
         ledger, "transformer_block", lambda value: torch.sin(value).square(), source,
@@ -392,6 +393,77 @@ def test_checkpoint_recompute_has_separate_attempted_completed_ledger():
     assert counts["recompute"] == {"attempted": 1, "completed": 1}
     assert source.grad is not None and torch.isfinite(source.grad).all()
     assert updates[-1]["counts"] == ledger.summary()["counts"]
+    assert ledger.summary()["transformer_boundary_storage"]["disk_peak_bytes"] > 0
+    ledger.release_transformer_storage()
+    assert ledger.summary()["transformer_boundary_storage"]["closed"]
+
+
+def test_transformer_boundary_disk_preserves_alias_history_and_exact_gradient(monkeypatch):
+    import runtime.wan.gradient_checkpointing as checkpoints
+
+    monkeypatch.setattr(checkpoints, "EXPECTED_BOUNDARY_BYTES", 0)
+    monkeypatch.setattr(checkpoints, "DISK_FREE_MARGIN_BYTES", 0)
+    monkeypatch.setattr(checkpoints, "TRANSFER_BYTES", 7)
+    source = torch.arange(24, dtype=torch.float64).reshape(4, 6)
+
+    def rollout(value, ledger=None):
+        history = [value * 0.17]
+        for index in range(3):
+            def block(x, old, step=index):
+                a = x[:, 1:5]
+                b = x[1:3, 2:6]
+                assert a.untyped_storage().data_ptr() == b.untyped_storage().data_ptr()
+                return torch.sin(a).sum() * x + old * (step + 1) * 0.03
+            if ledger is None:
+                value = block(value, history[-1])
+            else:
+                value = checkpoint_call(ledger, "transformer_block", block,
+                                        value, history[-1])
+            history.append(value)
+        return value.square().mean() + history[-2].sin().mean()
+
+    direct = source.detach().requires_grad_(True)
+    direct_value = rollout(direct)
+    direct_gradient, = torch.autograd.grad(direct_value, direct)
+    attached = source.detach().requires_grad_(True)
+    ledger = ReplayLedger({"transformer_block": 3, "vae_chunk": 0})
+    ledger.start_transformer_storage()
+    value = rollout(attached, ledger)
+    gradient, = torch.autograd.grad(value, attached)
+    assert torch.equal(value, direct_value)
+    assert torch.equal(gradient, direct_gradient)
+    counts = ledger.summary()["counts"]["transformer_block"]
+    assert counts["forward"] == {"attempted": 3, "completed": 3}
+    assert counts["recompute"] == {"attempted": 3, "completed": 3}
+    receipt = ledger.summary()["transformer_boundary_storage"]
+    assert receipt["disk_peak_bytes"] > 0
+    assert receipt["cpu_peak_packed_bytes"] <= 7
+    # A saved input may be unpacked more than once during native autograd.
+    assert receipt["disk_read_bytes"] >= receipt["disk_written_bytes"]
+    assert receipt["d2h_bytes"] == receipt["h2d_bytes"] == 0
+    path = ledger.transformer_spool.path
+    ledger.release_transformer_storage()
+    assert ledger.summary()["transformer_boundary_storage"]["closed"]
+    assert not path.exists()
+
+
+def test_transformer_boundary_budget_failure_closes_spool(monkeypatch):
+    import runtime.wan.gradient_checkpointing as checkpoints
+
+    monkeypatch.setattr(checkpoints, "EXPECTED_BOUNDARY_BYTES", 0)
+    monkeypatch.setattr(checkpoints, "DISK_FREE_MARGIN_BYTES", 0)
+    monkeypatch.setattr(checkpoints, "DISK_LIMIT_BYTES", 1)
+    ledger = ReplayLedger({"transformer_block": 1, "vae_chunk": 0})
+    ledger.start_transformer_storage()
+    path = ledger.transformer_spool.path
+    source = torch.arange(8, dtype=torch.float64, requires_grad=True)
+    try:
+        with pytest.raises(RuntimeError, match="TRANSFORMER_BOUNDARY_DISK_BUDGET"):
+            checkpoint_call(ledger, "transformer_block", torch.sin, source)
+    finally:
+        ledger.release_transformer_storage()
+    assert not path.exists()
+    assert ledger.summary()["transformer_boundary_storage"]["closed"]
 
 
 def test_disk_boundary_exact_views_alias_and_gradient(monkeypatch):

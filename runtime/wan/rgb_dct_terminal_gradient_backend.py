@@ -425,8 +425,8 @@ class WanTerminalGradientBackend:
             device="cuda", dtype=torch.float32
         ).detach().requires_grad_(True)
         guidance = self.config["generation"]["guidance_scale"]
-        enable_transformer_checkpointing(self.pipe.transformer, self.replay_ledger)
         try:
+            enable_transformer_checkpointing(self.pipe.transformer, self.replay_ledger)
             terminal = _graph_step(scheduler, z, v46, 46, self.count)
             for index in range(47, 50):
                 velocity = _graph_velocity(
@@ -449,7 +449,10 @@ class WanTerminalGradientBackend:
             )
             self.count("tail_vjp", True)
         finally:
-            disable_transformer_checkpointing(self.pipe.transformer)
+            try:
+                disable_transformer_checkpointing(self.pipe.transformer)
+            finally:
+                self.replay_ledger.release_transformer_storage()
         if not bool(torch.isfinite(gradient).all()):
             raise FloatingPointError("nonfinite full T46 velocity gradient")
         full = trajectory.measures(gradient)
@@ -621,6 +624,7 @@ class WanTerminalGradientBackend:
             _clear_cache(self.vae)
         if self.replay_ledger is not None:
             self.replay_ledger.release_boundary_storage()
+            self.replay_ledger.release_transformer_storage()
         self.vae = None
         if self.pipe is not None and self.pipe.transformer is not None:
             disable_transformer_checkpointing(self.pipe.transformer)
