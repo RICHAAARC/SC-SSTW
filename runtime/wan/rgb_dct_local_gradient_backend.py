@@ -350,9 +350,12 @@ class WanLocalGradientBackend:
         finally:
             rgb = loss = q = metadata = gradient = velocity = clean = None
             gc.collect()
-            _clear_cache(self.vae)
-            if torch.cuda.is_available():
-                torch.cuda.empty_cache()
+            try:
+                _clear_cache(self.vae)
+            finally:
+                self.checkpoint_ledger.release_boundary_storage()
+                if torch.cuda.is_available():
+                    torch.cuda.empty_cache()
 
     def verify_local_cfg(self) -> dict:
         """Recompute CFG after phase restoration without advancing live history."""
@@ -511,9 +514,12 @@ class WanLocalGradientBackend:
         return self.terminals["LOCAL44_46_48"]
 
     def net_from_off(self, terminal: Any) -> dict:
+        import torch
         from runtime.wan import trajectory
 
-        return trajectory.measures(terminal.float() - self.off_terminal.float())
+        return trajectory.measures(
+            terminal.detach().to(device="cpu", dtype=torch.float32)
+            - self.off_terminal.detach().float().cpu())
 
     def resources(self) -> dict:
         return dict(cuda=_cuda_memory(), phase=self.phase, phase_log=self.phase_log,
@@ -524,8 +530,11 @@ class WanLocalGradientBackend:
         import torch
         from runtime.wan.vae import _clear_cache
 
-        if self.vae is not None:
-            _clear_cache(self.vae)
+        try:
+            if self.vae is not None:
+                _clear_cache(self.vae)
+        finally:
+            self.checkpoint_ledger.release_boundary_storage()
         self.vae = None
         if self.pipe is not None:
             self.pipe.transformer = None

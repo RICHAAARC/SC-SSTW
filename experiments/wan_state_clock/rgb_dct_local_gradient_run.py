@@ -13,6 +13,7 @@ import resource
 import signal
 import subprocess
 import sys
+import tempfile
 import time
 import traceback
 from pathlib import Path
@@ -693,33 +694,120 @@ def _validate_output(output: Path) -> None:
 
 
 def _run_worker(output: Path, config: dict, case_id: str) -> str | None:
+    """Monitor child RSS and retain a parent-owned local spool on hard exit."""
     env = os.environ.copy()
     env["RGB_DCT_LOCAL_GRADIENT_INTERNAL_CASE"] = case_id
+    local_root = Path("/content") if Path("/content").is_dir() else Path("/tmp")
+    spool_owner = tempfile.TemporaryDirectory(
+        prefix=f"wan-vae-worker-{case_id}-", dir=local_root)
+    env["RGB_DCT_BOUNDARY_SPOOL_ROOT"] = spool_owner.name
     command = [sys.executable, "-u", "-m", MODULE, "--output", str(output)]
     worker_log = output / f"{case_id}_worker.log"
+    monitor_path = output / f"{case_id}_worker_monitor.json"
+    started = time.monotonic()
+    receipt = dict(status="STARTING", error=None, exit_code=None,
+                   elapsed_seconds=0.0, parent_observed_peak_rss_kib=None,
+                   parent_observed_peak_spool_bytes=0,
+                   boundary_spool_cleanup="PENDING", termination=None,
+                   timeout_seconds=config["resources"]["case_timeout_seconds"],
+                   log_path=str(worker_log))
+    _atomic_json(monitor_path, receipt)
     print("case start:", case_id, "log:", worker_log, flush=True)
-    with worker_log.open("w", encoding="utf-8") as stream:
-        try:
+    child = None
+    try:
+        with worker_log.open("w", encoding="utf-8") as stream:
             child = subprocess.Popen(command, cwd=ROOT, env=env, stdout=stream,
                                      stderr=subprocess.STDOUT, start_new_session=True)
-            try:
-                code = child.wait(timeout=config["resources"]["case_timeout_seconds"])
-                failure = None if code == 0 else f"WORKER_EXIT_{code}"
-                if failure is not None:
+            receipt["status"] = "RUNNING"
+            deadline = started + config["resources"]["case_timeout_seconds"]
+            while child.poll() is None and time.monotonic() < deadline:
+                rss = _proc_rss_kib(child.pid)
+                if rss is not None:
+                    receipt["parent_observed_peak_rss_kib"] = max(
+                        receipt["parent_observed_peak_rss_kib"] or 0, rss)
+                receipt["parent_observed_peak_spool_bytes"] = max(
+                    receipt["parent_observed_peak_spool_bytes"],
+                    _spool_bytes(Path(spool_owner.name)))
+                receipt["elapsed_seconds"] = time.monotonic() - started
+                _atomic_json(monitor_path, receipt)
+                time.sleep(min(1.0, max(0.0, deadline - time.monotonic())))
+            if child.poll() is None:
+                receipt.update(status="TERMINATING", error="WORKER_TIMEOUT",
+                               termination="SIGTERM_SENT")
+                _atomic_json(monitor_path, receipt)
+                try:
+                    os.killpg(child.pid, signal.SIGTERM)
+                except ProcessLookupError:
+                    pass
+                grace_deadline = time.monotonic() + 10
+                while child.poll() is None and time.monotonic() < grace_deadline:
+                    rss = _proc_rss_kib(child.pid)
+                    if rss is not None:
+                        receipt["parent_observed_peak_rss_kib"] = max(
+                            receipt["parent_observed_peak_rss_kib"] or 0, rss)
+                    receipt["elapsed_seconds"] = time.monotonic() - started
+                    _atomic_json(monitor_path, receipt)
+                    time.sleep(min(0.5, max(0.0, grace_deadline - time.monotonic())))
+                if child.poll() is None:
                     try:
                         os.killpg(child.pid, signal.SIGKILL)
                     except ProcessLookupError:
                         pass
-            except subprocess.TimeoutExpired:
-                try:
-                    os.killpg(child.pid, signal.SIGKILL)
-                except ProcessLookupError:
-                    pass
+                    receipt["termination"] = "SIGTERM_THEN_SIGKILL"
+                else:
+                    receipt["termination"] = "SIGTERM_GRACEFUL"
                 child.wait()
-                failure = "WORKER_TIMEOUT"
+                receipt["status"] = "TIMEOUT"
+            else:
+                receipt["exit_code"] = child.returncode
+                if child.returncode == 0:
+                    receipt["status"] = "COMPLETED"
+                else:
+                    receipt.update(status="FAILED", error=f"WORKER_EXIT_{child.returncode}")
+                    try:
+                        os.killpg(child.pid, signal.SIGKILL)
+                    except ProcessLookupError:
+                        pass
+    except BaseException as exc:
+        receipt.update(status="FAILED", error=f"WORKER_MONITOR_FAILED:{type(exc).__name__}:{exc}")
+    finally:
+        if child is not None and child.poll() is None:
+            try:
+                os.killpg(child.pid, signal.SIGKILL)
+            except ProcessLookupError:
+                pass
+            child.wait()
+            receipt["termination"] = "MONITOR_ABORT_SIGKILL"
+        try:
+            spool_owner.cleanup()
+            receipt["boundary_spool_cleanup"] = "COMPLETED"
         except Exception as exc:
-            failure = f"WORKER_START_FAILED:{type(exc).__name__}:{exc}"
-    return failure
+            receipt.update(status="FAILED", boundary_spool_cleanup="FAILED",
+                           error=f"BOUNDARY_SPOOL_CLEANUP:{type(exc).__name__}:{exc}")
+        receipt["elapsed_seconds"] = time.monotonic() - started
+        _atomic_json(monitor_path, receipt)
+    return receipt
+
+
+def _proc_rss_kib(pid: int) -> int | None:
+    try:
+        for line in Path(f"/proc/{pid}/status").read_text().splitlines():
+            if line.startswith("VmRSS:"):
+                return int(line.split()[1])
+    except (FileNotFoundError, ProcessLookupError, ValueError):
+        return None
+    return None
+
+
+def _spool_bytes(root: Path) -> int:
+    total = 0
+    for directory, _, files in os.walk(root):
+        for name in files:
+            try:
+                total += (Path(directory) / name).stat().st_size
+            except FileNotFoundError:
+                pass
+    return total
 
 
 def _supervise(output: Path, config: dict, source_sha: str,
@@ -728,8 +816,20 @@ def _supervise(output: Path, config: dict, source_sha: str,
     store = Store(result_path, initial_result(config, output, source_sha))
     store.save()
     for case_id in CASE_IDS:
-        failure = worker_fn(output, config, case_id)
+        receipt = worker_fn(output, config, case_id)
+        if isinstance(receipt, dict):
+            failure = (receipt.get("error") or receipt.get("status")) if (
+                receipt.get("status") != "COMPLETED") else None
+        else:
+            failure = receipt
+            receipt = dict(status="COMPLETED" if failure is None else "FAILED",
+                           error=failure, parent_observed_peak_rss_kib=None)
         store = Store.open(result_path)
+        store.case(case_id)["worker_receipt"] = receipt
+        store.case(case_id).setdefault("resources", {})["parent_observed_peak_rss_kib"] = (
+            receipt.get("parent_observed_peak_rss_kib"))
+        store.case(case_id)["resources"]["parent_observed_peak_spool_bytes"] = (
+            receipt.get("parent_observed_peak_spool_bytes"))
         if failure is not None:
             case = store.case(case_id)
             case["failures"].append(dict(stage="WORKER", error=failure,

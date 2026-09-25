@@ -15,7 +15,8 @@ from main.tube_state import rgb_dct_group_consistency as receiver
 from main.tube_state import rgb_dct_presence as baseline
 from runtime.wan.vae import decode_normalized_latent_with_grad
 from runtime.wan.rgb_dct_gradient_checkpoint import (
-    CheckpointLedger, checkpoint_call, checkpoint_decode,
+    BoundarySpool, BoundaryStorage, CheckpointLedger, checkpoint_call,
+    checkpoint_decode,
 )
 from scripts import build_rgb_dct_local_gradient_notebook as builder
 
@@ -338,6 +339,94 @@ def test_native_shaped_46_chunk_causal_checkpoint_matches_direct_gradient():
     assert len(summary["cache_boundaries"][0]["forward"]["chunks"]) == 46
     assert all(row["tensor_slots"] == 1
                for row in summary["cache_boundaries"][0]["forward"]["chunks"])
+    ledger.release_boundary_storage()
+
+
+def test_bounded_boundary_spool_preserves_views_and_three_sequential_vjps(
+        tmp_path, monkeypatch):
+    import runtime.wan.rgb_dct_gradient_checkpoint as checkpoints
+
+    monkeypatch.setenv("RGB_DCT_BOUNDARY_SPOOL_ROOT", str(tmp_path))
+    monkeypatch.setattr(checkpoints, "EXPECTED_BOUNDARY_BYTES", 0)
+    monkeypatch.setattr(checkpoints, "DISK_FREE_MARGIN_BYTES", 0)
+    monkeypatch.setattr(checkpoints, "TRANSFER_BYTES", 7)
+    spool = BoundarySpool()
+    source = torch.arange(24, dtype=torch.float64).reshape(4, 6)
+    view_a, view_b = source[:, 1:5], source[1:3, 2:6]
+    storage = BoundaryStorage(spool)
+    packed_a, packed_b = storage.pack(view_a), storage.pack(view_b)
+    assert packed_a[0] == packed_b[0] and spool.summary()["files"] == 1
+    storage.copies.clear()
+    restored_a, restored_b = storage.unpack(packed_a), storage.unpack(packed_b)
+    assert torch.equal(restored_a, view_a) and torch.equal(restored_b, view_b)
+    assert restored_a.untyped_storage().data_ptr() == restored_b.untyped_storage().data_ptr()
+    restored_a[1, 1] = -123
+    assert restored_b[0, 0].item() == -123
+    assert spool.summary()["cpu_peak_packed_bytes"] <= 7
+    assert spool.summary()["d2h_bytes"] == spool.summary()["h2d_bytes"] == 0
+    spool.close()
+    assert not spool.path.exists()
+
+    calls = []
+    ledger = CheckpointLedger(lambda kind, done: calls.append((kind, done)), 3, 3)
+    for _ in (44, 46, 48):
+        latent = torch.arange(8, dtype=torch.float64).requires_grad_(True)
+        ledger.new_decode()
+        actual = checkpoint_call(ledger, lambda value: value.sin().square().sum(), latent)
+        actual.backward()
+        assert torch.allclose(latent.grad, (2 * latent.detach().sin()
+                                             * latent.detach().cos()))
+        ledger.release_boundary_storage()
+    history = ledger.summary()["boundary_storage_history"]
+    assert len(history) == 3 and all(row["closed"] for row in history)
+    assert all(row["disk_peak_bytes"] > 0 and row["disk_live_bytes"] == 0
+               for row in history)
+    assert len(list(tmp_path.iterdir())) == 0
+    assert calls.count(("vae_chunk_forward", True)) == 3
+    assert calls.count(("vae_chunk_recompute", True)) == 3
+
+
+def test_full_decode_disk_preflight_and_transfer_failure_cleanup(tmp_path, monkeypatch):
+    import runtime.wan.rgb_dct_gradient_checkpoint as checkpoints
+
+    monkeypatch.setenv("RGB_DCT_BOUNDARY_SPOOL_ROOT", str(tmp_path))
+    monkeypatch.setattr(checkpoints, "EXPECTED_BOUNDARY_BYTES", 10**20)
+    with pytest.raises(RuntimeError, match="VAE_BOUNDARY_DISK_PREFLIGHT"):
+        BoundarySpool()
+    monkeypatch.setattr(checkpoints, "EXPECTED_BOUNDARY_BYTES", 0)
+    monkeypatch.setattr(checkpoints, "DISK_FREE_MARGIN_BYTES", 0)
+    monkeypatch.setattr(checkpoints, "DISK_LIMIT_BYTES", 1024)
+    spool = BoundarySpool()
+    original = spool._cpu_live
+
+    def fail_transfer(amount):
+        if amount:
+            raise IOError("injected transfer failure")
+        original(amount)
+
+    monkeypatch.setattr(spool, "_cpu_live", fail_transfer)
+    with pytest.raises(IOError, match="injected transfer failure"):
+        BoundaryStorage(spool).pack(torch.arange(8, dtype=torch.float64))
+    assert spool.summary()["disk_live_bytes"] == 0
+    assert not list(spool.path.glob("storage-*"))
+    spool.close()
+
+
+def test_net_from_off_moves_measurement_only_to_cpu():
+    from runtime.wan.rgb_dct_local_gradient_backend import WanLocalGradientBackend
+
+    backend = object.__new__(WanLocalGradientBackend)
+    backend.off_terminal = torch.full((1, 1, 46, 1, 1), 1.0)
+
+    class Terminal:
+        def detach(self):
+            return self
+
+        def to(self, *, device, dtype):
+            assert device == "cpu" and dtype == torch.float32
+            return torch.full((1, 1, 46, 1, 1), 2.0, dtype=dtype)
+
+    assert backend.net_from_off(Terminal())["global_rms"] == pytest.approx(1.0)
 
 
 def test_complete_fake_run_uses_live_histories_and_exact_call_caps(tmp_path, monkeypatch):
@@ -512,8 +601,52 @@ def test_real_cli_worker_failure_persists_all_six_attempted_slots(tmp_path):
     assert result["invalid_media_slots"] == 6
     for case_id in trial.CASE_IDS:
         assert Path(result["cases"][case_id]["worker_log_path"]).is_file()
+        monitor = json.loads((output / f"{case_id}_worker_monitor.json").read_text())
+        assert monitor["boundary_spool_cleanup"] == "COMPLETED"
+        assert monitor["parent_observed_peak_rss_kib"] is None or isinstance(
+            monitor["parent_observed_peak_rss_kib"], int)
         assert all(slot["status"] == "NOT_RUN_WORKER_FAILURE" and slot["attempted"]
                    for slot in result["cases"][case_id]["slots"].values())
+
+
+def test_parent_cleans_orphan_spool_on_sigkill_and_monitor_error(tmp_path, monkeypatch):
+    roots, signals = [], []
+
+    class KilledWorker:
+        pid = 123456
+        returncode = -9
+
+        def __init__(self, command, **kwargs):
+            root = Path(kwargs["env"]["RGB_DCT_BOUNDARY_SPOOL_ROOT"])
+            roots.append(root)
+            (root / "orphan-storage").write_bytes(b"partial VAE boundary")
+
+        def poll(self):
+            return self.returncode
+
+    monkeypatch.setattr(trial.subprocess, "Popen", KilledWorker)
+    monkeypatch.setattr(trial.os, "killpg", lambda pid, sig: signals.append(sig))
+    receipt = trial._run_worker(tmp_path, trial.load_config(), trial.CASE_IDS[0])
+    assert receipt["status"] == "FAILED" and receipt["error"] == "WORKER_EXIT_-9"
+    assert receipt["boundary_spool_cleanup"] == "COMPLETED"
+    assert signals == [trial.signal.SIGKILL]
+    assert roots and not roots[0].exists()
+    assert json.loads((tmp_path / f"{trial.CASE_IDS[0]}_worker_monitor.json").read_text()) == receipt
+
+    class RunningWorker(KilledWorker):
+        returncode = None
+
+        def wait(self):
+            self.returncode = -9
+
+    monkeypatch.setattr(trial.subprocess, "Popen", RunningWorker)
+    monkeypatch.setattr(trial, "_proc_rss_kib", lambda pid: (_ for _ in ()).throw(
+        RuntimeError("monitor failed")))
+    receipt = trial._run_worker(tmp_path, trial.load_config(), trial.CASE_IDS[1])
+    assert receipt["status"] == "FAILED" and "WORKER_MONITOR_FAILED" in receipt["error"]
+    assert receipt["termination"] == "MONITOR_ABORT_SIGKILL"
+    assert receipt["boundary_spool_cleanup"] == "COMPLETED"
+    assert not roots[-1].exists()
 
 
 def test_notebook_builder_static_binding_and_setup_failure_slots(tmp_path):
