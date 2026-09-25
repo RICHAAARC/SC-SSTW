@@ -16,26 +16,34 @@ pytestmark = pytest.mark.unit
 
 
 class TinyT49Scheduler:
-    def __init__(self, sign=-1):
+    def __init__(self, sign=-1, endpoint_coupling=0.0):
         self.step_index = 49
         self.timesteps = torch.arange(50)
         self.sigmas = torch.ones(51)
         self.sigmas[50] = 0
         self.sign = sign
+        self.endpoint_coupling = endpoint_coupling
 
     def step(self, velocity, timestep, z, return_dict=False):
         assert self.step_index == 49 and int(timestep) == 49
         self.step_index = 50
-        return (z + self.sign * self.sigmas[49] * velocity,)
+        result = z + self.sign * self.sigmas[49] * velocity
+        if self.endpoint_coupling:
+            result = result.clone()
+            endpoint = self.endpoint_coupling * velocity[:, :, 1:45].mean(dim=2)
+            result[:, :, 0] += endpoint
+            result[:, :, 45] += endpoint
+        return (result,)
 
 
-def _tiny_backend(sign=-1):
+def _tiny_backend(sign=-1, endpoint_coupling=0.0):
     counts = []
     backend = WanB2TerminalReceiverBackend({}, lambda kind, completed: counts.append((kind, completed)))
     z = torch.full((1, 1, 46, 1, 1), 2.0)
     v = torch.full_like(z, 0.2)
-    snapshot = TinyT49Scheduler(sign)
-    off = z + sign * v
+    snapshot = TinyT49Scheduler(sign, endpoint_coupling)
+    off = snapshot.step(v, snapshot.timesteps[49], z)[0]
+    snapshot.step_index = 49
     gradient = torch.ones_like(z)
     gradient[:, :, 0] = gradient[:, :, 45] = 0
     backend.phase = "TRANSFORMER"
@@ -95,6 +103,17 @@ def test_non_descent_native_mapping_retains_invalid_reason():
     assert state == "NON_DESCENT_DIRECTION"
     assert terminal is None
     assert metrics["g_dot_actual_terminal_delta"] >= 0
+    assert trajectory.fingerprint(vars(backend.snapshots[49])) == original_history
+
+
+def test_full_gradient_prediction_can_reject_masked_descent():
+    backend, _, original_history = _tiny_backend(endpoint_coupling=30.0)
+    state, terminal, metrics = backend.control_terminal49_receiver(trial.R_STAR)
+    assert state == "NON_DESCENT_DIRECTION"
+    assert terminal is None
+    assert metrics["masked_g_dot_actual_terminal_delta"] < 0
+    assert metrics["g_dot_actual_terminal_delta"] >= 0
+    assert metrics["endpoint_delta_rms"] > 0
     assert trajectory.fingerprint(vars(backend.snapshots[49])) == original_history
 
 

@@ -116,7 +116,8 @@ class WanB2TerminalReceiverBackend(WanTerminalGradientBackend):
             final_history_fingerprint=trajectory.fingerprint(vars(controlled_history)),
             terminal_from_off=actual,
         )
-        if not (math.isfinite(full_dot) and math.isfinite(masked_dot)) or masked_dot >= 0:
+        if (not (math.isfinite(full_dot) and math.isfinite(masked_dot))
+                or full_dot >= 0 or masked_dot >= 0):
             return "NON_DESCENT_DIRECTION", None, metrics
         self.terminals["TERMINAL49_RECEIVER"] = terminal.detach().cpu()
         return "READY", self.terminals["TERMINAL49_RECEIVER"], metrics
