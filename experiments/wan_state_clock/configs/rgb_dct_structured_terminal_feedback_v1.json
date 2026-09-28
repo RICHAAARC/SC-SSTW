@@ -1,0 +1,144 @@
+{
+  "name": "rgb_dct_structured_terminal_feedback_v1",
+  "protocol_sha256": "0f2dc1b1ecc5a5af6e942ba3078c811a67c27397e608047e3227360b9a1083af",
+  "receiver_spec_sha256": "cee183c3b64a6de23dfa9879810488d320985409db464cb0b70dbfb1709f1caa",
+  "baseline_receiver_spec_sha256": "0a8cc13d8f99fa87fa2ad8f6e34b953e091261763877b5e39863f179f317f00f",
+  "receiver_key_id": "785b91ae6b23bfc9",
+  "key_utf8": "WanProjection-first-validation-key-v1",
+  "model": {
+    "id": "Wan-AI/Wan2.1-T2V-1.3B-Diffusers",
+    "revision": "0fad780a534b6463e45facd96134c9f345acfa5b",
+    "transformer_dtype": "bfloat16",
+    "vae_dtype": "float32"
+  },
+  "runtime": {
+    "torch_version_policy": "record_and_api_check",
+    "cuda_build_suffix_policy": "record_only",
+    "diffusers_version": "0.40.0"
+  },
+  "generation": {
+    "height": 320,
+    "width": 512,
+    "frames": 181,
+    "fps": 8,
+    "steps": 50,
+    "guidance_scale": 5.0,
+    "max_sequence_length": 512,
+    "negative_prompt": "text, watermark, logo, camera motion, cuts, multiple objects, flicker"
+  },
+  "cases": [
+    {
+      "id": "eval_copperkettle_s2501",
+      "seed": 2026092501,
+      "prompt": "locked camera, a copper kettle resting on a plain wooden table, steady soft indoor light, no people, no cuts"
+    },
+    {
+      "id": "eval_paperplane_s2502",
+      "seed": 2026092502,
+      "prompt": "locked camera, a white paper airplane gliding slowly across a plain blue background, steady soft light, no people, no cuts"
+    }
+  ],
+  "media": {
+    "fps": 8,
+    "crf": 18,
+    "codec": "libx264",
+    "pixel_format": "yuv420p",
+    "receiver_readback": "ffmpeg_rgb24"
+  },
+  "observation_layers": [
+    "float_rgb",
+    "rgb8_quantized",
+    "mp4_rgb24"
+  ],
+  "control": {
+    "points": [
+      46,
+      47,
+      48,
+      49
+    ],
+    "bins": [
+      [
+        1,
+        15
+      ],
+      [
+        15,
+        30
+      ],
+      [
+        30,
+        45
+      ]
+    ],
+    "latent_support_time": [
+      1,
+      45
+    ],
+    "target_D_support_rms": 0.042943312697648145,
+    "total_immediate_rms_cap": 0.042943312697648145,
+    "point_cap": "remaining_total",
+    "probe_velocity_radius": 0.005367914087206018,
+    "margin": 0.0001,
+    "ridge": 0.0001,
+    "min_true_hinge_improvement": 1e-08,
+    "immediate_peak_cap": 0.25,
+    "lattice_fractions": [
+      0.0,
+      0.25,
+      0.5,
+      0.75,
+      1.0
+    ],
+    "fallback_scales": [
+      1.0,
+      0.5,
+      0.25
+    ],
+    "positive_group_weight": 4.0
+  },
+  "decision_rule": {
+    "statistic": "C=sum(q_g>0)",
+    "threshold": 24,
+    "rule": "C>=24:H1;C<24:H0",
+    "mp4_only": true
+  },
+  "fixed_denominator": {
+    "sources": 2,
+    "arms_per_source": 5,
+    "mp4_score_slots": 10,
+    "frames": 1810
+  },
+  "call_plan_max": {
+    "generation": 2,
+    "transformer_prefix": 200,
+    "scheduler_prefix": 100,
+    "transformer_feedback": 400,
+    "scheduler_feedback": 282,
+    "vae_decode": 122,
+    "vae_encode": 4,
+    "unit_response_probe_step": 2,
+    "scheduler_step": 2,
+    "mp4_save": 10,
+    "mp4_read": 10,
+    "score": 10,
+    "memory_receiver_score": 132
+  },
+  "derived_call_totals": {
+    "transformer_max": 600,
+    "scheduler_max": 386,
+    "vae_decode_max": 122,
+    "vae_encode_max": 4,
+    "backward_vjp": 0,
+    "memory_receiver_score_max": 132
+  },
+  "resources": {
+    "case_timeout_seconds": 28800,
+    "worker_processes_per_case": 1,
+    "case_execution": "serial fresh child processes",
+    "termination_grace_seconds": 10,
+    "vae_transformer_separate_phases": true,
+    "no_gradient_graph_spool": true
+  },
+  "evidence_ceiling": "CPU/static checks establish implementation only; complete ten-slot real run can establish two reused B2 development-source fixed-key observation only, not new-source generalization, low FPR, payload or video-quality pass"
+}
