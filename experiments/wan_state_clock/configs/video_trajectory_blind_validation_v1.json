@@ -1,0 +1,36 @@
+{
+  "name": "video_trajectory_blind_validation_v1",
+  "call_plan_max": {
+    "scheduler_feedback": 126,
+    "vae_decode": 44,
+    "vae_encode": 4,
+    "transformer_feedback": 168,
+    "model_setup": 2,
+    "memory_receiver_score": 42
+  },
+  "protocol_sha256": "4e9bc5ee311c40beea8557802c2762c2daa2a34c14826122fdf1185e210571b7",
+  "historical_protocol_sha256": "0f2dc1b1ecc5a5af6e942ba3078c811a67c27397e608047e3227360b9a1083af",
+  "evidence_ceiling": "Saved-state real-tail acceptance only; no sequential MP4, blind detection, payload, robustness or generalization claim",
+  "points": [
+    46,
+    47,
+    48
+  ],
+  "saved_source_sha": "2cfb709d7980068e00c5c3796198fa8960d6bc54",
+  "fixed_denominator": {
+    "real_tail_points": 6,
+    "sources": 2,
+    "mp4_slots": 0,
+    "independent_points_per_source": 3
+  },
+  "solver": {
+    "dtype": "float64",
+    "name": "projected_gradient_fw_gap_v1",
+    "relative_gap_tolerance": 1E-11,
+    "absolute_gap_tolerance": 1E-18,
+    "roundoff_factor": 64,
+    "max_iterations": 200000
+  },
+  "saved_result_sha256": "42a83d3f7d7847f985e01a9c8486e72a3b3e8c914d591c4e4c9cf2db7553329f",
+  "historical_config_sha256": "f70fa657ad9e4dfab07a4ad8365145a4f452355a3680a81a0e82ee4c1fbffcd5"
+}

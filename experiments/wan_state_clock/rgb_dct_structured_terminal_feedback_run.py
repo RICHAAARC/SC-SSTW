@@ -473,7 +473,9 @@ def _finalize_case(store: Store, case_id: str) -> None:
 
 
 def _feedback_arm(store: Store, case_id: str, arm: str, backend,
-                  directions: list[np.ndarray], key: bytes) -> None:
+                  directions: list[np.ndarray], key: bytes, *,
+                  coefficient_solver=None, independent_point: int | None = None,
+                  reference_point: dict | None = None) -> None:
     """Continue one independent main trajectory from accepted first-step history."""
     import torch
     from runtime.wan import trajectory
@@ -482,10 +484,17 @@ def _feedback_arm(store: Store, case_id: str, arm: str, backend,
     points = ((49,) if arm == "ONLY49" else
               (46, 47, 48) if arm == "MULTI46_47_48_FREE49" else
               (46, 47, 48, 49))
+    if independent_point is not None:
+        if independent_point not in (46, 47, 48):
+            raise ValueError("fixed independent early point required")
+        points = (independent_point,)
+    if coefficient_solver is None:
+        coefficient_solver = method.select_coefficients
     z, scheduler, v = backend.state(points[0])
     spent = squared = max_peak = cumulative_peak = 0.0
     cumulative_tensor = torch.zeros_like(z)
-    records = []
+    records = ([dict(index=independent_point, outcome="PENDING")]
+               if independent_point is not None else [])
     case["controls"][arm] = records
     case["budgets"][arm] = dict(status="RUNNING", spent=0.0)
     store.save()
@@ -499,13 +508,26 @@ def _feedback_arm(store: Store, case_id: str, arm: str, backend,
                      baseline_history=None, baseline_terminal_fingerprint=None,
                      baseline_rollout_status="ATTEMPTED", probes=[], candidates=[],
                      prediction=None, outcome="PENDING", spent_before=spent)
-        records.append(point)
+        if independent_point is None:
+            records.append(point)
+        else:
+            records[:] = [point]
         store.save()
         baseline = backend.rollout(index, z, scheduler, v)
         point.update(baseline_rollout_status="COMPLETED",
                      baseline_history=baseline["source_history_fingerprint"],
                      baseline_terminal_fingerprint=baseline["terminal_fingerprint"])
         store.save()
+        if reference_point is not None:
+            point["saved_reference_identity"] = dict(
+                state_match=source_fp == reference_point["current_state_fingerprint"],
+                history_match=baseline["source_history_fingerprint"] == reference_point["baseline_history"],
+                terminal_match=baseline["terminal_fingerprint"] == reference_point["baseline_terminal_fingerprint"])
+            store.save()
+            if not all(point["saved_reference_identity"].values()):
+                point["outcome"] = "IDENTITY_MISMATCH"
+                store.save()
+                raise RuntimeError("saved state/history/baseline terminal identity mismatch")
         if expected_terminal_fp is not None:
             point["continuation_diagnostic"] = dict(
                 terminal_fingerprint_match=(baseline["terminal_fingerprint"]
@@ -583,8 +605,24 @@ def _feedback_arm(store: Store, case_id: str, arm: str, backend,
             raise RuntimeError("main state/history changed across probe VAE phase")
         store.save()
 
-        choice = method.select_coefficients(base_q, jacobian,
-                                             method.R_STAR - spent, tuple(available))
+        point["jacobian"] = jacobian.tolist()
+        if reference_point is not None:
+            point["saved_proxy_comparison"] = dict(
+                baseline_q_equal=bool(np.array_equal(base_q, reference_point["baseline"]["q"])),
+                jacobian_equal=bool(np.array_equal(jacobian, reference_point["jacobian"])),
+                max_abs_baseline_q_delta=float(np.max(np.abs(base_q - reference_point["baseline"]["q"]))),
+                max_abs_jacobian_delta=float(np.max(np.abs(jacobian - reference_point["jacobian"]))))
+            store.save()
+        try:
+            choice = coefficient_solver(base_q, jacobian,
+                                        method.R_STAR - spent, tuple(available))
+        except Exception as exc:
+            point["prediction"] = getattr(exc, "receipt", None)
+            point["outcome"] = "SOLVER_FAILURE"
+            point["solver_error"] = f"{type(exc).__name__}: {exc}"
+            case["budgets"][arm].update(status="FAILED", reason="SOLVER_FAILURE")
+            store.save()
+            raise
         point["jacobian"] = jacobian.tolist()
         point["prediction"] = choice
         predicted_q = np.asarray(choice["predicted_q"], dtype=np.float64)
@@ -710,12 +748,12 @@ def _feedback_arm(store: Store, case_id: str, arm: str, backend,
                 != point["committed_next_history_fingerprint"]):
             raise RuntimeError("committed first-step history identity changed")
         final = chosen["terminal"]
-        if index < 49:
+        if index < 49 and (independent_point is None):
             device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
             v = backend.velocity(index + 1, z.to(device),
                                  _move_scheduler(copy.deepcopy(scheduler), device))
             v = v.detach().cpu()
-    if arm == "MULTI46_47_48_FREE49":
+    if arm == "MULTI46_47_48_FREE49" and independent_point is None:
         case["stage"] = f"{arm}_FREE_T49"
         store.save()
         free = backend.rollout(49, z, scheduler, v)

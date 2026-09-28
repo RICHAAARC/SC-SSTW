@@ -1,0 +1,2758 @@
+diff --git a/experiments/wan_state_clock/rgb_dct_structured_terminal_feedback_run.py b/experiments/wan_state_clock/rgb_dct_structured_terminal_feedback_run.py
+index 712fa34..1ab7c6e 100644
+--- a/experiments/wan_state_clock/rgb_dct_structured_terminal_feedback_run.py
++++ b/experiments/wan_state_clock/rgb_dct_structured_terminal_feedback_run.py
+@@ -473,7 +473,9 @@ def _finalize_case(store: Store, case_id: str) -> None:
+ 
+ 
+ def _feedback_arm(store: Store, case_id: str, arm: str, backend,
+-                  directions: list[np.ndarray], key: bytes) -> None:
++                  directions: list[np.ndarray], key: bytes, *,
++                  coefficient_solver=None, independent_point: int | None = None,
++                  reference_point: dict | None = None) -> None:
+     """Continue one independent main trajectory from accepted first-step history."""
+     import torch
+     from runtime.wan import trajectory
+@@ -482,10 +484,17 @@ def _feedback_arm(store: Store, case_id: str, arm: str, backend,
+     points = ((49,) if arm == "ONLY49" else
+               (46, 47, 48) if arm == "MULTI46_47_48_FREE49" else
+               (46, 47, 48, 49))
++    if independent_point is not None:
++        if independent_point not in (46, 47, 48):
++            raise ValueError("fixed independent early point required")
++        points = (independent_point,)
++    if coefficient_solver is None:
++        coefficient_solver = method.select_coefficients
+     z, scheduler, v = backend.state(points[0])
+     spent = squared = max_peak = cumulative_peak = 0.0
+     cumulative_tensor = torch.zeros_like(z)
+-    records = []
++    records = ([dict(index=independent_point, outcome="PENDING")]
++               if independent_point is not None else [])
+     case["controls"][arm] = records
+     case["budgets"][arm] = dict(status="RUNNING", spent=0.0)
+     store.save()
+@@ -499,13 +508,26 @@ def _feedback_arm(store: Store, case_id: str, arm: str, backend,
+                      baseline_history=None, baseline_terminal_fingerprint=None,
+                      baseline_rollout_status="ATTEMPTED", probes=[], candidates=[],
+                      prediction=None, outcome="PENDING", spent_before=spent)
+-        records.append(point)
++        if independent_point is None:
++            records.append(point)
++        else:
++            records[:] = [point]
+         store.save()
+         baseline = backend.rollout(index, z, scheduler, v)
+         point.update(baseline_rollout_status="COMPLETED",
+                      baseline_history=baseline["source_history_fingerprint"],
+                      baseline_terminal_fingerprint=baseline["terminal_fingerprint"])
+         store.save()
++        if reference_point is not None:
++            point["saved_reference_identity"] = dict(
++                state_match=source_fp == reference_point["current_state_fingerprint"],
++                history_match=baseline["source_history_fingerprint"] == reference_point["baseline_history"],
++                terminal_match=baseline["terminal_fingerprint"] == reference_point["baseline_terminal_fingerprint"])
++            store.save()
++            if not all(point["saved_reference_identity"].values()):
++                point["outcome"] = "IDENTITY_MISMATCH"
++                store.save()
++                raise RuntimeError("saved state/history/baseline terminal identity mismatch")
+         if expected_terminal_fp is not None:
+             point["continuation_diagnostic"] = dict(
+                 terminal_fingerprint_match=(baseline["terminal_fingerprint"]
+@@ -583,8 +605,24 @@ def _feedback_arm(store: Store, case_id: str, arm: str, backend,
+             raise RuntimeError("main state/history changed across probe VAE phase")
+         store.save()
+ 
+-        choice = method.select_coefficients(base_q, jacobian,
+-                                             method.R_STAR - spent, tuple(available))
++        point["jacobian"] = jacobian.tolist()
++        if reference_point is not None:
++            point["saved_proxy_comparison"] = dict(
++                baseline_q_equal=bool(np.array_equal(base_q, reference_point["baseline"]["q"])),
++                jacobian_equal=bool(np.array_equal(jacobian, reference_point["jacobian"])),
++                max_abs_baseline_q_delta=float(np.max(np.abs(base_q - reference_point["baseline"]["q"]))),
++                max_abs_jacobian_delta=float(np.max(np.abs(jacobian - reference_point["jacobian"]))))
++            store.save()
++        try:
++            choice = coefficient_solver(base_q, jacobian,
++                                        method.R_STAR - spent, tuple(available))
++        except Exception as exc:
++            point["prediction"] = getattr(exc, "receipt", None)
++            point["outcome"] = "SOLVER_FAILURE"
++            point["solver_error"] = f"{type(exc).__name__}: {exc}"
++            case["budgets"][arm].update(status="FAILED", reason="SOLVER_FAILURE")
++            store.save()
++            raise
+         point["jacobian"] = jacobian.tolist()
+         point["prediction"] = choice
+         predicted_q = np.asarray(choice["predicted_q"], dtype=np.float64)
+@@ -710,12 +748,12 @@ def _feedback_arm(store: Store, case_id: str, arm: str, backend,
+                 != point["committed_next_history_fingerprint"]):
+             raise RuntimeError("committed first-step history identity changed")
+         final = chosen["terminal"]
+-        if index < 49:
++        if index < 49 and (independent_point is None):
+             device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+             v = backend.velocity(index + 1, z.to(device),
+                                  _move_scheduler(copy.deepcopy(scheduler), device))
+             v = v.detach().cpu()
+-    if arm == "MULTI46_47_48_FREE49":
++    if arm == "MULTI46_47_48_FREE49" and independent_point is None:
+         case["stage"] = f"{arm}_FREE_T49"
+         store.save()
+         free = backend.rollout(49, z, scheduler, v)
+diff --git a/diagnostics/video_trajectory_blind_validation_v1/implementation_report.md b/diagnostics/video_trajectory_blind_validation_v1/implementation_report.md
+new file mode 100644
+index 0000000..1940b8d
+--- /dev/null
++++ b/diagnostics/video_trajectory_blind_validation_v1/implementation_report.md
+@@ -0,0 +1,74 @@
++# A1 candidate implementation: first review snapshot
++
++Branch: dev/video-trajectory-blind-validation-v1; base e6050c8.
++No model/GPU/Colab run, push, merge or commit was performed.
++
++The original lattice function and protocol/config are retained. The new pure
++FP64 solver has projected-gradient updates, a full-simplex Frank-Wolfe gap
++certificate with a rounding cushion, and fail-closed numerical failure.
++The existing real feedback loop now accepts an explicit solver and independent
++saved point; its historical default stays the lattice. The new candidate
++wrapper selects the continuous solver and separately binds its protocol/config.
++Failures cannot become ZERO_OPTIMUM or advance a sequential control chain.
++
++The fixed six-point entrypoint verifies all original saved artifact hashes,
++restores complete native scheduler history, recomputes the original basis and
++requires old raw/masked full-byte hashes, then reuses the real feedback loop.
++Each saved T46/47/48 point has its own original state/history and spent=0.
++Sequential continuation through the wrapper remains the original loop, which
++recomputes q/J after committing each accepted first-step history.
++
++CPU validation:
++
++- Python: /home/richar/projects/CEG-WM/alive/CEG-WM/.venv/bin/python.
++- numpy 2.5.2, pytest 9.1.1, torch 2.5.1+cpu, diffusers 0.39.0.
++- `python -m pytest tests/test_rgb_dct_continuous_solver.py tests/test_rgb_dct_structured_feedback.py -q`: 18 passed in 9.58s.
++- Includes analytic fine-scale optimum/lattice-zero counterexample, exact zero,
++  unavailable directions, budget boundary, tiny nonzero, exhausted iteration,
++  nonfinite arithmetic, real-loop fail-stop, accepted sequential history/q
++  refresh, independent single-point nonadvancement and six-row failure retention.
++- Existing native UniPC CPU checks use a fake Transformer. They do not validate
++  the real model or the Colab diffusers 0.40.0 runtime numerics.
++- `git diff --check`: passed.
++
++Saved proxy replay: `python -m scripts.replay_video_trajectory_surrogates`
++with the original audit `result.json` and `offline_review.json`, output
++`saved_surrogate_replay.json`: 6/6 certified, 0 failure. Gap bounds range from
++6.7174e-18 to 1.0058e-16; maximum objective difference from prior independently
++computed continuous solutions is 1.6941e-21. All six original grid solutions
++remain zero. This is saved-proxy CPU evidence only, with no real candidate tail,
++MP4, blind detector or payload result.
++
++The original audit input directory is
++`/home/richar/projects/Video-WM/diagnostics/method-mechanism-audit-20260928/structured_feedback_review`.
++Original files were read without modification. A4 independently reports that
++all 26 original Drive .pt artifacts were read and SHA256 matched this session.
++The new preflight will repeat byte verification immediately before the real run.
++
++Notebook: `notebooks/video_trajectory_blind_validation_v1_colab.ipynb`.
++Generated by `scripts/build_video_trajectory_blind_validation_notebook.py` from
++the successful fixed ten-slot notebook. The first executable cell is unchanged
++and is exactly the two Drive mount lines. Dependency install, environment check
++and fresh child execution are reused. It fixes the input run to
++`20260928T053626644222Z`, executes only six points, and writes to a new
++`Video-Trajectory-Blind-Validation-V1/<timestamp>/six_point_run/result.json`.
++All code cells parse; outputs are empty. This is an explicit UNPUBLISHED_DRAFT
++with SOURCE_SHA=None, so there is currently no executable immutable Colab link.
++After authorized publication, run the builder with `--source-sha <published S>`;
++that mechanical binding must be statically rechecked. GPU execution belongs to
++the user in Colab; no execution has been attempted here.
++
++Real stage-1 command after publication, using the same configured environment:
++
++```
++python -m experiments.wan_state_clock.video_trajectory_blind_validation_run \
++  --saved-run /content/drive/MyDrive/Video-WM/RGB-DCT-Structured-Terminal-Feedback-V1/20260928T053626644222Z \
++  --output /content/drive/MyDrive/Video-WM/Video-Trajectory-Blind-Validation-V1/NEW_RUN/six_point_run \
++  --execute-real-tail
++```
++
++Required real materials: pinned candidate source, original result/source
++receipt and 26 .pt files (already present), the fixed model revision, and the
++existing Colab CUDA environment. Basis arrays were not saved originally; the
++runner reconstructs them from saved off_terminal and fails on identity mismatch.
++The user-run six-point result must precede any sequential/MP4 mechanism claim.
+diff --git a/diagnostics/video_trajectory_blind_validation_v1/saved_surrogate_replay.json b/diagnostics/video_trajectory_blind_validation_v1/saved_surrogate_replay.json
+new file mode 100644
+index 0000000..09e4d13
+--- /dev/null
++++ b/diagnostics/video_trajectory_blind_validation_v1/saved_surrogate_replay.json
+@@ -0,0 +1,992 @@
++{
++  "status": "CPU_SURROGATE_ONLY",
++  "real_tail_executed": false,
++  "fixed_denominator": 6,
++  "result_sha256": "42a83d3f7d7847f985e01a9c8486e72a3b3e8c914d591c4e4c9cf2db7553329f",
++  "prior_offline_review_sha256": "d2cdf215e5734ca6b26d788cb2726f3fbab69e4ba6c4c56f786a12e12be9cfd9",
++  "source_receipt": {
++    "git_head": "e6050c8b6bc1f7b42343247e39b448480b0ebbea",
++    "git_status": " M experiments/wan_state_clock/rgb_dct_structured_terminal_feedback_run.py\n?? docs/video_trajectory_blind_validation_v1.md\n?? experiments/wan_state_clock/configs/video_trajectory_blind_validation_v1.json\n?? experiments/wan_state_clock/video_trajectory_blind_validation_run.py\n?? main/tube_state/rgb_dct_continuous_solver.py\n?? scripts/replay_video_trajectory_surrogates.py\n?? tests/test_rgb_dct_continuous_solver.py\n",
++    "files": {
++      "experiments/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
++      "experiments/wan_state_clock/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
++      "experiments/wan_state_clock/flow_fixed_key_run.py": "50b7d2fc644667b57d25b29accbc476260d4071db656643e13b9cbb32acc882f",
++      "experiments/wan_state_clock/integrated_payload_run.py": "f0c7ddf0e554eeccfd0468657eefba6e28a81c9c22cb7640ea5770521ab3de99",
++      "experiments/wan_state_clock/media_channel_retention_run.py": "062fd707909d4ff86a909a4ca21fea3326932b881cdae73d4395cefd36991d3e",
++      "experiments/wan_state_clock/rgb_dct_b2_terminal_receiver_run.py": "d5026f7bb78ccda727726ac31488bf166f61dfb301497a264ada9f194b7f4f1a",
++      "experiments/wan_state_clock/rgb_dct_group_consistency_run.py": "11390e3c38d260240719eeb4fd755c5ba8d47a2c9bee61446ee6a83b30b18240",
++      "experiments/wan_state_clock/rgb_dct_h0_h1_functional_run.py": "50ef9b9caa0699dd10d047062cdc0693390ff74d9c146a8e1882ee228ebfe5b0",
++      "experiments/wan_state_clock/rgb_dct_multistep_comparison_run.py": "c68c4da7f3174795d39e15935ea213dbe666b4bedf4267d6c50169fb6f50d351",
++      "experiments/wan_state_clock/rgb_dct_structured_terminal_feedback_run.py": "a81f4fc00bf0eb97d572b73feefe180c37ebd3793d411854e8cb75cb35d0f69c",
++      "experiments/wan_state_clock/rgb_dct_t49_vae_lift_run.py": "cc0d46da028ef784fb52c4f60511c878fe383d972ccd640ec3ee4ef1dfcf5d10",
++      "experiments/wan_state_clock/rgb_dct_terminal_gradient_run.py": "8500392c267f34a0748238d9d13598a17a5d966656517316421b743ef217ad58",
++      "experiments/wan_state_clock/run.py": "6981ba09c9eb3aaabf11d4ddc1c1b81523baf58d6401be6b015346c79b68f7aa",
++      "experiments/wan_state_clock/video_trajectory_blind_validation_run.py": "2e348406f75d174fc8d6d03004434d75f72285b21cec937cab7ec782b1a7af12",
++      "experiments/wan_state_clock/window_state_mse_paired_run.py": "bb80e53aa0c4a9ba29ea491f13e622726ffad2fbf38ea7f2e6de34983bc5521a",
++      "main/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
++      "main/tube_state/__init__.py": "740da63315a82fa5f8e9ed50f342295d100d464ad3e465496cf997e24da30169",
++      "main/tube_state/fixed_key.py": "43053c60f34037dea268a4f7543f44321de0ca92ad37e33ccdaafeacf3c91182",
++      "main/tube_state/fixed_key_split_receiver.py": "c69cb4ac718d9f30744a562fa9f6d549de4926fa71686e52d5df408d519ec641",
++      "main/tube_state/payload_codec.py": "8cd0744b1d2183e39f95fca413dd4548f6dacef7e1a85b6d2af42202eea60b96",
++      "main/tube_state/projection_margin.py": "746d34b0a0be83ae0c21e6d7d9ec428a227c7eb11b70c17340d86bf01e3daf66",
++      "main/tube_state/rgb_dct_continuous_solver.py": "21c9a94609b131884305e239809443be8eae90e63c885c2dbd0f44aecbda1861",
++      "main/tube_state/rgb_dct_group_consistency.py": "47fec92dbba12e69c48117497b5802c6629ea99babedf37913b647d52ee8e301",
++      "main/tube_state/rgb_dct_presence.py": "29847c540ba90d60211474246d5f8cf426f1ed473ceedd55c13eaca3ffdb2f1f",
++      "main/tube_state/rgb_dct_structured_feedback.py": "bfcda84cf7549e2737e50be8937cd77b9f48b613993e93ab7f2d417747f5f8f3",
++      "main/tube_state/rgb_dct_t49_carrier.py": "01c275d7e30a1868e5d550c1d82dbc512829e363c6dd3bd09f1bc43917c08e24",
++      "main/tube_state/rgb_dct_terminal_gradient.py": "cd5d34d86aff741e2ae0daf58b3cea5e4dbcf9564391590f9c5c11c5a800805a",
++      "main/tube_state/state_clock.py": "e880111fd86c3befd79f5c68c357eb4e2103d3d70815fb71b43610314abd7e4d",
++      "runtime/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
++      "runtime/wan/__init__.py": "a53fdb88e0ccef8b0de9db2ade1ce09720034d71f4e788fd7f6c9059fe43eb9c",
++      "runtime/wan/fixed_key_cli.py": "afa313429ad21717173e9c7e97d74871871a061900941b445e8e41e4915cd6fe",
++      "runtime/wan/fixed_key_control.py": "78ced0fac7d7256f630dd7fa79cd426061d7ce66f46ad5013f8c1e7e381fbe11",
++      "runtime/wan/fixed_key_core.py": "3f4cce45ec80bd7890aac5ae82c37a289c7355e5b9d49a1b13c0a22899713a1b",
++      "runtime/wan/generation.py": "3c444cc1d8fbf2378ca56946678f2c2bf97c03286c5ecaf8ef64b3a7044337d5",
++      "runtime/wan/gradient_checkpointing.py": "e9ba034a4f6d76b886e22e61363f34bacb2f87b38340e8df24e40f8b8ee73a9e",
++      "runtime/wan/integrated_cli.py": "27cda54c722de6bab7080fa823bdd7c64a751bc5d4a1ccf9e189ebed2037874c",
++      "runtime/wan/integrated_core.py": "1ab305a7415e695f9b4c7b7e5bd8479a6cad493c35b7fffe84a249f1d2a00045",
++      "runtime/wan/io.py": "db9caa843d632d733aa670dbe87bd38cf6084490d5bef71b8a69e6839cc33ae7",
++      "runtime/wan/media_channel_retention.py": "018883ba329d85b13e26023a6bdd0263dd6bdfc285d62bb2b5c40dc7dc85d9be",
++      "runtime/wan/payload_control.py": "5329952f38451808b3c42aefc83682fc192a48574d0b39571f989fee4866675c",
++      "runtime/wan/quality.py": "21af9eb67631378a776f424276a81426efc06817c8b5f146369bf3872204793e",
++      "runtime/wan/rgb_dct_b2_terminal_receiver_backend.py": "cf53f7a18f24e203291fe997d68bfb7aa7dc44c5af92bf2054f8324c006043f6",
++      "runtime/wan/rgb_dct_group_consistency_adapter.py": "84ab8ee984e9a6e4dc60297487fe3ed9e8c5b377304e78a571df6db4464a1a4f",
++      "runtime/wan/rgb_dct_multistep_adapter.py": "d0fed773f81810bf75f250261d83d785a6bd0bb9c22c8dae33951a467fc467e5",
++      "runtime/wan/rgb_dct_multistep_backend.py": "a8226ef33c7468e96bd96fe63939915bd60f06b121902d1fcc46857ea117ab21",
++      "runtime/wan/rgb_dct_presence_adapter.py": "b12fb3bd1ac886eba6364dbf8849fc366b5ef5c7d03ce4ee5e7e62aacb6711a1",
++      "runtime/wan/rgb_dct_structured_feedback_backend.py": "30d96d480e7b5ee7c07ea3501f0b5eae007fe1dcf7205ef663ad52d02218f586",
++      "runtime/wan/rgb_dct_t49_backend.py": "402ad4c99f1185b7291194ec4be26e17da4610e82af427a6bf0c64b9bef1ee14",
++      "runtime/wan/rgb_dct_terminal_gradient_backend.py": "a714e7d231dafc5ccf6ada2196ebc3991e25960be5756a2107c8082161dbc425",
++      "runtime/wan/trajectory.py": "a0e78f162705a2ec29ad82d9135a4d46ac664f6c763eabd6fdef98ef39a85478",
++      "runtime/wan/vae.py": "ff3aec5659a14238923cd943364c6eda62d4648343b3ac17910cfbecdfec3670",
++      "runtime/wan/videoseal_score_diagnostic.py": "6a10a0f63dc1c82618ca01857f1314c861762bf153294ffc258f612f3db416bd",
++      "runtime/wan/window_state_mse.py": "5979cee0380c9f726d3e14022e3515abb4039a39dab74588b76635706f03ceb1",
++      "experiments/wan_state_clock/configs/video_trajectory_blind_validation_v1.json": "fb477d0a42ad104b2bda4d9f9b9132331545875461b95c51dcd39b3aa51e1e55",
++      "docs/video_trajectory_blind_validation_v1.md": "4e9bc5ee311c40beea8557802c2762c2daa2a34c14826122fdf1185e210571b7",
++      "experiments/wan_state_clock/configs/rgb_dct_structured_terminal_feedback_v1.json": "f70fa657ad9e4dfab07a4ad8365145a4f452355a3680a81a0e82ee4c1fbffcd5",
++      "docs/rgb_dct_structured_terminal_feedback_v1_protocol.md": "0f2dc1b1ecc5a5af6e942ba3078c811a67c27397e608047e3227360b9a1083af"
++    },
++    "source_tree_sha256": "5b3297da17fec6f49070726f23972bd3703f4154ff1eac46217020a298ee2273",
++    "published_binding": false
++  },
++  "points": [
++    {
++      "source": "eval_copperkettle_s2501",
++      "index": 46,
++      "status": "CERTIFIED",
++      "legacy": {
++        "coefficients": [
++          0.0,
++          0.0,
++          0.0
++        ],
++        "predicted_q": [
++          0.00960989144870441,
++          0.005253226096391995,
++          -0.0006104949404218047,
++          -0.0009319511075134349,
++          -0.0012817436231825237,
++          -0.00011201443351205899,
++          0.0008940715045655116,
++          0.0005361908548208951,
++          0.0007527003320784524,
++          0.001228173119934295,
++          0.0025159034286135373,
++          -0.002082832423023787,
++          7.164829951935843e-05,
++          0.00029884274518513767,
++          -0.0005575768638495214,
++          0.0004251501389411487,
++          -0.00020951900790069233,
++          -0.0002228765837496311,
++          -0.0024407261288495177,
++          0.0008770578323160593,
++          -0.0003851143629846324,
++          -0.0015100763806813846,
++          0.00016469333581042457,
++          -0.0017993304352730566,
++          -0.0004134142124044125,
++          0.0006722770029434029,
++          0.0012706843163728973,
++          0.0014606296552562667,
++          -0.0001313189666078989,
++          0.00027308154227966567
++        ],
++        "predicted_objective": 7.377284295604379e-07,
++        "predictions_tried": 125,
++        "radius": 0.042943312697648145
++      },
++      "continuous": {
++        "solver": {
++          "name": "projected_gradient_fw_gap_v1",
++          "dtype": "float64",
++          "max_iterations": 200000,
++          "absolute_gap_tolerance": 1e-18,
++          "relative_gap_tolerance": 1e-11,
++          "roundoff_factor": 64
++        },
++        "status": "CERTIFIED",
++        "reason": null,
++        "coefficients": [
++          0.0,
++          0.0005272323010110132,
++          0.0009714170293138886
++        ],
++        "predicted_q": [
++          0.009420137094520569,
++          0.005414923909022153,
++          0.0007567607099955684,
++          -6.973215262549121e-05,
++          -9.551331205857449e-05,
++          -0.0002753824768222897,
++          -0.00021998620137119362,
++          -0.00029308160925024004,
++          -7.039498780967606e-05,
++          0.0008086984687114627,
++          0.0015878730869073013,
++          -0.0013189428575593031,
++          0.00024887368268068064,
++          0.0001731290710062329,
++          -0.0009136393151824338,
++          0.0008170662036277434,
++          -0.00045766349069264225,
++          0.0004335233510793712,
++          -0.0013826001310116623,
++          0.001596925450499641,
++          9.696635891316685e-05,
++          -0.0009459701263478022,
++          -0.00018369835082047463,
++          -0.0004883552422042068,
++          0.00016390073701318488,
++          0.0007786363543693753,
++          0.00032249860718141956,
++          7.41581919262446e-05,
++          0.000614182472556522,
++          0.0005813018825820693
++        ],
++        "iterations": 193,
++        "radius": 0.042943312697648145,
++        "available": [
++          true,
++          true,
++          true
++        ],
++        "max_iterations": 200000,
++        "zero_objective": 7.377284295604379e-07,
++        "tolerance": 7.377284295604379e-18,
++        "derivative_at_zero": [
++          -0.0003262335594226483,
++          -0.0005307290250165795,
++          -0.0005247488497232902
++        ],
++        "lipschitz_bound": 2.476328642526939,
++        "predicted_objective": 2.89005215050064e-07,
++        "gradient": [
++          9.706315213035e-06,
++          2.739205422095799e-16,
++          -1.705878827749246e-16
++        ],
++        "raw_frank_wolfe_gap": 7.30431657587451e-18,
++        "roundoff_cushion": 1.45907626548782e-20,
++        "global_objective_gap_upper_bound": 7.318907338529388e-18
++      },
++      "prior_objective_absolute_delta": 0.0,
++      "reconstructed_J_exact": true,
++      "surrogate_scales": [
++        {
++          "scale": 1.0,
++          "predicted_C": 17,
++          "predicted_lost_groups": [
++            6,
++            7,
++            8,
++            22
++          ],
++          "predicted_hinge_improvement": 4.4884537700478093e-07,
++          "proxy_positive_and_hinge_guard": false,
++          "no_true_native_measurement": true
++        },
++        {
++          "scale": 0.5,
++          "predicted_C": 18,
++          "predicted_lost_groups": [
++            22
++          ],
++          "predicted_hinge_improvement": 3.1389526568085694e-07,
++          "proxy_positive_and_hinge_guard": false,
++          "no_true_native_measurement": true
++        },
++        {
++          "scale": 0.25,
++          "predicted_C": 17,
++          "predicted_lost_groups": [],
++          "predicted_hinge_improvement": 1.7724847925509855e-07,
++          "proxy_positive_and_hinge_guard": true,
++          "no_true_native_measurement": true
++        }
++      ]
++    },
++    {
++      "source": "eval_copperkettle_s2501",
++      "index": 47,
++      "status": "CERTIFIED",
++      "legacy": {
++        "coefficients": [
++          0.0,
++          0.0,
++          0.0
++        ],
++        "predicted_q": [
++          0.00960989144870441,
++          0.005253226096391995,
++          -0.0006104949404218047,
++          -0.0009319511075134349,
++          -0.0012817436231825237,
++          -0.00011201443351205899,
++          0.0008940715045655116,
++          0.0005361908548208951,
++          0.0007527003320784524,
++          0.001228173119934295,
++          0.0025159034286135373,
++          -0.002082832423023787,
++          7.164829951935843e-05,
++          0.00029884274518513767,
++          -0.0005575768638495214,
++          0.0004251501389411487,
++          -0.00020951900790069233,
++          -0.0002228765837496311,
++          -0.0024407261288495177,
++          0.0008770578323160593,
++          -0.0003851143629846324,
++          -0.0015100763806813846,
++          0.00016469333581042457,
++          -0.0017993304352730566,
++          -0.0004134142124044125,
++          0.0006722770029434029,
++          0.0012706843163728973,
++          0.0014606296552562667,
++          -0.0001313189666078989,
++          0.00027308154227966567
++        ],
++        "predicted_objective": 7.377284295604379e-07,
++        "predictions_tried": 125,
++        "radius": 0.042943312697648145
++      },
++      "continuous": {
++        "solver": {
++          "name": "projected_gradient_fw_gap_v1",
++          "dtype": "float64",
++          "max_iterations": 200000,
++          "absolute_gap_tolerance": 1e-18,
++          "relative_gap_tolerance": 1e-11,
++          "roundoff_factor": 64
++        },
++        "status": "CERTIFIED",
++        "reason": null,
++        "coefficients": [
++          0.0,
++          0.00021860126296081013,
++          0.0012833689992423221
++        ],
++        "predicted_q": [
++          0.010210325690060102,
++          0.0055226305709050166,
++          -0.0002030981632060693,
++          -0.0003418313612606846,
++          -0.0011076363185860822,
++          0.00019389174123451823,
++          -0.00022343027204610076,
++          0.00037528773992476206,
++          0.0002961847979664478,
++          0.0006577241574013726,
++          0.001035615302491966,
++          -0.0027460470306629138,
++          0.0001568513852217034,
++          0.0005026002046185034,
++          -0.0004061093404878508,
++          0.0008589555008045466,
++          -0.0003000844767456201,
++          0.0004908591910058944,
++          -0.0015528803114850211,
++          0.0005158333641383398,
++          -0.0001456433260522592,
++          -0.001342864974668037,
++          0.0007945879417072983,
++          -0.0008514422899836806,
++          -0.0003352803227047988,
++          0.0011440833844741881,
++          0.0011840505638846962,
++          0.0008761634769900799,
++          0.0004785205965651472,
++          0.00018563059053839504
++        ],
++        "iterations": 569,
++        "radius": 0.042943312697648145,
++        "available": [
++          true,
++          true,
++          true
++        ],
++        "max_iterations": 200000,
++        "zero_objective": 7.377284295604379e-07,
++        "tolerance": 7.377284295604379e-18,
++        "derivative_at_zero": [
++          -4.065696830354101e-05,
++          -0.00013677198432251902,
++          -0.00022036142464997214
++        ],
++        "lipschitz_bound": 2.087828882654244,
++        "predicted_objective": 5.55136820148933e-07,
++        "gradient": [
++          7.536459291651988e-05,
++          1.3870941399320478e-16,
++          -1.7334206334248116e-16
++        ],
++        "raw_frank_wolfe_gap": 7.251742652496729e-18,
++        "roundoff_cushion": 1.8372720230062606e-20,
++        "global_objective_gap_upper_bound": 7.270115372726792e-18
++      },
++      "prior_objective_absolute_delta": 1.0587911840678754e-22,
++      "reconstructed_J_exact": true,
++      "surrogate_scales": [
++        {
++          "scale": 1.0,
++          "predicted_C": 18,
++          "predicted_lost_groups": [
++            6
++          ],
++          "predicted_hinge_improvement": 1.827610916615434e-07,
++          "proxy_positive_and_hinge_guard": false,
++          "no_true_native_measurement": true
++        },
++        {
++          "scale": 0.5,
++          "predicted_C": 19,
++          "predicted_lost_groups": [],
++          "predicted_hinge_improvement": 1.2495094961651782e-07,
++          "proxy_positive_and_hinge_guard": true,
++          "no_true_native_measurement": true
++        },
++        {
++          "scale": 0.25,
++          "predicted_C": 17,
++          "predicted_lost_groups": [],
++          "predicted_hinge_improvement": 7.026414175671195e-08,
++          "proxy_positive_and_hinge_guard": true,
++          "no_true_native_measurement": true
++        }
++      ]
++    },
++    {
++      "source": "eval_copperkettle_s2501",
++      "index": 48,
++      "status": "CERTIFIED",
++      "legacy": {
++        "coefficients": [
++          0.0,
++          0.0,
++          0.0
++        ],
++        "predicted_q": [
++          0.00960989144870441,
++          0.005253226096391995,
++          -0.0006104949404218047,
++          -0.0009319511075134349,
++          -0.0012817436231825237,
++          -0.00011201443351205899,
++          0.0008940715045655116,
++          0.0005361908548208951,
++          0.0007527003320784524,
++          0.001228173119934295,
++          0.0025159034286135373,
++          -0.002082832423023787,
++          7.164829951935843e-05,
++          0.00029884274518513767,
++          -0.0005575768638495214,
++          0.0004251501389411487,
++          -0.00020951900790069233,
++          -0.0002228765837496311,
++          -0.0024407261288495177,
++          0.0008770578323160593,
++          -0.0003851143629846324,
++          -0.0015100763806813846,
++          0.00016469333581042457,
++          -0.0017993304352730566,
++          -0.0004134142124044125,
++          0.0006722770029434029,
++          0.0012706843163728973,
++          0.0014606296552562667,
++          -0.0001313189666078989,
++          0.00027308154227966567
++        ],
++        "predicted_objective": 7.377284295604379e-07,
++        "predictions_tried": 125,
++        "radius": 0.042943312697648145
++      },
++      "continuous": {
++        "solver": {
++          "name": "projected_gradient_fw_gap_v1",
++          "dtype": "float64",
++          "max_iterations": 200000,
++          "absolute_gap_tolerance": 1e-18,
++          "relative_gap_tolerance": 1e-11,
++          "roundoff_factor": 64
++        },
++        "status": "CERTIFIED",
++        "reason": null,
++        "coefficients": [
++          0.0014391671361791737,
++          0.0013530100707779273,
++          0.0013190920200848554
++        ],
++        "predicted_q": [
++          0.01022969463440563,
++          0.004963158626732614,
++          0.0005255622856598838,
++          -0.0007500219539188092,
++          -0.0008444106798549775,
++          0.0007050606298032827,
++          9.561462065464134e-05,
++          -1.3435311484907863e-05,
++          9.491011233957571e-05,
++          0.0008893385130468649,
++          0.0015630499154073536,
++          -0.0028543189567775645,
++          0.00020020898604477172,
++          8.638349348536787e-05,
++          -0.0004644500666523278,
++          5.172250915750422e-05,
++          -0.0009839232455799388,
++          0.0007698332739989707,
++          -0.0012279039863034205,
++          0.0008257839989719377,
++          -0.00021581510561121666,
++          -0.001259749863548939,
++          5.30955987060617e-05,
++          -0.0007521511274391015,
++          0.00022518147282006996,
++          0.000203667908885789,
++          0.00040077331155465034,
++          0.0014747339784904137,
++          0.0005730995147808833,
++          0.0010681164682997068
++        ],
++        "iterations": 174,
++        "radius": 0.042943312697648145,
++        "available": [
++          true,
++          true,
++          true
++        ],
++        "max_iterations": 200000,
++        "zero_objective": 7.377284295604379e-07,
++        "tolerance": 7.377284295604379e-18,
++        "derivative_at_zero": [
++          -0.00010736714159368025,
++          -9.714729691756913e-05,
++          -0.00010118094369933846
++        ],
++        "lipschitz_bound": 0.32137708941256055,
++        "predicted_objective": 5.453844399560162e-07,
++        "gradient": [
++          -1.5921741837010128e-16,
++          1.5629668994929084e-16,
++          -9.135695028434938e-17
++        ],
++        "raw_frank_wolfe_gap": 6.699145679385259e-18,
++        "roundoff_cushion": 1.8234130572009415e-20,
++        "global_objective_gap_upper_bound": 6.717379809957269e-18
++      },
++      "prior_objective_absolute_delta": 0.0,
++      "reconstructed_J_exact": true,
++      "surrogate_scales": [
++        {
++          "scale": 1.0,
++          "predicted_C": 20,
++          "predicted_lost_groups": [
++            7
++          ],
++          "predicted_hinge_improvement": 1.9290817380991532e-07,
++          "proxy_positive_and_hinge_guard": false,
++          "no_true_native_measurement": true
++        },
++        {
++          "scale": 0.5,
++          "predicted_C": 19,
++          "predicted_lost_groups": [],
++          "predicted_hinge_improvement": 1.4599185583226403e-07,
++          "proxy_positive_and_hinge_guard": true,
++          "no_true_native_measurement": true
++        },
++        {
++          "scale": 0.25,
++          "predicted_C": 19,
++          "predicted_lost_groups": [],
++          "predicted_hinge_improvement": 8.819086621463038e-08,
++          "proxy_positive_and_hinge_guard": true,
++          "no_true_native_measurement": true
++        }
++      ]
++    },
++    {
++      "source": "eval_paperplane_s2502",
++      "index": 46,
++      "status": "CERTIFIED",
++      "legacy": {
++        "coefficients": [
++          0.0,
++          0.0,
++          0.0
++        ],
++        "predicted_q": [
++          -0.0008490836909150488,
++          0.003943866179813156,
++          -0.004652561698578633,
++          -0.0014299048962218867,
++          0.0008393586547649328,
++          -0.005028800607280164,
++          -0.00029337990977289566,
++          -0.004978750437946346,
++          0.006603834274762064,
++          0.008122337856475374,
++          -0.0023594415121382757,
++          0.005533250684189612,
++          0.005812209978630524,
++          -0.0022826479777787326,
++          -0.0023465023144969006,
++          0.003736909498099258,
++          -0.003294252208758331,
++          0.00030128292638349806,
++          0.0023153712762638734,
++          -0.002226434979009761,
++          -0.004095153035839545,
++          -0.0009566958922045132,
++          -0.0045968243943041096,
++          -0.0032769410622803504,
++          -0.0012507957063213923,
++          -0.008214449763204335,
++          0.001427065870198407,
++          -0.0076060224986400716,
++          0.0057724500635468,
++          -0.0037596664726755103
++        ],
++        "predicted_objective": 1.0338002790786726e-05,
++        "predictions_tried": 125,
++        "radius": 0.042943312697648145
++      },
++      "continuous": {
++        "solver": {
++          "name": "projected_gradient_fw_gap_v1",
++          "dtype": "float64",
++          "max_iterations": 200000,
++          "absolute_gap_tolerance": 1e-18,
++          "relative_gap_tolerance": 1e-11,
++          "roundoff_factor": 64
++        },
++        "status": "CERTIFIED",
++        "reason": null,
++        "coefficients": [
++          0.0,
++          0.00047546871392457413,
++          0.00013555698640136074
++        ],
++        "predicted_q": [
++          -0.0014089557551317223,
++          0.0021423100268343517,
++          -0.0033125797127835296,
++          -0.00134895252417944,
++          0.002473300876904966,
++          -0.008129233537733038,
++          0.00010662269518741096,
++          -0.0036516539362652436,
++          0.005272031014333169,
++          0.008258073254284163,
++          -0.0017912988298021976,
++          0.004468658882450807,
++          0.00430238043049062,
++          -0.0012565498692230928,
++          -0.0018320567117485155,
++          0.0025704449377289577,
++          -0.0030292421048368785,
++          -0.0005608960354941947,
++          0.001341802348232649,
++          -0.0013636235905831692,
++          -0.004340913175868396,
++          0.00020092856447056812,
++          -0.004372644251160136,
++          -0.002657610933898631,
++          -0.003969370239931935,
++          -0.004871766353821103,
++          0.0017131382955412988,
++          -0.00725422554147057,
++          0.005304119628651993,
++          -0.0020928912436770546
++        ],
++        "iterations": 145,
++        "radius": 0.042943312697648145,
++        "available": [
++          true,
++          true,
++          true
++        ],
++        "max_iterations": 200000,
++        "zero_objective": 1.0338002790786726e-05,
++        "tolerance": 1.0338002790786725e-16,
++        "derivative_at_zero": [
++          0.0017509807287058718,
++          -0.005122168944003684,
++          -0.0024756367040315377
++        ],
++        "lipschitz_bound": 38.47697219135287,
++        "predicted_objective": 8.93839724786922e-06,
++        "gradient": [
++          0.004735441094502032,
++          -2.2220458959643294e-15,
++          2.6791636140524085e-15
++        ],
++        "raw_frank_wolfe_gap": 9.472867778008353e-17,
++        "roundoff_cushion": 2.7393412038283014e-19,
++        "global_objective_gap_upper_bound": 9.500261190046635e-17
++      },
++      "prior_objective_absolute_delta": 0.0,
++      "reconstructed_J_exact": true,
++      "surrogate_scales": [
++        {
++          "scale": 1.0,
++          "predicted_C": 12,
++          "predicted_lost_groups": [
++            17
++          ],
++          "predicted_hinge_improvement": 1.3996299875369534e-06,
++          "proxy_positive_and_hinge_guard": false,
++          "no_true_native_measurement": true
++        },
++        {
++          "scale": 0.5,
++          "predicted_C": 10,
++          "predicted_lost_groups": [
++            17
++          ],
++          "predicted_hinge_improvement": 1.0500954547461769e-06,
++          "proxy_positive_and_hinge_guard": false,
++          "no_true_native_measurement": true
++        },
++        {
++          "scale": 0.25,
++          "predicted_C": 11,
++          "predicted_lost_groups": [],
++          "predicted_hinge_improvement": 6.106347286082445e-07,
++          "proxy_positive_and_hinge_guard": true,
++          "no_true_native_measurement": true
++        }
++      ]
++    },
++    {
++      "source": "eval_paperplane_s2502",
++      "index": 47,
++      "status": "CERTIFIED",
++      "legacy": {
++        "coefficients": [
++          0.0,
++          0.0,
++          0.0
++        ],
++        "predicted_q": [
++          -0.0008490836909150488,
++          0.003943866179813156,
++          -0.004652561698578633,
++          -0.0014299048962218867,
++          0.0008393586547649328,
++          -0.005028800607280164,
++          -0.00029337990977289566,
++          -0.004978750437946346,
++          0.006603834274762064,
++          0.008122337856475374,
++          -0.0023594415121382757,
++          0.005533250684189612,
++          0.005812209978630524,
++          -0.0022826479777787326,
++          -0.0023465023144969006,
++          0.003736909498099258,
++          -0.003294252208758331,
++          0.00030128292638349806,
++          0.0023153712762638734,
++          -0.002226434979009761,
++          -0.004095153035839545,
++          -0.0009566958922045132,
++          -0.0045968243943041096,
++          -0.0032769410622803504,
++          -0.0012507957063213923,
++          -0.008214449763204335,
++          0.001427065870198407,
++          -0.0076060224986400716,
++          0.0057724500635468,
++          -0.0037596664726755103
++        ],
++        "predicted_objective": 1.0338002790786726e-05,
++        "predictions_tried": 125,
++        "radius": 0.042943312697648145
++      },
++      "continuous": {
++        "solver": {
++          "name": "projected_gradient_fw_gap_v1",
++          "dtype": "float64",
++          "max_iterations": 200000,
++          "absolute_gap_tolerance": 1e-18,
++          "relative_gap_tolerance": 1e-11,
++          "roundoff_factor": 64
++        },
++        "status": "CERTIFIED",
++        "reason": null,
++        "coefficients": [
++          0.0,
++          0.001417225108067133,
++          0.00047444439377839257
++        ],
++        "predicted_q": [
++          0.0009059704138475857,
++          0.005124695733730693,
++          4.6162805397011e-05,
++          -0.0007335543008042504,
++          -0.0014263467469222725,
++          -0.005994629270028857,
++          -0.0024355386576898177,
++          -0.0027593581419518573,
++          0.002715114590663453,
++          0.006848720718191444,
++          -0.004840966477918998,
++          0.003865341820415762,
++          0.008076168480022544,
++          -0.000539713283486921,
++          0.0023153825220599577,
++          0.004478271869245029,
++          -0.0032644216423828713,
++          0.0019017151643562023,
++          0.0033550684282215694,
++          -0.002238288504691625,
++          0.0027867251793923043,
++          0.0003590171559090874,
++          -0.003543608911691026,
++          -0.003935253221861538,
++          -0.001779315542812847,
++          -0.0028275520902220916,
++          0.0009303505519354114,
++          -0.005220244578700588,
++          0.0027982631032543778,
++          -6.722057234182042e-06
++        ],
++        "iterations": 251,
++        "radius": 0.042943312697648145,
++        "available": [
++          true,
++          true,
++          true
++        ],
++        "max_iterations": 200000,
++        "zero_objective": 1.0338002790786726e-05,
++        "tolerance": 1.0338002790786725e-16,
++        "derivative_at_zero": [
++          -0.00018916411037339268,
++          -0.005592939089373656,
++          -0.004369886256580036
++        ],
++        "lipschitz_bound": 15.294486035796425,
++        "predicted_objective": 5.778666146510989e-06,
++        "gradient": [
++          0.0006886956868018763,
++          -2.22773984995912e-15,
++          1.6632478183326146e-15
++        ],
++        "raw_frank_wolfe_gap": 9.329843873907453e-17,
++        "roundoff_cushion": 2.290316407623625e-19,
++        "global_objective_gap_upper_bound": 9.35274703798369e-17
++      },
++      "prior_objective_absolute_delta": 8.470329472543003e-22,
++      "reconstructed_J_exact": true,
++      "surrogate_scales": [
++        {
++          "scale": 1.0,
++          "predicted_C": 15,
++          "predicted_lost_groups": [
++            4
++          ],
++          "predicted_hinge_improvement": 4.55956000672471e-06,
++          "proxy_positive_and_hinge_guard": false,
++          "no_true_native_measurement": true
++        },
++        {
++          "scale": 0.5,
++          "predicted_C": 11,
++          "predicted_lost_groups": [
++            4
++          ],
++          "predicted_hinge_improvement": 3.5898074906137793e-06,
++          "proxy_positive_and_hinge_guard": false,
++          "no_true_native_measurement": true
++        },
++        {
++          "scale": 0.25,
++          "predicted_C": 11,
++          "predicted_lost_groups": [],
++          "predicted_hinge_improvement": 2.1525783424510213e-06,
++          "proxy_positive_and_hinge_guard": true,
++          "no_true_native_measurement": true
++        }
++      ]
++    },
++    {
++      "source": "eval_paperplane_s2502",
++      "index": 48,
++      "status": "CERTIFIED",
++      "legacy": {
++        "coefficients": [
++          0.0,
++          0.0,
++          0.0
++        ],
++        "predicted_q": [
++          -0.0008490836909150488,
++          0.003943866179813156,
++          -0.004652561698578633,
++          -0.0014299048962218867,
++          0.0008393586547649328,
++          -0.005028800607280164,
++          -0.00029337990977289566,
++          -0.004978750437946346,
++          0.006603834274762064,
++          0.008122337856475374,
++          -0.0023594415121382757,
++          0.005533250684189612,
++          0.005812209978630524,
++          -0.0022826479777787326,
++          -0.0023465023144969006,
++          0.003736909498099258,
++          -0.003294252208758331,
++          0.00030128292638349806,
++          0.0023153712762638734,
++          -0.002226434979009761,
++          -0.004095153035839545,
++          -0.0009566958922045132,
++          -0.0045968243943041096,
++          -0.0032769410622803504,
++          -0.0012507957063213923,
++          -0.008214449763204335,
++          0.001427065870198407,
++          -0.0076060224986400716,
++          0.0057724500635468,
++          -0.0037596664726755103
++        ],
++        "predicted_objective": 1.0338002790786726e-05,
++        "predictions_tried": 125,
++        "radius": 0.042943312697648145
++      },
++      "continuous": {
++        "solver": {
++          "name": "projected_gradient_fw_gap_v1",
++          "dtype": "float64",
++          "max_iterations": 200000,
++          "absolute_gap_tolerance": 1e-18,
++          "relative_gap_tolerance": 1e-11,
++          "roundoff_factor": 64
++        },
++        "status": "CERTIFIED",
++        "reason": null,
++        "coefficients": [
++          0.0,
++          0.002116465558390426,
++          0.0
++        ],
++        "predicted_q": [
++          -0.0021842803214507226,
++          0.0038366125952959767,
++          -0.0032204060273078963,
++          -0.0011464151360187527,
++          0.0009451101355754168,
++          -0.005938164840763267,
++          -0.00018086650549539957,
++          -0.004465616592004963,
++          0.004333822352042263,
++          0.007886281374535033,
++          -0.0014660020788191184,
++          0.004092719949908592,
++          0.006785870138330607,
++          -0.0020421600688899783,
++          -0.003517076801661941,
++          0.0028264739703884227,
++          -0.004872084720721684,
++          0.0030851665334954677,
++          0.001759788269392373,
++          0.002266193761243009,
++          -0.00430010595463021,
++          5.490171274260495e-05,
++          -0.003631089102543777,
++          -0.0034236619224604207,
++          -0.0009746245421186182,
++          -0.005854625460050672,
++          0.004808921614507978,
++          -0.007817001325265088,
++          0.004266504673036208,
++          -0.004549488597005741
++        ],
++        "iterations": 551,
++        "radius": 0.042943312697648145,
++        "available": [
++          true,
++          true,
++          true
++        ],
++        "max_iterations": 200000,
++        "zero_objective": 1.0338002790786726e-05,
++        "tolerance": 1.0338002790786725e-16,
++        "derivative_at_zero": [
++          0.00015362309077124385,
++          -0.0008987023985535525,
++          -0.00027447093912000053
++        ],
++        "lipschitz_bound": 5.823867492378125,
++        "predicted_objective": 9.554950085142347e-06,
++        "gradient": [
++          0.0003770766070981711,
++          -2.456637110246116e-15,
++          0.00014925967703501077
++        ],
++        "raw_frank_wolfe_gap": 1.0029674777664599e-16,
++        "roundoff_cushion": 2.82695863177761e-19,
++        "global_objective_gap_upper_bound": 1.0057944363982375e-16
++      },
++      "prior_objective_absolute_delta": 1.6940658945086007e-21,
++      "reconstructed_J_exact": true,
++      "surrogate_scales": [
++        {
++          "scale": 1.0,
++          "predicted_C": 13,
++          "predicted_lost_groups": [],
++          "predicted_hinge_improvement": 7.835006482903646e-07,
++          "proxy_positive_and_hinge_guard": true,
++          "no_true_native_measurement": true
++        },
++        {
++          "scale": 0.5,
++          "predicted_C": 12,
++          "predicted_lost_groups": [],
++          "predicted_hinge_improvement": 6.322900354242223e-07,
++          "proxy_positive_and_hinge_guard": true,
++          "no_true_native_measurement": true
++        },
++        {
++          "scale": 0.25,
++          "predicted_C": 11,
++          "predicted_lost_groups": [],
++          "predicted_hinge_improvement": 3.958315930787379e-07,
++          "proxy_positive_and_hinge_guard": true,
++          "no_true_native_measurement": true
++        }
++      ]
++    }
++  ],
++  "counts": {
++    "expected": 6,
++    "certified": 6,
++    "failed": 0
++  }
++}
+diff --git a/docs/video_trajectory_blind_validation_v1.md b/docs/video_trajectory_blind_validation_v1.md
+new file mode 100644
+index 0000000..c01a410
+--- /dev/null
++++ b/docs/video_trajectory_blind_validation_v1.md
+@@ -0,0 +1,61 @@
++# Video Trajectory Blind Validation V1: continuous solver candidate
++
++This candidate replaces only the three-coefficient lattice optimizer. The
++historical protocol/configuration and its negative result remain unchanged.
++`rgb_dct_continuous_solver.select_coefficients` minimizes the identical weighted
++hinge plus ridge objective on a>=0, sum(a)<=remaining, with unavailable
++coordinates fixed to zero. Margin=1e-4, ridge=1e-4, positive weight=4,
++R*=0.042943312697648145, direction bins, steps T46/47/48/49, fallback scales
++1,1/2,1/4 and every real acceptance condition remain unchanged.
++
++The deterministic FP64 projected-gradient solver uses the maximum eigenvalue of
++the full quadratic Hessian bound as its Lipschitz constant. Its stopping test is
++the Frank-Wolfe gap over the feasible simplex, padded by a documented FP64
++roundoff cushion, <= max(1e-18, f(0)*1e-11), within 200000 iterations. This is a
++numerical convex global-objective certificate, not interval arithmetic or a
++true-model error bound. Invalid input, nonfinite arithmetic, uncertified
++stagnation, exhausted iterations, or feasibility/descent failure raises
++SolverFailure. The runner persists SOLVER_FAILURE and stops that arm; it cannot
++rename failure ZERO_OPTIMUM or commit its baseline and continue a sequential
++arm. A zero candidate is returned only when its feasible zero-gradient KKT
++condition and numerical certificate hold. No minimum coefficient is imposed.
++
++Stage 1 is a fixed six-point saved-state diagnostic: two existing sources times
++T46/47/48, each with spent=0 and an independent copy of its original complete
++UniPC scheduler object, z and v. All six rows exist before work, and every
++failure/missing row remains. It is NOT a sequential trajectory, MP4 comparison,
++blind detection or payload result. The real shared feedback loop recomputes
++baseline/probes, forms q/J, uses the new solver, computes original scales and
++applies the original real RMS/peak/positive-group/hinge guards. The first
++accepted scale is retained; the real tail must produce that acceptance.
++
++Input is the original run directory containing result.json, source_receipt.json
++and both source state directories. First verify the exact saved result/source
++and all 26 tensor/scheduler file SHA256 values. Restore complete saved objects
++on CPU, verify their tensor/history fingerprints and cursors. Never regenerate
++a prefix. Recreate only the same model revision and prompt embeddings using
++prepare_generation, discard its unused initial noise, and verify its initial
++noise fingerprint; the newly created scheduler is not a replacement history.
++Rebuild the original basis from saved off_terminal through FP32 VAE and the
++same key/carrier/encode pair. Require old full raw_sha256 and masked_sha256;
++legacy NumPy repr fingerprints are not accepted as basis byte identity. Save
++three newly computed full-byte basis hashes and arrays. A mismatch fails the
++source as IDENTITY_MISMATCH, with all three rows retained. Each restored point
++must reproduce old state/history/baseline-terminal fingerprints. Record q/J
++identity/drift separately; solve the newly measured same-state q/J, never feed
++saved offline coefficients into the runner.
++
++The new config names and hashes this protocol, the historical config/protocol,
++and the immutable saved result. The run records working source file hashes,
++Git HEAD and dirty state, config/protocol hashes, seed, calls, resources and
++output paths. No new published SHA or notebook binding is claimed.
++
++Sequential follow-up uses feedback_arm with the continuous solver in the same
++shared loop: after acceptance it commits the first-step native history, then
++recomputes velocity, baseline, probes and q/J at the next point. The six saved
++independent coefficients cannot be concatenated into MULTI. That later real
++execution and MP4 OFF/SINGLE49/ONLY49/MULTI/FREE49 comparison is evidence-gated
++and is not executed by this stage-1 entrypoint.
++
++No GPU/model run, source publication, later method adoption or complete blind
++video-watermark claim follows from local CPU checks or saved-proxy solutions.
+diff --git a/experiments/wan_state_clock/configs/video_trajectory_blind_validation_v1.json b/experiments/wan_state_clock/configs/video_trajectory_blind_validation_v1.json
+new file mode 100644
+index 0000000..28909c1
+--- /dev/null
++++ b/experiments/wan_state_clock/configs/video_trajectory_blind_validation_v1.json
+@@ -0,0 +1,36 @@
++{
++  "name": "video_trajectory_blind_validation_v1",
++  "call_plan_max": {
++    "scheduler_feedback": 126,
++    "vae_decode": 44,
++    "vae_encode": 4,
++    "transformer_feedback": 168,
++    "model_setup": 2,
++    "memory_receiver_score": 42
++  },
++  "protocol_sha256": "4e9bc5ee311c40beea8557802c2762c2daa2a34c14826122fdf1185e210571b7",
++  "historical_protocol_sha256": "0f2dc1b1ecc5a5af6e942ba3078c811a67c27397e608047e3227360b9a1083af",
++  "evidence_ceiling": "Saved-state real-tail acceptance only; no sequential MP4, blind detection, payload, robustness or generalization claim",
++  "points": [
++    46,
++    47,
++    48
++  ],
++  "saved_source_sha": "2cfb709d7980068e00c5c3796198fa8960d6bc54",
++  "fixed_denominator": {
++    "real_tail_points": 6,
++    "sources": 2,
++    "mp4_slots": 0,
++    "independent_points_per_source": 3
++  },
++  "solver": {
++    "dtype": "float64",
++    "name": "projected_gradient_fw_gap_v1",
++    "relative_gap_tolerance": 1E-11,
++    "absolute_gap_tolerance": 1E-18,
++    "roundoff_factor": 64,
++    "max_iterations": 200000
++  },
++  "saved_result_sha256": "42a83d3f7d7847f985e01a9c8486e72a3b3e8c914d591c4e4c9cf2db7553329f",
++  "historical_config_sha256": "f70fa657ad9e4dfab07a4ad8365145a4f452355a3680a81a0e82ee4c1fbffcd5"
++}
+diff --git a/experiments/wan_state_clock/video_trajectory_blind_validation_run.py b/experiments/wan_state_clock/video_trajectory_blind_validation_run.py
+new file mode 100644
+index 0000000..67b291f
+--- /dev/null
++++ b/experiments/wan_state_clock/video_trajectory_blind_validation_run.py
+@@ -0,0 +1,370 @@
++"""Fixed six saved-state real-tail points; continuous surrogate solver candidate."""
++from __future__ import annotations
++
++import argparse
++import copy
++import hashlib
++import json
++import os
++from pathlib import Path
++import subprocess
++import sys
++import time
++import traceback
++
++import numpy as np
++from main.tube_state import rgb_dct_continuous_solver as solver
++from experiments.wan_state_clock import rgb_dct_structured_terminal_feedback_run as shared
++
++ROOT = shared.ROOT
++CONFIG_PATH = Path(__file__).parent / "configs/video_trajectory_blind_validation_v1.json"
++PROTOCOL_PATH = ROOT / "docs/video_trajectory_blind_validation_v1.md"
++MODULE = "experiments.wan_state_clock.video_trajectory_blind_validation_run"
++POINTS = (46, 47, 48)
++PLAN = dict(model_setup=2, transformer_feedback=168, scheduler_feedback=126,
++            vae_decode=44, vae_encode=4, memory_receiver_score=42)
++
++
++def load_config():
++    candidate = json.loads(CONFIG_PATH.read_text())
++    historical = shared.load_config()
++    if (shared._sha(PROTOCOL_PATH) != candidate["protocol_sha256"]
++            or shared._sha(shared.CONFIG_PATH) != candidate["historical_config_sha256"]
++            or shared._sha(shared.PROTOCOL_PATH) != candidate["historical_protocol_sha256"]
++            or candidate["solver"] != solver.SPEC
++            or candidate["points"] != list(POINTS)
++            or candidate["fixed_denominator"] != dict(sources=2,
++                independent_points_per_source=3, real_tail_points=6, mp4_slots=0)
++            or candidate["call_plan_max"] != PLAN):
++        raise ValueError("candidate protocol/config binding mismatch")
++    return candidate, historical
++
++
++def source_receipt():
++    paths = sorted(path for directory in ("main", "runtime", "experiments")
++                   for path in (ROOT / directory).rglob("*.py"))
++    paths += [CONFIG_PATH, PROTOCOL_PATH, shared.CONFIG_PATH, shared.PROTOCOL_PATH]
++    files = {str(p.relative_to(ROOT)): shared._sha(p) for p in paths}
++    digest = hashlib.sha256(json.dumps(files, sort_keys=True).encode()).hexdigest()
++    return dict(git_head=subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=ROOT, text=True).strip(),
++                git_status=subprocess.check_output(["git", "status", "--porcelain"], cwd=ROOT, text=True),
++                files=files, source_tree_sha256=digest,
++                published_binding=False)
++
++
++def preflight(saved_run: Path):
++    candidate, historical = load_config()
++    result_path = saved_run / "result.json"
++    if shared._sha(result_path) != candidate["saved_result_sha256"]:
++        raise ValueError("saved result byte identity mismatch")
++    saved = json.loads(result_path.read_text())
++    receipt_path = saved_run / "source_receipt.json"
++    receipt = json.loads(receipt_path.read_text())
++    if (saved["source_sha"] != candidate["saved_source_sha"]
++            or receipt["status"] != "VALID"
++            or receipt["expected_sha"] != candidate["saved_source_sha"]
++            or receipt["actual_sha"] != candidate["saved_source_sha"]
++            or receipt["files"]["config"]["sha256"] != candidate["historical_config_sha256"]
++            or receipt["files"]["protocol"]["sha256"] != candidate["historical_protocol_sha256"]):
++        raise ValueError("saved source/config identity mismatch")
++    manifest = {}
++    for case_id in shared.CASE_IDS:
++        case = saved["cases"][case_id]
++        required = {f"{kind}{index}" for index in (46, 47, 48, 49)
++                    for kind in ("z", "v", "scheduler")} | {"off_terminal"}
++        artifacts = case["generation"]["artifacts"]
++        if set(artifacts) != required:
++            raise ValueError("saved 13-artifact denominator mismatch")
++        manifest[case_id] = {}
++        for name in sorted(required):
++            path = saved_run / case_id / "state" / f"{name}.pt"
++            digest = shared._sha(path)
++            if digest != artifacts[name]["sha256"]:
++                raise ValueError(f"saved artifact identity mismatch: {case_id}/{name}")
++            manifest[case_id][name] = dict(path=str(path), sha256=digest,
++                                           bytes=path.stat().st_size)
++    return saved, dict(status="VERIFIED", result_sha256=shared._sha(result_path),
++        source_receipt_sha256=shared._sha(receipt_path), artifact_count=26,
++        artifacts=manifest, no_model_loaded=True)
++
++
++def initial_result(output, saved_run, candidate, historical, receipt, inputs):
++    return dict(status="PREPARED", experiment_id=candidate["name"],
++        config_sha256=shared._sha(CONFIG_PATH), protocol_sha256=shared._sha(PROTOCOL_PATH),
++        source_receipt=receipt, input_receipt=inputs, saved_run=str(saved_run),
++        fixed_denominator=candidate["fixed_denominator"], solver=solver.SPEC,
++        historical_control=historical["control"], model=historical["model"],
++        receiver_spec_sha256=historical["receiver_spec_sha256"], key_id=historical["receiver_key_id"],
++        output_dir=str(output), result_path=str(output / "result.json"),
++        evidence_ceiling=candidate["evidence_ceiling"],
++        call_plan_max=PLAN, calls={k: dict(attempted=0, completed=0) for k in PLAN},
++        cases={case_id: dict(status="PENDING", stage="PENDING", seed=seed,
++            controls={f"FIXED_T{i}": [dict(index=i, outcome="PENDING")] for i in POINTS},
++            budgets={}, phase_receipts=[], failures=[], basis=None,
++            calls={k: dict(attempted=0, completed=0) for k in PLAN},
++            environment_receipt=None, resources=None, release_receipt=None)
++            for case_id, seed in zip(shared.CASE_IDS, shared.SEEDS, strict=True)})
++
++
++class SixPointStore:
++    def __init__(self, path, data):
++        self.path, self.data, self.active_case = path, data, None
++
++    @classmethod
++    def open(cls, path):
++        return cls(path, json.loads(path.read_text()))
++
++    def case(self, case_id):
++        return self.data["cases"][case_id]
++
++    def save(self):
++        rows = [row for case in self.data["cases"].values()
++                for points in case["controls"].values() for row in points]
++        if len(rows) != 6:
++            raise RuntimeError("six-point denominator changed")
++        outcomes = [r["outcome"] for r in rows]
++        complete = ("ACCEPT", "ZERO_OPTIMUM", "NO_ACCEPTABLE_CANDIDATE")
++        self.data["point_counts"] = dict(expected=6, accepted=outcomes.count("ACCEPT"),
++            evaluated=sum(x in complete for x in outcomes),
++            pending=outcomes.count("PENDING"),
++            failed=sum(x not in (*complete, "PENDING") for x in outcomes))
++        shared._atomic_json(self.path, self.data)
++
++    def count(self, kind, completed):
++        if kind not in PLAN:
++            raise RuntimeError(f"unplanned call: {kind}")
++        field = "completed" if completed else "attempted"
++        for ledger, cap in ((self.data["calls"], PLAN[kind]),
++                            (self.case(self.active_case)["calls"], PLAN[kind] // 2)):
++            row = ledger[kind]
++            row[field] += 1
++            if row["attempted"] > cap or row["completed"] > row["attempted"]:
++                raise RuntimeError(f"call cap/order: {kind}")
++        self.save()
++
++
++def feedback_arm(store, case_id, arm, backend, directions, key, **kwargs):
++    """Candidate sequential entry: q/J are refreshed inside the shared loop."""
++    return shared._feedback_arm(store, case_id, arm, backend, directions, key,
++                               coefficient_solver=solver.select_coefficients, **kwargs)
++
++
++def restore_backend(backend, saved_case, case_id, input_receipt):
++    """Load pinned trusted local torch.save artifacts before any model load."""
++    import torch
++    from runtime.wan import trajectory
++    from runtime.wan.rgb_dct_structured_feedback_backend import _assert_finite_history
++    for name, entry in input_receipt["artifacts"][case_id].items():
++        path = Path(entry["path"])
++        if shared._sha(path) != entry["sha256"]:
++            raise RuntimeError("IDENTITY_MISMATCH: artifact changed after preflight")
++        is_scheduler = name.startswith("scheduler")
++        value = torch.load(path, map_location="cpu", weights_only=not is_scheduler)
++        fingerprint = trajectory.fingerprint(vars(value) if is_scheduler else value)
++        if fingerprint != saved_case["generation"]["artifacts"][name]["fingerprint"]:
++            raise RuntimeError(f"IDENTITY_MISMATCH: restored {name}")
++        if is_scheduler:
++            index = int(name.removeprefix("scheduler"))
++            trajectory.validate_scheduler(value)
++            _assert_finite_history(value)
++            if value.step_index != index:
++                raise RuntimeError("IDENTITY_MISMATCH: saved history cursor")
++            backend.snapshots[index] = value
++        else:
++            if (not torch.is_tensor(value) or value.shape != (1, 16, 46, 40, 64)
++                    or value.dtype != torch.float32 or not bool(torch.isfinite(value).all())):
++                raise RuntimeError("IDENTITY_MISMATCH: saved tensor shape/dtype/finite")
++            if name == "off_terminal":
++                backend.off_terminal = value
++            else:
++                backend.nodes.setdefault(int(name[1:]), {})[name[0]] = value
++
++
++def run_independent_points(store, case_id, backend, directions, key, saved_case):
++    """Each point resets z/history and the budget; errors retain every row."""
++    for index in POINTS:
++        arm = f"FIXED_T{index}"
++        reference = next(p for p in saved_case["controls"]["MULTI46_47_48_49"]
++                         if p["index"] == index)
++        try:
++            feedback_arm(store, case_id, arm, backend, directions, key,
++                         independent_point=index, reference_point=reference)
++        except Exception as exc:
++            row = store.case(case_id)["controls"][arm][0]
++            if row["outcome"] in ("PENDING", "ACCEPT", "ZERO_OPTIMUM",
++                                   "NO_ACCEPTABLE_CANDIDATE"):
++                row["prior_outcome"] = row["outcome"]
++                row["outcome"] = "ENGINEERING_FAILURE"
++            # Keep measured spent/response fields, but never count a verdict
++            # as a completed point after a subsequent native-history failure.
++            if arm in store.case(case_id)["budgets"]:
++                store.case(case_id)["budgets"][arm].update(
++                    status="FAILED", reason=row["outcome"])
++            row["error"] = f"{type(exc).__name__}: {exc}"
++            store.case(case_id)["failures"].append(dict(index=index, error=row["error"],
++                                                        traceback=traceback.format_exc()))
++            store.save()
++            # A failed numerical solve leaves native state unchanged, but a
++            # backend failure may leave GPU/VAE phase unsafe. Retain remaining.
++            if row["outcome"] != "SOLVER_FAILURE":
++                raise
++
++
++def _mark_pending(store, case_id, reason):
++    for rows in store.case(case_id)["controls"].values():
++        for row in rows:
++            if row["outcome"] == "PENDING":
++                row.update(outcome="NOT_RUN_FAILURE", error=reason)
++    store.save()
++
++
++def recover_worker_failure(store, case_id, reason):
++    """Invalidate provisional verdicts when a worker dies outside Python catch.
++
++    A COMPLETE budget is the persisted point completion marker. Previously
++    completed independent points remain valid; their case can still fail later.
++    """
++    case = store.case(case_id)
++    case.update(status="FAILED", worker_error=reason)
++    for arm, rows in case["controls"].items():
++        budget = case["budgets"].get(arm, {})
++        if budget.get("status") == "COMPLETE":
++            continue
++        for row in rows:
++            if row["outcome"] in ("ACCEPT", "ZERO_OPTIMUM", "NO_ACCEPTABLE_CANDIDATE"):
++                row.update(prior_outcome=row["outcome"],
++                           outcome="ENGINEERING_FAILURE", error=reason)
++                case["budgets"].setdefault(arm, {}).update(
++                    status="FAILED", reason="WORKER_FAILURE_BEFORE_POINT_COMPLETION")
++    _mark_pending(store, case_id, reason)
++
++def run_case(store, case_id, saved, historical):
++    from runtime.wan.rgb_dct_structured_feedback_backend import WanStructuredFeedbackBackend
++    from runtime.wan.generation import prepare_generation
++    from runtime.wan import trajectory
++    case, saved_case = store.case(case_id), saved["cases"][case_id]
++    store.active_case = case_id
++    config = copy.deepcopy(historical)
++    source = next(c for c in config["cases"] if c["id"] == case_id)
++    config["generation"].update(prompt=source["prompt"], seed=source["seed"])
++    backend = WanStructuredFeedbackBackend(config, store.count)
++    started = time.perf_counter()
++    try:
++        case.update(status="RUNNING", stage="RESTORE_SAVED_STATE")
++        store.save()
++        case["environment_receipt"] = shared.environment_receipt(config)
++        restore_backend(backend, saved_case, case_id, store.data["input_receipt"])
++        case["stage"] = "MODEL_AND_CONDITIONING_SETUP_NO_PREFIX"
++        store.count("model_setup", False)
++        backend.pipe, initial, backend.prompt, backend.negative, backend.dtype = prepare_generation(config, load_vae=False)
++        if trajectory.fingerprint(initial) != saved_case["generation"]["initial_noise_fingerprint"]:
++            raise RuntimeError("IDENTITY_MISMATCH: recreated conditioning/noise seed")
++        del initial
++        backend.phase = "TRANSFORMER"
++        store.count("model_setup", True)
++        case["phase_receipts"].append(backend.to_vae_phase("SAVED_OFF_BASIS_VAE"))
++        off_rgb, directions, single, basis = backend.build_basis(config["key_utf8"].encode())
++        del off_rgb, single
++        for name in ("raw_sha256", "masked_sha256"):
++            if basis["single_geometry"][name] != saved_case["basis"]["single_geometry"][name]:
++                raise RuntimeError(f"IDENTITY_MISMATCH: rebuilt basis {name}")
++        basis_dir = Path(store.data["output_dir"]) / case_id / "basis"
++        basis_dir.mkdir(parents=True, exist_ok=True)
++        basis["full_byte_directions"] = []
++        for j, direction in enumerate(directions):
++            path = basis_dir / f"direction{j}.npy"
++            np.save(path, direction, allow_pickle=False)
++            basis["full_byte_directions"].append(dict(path=str(path),
++                array_sha256=hashlib.sha256(np.ascontiguousarray(direction).tobytes()).hexdigest(),
++                file_sha256=shared._sha(path), shape=list(direction.shape), dtype=str(direction.dtype)))
++        basis["identity"] = "RAW_AND_MASKED_FULL_BYTE_MATCH"
++        case["basis"] = basis
++        store.save()
++        case["phase_receipts"].append(backend.to_transformer_phase("SAVED_OFF_BASIS_RESUME"))
++        run_independent_points(store, case_id, backend, directions,
++                               config["key_utf8"].encode(), saved_case)
++        case["status"] = "EVALUATED" if not case["failures"] else "FAILED"
++    except Exception as exc:
++        case.update(status="FAILED", error=f"{type(exc).__name__}: {exc}")
++        case["failures"].append(dict(stage=case["stage"], error=case["error"],
++                                     traceback=traceback.format_exc()))
++        _mark_pending(store, case_id, case["error"])
++    finally:
++        case["resources"] = backend.resources()
++        try:
++            backend.release()
++            case["release_receipt"] = dict(status="COMPLETED")
++        except Exception as exc:
++            case["status"] = "FAILED"
++            case["release_receipt"] = dict(status="FAILED", error=str(exc))
++        case["elapsed_seconds"] = time.perf_counter() - started
++        store.save()
++
++
++def main():
++    parser = argparse.ArgumentParser(description=__doc__)
++    parser.add_argument("--saved-run", type=Path, required=True)
++    parser.add_argument("--output", type=Path, required=True)
++    parser.add_argument("--execute-real-tail", action="store_true",
++                        help="load model and execute the fixed six points; default is read-only preflight")
++    args = parser.parse_args()
++    candidate, historical = load_config()
++    internal = os.environ.get("VIDEO_TRAJECTORY_FIXED_INTERNAL_CASE")
++    if internal:
++        if internal not in shared.CASE_IDS or not args.execute_real_tail:
++            raise ValueError("invalid worker invocation")
++        store = SixPointStore.open(args.output / "result.json")
++        if (store.data["source_receipt"]["source_tree_sha256"] != source_receipt()["source_tree_sha256"]
++                or store.data["config_sha256"] != shared._sha(CONFIG_PATH)
++                or store.case(internal)["status"] != "PENDING"):
++            raise ValueError("worker source/config/status changed")
++        saved, inputs = preflight(args.saved_run)
++        if inputs != store.data["input_receipt"]:
++            raise ValueError("worker saved input changed")
++        run_case(store, internal, saved, historical)
++        return
++    if args.output.exists():
++        raise ValueError("fresh output directory required")
++    args.output.mkdir(parents=True)
++    # Persist six rows before preflight, so missing/corrupt inputs do not erase
++    # the denominator. preflight itself never loads pickles or models.
++    store = SixPointStore(args.output / "result.json", initial_result(
++        args.output, args.saved_run, candidate, historical, source_receipt(), None))
++    store.save()
++    try:
++        _, inputs = preflight(args.saved_run)
++        store.data["input_receipt"] = inputs
++    except Exception as exc:
++        store.data.update(status="INPUT_FAILURE", error=f"{type(exc).__name__}: {exc}")
++        for case_id in shared.CASE_IDS:
++            _mark_pending(store, case_id, store.data["error"])
++        store.save()
++        return
++    store.save()
++    if not args.execute_real_tail:
++        return
++    store.data["status"] = "RUNNING"
++    store.save()
++    for case_id in shared.CASE_IDS:
++        env = os.environ.copy()
++        env["VIDEO_TRAJECTORY_FIXED_INTERNAL_CASE"] = case_id
++        command = [sys.executable, "-m", MODULE, "--saved-run", str(args.saved_run),
++                   "--output", str(args.output), "--execute-real-tail"]
++        with (args.output / f"{case_id}_worker.log").open("w") as log:
++            try:
++                result = subprocess.run(command, cwd=ROOT, env=env, stdout=log,
++                    stderr=subprocess.STDOUT, timeout=historical["resources"]["case_timeout_seconds"], check=False)
++                failure = None if result.returncode == 0 else f"WORKER_EXIT_{result.returncode}"
++            except subprocess.TimeoutExpired:
++                failure = "WORKER_TIMEOUT"
++        store = SixPointStore.open(args.output / "result.json")
++        if failure:
++            recover_worker_failure(store, case_id, failure)
++        store.save()
++    store.data["status"] = ("SIX_POINT_EXECUTION_COMPLETE" if all(
++        c["status"] == "EVALUATED" for c in store.data["cases"].values()) else "INCOMPLETE")
++    store.save()
++
++
++if __name__ == "__main__":
++    main()
+diff --git a/main/tube_state/rgb_dct_continuous_solver.py b/main/tube_state/rgb_dct_continuous_solver.py
+new file mode 100644
+index 0000000..62acdee
+--- /dev/null
++++ b/main/tube_state/rgb_dct_continuous_solver.py
+@@ -0,0 +1,125 @@
++"""Deterministic FP64 convex solver for the unchanged three-direction surrogate.
++
++A Frank-Wolfe gap bounds objective suboptimality over the entire nonnegative
++simplex. This is a numerical convex-surrogate certificate, not a real-tail claim.
++"""
++from __future__ import annotations
++
++import math
++import numpy as np
++from main.tube_state import rgb_dct_structured_feedback as fixed
++
++SPEC = dict(name="projected_gradient_fw_gap_v1", dtype="float64",
++            max_iterations=200000, absolute_gap_tolerance=1e-18,
++            relative_gap_tolerance=1e-11, roundoff_factor=64)
++
++
++class SolverFailure(RuntimeError):
++    def __init__(self, receipt):
++        self.receipt = receipt
++        super().__init__(receipt["reason"])
++
++
++def _project(x, radius):
++    positive = np.maximum(x, 0.0)
++    if positive.sum() <= radius:
++        return positive
++    ordered = np.sort(positive)[::-1]
++    excess = np.cumsum(ordered) - radius
++    active = np.flatnonzero(ordered - excess / np.arange(1, len(x) + 1) > 0)
++    if not len(active):
++        return np.zeros_like(x)
++    k = int(active[-1])
++    projected = np.maximum(positive - excess[k] / (k + 1), 0.0)
++    # Inward rounding: the returned point is feasible without budget tolerance.
++    total = float(projected.sum())
++    if total > radius:
++        projected *= np.nextafter(radius / total, 0.0)
++    return projected
++
++
++def select_coefficients(q, jacobian, remaining,
++                        available=(True, True, True), *,
++                        max_iterations=SPEC["max_iterations"],
++                        absolute_tolerance=SPEC["absolute_gap_tolerance"],
++                        relative_tolerance=SPEC["relative_gap_tolerance"]):
++    receipt = dict(solver=dict(SPEC), status="FAILED", reason=None,
++                   coefficients=None, predicted_q=None, iterations=0)
++    def fail(reason):
++        receipt["reason"] = reason
++        raise SolverFailure(receipt.copy())
++    q = np.asarray(q, dtype=np.float64)
++    J = np.asarray(jacobian, dtype=np.float64)
++    mask = np.asarray(available)
++    if (q.shape != (30,) or J.shape != (30, 3) or mask.shape != (3,)
++            or mask.dtype != np.bool_):
++        fail("INVALID_SHAPE_OR_AVAILABILITY")
++    if not np.isfinite(q).all() or not np.isfinite(J).all():
++        fail("NONFINITE_INPUT")
++    if not math.isfinite(remaining) or not 0 <= remaining <= fixed.R_STAR:
++        fail("INVALID_REMAINING_BUDGET")
++    if (not isinstance(max_iterations, int) or max_iterations < 0
++            or not math.isfinite(absolute_tolerance) or absolute_tolerance < 0
++            or not math.isfinite(relative_tolerance) or relative_tolerance < 0):
++        fail("INVALID_NUMERICAL_SETTINGS")
++    radius = min(fixed.POINT_CAP, remaining)
++    weights = np.where(q > 0, 4.0, 1.0)
++    # Unavailable directions cannot influence projection, smoothness or the LMO.
++    J = J.copy()
++    J[:, ~mask] = 0.0
++    a = np.zeros(3)
++    receipt.update(radius=radius, available=mask.tolist(),
++                   max_iterations=max_iterations)
++    try:
++        with np.errstate(over="raise", invalid="raise", divide="raise"):
++            hessian_bound = 2 / 30 * J.T @ (weights[:, None] * J)
++            hessian_bound += 2 * fixed.RIDGE * np.eye(3)
++            lipschitz = float(np.linalg.eigvalsh(hessian_bound)[-1])
++            if not math.isfinite(lipschitz) or lipschitz <= 0:
++                fail("INVALID_LIPSCHITZ_BOUND")
++            def evaluate(coeff):
++                prediction = q + J @ coeff
++                residual = np.maximum(fixed.MARGIN - prediction, 0.0)
++                objective = float(np.mean(weights * residual ** 2)
++                                  + fixed.RIDGE * (coeff @ coeff))
++                gradient = -2 / 30 * J.T @ (weights * residual) + 2 * fixed.RIDGE * coeff
++                if not math.isfinite(objective) or not np.isfinite(gradient).all():
++                    fail("NONFINITE_ITERATE")
++                return objective, gradient, prediction
++            f0, g0, _ = evaluate(a)
++            tolerance = max(absolute_tolerance, relative_tolerance * f0)
++            receipt.update(zero_objective=f0, tolerance=tolerance,
++                           derivative_at_zero=g0.tolist(), lipschitz_bound=lipschitz)
++            zero_kkt = radius == 0 or not mask.any() or np.all(g0[mask] >= 0)
++            for iteration in range(max_iterations + 1):
++                f, gradient, predicted = evaluate(a)
++                linear_minimum = radius * min(0.0, float(gradient[mask].min())) if mask.any() else 0.0
++                raw_gap = float(gradient @ a - linear_minimum)
++                # A conservative FP64 rounding cushion; not interval arithmetic.
++                scale = (float(np.abs(gradient) @ a) + abs(linear_minimum)
++                         + f + f0)
++                rounding = SPEC["roundoff_factor"] * np.finfo(np.float64).eps * scale
++                gap = max(0.0, raw_gap) + rounding
++                receipt.update(iterations=iteration, predicted_objective=f,
++                    gradient=gradient.tolist(), raw_frank_wolfe_gap=raw_gap,
++                    roundoff_cushion=rounding, global_objective_gap_upper_bound=gap)
++                if raw_gap < -rounding:
++                    fail("NEGATIVE_GAP_NUMERICAL_ERROR")
++                if (zero_kkt or np.any(a > 0)) and gap <= tolerance:
++                    if (np.any(a < 0) or np.any(a[~mask] != 0)
++                            or float(a.sum()) > radius or f > f0 + rounding):
++                        fail("FINAL_FEASIBILITY_OR_DESCENT_ERROR")
++                    receipt.update(status="ZERO_OPTIMUM" if not np.any(a) else "CERTIFIED",
++                        reason=None, coefficients=a.tolist(), predicted_q=predicted.tolist())
++                    return receipt
++                if iteration == max_iterations:
++                    fail("MAX_ITERATIONS_WITHOUT_CERTIFICATE")
++                updated = _project(a - gradient / lipschitz, radius)
++                updated[~mask] = 0.0
++                if np.array_equal(updated, a):
++                    fail("STAGNATION_WITHOUT_CERTIFICATE")
++                a = updated
++    except SolverFailure:
++        raise
++    except (FloatingPointError, np.linalg.LinAlgError, OverflowError) as exc:
++        fail(f"NUMERICAL_FAILURE:{type(exc).__name__}")
+diff --git a/notebooks/video_trajectory_blind_validation_v1_colab.ipynb b/notebooks/video_trajectory_blind_validation_v1_colab.ipynb
+new file mode 100644
+index 0000000..dd87f2f
+--- /dev/null
++++ b/notebooks/video_trajectory_blind_validation_v1_colab.ipynb
+@@ -0,0 +1,465 @@
++{
++ "cells": [
++  {
++   "cell_type": "code",
++   "execution_count": null,
++   "id": "video-trajectory-blind-validation-0",
++   "metadata": {},
++   "outputs": [],
++   "source": [
++    "from google.colab import drive\n",
++    "drive.mount('/content/drive')\n"
++   ]
++  },
++  {
++   "cell_type": "markdown",
++   "id": "video-trajectory-blind-validation-1",
++   "metadata": {},
++   "source": [
++    "# Video Trajectory Blind Validation V1: six saved-state tail points\n",
++    "\n",
++    "This notebook reuses the environment/setup/worker approach of the successfully\n",
++    "executed 20260928 structured-feedback notebook. It loads the original saved\n",
++    "states and complete UniPC histories for the same two sources at T46/47/48.\n",
++    "Each point is independent with spent=0. The only optimizer revision is the\n",
++    "continuous certified solver; directions, budgets, scales and acceptance guards\n",
++    "are unchanged. All six outcomes survive setup, missing-artifact and worker failures.\n",
++    "\n",
++    "Publication status: **DRAFT — candidate source not yet published; SOURCE_SHA is intentionally unset.**\n",
++    "\n",
++    "After publication, run all once in Colab. The user executes GPU work. Rebuilding\n",
++    "the basis must match the original full raw/masked hashes. This stage reports\n",
++    "real-tail acceptance only, with no MP4, sequential control or blind-detection\n",
++    "success claim. Results are in the new output's `six_point_run/result.json`.\n"
++   ]
++  },
++  {
++   "cell_type": "code",
++   "execution_count": null,
++   "id": "video-trajectory-blind-validation-2",
++   "metadata": {},
++   "outputs": [],
++   "source": [
++    "from pathlib import Path\n",
++    "import datetime, json, sys\n",
++    "\n",
++    "SOURCE_SHA = None\n",
++    "CASE_IDS = ('eval_copperkettle_s2501', 'eval_paperplane_s2502')\n",
++    "ARMS = ('FIXED_T46', 'FIXED_T47', 'FIXED_T48')\n",
++    "FIXED_DENOMINATOR = {'sources': 2, 'independent_points_per_source': 3, 'real_tail_points': 6, 'mp4_slots': 0}\n",
++    "OUTPUT_PARENT = Path('/content/drive/MyDrive/Video-WM/Video-Trajectory-Blind-Validation-V1')\n",
++    "OUTPUT_PARENT.mkdir(parents=True, exist_ok=True)\n",
++    "stamp = datetime.datetime.now(datetime.timezone.utc).strftime('%Y%m%dT%H%M%S%fZ')\n",
++    "OUTPUT = OUTPUT_PARENT / stamp\n",
++    "OUTPUT.mkdir(exist_ok=False)\n",
++    "SETUP_SLOTS_PATH = OUTPUT / 'setup_slots.json'\n",
++    "SETUP_RECEIPT_PATH = OUTPUT / 'setup_receipt.json'\n",
++    "setup_slots = {\n",
++    "    'status': 'GLOBAL_SETUP_NOT_COMPLETED',\n",
++    "    'source_sha': SOURCE_SHA,\n",
++    "    'fixed_denominator': FIXED_DENOMINATOR,\n",
++    "    'cases': {\n",
++    "        case_id: {\n",
++    "            'status': 'NOT_RUN_GLOBAL_SETUP_FAILURE',\n",
++    "            'slots': {\n",
++    "                arm: {\n",
++    "                    'status': 'NOT_RUN_GLOBAL_SETUP_FAILURE',\n",
++    "                    'reason': 'SETUP_NOT_COMPLETED',\n",
++    "                    'path': None,\n",
++    "                    'score': None,\n",
++    "                    'decision': None,\n",
++    "                }\n",
++    "                for arm in ARMS\n",
++    "            },\n",
++    "        }\n",
++    "        for case_id in CASE_IDS\n",
++    "    },\n",
++    "}\n",
++    "SETUP_SLOTS_PATH.write_text(json.dumps(setup_slots, indent=2) + '\\n', encoding='utf-8')\n",
++    "SETUP_RECEIPT_PATH.write_text(json.dumps({\n",
++    "    'status': 'SETUP_STARTED',\n",
++    "    'source_sha': SOURCE_SHA,\n",
++    "    'output_dir': str(OUTPUT),\n",
++    "    'python': sys.version,\n",
++    "    'executable': sys.executable,\n",
++    "}, indent=2) + '\\n', encoding='utf-8')\n",
++    "print('fresh output:', OUTPUT, flush=True)\n",
++    "\n",
++    "SAVED_RUN = Path('/content/drive/MyDrive/Video-WM/RGB-DCT-Structured-Terminal-Feedback-V1/20260928T053626644222Z')\n",
++    "RUN_OUTPUT = OUTPUT / 'six_point_run'\n",
++    "if SOURCE_SHA is None:\n",
++    "    raise RuntimeError('Unpublished candidate draft: bind the published source SHA with the notebook builder before Run all.')\n"
++   ]
++  },
++  {
++   "cell_type": "code",
++   "execution_count": null,
++   "id": "video-trajectory-blind-validation-3",
++   "metadata": {},
++   "outputs": [],
++   "source": [
++    "import importlib.metadata\n",
++    "import os\n",
++    "import subprocess\n",
++    "\n",
++    "SETUP_LOG = OUTPUT / 'setup.log'\n",
++    "\n",
++    "def write_json(path, value):\n",
++    "    temporary = path.with_name(path.name + '.tmp')\n",
++    "    temporary.write_text(json.dumps(value, indent=2) + '\\n', encoding='utf-8')\n",
++    "    os.replace(temporary, path)\n",
++    "\n",
++    "\n",
++    "def mark_setup_failure(reason, *, command=None, returncode=None):\n",
++    "    retained = json.loads(SETUP_SLOTS_PATH.read_text(encoding='utf-8'))\n",
++    "    retained['status'] = 'GLOBAL_SETUP_FAILED'\n",
++    "    retained['reason'] = reason\n",
++    "    for case in retained['cases'].values():\n",
++    "        case['status'] = 'NOT_RUN_GLOBAL_SETUP_FAILURE'\n",
++    "        for slot in case['slots'].values():\n",
++    "            slot['status'] = 'NOT_RUN_GLOBAL_SETUP_FAILURE'\n",
++    "            slot['reason'] = reason\n",
++    "    write_json(SETUP_SLOTS_PATH, retained)\n",
++    "    failure = {'status': 'SETUP_FAILED', 'reason': reason, 'command': command, 'returncode': returncode}\n",
++    "    write_json(OUTPUT / 'setup_failure.json', failure)\n",
++    "    receipt = json.loads(SETUP_RECEIPT_PATH.read_text(encoding='utf-8'))\n",
++    "    receipt.update(failure)\n",
++    "    write_json(SETUP_RECEIPT_PATH, receipt)\n",
++    "\n",
++    "\n",
++    "def logged_run(command, *, cwd=None, env=None, check=True, log_path=SETUP_LOG):\n",
++    "    with log_path.open('a', encoding='utf-8') as log:\n",
++    "        line = 'COMMAND ' + repr(command) + '\\n'\n",
++    "        print(line, end='', flush=True)\n",
++    "        log.write(line)\n",
++    "        log.flush()\n",
++    "        child = subprocess.Popen(\n",
++    "            command, cwd=cwd, env=env,\n",
++    "            stdout=subprocess.PIPE, stderr=subprocess.STDOUT,\n",
++    "            text=True, bufsize=1,\n",
++    "        )\n",
++    "        for line in child.stdout:\n",
++    "            print(line, end='', flush=True)\n",
++    "            log.write(line)\n",
++    "            log.flush()\n",
++    "        returncode = child.wait()\n",
++    "        log.write('EXIT ' + str(returncode) + '\\n')\n",
++    "        log.flush()\n",
++    "    if check and returncode:\n",
++    "        reason = 'SETUP_COMMAND_EXIT_' + str(returncode)\n",
++    "        mark_setup_failure(reason, command=command, returncode=returncode)\n",
++    "        raise subprocess.CalledProcessError(returncode, command)\n",
++    "    return subprocess.CompletedProcess(command, returncode)\n",
++    "\n",
++    "\n",
++    "def version(name):\n",
++    "    try:\n",
++    "        return importlib.metadata.version(name)\n",
++    "    except importlib.metadata.PackageNotFoundError:\n",
++    "        return None\n",
++    "\n",
++    "print('Python:', sys.version, flush=True)\n",
++    "print('Executable:', sys.executable, flush=True)\n",
++    "logged_run([sys.executable, '-m', 'pip', '--version'])\n",
++    "logged_run(['apt-get', 'update', '-qq'])\n",
++    "logged_run(['apt-get', 'install', '-y', '-qq', 'ffmpeg'])\n",
++    "if version('torch') is None:\n",
++    "    logged_run([\n",
++    "        sys.executable, '-m', 'pip', 'install',\n",
++    "        'torch==2.11.0', 'torchvision',\n",
++    "        '--index-url', 'https://download.pytorch.org/whl/cu128',\n",
++    "    ])\n",
++    "logged_run([\n",
++    "    sys.executable, '-m', 'pip', 'install',\n",
++    "    'diffusers==0.40.0', 'transformers', 'accelerate', 'ftfy',\n",
++    "    'sentencepiece', 'safetensors', 'huggingface_hub', 'numpy', 'Pillow',\n",
++    "])\n"
++   ]
++  },
++  {
++   "cell_type": "code",
++   "execution_count": null,
++   "id": "video-trajectory-blind-validation-4",
++   "metadata": {},
++   "outputs": [],
++   "source": [
++    "environment_check_code = r'''import importlib.metadata\n",
++    "import json\n",
++    "import os\n",
++    "import shutil\n",
++    "import sys\n",
++    "import traceback\n",
++    "from pathlib import Path\n",
++    "\n",
++    "receipt_path = Path(os.environ['RGB_DCT_SETUP_ENVIRONMENT_RECEIPT'])\n",
++    "packages = (\n",
++    "    'torch', 'torchvision', 'diffusers', 'transformers', 'accelerate',\n",
++    "    'ftfy', 'sentencepiece', 'safetensors', 'huggingface_hub', 'numpy', 'Pillow',\n",
++    ")\n",
++    "receipt = {\n",
++    "    'status': 'FAILED',\n",
++    "    'python': sys.version,\n",
++    "    'executable': sys.executable,\n",
++    "    'packages': {},\n",
++    "    'ffmpeg': shutil.which('ffmpeg'),\n",
++    "    'ffprobe': shutil.which('ffprobe'),\n",
++    "    'torch_version_policy': 'record_and_api_check',\n",
++    "    'cuda_build_suffix_policy': 'record_only',\n",
++    "}\n",
++    "for name in packages:\n",
++    "    try:\n",
++    "        receipt['packages'][name] = importlib.metadata.version(name)\n",
++    "    except importlib.metadata.PackageNotFoundError:\n",
++    "        receipt['packages'][name] = None\n",
++    "try:\n",
++    "    import torch\n",
++    "    import diffusers\n",
++    "    from diffusers import AutoencoderKLWan, UniPCMultistepScheduler, WanPipeline\n",
++    "\n",
++    "    torch_version = str(torch.__version__)\n",
++    "    receipt.update({\n",
++    "        'torch_version': torch_version,\n",
++    "        'torch_public_version': torch_version.split('+', 1)[0],\n",
++    "        'torch_build_suffix': torch_version.split('+', 1)[1] if '+' in torch_version else None,\n",
++    "        'torch_cuda_runtime': torch.version.cuda,\n",
++    "        'diffusers_version': diffusers.__version__,\n",
++    "        'cuda_available': torch.cuda.is_available(),\n",
++    "        'cuda_device_count': torch.cuda.device_count(),\n",
++    "        'cuda_device_name': torch.cuda.get_device_name(0) if torch.cuda.is_available() else None,\n",
++    "        'cuda_device_capability': list(torch.cuda.get_device_capability(0)) if torch.cuda.is_available() else None,\n",
++    "        'cuda_bfloat16_supported': bool(torch.cuda.is_bf16_supported()) if torch.cuda.is_available() else False,\n",
++    "        'wan_pipeline_import': WanPipeline is not None,\n",
++    "        'wan_vae_import': AutoencoderKLWan is not None,\n",
++    "    })\n",
++    "    assert receipt['ffmpeg'] and receipt['ffprobe'], 'ffmpeg and ffprobe are required'\n",
++    "    assert diffusers.__version__ == '0.40.0', diffusers.__version__\n",
++    "    assert receipt['cuda_available'], 'CUDA torch required'\n",
++    "\n",
++    "    scheduler = UniPCMultistepScheduler(\n",
++    "        prediction_type='flow_prediction', thresholding=False,\n",
++    "        predict_x0=True, lower_order_final=True, use_flow_sigmas=True,\n",
++    "        flow_shift=3.0, final_sigmas_type='zero',\n",
++    "    )\n",
++    "    scheduler.set_timesteps(4, device='cuda')\n",
++    "    sample = torch.zeros((1, 1, 2, 2), device='cuda', dtype=torch.float32)\n",
++    "    model_output = torch.ones_like(sample)\n",
++    "    previous = scheduler.step(model_output, scheduler.timesteps[0], sample, return_dict=False)[0]\n",
++    "    assert scheduler.step_index == 1 and bool(torch.isfinite(previous).all()), 'native UniPC forward smoke failed'\n",
++    "    receipt['native_unipc_forward_smoke'] = True\n",
++    "    receipt['status'] = 'VALID'\n",
++    "except Exception as exc:\n",
++    "    receipt['reason'] = f'{type(exc).__name__}: {exc}'\n",
++    "    receipt['traceback'] = traceback.format_exc()\n",
++    "finally:\n",
++    "    receipt_path.write_text(json.dumps(receipt, indent=2) + '\\n', encoding='utf-8')\n",
++    "if receipt['status'] != 'VALID':\n",
++    "    raise RuntimeError(receipt['reason'])\n",
++    "'''\n",
++    "setup_environment_path = OUTPUT / 'setup_environment_receipt.json'\n",
++    "check_env = os.environ.copy()\n",
++    "check_env['RGB_DCT_SETUP_ENVIRONMENT_RECEIPT'] = str(setup_environment_path)\n",
++    "completed = logged_run(\n",
++    "    [sys.executable, '-u', '-c', environment_check_code],\n",
++    "    env=check_env,\n",
++    "    check=False,\n",
++    ")\n",
++    "if completed.returncode:\n",
++    "    if setup_environment_path.exists():\n",
++    "        setup_environment = json.loads(setup_environment_path.read_text(encoding='utf-8'))\n",
++    "        reason = 'ENVIRONMENT_CHECK:' + setup_environment.get('reason', 'fresh child failed')\n",
++    "    else:\n",
++    "        reason = 'ENVIRONMENT_CHECK:fresh child produced no receipt'\n",
++    "    mark_setup_failure(reason, command=[sys.executable, '-u', '-c', '<environment_check_code>'], returncode=completed.returncode)\n",
++    "    raise subprocess.CalledProcessError(completed.returncode, [sys.executable, '-u', '-c', '<environment_check_code>'])\n",
++    "print('fresh-child environment receipt:', setup_environment_path, flush=True)\n"
++   ]
++  },
++  {
++   "cell_type": "code",
++   "execution_count": null,
++   "id": "video-trajectory-blind-validation-5",
++   "metadata": {},
++   "outputs": [],
++   "source": [
++    "REPO = Path('/content/SC-SSTW-VIDEO-TRAJECTORY-BLIND-VALIDATION-' + stamp)\n",
++    "try:\n",
++    "    logged_run(['git', 'clone', '--filter=blob:none', 'https://github.com/RICHAAARC/SC-SSTW.git', str(REPO)])\n",
++    "    logged_run(['git', '-C', str(REPO), 'fetch', '--depth', '2', 'origin', 'dev/video-trajectory-blind-validation-v1'])\n",
++    "    logged_run(['git', '-C', str(REPO), 'checkout', '--detach', SOURCE_SHA])\n",
++    "    actual = subprocess.check_output(['git', '-C', str(REPO), 'rev-parse', 'HEAD'], text=True).strip()\n",
++    "    attached = subprocess.run(\n",
++    "        ['git', '-C', str(REPO), 'symbolic-ref', '-q', 'HEAD'],\n",
++    "        stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True,\n",
++    "    ).returncode == 0\n",
++    "    porcelain = subprocess.check_output(['git', '-C', str(REPO), 'status', '--porcelain'], text=True)\n",
++    "    if actual != SOURCE_SHA:\n",
++    "        raise RuntimeError('immutable source SHA readback mismatch')\n",
++    "    if attached:\n",
++    "        raise RuntimeError('source checkout is not detached')\n",
++    "    if porcelain:\n",
++    "        raise RuntimeError('source checkout is not clean')\n",
++    "    source_files = {\n",
++    "        'protocol': REPO / 'docs/video_trajectory_blind_validation_v1.md',\n",
++    "        'config': REPO / 'experiments/wan_state_clock/configs/video_trajectory_blind_validation_v1.json',\n",
++    "        'runner': REPO / 'experiments/wan_state_clock/video_trajectory_blind_validation_run.py',\n",
++    "        'method': REPO / 'main/tube_state/rgb_dct_continuous_solver.py',\n",
++    "        'backend': REPO / 'runtime/wan/rgb_dct_structured_feedback_backend.py',\n",
++    "    }\n",
++    "    source_files['shared_real_loop'] = REPO / 'experiments/wan_state_clock/rgb_dct_structured_terminal_feedback_run.py'\n",
++    "    import hashlib\n",
++    "    source_receipt = {\n",
++    "        'status': 'VALID',\n",
++    "        'expected_sha': SOURCE_SHA,\n",
++    "        'actual_sha': actual,\n",
++    "        'detached_head': not attached,\n",
++    "        'clean_checkout': not bool(porcelain),\n",
++    "        'repo': str(REPO),\n",
++    "        'files': {\n",
++    "            name: {'path': str(path), 'sha256': hashlib.sha256(path.read_bytes()).hexdigest()}\n",
++    "            for name, path in source_files.items()\n",
++    "        },\n",
++    "    }\n",
++    "    write_json(OUTPUT / 'source_receipt.json', source_receipt)\n",
++    "except Exception as exc:\n",
++    "    reason = f'SOURCE_CHECKOUT:{type(exc).__name__}: {exc}'\n",
++    "    mark_setup_failure(reason)\n",
++    "    raise\n",
++    "print('detached source commit:', actual, flush=True)\n"
++   ]
++  },
++  {
++   "cell_type": "code",
++   "execution_count": null,
++   "id": "video-trajectory-blind-validation-6",
++   "metadata": {},
++   "outputs": [],
++   "source": [
++    "setup_environment = json.loads(setup_environment_path.read_text(encoding='utf-8'))\n",
++    "if setup_environment.get('status') != 'VALID':\n",
++    "    reason = 'ENVIRONMENT_CHECK:' + setup_environment.get('reason', 'invalid receipt')\n",
++    "    mark_setup_failure(reason)\n",
++    "    raise RuntimeError(reason)\n",
++    "retained = json.loads(SETUP_SLOTS_PATH.read_text(encoding='utf-8'))\n",
++    "retained['status'] = 'SETUP_COMPLETE_AWAITING_RESULT'\n",
++    "retained['reason'] = None\n",
++    "for case in retained['cases'].values():\n",
++    "    case['status'] = 'PENDING_RUNNER_RESULT'\n",
++    "    for slot in case['slots'].values():\n",
++    "        slot['status'] = 'PENDING_RUNNER_RESULT'\n",
++    "        slot['reason'] = None\n",
++    "write_json(SETUP_SLOTS_PATH, retained)\n",
++    "write_json(SETUP_RECEIPT_PATH, {\n",
++    "    'status': 'SETUP_COMPLETE',\n",
++    "    'source_sha': SOURCE_SHA,\n",
++    "    'output_dir': str(OUTPUT),\n",
++    "    'repo': str(REPO),\n",
++    "    'source_receipt': str(OUTPUT / 'source_receipt.json'),\n",
++    "    'environment_receipt': str(setup_environment_path),\n",
++    "    'python': sys.version,\n",
++    "    'executable': sys.executable,\n",
++    "})\n",
++    "print('setup complete; fixed runner will now create result.json before workers', flush=True)\n"
++   ]
++  },
++  {
++   "cell_type": "code",
++   "execution_count": null,
++   "id": "video-trajectory-blind-validation-7",
++   "metadata": {},
++   "outputs": [],
++   "source": [
++    "RUN_LOG = OUTPUT / 'run.log'\n",
++    "run_env = os.environ.copy()\n",
++    "run_env['PYTHONUNBUFFERED'] = '1'\n",
++    "command = [\n",
++    "    sys.executable, '-u', '-m',\n",
++    "    'experiments.wan_state_clock.video_trajectory_blind_validation_run',\n",
++    "    '--saved-run', str(SAVED_RUN),\n",
++    "    '--output', str(RUN_OUTPUT), '--execute-real-tail',\n",
++    "]\n",
++    "completed = logged_run(command, cwd=REPO, env=run_env, check=False, log_path=RUN_LOG)\n",
++    "RESULT_PATH = RUN_OUTPUT / 'result.json'\n",
++    "write_json(OUTPUT / 'execution_receipt.json', {\n",
++    "    'command': command,\n",
++    "    'cwd': str(REPO),\n",
++    "    'returncode': completed.returncode,\n",
++    "    'result_path': str(RESULT_PATH),\n",
++    "    'result_exists': RESULT_PATH.is_file(),\n",
++    "})\n",
++    "retained = json.loads(SETUP_SLOTS_PATH.read_text(encoding='utf-8'))\n",
++    "if not RESULT_PATH.is_file():\n",
++    "    retained['status'] = 'RUNNER_FAILED_NO_RESULT'\n",
++    "    retained['reason'] = 'RUNNER_DID_NOT_PRODUCE_RESULT'\n",
++    "    for case in retained['cases'].values():\n",
++    "        case['status'] = 'NOT_RUN_RUNNER_FAILURE'\n",
++    "        for slot in case['slots'].values():\n",
++    "            slot['status'] = 'NOT_RUN_RUNNER_FAILURE'\n",
++    "            slot['reason'] = 'RUNNER_DID_NOT_PRODUCE_RESULT'\n",
++    "    write_json(SETUP_SLOTS_PATH, retained)\n",
++    "    raise FileNotFoundError('runner produced no retained result.json; inspect setup_slots.json and run.log')\n",
++    "retained['status'] = 'SUPERSEDED_BY_RESULT_JSON'\n",
++    "retained['result_path'] = str(RESULT_PATH)\n",
++    "write_json(SETUP_SLOTS_PATH, retained)\n",
++    "print('runner return code:', completed.returncode, flush=True)\n",
++    "print('retained result:', RESULT_PATH, flush=True)\n"
++   ]
++  },
++  {
++   "cell_type": "code",
++   "execution_count": null,
++   "id": "video-trajectory-blind-validation-8",
++   "metadata": {},
++   "outputs": [],
++   "source": [
++    "result = json.loads(RESULT_PATH.read_text(encoding='utf-8'))\n",
++    "if result.get('source_receipt', {}).get('git_head') != SOURCE_SHA:\n",
++    "    raise RuntimeError('result source SHA mismatch')\n",
++    "if result.get('fixed_denominator') != FIXED_DENOMINATOR:\n",
++    "    raise RuntimeError('fixed six-point denominator mismatch')\n",
++    "if tuple(result.get('cases', {}).keys()) != CASE_IDS:\n",
++    "    raise RuntimeError('fixed source roster mismatch')\n",
++    "print('status:', result.get('status'))\n",
++    "print('fixed point counts:', result.get('point_counts'))\n",
++    "for case_id in CASE_IDS:\n",
++    "    case = result['cases'][case_id]\n",
++    "    if tuple(case['controls']) != ARMS:\n",
++    "        raise RuntimeError('fixed point roster mismatch')\n",
++    "    print(case_id, case.get('status'), case.get('stage'))\n",
++    "    for arm in ARMS:\n",
++    "        rows = case['controls'][arm]\n",
++    "        for row in rows:\n",
++    "            print(arm, row.get('outcome'), row.get('accepted_scale'), row.get('error'))\n",
++    "            for trial in row.get('candidates', []):\n",
++    "                print('  scale', trial['scale'], trial['decision'], trial.get('C'),\n",
++    "                      trial.get('lost_groups'), trial.get('true_hinge_improvement'))\n",
++    "print('evidence ceiling:', result['evidence_ceiling'])\n",
++    "print('retained result:', RESULT_PATH)\n"
++   ]
++  }
++ ],
++ "metadata": {
++  "accelerator": "GPU",
++  "colab": {
++   "name": "rgb_dct_b2_terminal_receiver_v1_colab.ipynb",
++   "provenance": []
++  },
++  "kernelspec": {
++   "display_name": "Python 3",
++   "language": "python",
++   "name": "python3"
++  },
++  "language_info": {
++   "name": "python",
++   "version": "3"
++  },
++  "candidate_binding": {
++   "status": "UNPUBLISHED_DRAFT",
++   "source_sha": null,
++   "template_sha256": "3f3d62e4b70306e766cb949668717912df95d3c48e9052a1fd3886701b7ac3ed",
++   "template_real_run": "20260928T053626644222Z",
++   "validation": "AST and structure only; GPU execution is user-run"
++  }
++ },
++ "nbformat": 4,
++ "nbformat_minor": 5
++}
+diff --git a/scripts/build_video_trajectory_blind_validation_notebook.py b/scripts/build_video_trajectory_blind_validation_notebook.py
+new file mode 100644
+index 0000000..8617145
+--- /dev/null
++++ b/scripts/build_video_trajectory_blind_validation_notebook.py
+@@ -0,0 +1,112 @@
++"""Reuse the successful ten-slot notebook for six saved-state tail diagnostics.
++
++Without --source-sha, produce an explicit unpublished draft. After the candidate
++source is published, bind its verified immutable SHA with this same builder.
++"""
++from __future__ import annotations
++import argparse
++import ast
++import copy
++import hashlib
++import json
++import re
++from pathlib import Path
++
++ROOT = Path(__file__).resolve().parents[1]
++TEMPLATE = ROOT / "notebooks/rgb_dct_structured_terminal_feedback_v1_colab.ipynb"
++OUTPUT = ROOT / "notebooks/video_trajectory_blind_validation_v1_colab.ipynb"
++
++
++def build(source_sha=None, output=OUTPUT):
++    if source_sha is not None and not re.fullmatch(r"[0-9a-f]{40}", source_sha):
++        raise ValueError("published immutable source SHA required")
++    notebook = json.loads(TEMPLATE.read_text())
++    cells = copy.deepcopy(notebook["cells"])
++    def get(i): return "".join(cells[i]["source"])
++    def put(i, text): cells[i]["source"] = text.splitlines(keepends=True)
++    put(1, """# Video Trajectory Blind Validation V1: six saved-state tail points
++
++This notebook reuses the environment/setup/worker approach of the successfully
++executed 20260928 structured-feedback notebook. It loads the original saved
++states and complete UniPC histories for the same two sources at T46/47/48.
++Each point is independent with spent=0. The only optimizer revision is the
++continuous certified solver; directions, budgets, scales and acceptance guards
++are unchanged. All six outcomes survive setup, missing-artifact and worker failures.
++
++Publication status: """ + ("immutable candidate SHA bound.\n" if source_sha else
++"**DRAFT — candidate source not yet published; SOURCE_SHA is intentionally unset.**\n") + """
++After publication, run all once in Colab. The user executes GPU work. Rebuilding
++the basis must match the original full raw/masked hashes. This stage reports
++real-tail acceptance only, with no MP4, sequential control or blind-detection
++success claim. Results are in the new output's `six_point_run/result.json`.
++""")
++    setup = get(2).replace("SOURCE_SHA = '2cfb709d7980068e00c5c3796198fa8960d6bc54'", f"SOURCE_SHA = {source_sha!r}")
++    setup = setup.replace("ARMS = ('OFF', 'SINGLE49', 'ONLY49', 'MULTI46_47_48_49', 'MULTI46_47_48_FREE49')",
++                          "ARMS = ('FIXED_T46', 'FIXED_T47', 'FIXED_T48')")
++    setup = setup.replace("{'sources': 2, 'arms_per_source': 5, 'mp4_score_slots': 10, 'frames': 1810}",
++        "{'sources': 2, 'independent_points_per_source': 3, 'real_tail_points': 6, 'mp4_slots': 0}")
++    setup = setup.replace("Video-WM/RGB-DCT-Structured-Terminal-Feedback-V1')",
++                          "Video-WM/Video-Trajectory-Blind-Validation-V1')")
++    setup += "\nSAVED_RUN = Path('/content/drive/MyDrive/Video-WM/RGB-DCT-Structured-Terminal-Feedback-V1/20260928T053626644222Z')\nRUN_OUTPUT = OUTPUT / 'six_point_run'\n"
++    setup += "if SOURCE_SHA is None:\n    raise RuntimeError('Unpublished candidate draft: bind the published source SHA with the notebook builder before Run all.')\n"
++    put(2, setup)
++    checkout = get(5).replace("SC-SSTW-RGB-DCT-STRUCTURED-TERMINAL-FEEDBACK-", "SC-SSTW-VIDEO-TRAJECTORY-BLIND-VALIDATION-")
++    checkout = checkout.replace("'dev/rgb-dct-structured-terminal-feedback-v1'", "'dev/video-trajectory-blind-validation-v1'")
++    checkout = checkout.replace("'docs/rgb_dct_structured_terminal_feedback_v1_protocol.md'", "'docs/video_trajectory_blind_validation_v1.md'")
++    checkout = checkout.replace("'experiments/wan_state_clock/configs/rgb_dct_structured_terminal_feedback_v1.json'", "'experiments/wan_state_clock/configs/video_trajectory_blind_validation_v1.json'")
++    checkout = checkout.replace("'experiments/wan_state_clock/rgb_dct_structured_terminal_feedback_run.py'", "'experiments/wan_state_clock/video_trajectory_blind_validation_run.py'")
++    checkout = checkout.replace("'main/tube_state/rgb_dct_structured_feedback.py'", "'main/tube_state/rgb_dct_continuous_solver.py'")
++    checkout = checkout.replace("    import hashlib", "    source_files['shared_real_loop'] = REPO / 'experiments/wan_state_clock/rgb_dct_structured_terminal_feedback_run.py'\n    import hashlib")
++    put(5, checkout)
++    run = get(7).replace("'experiments.wan_state_clock.rgb_dct_structured_terminal_feedback_run'", "'experiments.wan_state_clock.video_trajectory_blind_validation_run'")
++    run = run.replace("'--output', str(OUTPUT),", "'--saved-run', str(SAVED_RUN),\n    '--output', str(RUN_OUTPUT), '--execute-real-tail',")
++    run = run.replace("RESULT_PATH = OUTPUT / 'result.json'", "RESULT_PATH = RUN_OUTPUT / 'result.json'")
++    put(7, run)
++    put(8, """result = json.loads(RESULT_PATH.read_text(encoding='utf-8'))
++if result.get('source_receipt', {}).get('git_head') != SOURCE_SHA:
++    raise RuntimeError('result source SHA mismatch')
++if result.get('fixed_denominator') != FIXED_DENOMINATOR:
++    raise RuntimeError('fixed six-point denominator mismatch')
++if tuple(result.get('cases', {}).keys()) != CASE_IDS:
++    raise RuntimeError('fixed source roster mismatch')
++print('status:', result.get('status'))
++print('fixed point counts:', result.get('point_counts'))
++for case_id in CASE_IDS:
++    case = result['cases'][case_id]
++    if tuple(case['controls']) != ARMS:
++        raise RuntimeError('fixed point roster mismatch')
++    print(case_id, case.get('status'), case.get('stage'))
++    for arm in ARMS:
++        rows = case['controls'][arm]
++        for row in rows:
++            print(arm, row.get('outcome'), row.get('accepted_scale'), row.get('error'))
++            for trial in row.get('candidates', []):
++                print('  scale', trial['scale'], trial['decision'], trial.get('C'),
++                      trial.get('lost_groups'), trial.get('true_hinge_improvement'))
++print('evidence ceiling:', result['evidence_ceiling'])
++print('retained result:', RESULT_PATH)
++""")
++    for i, cell in enumerate(cells):
++        cell["id"] = f"video-trajectory-blind-validation-{i}"
++        if cell["cell_type"] == "code":
++            cell["execution_count"], cell["outputs"] = None, []
++            ast.parse("".join(cell["source"]))
++    assert "".join(cells[0]["source"]) == "from google.colab import drive\ndrive.mount('/content/drive')\n"
++    notebook["cells"] = cells
++    notebook.setdefault("metadata", {})["candidate_binding"] = dict(
++        status="PUBLISHED_SHA_BOUND" if source_sha else "UNPUBLISHED_DRAFT",
++        source_sha=source_sha,
++        template_sha256=hashlib.sha256(TEMPLATE.read_bytes()).hexdigest(),
++        template_real_run="20260928T053626644222Z",
++        validation="AST and structure only; GPU execution is user-run")
++    output = Path(output)
++    output.write_text(json.dumps(notebook, ensure_ascii=False, indent=1)+"\n")
++    return output
++
++
++if __name__ == "__main__":
++    parser = argparse.ArgumentParser(description=__doc__)
++    parser.add_argument("--source-sha")
++    parser.add_argument("--output", type=Path, default=OUTPUT)
++    args = parser.parse_args()
++    print(build(args.source_sha, args.output))
+diff --git a/scripts/replay_video_trajectory_surrogates.py b/scripts/replay_video_trajectory_surrogates.py
+new file mode 100644
+index 0000000..4a25c4e
+--- /dev/null
++++ b/scripts/replay_video_trajectory_surrogates.py
+@@ -0,0 +1,73 @@
++"""Replay exactly six saved convex proxies on CPU; no model, media or GPU call."""
++from __future__ import annotations
++import argparse
++import hashlib
++import json
++from pathlib import Path
++import numpy as np
++from main.tube_state import rgb_dct_continuous_solver as solver
++from main.tube_state import rgb_dct_structured_feedback as fixed
++from experiments.wan_state_clock import video_trajectory_blind_validation_run as candidate
++
++
++def replay(result_path, reference_path):
++    config, _ = candidate.load_config()
++    if candidate.shared._sha(result_path) != config["saved_result_sha256"]:
++        raise ValueError("fixed saved result changed")
++    result = json.loads(result_path.read_text())
++    reference = json.loads(reference_path.read_text())
++    report = dict(status="CPU_SURROGATE_ONLY", real_tail_executed=False,
++        fixed_denominator=6, result_sha256=candidate.shared._sha(result_path),
++        prior_offline_review_sha256=candidate.shared._sha(reference_path),
++        source_receipt=candidate.source_receipt(), points=[])
++    for case_id in candidate.shared.CASE_IDS:
++        for index in candidate.POINTS:
++            p = next(p for p in result["cases"][case_id]["controls"]["MULTI46_47_48_49"] if p["index"] == index)
++            row = dict(source=case_id, index=index, status="PENDING")
++            report["points"].append(row)
++            try:
++                q, J = np.array(p["baseline"]["q"]), np.array(p["jacobian"])
++                rebuilt = np.column_stack([(np.array(probe["q"])-q)/probe["finite_difference_denominator"] for probe in p["probes"]])
++                assert np.array_equal(J, rebuilt)
++                legacy = fixed.select_coefficients(q, J, p["prediction"]["radius"])
++                assert legacy["coefficients"] == [0.,0.,0.]
++                answer = solver.select_coefficients(q, J, p["prediction"]["radius"])
++                prior = next(r for r in reference["points"] if r["source"] == case_id and r["index"] == index)["continuous"]
++                a = np.array(answer["coefficients"])
++                assert answer["predicted_objective"] <= prior["objective"] + 2 * answer["tolerance"]
++                assert answer["global_objective_gap_upper_bound"] <= answer["tolerance"]
++                scales = []
++                for scale in fixed.SCALES:
++                    predicted = q + J @ (a*scale)
++                    lost = np.flatnonzero((q > 0) & (predicted <= 0)).tolist()
++                    gain = fixed.weighted_hinge(q,q)-fixed.weighted_hinge(predicted,q)
++                    scales.append(dict(scale=scale, predicted_C=int((predicted>0).sum()),
++                        predicted_lost_groups=lost, predicted_hinge_improvement=gain,
++                        proxy_positive_and_hinge_guard=not lost and gain >= fixed.MIN_IMPROVEMENT,
++                        no_true_native_measurement=True))
++                row.update(status="CERTIFIED", legacy=legacy, continuous=answer,
++                    prior_objective_absolute_delta=abs(answer["predicted_objective"]-prior["objective"]),
++                    reconstructed_J_exact=True, surrogate_scales=scales)
++            except Exception as exc:
++                row.update(status="FAILED", error=f"{type(exc).__name__}: {exc}",
++                           solver_receipt=getattr(exc,"receipt",None))
++    report["counts"] = dict(expected=6, certified=sum(p["status"]=="CERTIFIED" for p in report["points"]),
++        failed=sum(p["status"]=="FAILED" for p in report["points"]))
++    return report
++
++
++def main():
++    p = argparse.ArgumentParser(description=__doc__)
++    p.add_argument("--result", type=Path, required=True)
++    p.add_argument("--reference", type=Path, required=True)
++    p.add_argument("--output", type=Path, required=True)
++    args=p.parse_args()
++    report=replay(args.result,args.reference)
++    args.output.parent.mkdir(parents=True,exist_ok=True)
++    candidate.shared._atomic_json(args.output,report)
++    print(json.dumps(report["counts"]))
++    if report["counts"]["failed"]:
++        raise SystemExit(1)
++
++if __name__ == "__main__":
++    main()
+diff --git a/tests/test_rgb_dct_continuous_solver.py b/tests/test_rgb_dct_continuous_solver.py
+new file mode 100644
+index 0000000..1d9332c
+--- /dev/null
++++ b/tests/test_rgb_dct_continuous_solver.py
+@@ -0,0 +1,286 @@
++"""CPU convex certificates and same native-loop failure/continuation contracts."""
++from __future__ import annotations
++
++import copy
++import json
++from pathlib import Path
++
++import numpy as np
++import pytest
++from main.tube_state import rgb_dct_structured_feedback as fixed
++from main.tube_state import rgb_dct_continuous_solver as solver
++
++pytestmark = pytest.mark.unit
++
++
++def test_small_optimum_lost_by_original_lattice():
++    q = np.full(30, -0.000001)
++    J = np.zeros((30, 3)); J[:, 0] = 1
++    old = fixed.select_coefficients(q, J, fixed.R_STAR)
++    new = solver.select_coefficients(q, J, fixed.R_STAR)
++    assert old["coefficients"] == [0., 0., 0.]
++    assert new["status"] == "CERTIFIED"
++    assert np.isclose(new["coefficients"][0], 0.000101 / 1.0001, rtol=1e-10)
++    assert new["predicted_objective"] < old["predicted_objective"]
++    assert new["global_objective_gap_upper_bound"] <= new["tolerance"]
++
++
++@pytest.mark.parametrize("radius,available", [(0., (True, True, True)),
++    (fixed.R_STAR, (False, False, False)), (fixed.R_STAR, (True, False, True))])
++def test_zero_and_unavailable_directions(radius, available):
++    q = np.full(30, -0.001)
++    J = np.zeros((30, 3)); J[:, 1] = 1
++    result = solver.select_coefficients(q, J, radius, available)
++    assert result["status"] == "ZERO_OPTIMUM"
++    assert result["coefficients"] == [0., 0., 0.]
++
++
++def test_positive_q_flat_hinge_zero_optimum():
++    result = solver.select_coefficients(np.full(30, .1), np.ones((30, 3)), fixed.R_STAR)
++    assert result["status"] == "ZERO_OPTIMUM"
++    assert result["global_objective_gap_upper_bound"] == 0
++
++
++def test_budget_boundary_and_unavailable_coordinate():
++    q = np.full(30, -1.)
++    J = np.ones((30, 3)); J[:, 1] = 100
++    result = solver.select_coefficients(q, J, 0.001, (True, False, True))
++    a = np.array(result["coefficients"])
++    assert a[1] == 0 and a.sum() <= .001
++    assert a.sum() >= np.nextafter(.001, 0) - 1e-18
++    assert result["global_objective_gap_upper_bound"] <= result["tolerance"]
++
++
++def test_numerical_failure_and_no_uncertified_return():
++    q, J = np.full(30, -.001), np.ones((30, 3))
++    with pytest.raises(solver.SolverFailure) as caught:
++        solver.select_coefficients(q, J, fixed.R_STAR, max_iterations=0)
++    assert caught.value.receipt["reason"] == "MAX_ITERATIONS_WITHOUT_CERTIFICATE"
++    assert caught.value.receipt["coefficients"] is None
++    assert caught.value.receipt["status"] == "FAILED"
++    for matrix in (J * np.nan, J * 1e308):
++        with pytest.raises(solver.SolverFailure):
++            solver.select_coefficients(q, matrix, fixed.R_STAR)
++    with pytest.raises(solver.SolverFailure):
++        solver.select_coefficients(q, J, fixed.R_STAR + 1e-10)
++
++
++def test_certified_tiny_nonzero_is_never_called_zero():
++    q = np.full(30, fixed.MARGIN - 1e-12)
++    result = solver.select_coefficients(q, np.ones((30, 3)), fixed.R_STAR)
++    assert result["status"] == "CERTIFIED"
++    assert sum(result["coefficients"]) > 0
++
++
++def _directions():
++    directions = []
++    for lo, hi in fixed.BINS:
++        direction = np.zeros((1, 1, 46, 1, 1), dtype=np.float32)
++        direction[:, :, lo:hi] = np.sqrt(44 / (hi - lo))
++        directions.append(direction)
++    return directions
++
++
++def test_real_loop_solver_failure_stops_sequential_chain(tmp_path):
++    from experiments.wan_state_clock import rgb_dct_structured_terminal_feedback_run as run
++    from test_rgb_dct_structured_feedback import _tiny_feedback_backend
++    backend = _tiny_feedback_backend()
++    backend.score_terminal = lambda *_: dict(q=[-.01] * 30, C=0, score=-.01)
++    store = run.Store(tmp_path / "result.json", run.initial_result(run.load_config(), tmp_path, "0" * 40))
++    store.active_case = run.CASE_IDS[0]
++    backend.count = store.count
++    calls = []
++    def failure(*_):
++        calls.append("solver")
++        raise solver.SolverFailure(dict(status="FAILED", reason="FORCED_NONCONVERGENCE", coefficients=None))
++    with pytest.raises(solver.SolverFailure):
++        run._feedback_arm(store, run.CASE_IDS[0], "MULTI46_47_48_49", backend,
++                          _directions(), b"key", coefficient_solver=failure)
++    rows = store.case(run.CASE_IDS[0])["controls"]["MULTI46_47_48_49"]
++    assert len(rows) == 1 and rows[0]["outcome"] == "SOLVER_FAILURE"
++    assert store.case(run.CASE_IDS[0])["budgets"]["MULTI46_47_48_49"]["status"] == "FAILED"
++    assert "MULTI46_47_48_49" not in backend.terminals
++    assert calls == ["solver"]
++
++
++def test_candidate_shared_sequence_refreshes_current_q_and_history(tmp_path):
++    from experiments.wan_state_clock import rgb_dct_structured_terminal_feedback_run as run
++    from experiments.wan_state_clock import video_trajectory_blind_validation_run as candidate
++    from test_rgb_dct_structured_feedback import _tiny_feedback_backend
++    backend = _tiny_feedback_backend()
++    def score(terminal, _key):
++        value = -.01 + float((terminal - backend.off_terminal).abs().mean()) * 100
++        return dict(q=[value]*30, C=30 if value > 0 else 0, score=value)
++    backend.score_terminal = score
++    store = run.Store(tmp_path / "result.json", run.initial_result(run.load_config(), tmp_path, "0"*40))
++    store.active_case = run.CASE_IDS[0]
++    backend.count = store.count
++    candidate.feedback_arm(store, run.CASE_IDS[0], "MULTI46_47_48_49", backend, _directions(), b"key")
++    rows = store.case(run.CASE_IDS[0])["controls"]["MULTI46_47_48_49"]
++    assert rows[0]["outcome"] == "ACCEPT"
++    assert rows[1]["baseline_history"] == rows[0]["committed_next_history_fingerprint"]
++    assert rows[1]["baseline"]["q"] != rows[0]["baseline"]["q"]
++    assert len(rows[1]["probes"]) == 3
++    assert rows[1]["prediction"]["solver"] == solver.SPEC
++    assert rows[1]["continuation_diagnostic"]["terminal_fingerprint_match"]
++
++
++def test_fixed_six_store_failure_retains_every_point(tmp_path):
++    from experiments.wan_state_clock import video_trajectory_blind_validation_run as run
++    candidate, historical = run.load_config()
++    data = run.initial_result(tmp_path, tmp_path / "saved", candidate, historical, {}, None)
++    store = run.SixPointStore(tmp_path / "result.json", data)
++    run._mark_pending(store, run.shared.CASE_IDS[0], "MISSING_SAVED_STATE")
++    assert data["point_counts"] == dict(expected=6, accepted=0, evaluated=0, pending=3, failed=3)
++    assert len(json.loads(store.path.read_text())["cases"]) == 2
++
++
++def test_independent_point_uses_same_real_loop_and_does_not_advance(tmp_path):
++    from experiments.wan_state_clock import video_trajectory_blind_validation_run as candidate
++    from test_rgb_dct_structured_feedback import _tiny_feedback_backend
++    from runtime.wan import trajectory
++    backend = _tiny_feedback_backend()
++    backend.score_terminal = lambda *_: dict(q=[-.01]*30, C=0, score=-.01)
++    config, historical = candidate.load_config()
++    store = candidate.SixPointStore(tmp_path / "result.json", candidate.initial_result(
++        tmp_path, tmp_path / "saved", config, historical, {}, None))
++    case_id = candidate.shared.CASE_IDS[0]
++    store.active_case = case_id
++    backend.count = store.count
++    z, history, v = backend.state(46)
++    baseline = backend.rollout(46, z, history, v)
++    reference = dict(current_state_fingerprint=trajectory.fingerprint((z, vars(history), v)),
++        baseline_history=baseline["source_history_fingerprint"],
++        baseline_terminal_fingerprint=baseline["terminal_fingerprint"],
++        baseline=dict(q=[-.01]*30), jacobian=np.zeros((30,3)).tolist())
++    original_velocity = backend.velocity
++    calls = []
++    def velocity(*args):
++        calls.append(args[0]); return original_velocity(*args)
++    backend.velocity = velocity
++    candidate.feedback_arm(store, case_id, "FIXED_T46", backend, _directions(), b"key",
++                           independent_point=46, reference_point=reference)
++    point = store.case(case_id)["controls"]["FIXED_T46"][0]
++    assert point["outcome"] == "ZERO_OPTIMUM"
++    assert point["saved_reference_identity"] == dict(state_match=True, history_match=True, terminal_match=True)
++    assert calls == [47,48,49]*4  # baseline + probes, no next-point velocity
++    assert store.data["point_counts"]["evaluated"] == 1
++    assert trajectory.fingerprint(vars(backend.snapshots[46])) == reference["baseline_history"]
++
++
++def test_post_verdict_history_failure_invalidates_point_not_evidence(tmp_path):
++    from experiments.wan_state_clock import video_trajectory_blind_validation_run as candidate
++    from test_rgb_dct_structured_feedback import _tiny_feedback_backend
++    from runtime.wan import trajectory
++    backend = _tiny_feedback_backend()
++    def score(terminal, _key):
++        value = -.01 + float((terminal - backend.off_terminal).abs().mean()) * 100
++        return dict(q=[value]*30, C=30 if value > 0 else 0, score=value)
++    backend.score_terminal = score
++    config, historical = candidate.load_config()
++    store = candidate.SixPointStore(tmp_path / "result.json", candidate.initial_result(
++        tmp_path, tmp_path / "saved", config, historical, {}, None))
++    case_id = candidate.shared.CASE_IDS[0]
++    store.active_case = case_id
++    z, history, v = backend.state(46)
++    baseline = backend.rollout(46, z, history, v)
++    reference = dict(index=46,
++        current_state_fingerprint=trajectory.fingerprint((z, vars(history), v)),
++        baseline_history=baseline["source_history_fingerprint"],
++        baseline_terminal_fingerprint=baseline["terminal_fingerprint"],
++        baseline=score(baseline["terminal"], b"key"), jacobian=np.zeros((30,3)).tolist())
++    saved_case = dict(controls={"MULTI46_47_48_49": [reference]})
++    original_rollout = backend.rollout
++    def corrupt_candidate_history(*args, **kwargs):
++        result = original_rollout(*args, **kwargs)
++        if len(args) > 4 and args[4] is not None:
++            result["next_history_fingerprint"] = "injected-history-mismatch"
++        return result
++    backend.rollout = corrupt_candidate_history
++    backend.count = store.count
++    with pytest.raises(RuntimeError, match="committed first-step history identity"):
++        candidate.run_independent_points(store, case_id, backend, _directions(), b"key", saved_case)
++    case = store.case(case_id)
++    point = case["controls"]["FIXED_T46"][0]
++    assert point["outcome"] == "ENGINEERING_FAILURE"
++    assert point["prior_outcome"] == "ACCEPT"
++    assert any(trial["decision"] == "ACCEPT" for trial in point["candidates"])
++    assert case["budgets"]["FIXED_T46"]["status"] == "FAILED"
++    assert case["budgets"]["FIXED_T46"]["spent"] > 0
++    assert store.data["point_counts"] == dict(expected=6, accepted=0, evaluated=0, pending=5, failed=1)
++    assert len(case["failures"]) == 1
++    assert "FIXED_T46" not in backend.terminals
++    persisted = json.loads(store.path.read_text())
++    assert persisted["point_counts"] == store.data["point_counts"]
++    assert all(case["controls"][f"FIXED_T{i}"][0]["outcome"] == "PENDING" for i in (47,48))
++
++
++@pytest.mark.parametrize("failed_index,worker_reason", [
++    (46, "WORKER_EXIT_-9"), (47, "WORKER_TIMEOUT")])
++def test_worker_death_after_verdict_recovers_only_incomplete_points(
++        tmp_path, failed_index, worker_reason):
++    from experiments.wan_state_clock import video_trajectory_blind_validation_run as candidate
++    from test_rgb_dct_structured_feedback import _tiny_feedback_backend
++    from runtime.wan import trajectory
++    backend = _tiny_feedback_backend()
++    def score(terminal, _key):
++        value = -.01 + float((terminal - backend.off_terminal).abs().mean()) * 100
++        return dict(q=[value]*30, C=30 if value > 0 else 0, score=value)
++    backend.score_terminal = score
++    config, historical = candidate.load_config()
++    store = candidate.SixPointStore(tmp_path / "result.json", candidate.initial_result(
++        tmp_path, tmp_path / "saved", config, historical, {}, None))
++    case_id = candidate.shared.CASE_IDS[0]
++    store.active_case = case_id
++    references = []
++    for index in (46, 47):
++        z, history, v = backend.state(index)
++        baseline = backend.rollout(index, z, history, v)
++        references.append(dict(index=index,
++            current_state_fingerprint=trajectory.fingerprint((z, vars(history), v)),
++            baseline_history=baseline["source_history_fingerprint"],
++            baseline_terminal_fingerprint=baseline["terminal_fingerprint"],
++            baseline=score(baseline["terminal"], b"key"), jacobian=np.zeros((30,3)).tolist()))
++        if index == 46:
++            next_z, next_history = baseline["next_z"], baseline["next_scheduler"]
++            backend.nodes[47] = dict(z=next_z, v=backend.velocity(47, next_z, next_history))
++            backend.snapshots[47] = next_history
++    saved_case = dict(controls={"MULTI46_47_48_49": references})
++    backend.count = store.count
++    original_save = store.save
++    class HardWorkerDeath(BaseException):
++        pass
++    def save_then_die():
++        original_save()
++        case = store.case(case_id)
++        arm = f"FIXED_T{failed_index}"
++        if (case["controls"][arm][0]["outcome"] == "ACCEPT"
++                and case["budgets"].get(arm, {}).get("status") == "RUNNING"):
++            raise HardWorkerDeath(worker_reason)
++    store.save = save_then_die
++    with pytest.raises(HardWorkerDeath):
++        candidate.run_independent_points(store, case_id, backend, _directions(), b"key", saved_case)
++    # Parent has only the persisted checkpoint; the child's Exception handler
++    # never ran. This is the exact crash/timeout window after verdict save.
++    recovered = candidate.SixPointStore.open(store.path)
++    provisional = recovered.case(case_id)["controls"][f"FIXED_T{failed_index}"][0]
++    assert provisional["outcome"] == "ACCEPT"
++    assert recovered.case(case_id)["budgets"][f"FIXED_T{failed_index}"]["status"] == "RUNNING"
++    assert recovered.case(case_id)["failures"] == []
++    completed_before = copy.deepcopy(recovered.case(case_id)["controls"]["FIXED_T46"]) if failed_index == 47 else None
++    candidate.recover_worker_failure(recovered, case_id, worker_reason)
++    case = recovered.case(case_id)
++    row = case["controls"][f"FIXED_T{failed_index}"][0]
++    assert row["outcome"] == "ENGINEERING_FAILURE" and row["prior_outcome"] == "ACCEPT"
++    assert any(trial["decision"] == "ACCEPT" for trial in row["candidates"])
++    budget = case["budgets"][f"FIXED_T{failed_index}"]
++    assert budget["status"] == "FAILED" and budget["spent"] > 0
++    expected_complete = failed_index - 46
++    assert recovered.data["point_counts"] == dict(expected=6, accepted=expected_complete,
++        evaluated=expected_complete, failed=3-expected_complete, pending=3)
++    if completed_before is not None:
++        assert case["controls"]["FIXED_T46"] == completed_before
++        assert case["budgets"]["FIXED_T46"]["status"] == "COMPLETE"
++    assert case["controls"]["FIXED_T48"][0]["outcome"] == "NOT_RUN_FAILURE"
++    assert case["status"] == "FAILED" and case["worker_error"] == worker_reason
++    assert json.loads(store.path.read_text())["point_counts"] == recovered.data["point_counts"]

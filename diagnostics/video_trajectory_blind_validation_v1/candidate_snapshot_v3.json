@@ -1,0 +1,42 @@
+{
+  "snapshot": "A1_THIRD_REVIEW",
+  "base": "e6050c8b6bc1f7b42343247e39b448480b0ebbea",
+  "files": {
+    "diagnostics/video_trajectory_blind_validation_v1/implementation_report.md": "4744b71f06cb97381f7aa8877a8691ae57c2abf2e7e32a4fbbb23902249f953b",
+    "diagnostics/video_trajectory_blind_validation_v1/saved_surrogate_replay.json": "17abcef14c953324654cb827b1e7ff66e1aef5bc64b77c3e2e3aa11171b2cec1",
+    "docs/video_trajectory_blind_validation_v1.md": "4e9bc5ee311c40beea8557802c2762c2daa2a34c14826122fdf1185e210571b7",
+    "experiments/wan_state_clock/configs/video_trajectory_blind_validation_v1.json": "fb477d0a42ad104b2bda4d9f9b9132331545875461b95c51dcd39b3aa51e1e55",
+    "experiments/wan_state_clock/rgb_dct_structured_terminal_feedback_run.py": "a81f4fc00bf0eb97d572b73feefe180c37ebd3793d411854e8cb75cb35d0f69c",
+    "experiments/wan_state_clock/video_trajectory_blind_validation_run.py": "b2bf45fa50fff891e1e6137ba4a121a69b2d1b95096bb044bf39dc44434a92b0",
+    "main/tube_state/rgb_dct_continuous_solver.py": "21c9a94609b131884305e239809443be8eae90e63c885c2dbd0f44aecbda1861",
+    "notebooks/video_trajectory_blind_validation_v1_colab.ipynb": "e91d606056e44eff9a4cfa6950403caea2c54557661ea54ed61bc4b822ddc69f",
+    "scripts/build_video_trajectory_blind_validation_notebook.py": "f50327f7c286a31264a2c2336f19249903fe945aa9ec702a440efafde26a8d7b",
+    "scripts/replay_video_trajectory_surrogates.py": "72c048709a61ca04f53ca0c707c29c7181ced753d3fa1669d6a3dda8ac795b12",
+    "tests/test_rgb_dct_continuous_solver.py": "cd813ebe19a45810ee477a04d9ed8fa6e40af3948ac92e623531a6a9e64ecc77"
+  },
+  "patch_sha256": "027986e51e0f5113aa0610ab0d1dbebc35694cdfb7f6d7f0eedabea819f0a998",
+  "previous_patch_sha256": "70afc7b9d6dbb80423492eae6c2a512953e3d9c2332c028b07d85c410a368025",
+  "changed_from_second": {
+    "experiments/wan_state_clock/video_trajectory_blind_validation_run.py": {
+      "before": "0832204985dd66ea96eb7299a88fda14025a5cc80bd712e6970dbf92526e99bc",
+      "after": "b2bf45fa50fff891e1e6137ba4a121a69b2d1b95096bb044bf39dc44434a92b0"
+    },
+    "tests/test_rgb_dct_continuous_solver.py": {
+      "before": "da9eb9973b4f2b5b97d917093ddc0dd1da2bc9d4c0932ae5bcb707d5fd640c7e",
+      "after": "cd813ebe19a45810ee477a04d9ed8fa6e40af3948ac92e623531a6a9e64ecc77"
+    }
+  },
+  "tests": "5 targeted recovery/failure tests passed, 10 deselected in 3.46s; git diff --check passed",
+  "repair": "Parent worker failure recovery invalidates normal verdicts whose budget is not COMPLETE, retains prior outcome/candidate verdict/measured spent, preserves earlier COMPLETE points, and retains unrun rows.",
+  "solver_and_acceptance_unchanged": true,
+  "numerical_evidence": "Original v1 saved-proxy oracle inherited without rerun; solver/config/protocol/shared-loop unchanged.",
+  "preserved_prior_evidence": [
+    "candidate_snapshot.json",
+    "candidate.patch",
+    "candidate_snapshot_v2.json",
+    "candidate_v2.patch",
+    "saved_surrogate_replay.json",
+    "implementation_report.md",
+    "review_report.md"
+  ]
+}

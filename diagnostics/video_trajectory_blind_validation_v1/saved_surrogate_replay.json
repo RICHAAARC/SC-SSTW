@@ -1,0 +1,992 @@
+{
+  "status": "CPU_SURROGATE_ONLY",
+  "real_tail_executed": false,
+  "fixed_denominator": 6,
+  "result_sha256": "42a83d3f7d7847f985e01a9c8486e72a3b3e8c914d591c4e4c9cf2db7553329f",
+  "prior_offline_review_sha256": "d2cdf215e5734ca6b26d788cb2726f3fbab69e4ba6c4c56f786a12e12be9cfd9",
+  "source_receipt": {
+    "git_head": "e6050c8b6bc1f7b42343247e39b448480b0ebbea",
+    "git_status": " M experiments/wan_state_clock/rgb_dct_structured_terminal_feedback_run.py\n?? docs/video_trajectory_blind_validation_v1.md\n?? experiments/wan_state_clock/configs/video_trajectory_blind_validation_v1.json\n?? experiments/wan_state_clock/video_trajectory_blind_validation_run.py\n?? main/tube_state/rgb_dct_continuous_solver.py\n?? scripts/replay_video_trajectory_surrogates.py\n?? tests/test_rgb_dct_continuous_solver.py\n",
+    "files": {
+      "experiments/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "experiments/wan_state_clock/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "experiments/wan_state_clock/flow_fixed_key_run.py": "50b7d2fc644667b57d25b29accbc476260d4071db656643e13b9cbb32acc882f",
+      "experiments/wan_state_clock/integrated_payload_run.py": "f0c7ddf0e554eeccfd0468657eefba6e28a81c9c22cb7640ea5770521ab3de99",
+      "experiments/wan_state_clock/media_channel_retention_run.py": "062fd707909d4ff86a909a4ca21fea3326932b881cdae73d4395cefd36991d3e",
+      "experiments/wan_state_clock/rgb_dct_b2_terminal_receiver_run.py": "d5026f7bb78ccda727726ac31488bf166f61dfb301497a264ada9f194b7f4f1a",
+      "experiments/wan_state_clock/rgb_dct_group_consistency_run.py": "11390e3c38d260240719eeb4fd755c5ba8d47a2c9bee61446ee6a83b30b18240",
+      "experiments/wan_state_clock/rgb_dct_h0_h1_functional_run.py": "50ef9b9caa0699dd10d047062cdc0693390ff74d9c146a8e1882ee228ebfe5b0",
+      "experiments/wan_state_clock/rgb_dct_multistep_comparison_run.py": "c68c4da7f3174795d39e15935ea213dbe666b4bedf4267d6c50169fb6f50d351",
+      "experiments/wan_state_clock/rgb_dct_structured_terminal_feedback_run.py": "a81f4fc00bf0eb97d572b73feefe180c37ebd3793d411854e8cb75cb35d0f69c",
+      "experiments/wan_state_clock/rgb_dct_t49_vae_lift_run.py": "cc0d46da028ef784fb52c4f60511c878fe383d972ccd640ec3ee4ef1dfcf5d10",
+      "experiments/wan_state_clock/rgb_dct_terminal_gradient_run.py": "8500392c267f34a0748238d9d13598a17a5d966656517316421b743ef217ad58",
+      "experiments/wan_state_clock/run.py": "6981ba09c9eb3aaabf11d4ddc1c1b81523baf58d6401be6b015346c79b68f7aa",
+      "experiments/wan_state_clock/video_trajectory_blind_validation_run.py": "2e348406f75d174fc8d6d03004434d75f72285b21cec937cab7ec782b1a7af12",
+      "experiments/wan_state_clock/window_state_mse_paired_run.py": "bb80e53aa0c4a9ba29ea491f13e622726ffad2fbf38ea7f2e6de34983bc5521a",
+      "main/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "main/tube_state/__init__.py": "740da63315a82fa5f8e9ed50f342295d100d464ad3e465496cf997e24da30169",
+      "main/tube_state/fixed_key.py": "43053c60f34037dea268a4f7543f44321de0ca92ad37e33ccdaafeacf3c91182",
+      "main/tube_state/fixed_key_split_receiver.py": "c69cb4ac718d9f30744a562fa9f6d549de4926fa71686e52d5df408d519ec641",
+      "main/tube_state/payload_codec.py": "8cd0744b1d2183e39f95fca413dd4548f6dacef7e1a85b6d2af42202eea60b96",
+      "main/tube_state/projection_margin.py": "746d34b0a0be83ae0c21e6d7d9ec428a227c7eb11b70c17340d86bf01e3daf66",
+      "main/tube_state/rgb_dct_continuous_solver.py": "21c9a94609b131884305e239809443be8eae90e63c885c2dbd0f44aecbda1861",
+      "main/tube_state/rgb_dct_group_consistency.py": "47fec92dbba12e69c48117497b5802c6629ea99babedf37913b647d52ee8e301",
+      "main/tube_state/rgb_dct_presence.py": "29847c540ba90d60211474246d5f8cf426f1ed473ceedd55c13eaca3ffdb2f1f",
+      "main/tube_state/rgb_dct_structured_feedback.py": "bfcda84cf7549e2737e50be8937cd77b9f48b613993e93ab7f2d417747f5f8f3",
+      "main/tube_state/rgb_dct_t49_carrier.py": "01c275d7e30a1868e5d550c1d82dbc512829e363c6dd3bd09f1bc43917c08e24",
+      "main/tube_state/rgb_dct_terminal_gradient.py": "cd5d34d86aff741e2ae0daf58b3cea5e4dbcf9564391590f9c5c11c5a800805a",
+      "main/tube_state/state_clock.py": "e880111fd86c3befd79f5c68c357eb4e2103d3d70815fb71b43610314abd7e4d",
+      "runtime/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "runtime/wan/__init__.py": "a53fdb88e0ccef8b0de9db2ade1ce09720034d71f4e788fd7f6c9059fe43eb9c",
+      "runtime/wan/fixed_key_cli.py": "afa313429ad21717173e9c7e97d74871871a061900941b445e8e41e4915cd6fe",
+      "runtime/wan/fixed_key_control.py": "78ced0fac7d7256f630dd7fa79cd426061d7ce66f46ad5013f8c1e7e381fbe11",
+      "runtime/wan/fixed_key_core.py": "3f4cce45ec80bd7890aac5ae82c37a289c7355e5b9d49a1b13c0a22899713a1b",
+      "runtime/wan/generation.py": "3c444cc1d8fbf2378ca56946678f2c2bf97c03286c5ecaf8ef64b3a7044337d5",
+      "runtime/wan/gradient_checkpointing.py": "e9ba034a4f6d76b886e22e61363f34bacb2f87b38340e8df24e40f8b8ee73a9e",
+      "runtime/wan/integrated_cli.py": "27cda54c722de6bab7080fa823bdd7c64a751bc5d4a1ccf9e189ebed2037874c",
+      "runtime/wan/integrated_core.py": "1ab305a7415e695f9b4c7b7e5bd8479a6cad493c35b7fffe84a249f1d2a00045",
+      "runtime/wan/io.py": "db9caa843d632d733aa670dbe87bd38cf6084490d5bef71b8a69e6839cc33ae7",
+      "runtime/wan/media_channel_retention.py": "018883ba329d85b13e26023a6bdd0263dd6bdfc285d62bb2b5c40dc7dc85d9be",
+      "runtime/wan/payload_control.py": "5329952f38451808b3c42aefc83682fc192a48574d0b39571f989fee4866675c",
+      "runtime/wan/quality.py": "21af9eb67631378a776f424276a81426efc06817c8b5f146369bf3872204793e",
+      "runtime/wan/rgb_dct_b2_terminal_receiver_backend.py": "cf53f7a18f24e203291fe997d68bfb7aa7dc44c5af92bf2054f8324c006043f6",
+      "runtime/wan/rgb_dct_group_consistency_adapter.py": "84ab8ee984e9a6e4dc60297487fe3ed9e8c5b377304e78a571df6db4464a1a4f",
+      "runtime/wan/rgb_dct_multistep_adapter.py": "d0fed773f81810bf75f250261d83d785a6bd0bb9c22c8dae33951a467fc467e5",
+      "runtime/wan/rgb_dct_multistep_backend.py": "a8226ef33c7468e96bd96fe63939915bd60f06b121902d1fcc46857ea117ab21",
+      "runtime/wan/rgb_dct_presence_adapter.py": "b12fb3bd1ac886eba6364dbf8849fc366b5ef5c7d03ce4ee5e7e62aacb6711a1",
+      "runtime/wan/rgb_dct_structured_feedback_backend.py": "30d96d480e7b5ee7c07ea3501f0b5eae007fe1dcf7205ef663ad52d02218f586",
+      "runtime/wan/rgb_dct_t49_backend.py": "402ad4c99f1185b7291194ec4be26e17da4610e82af427a6bf0c64b9bef1ee14",
+      "runtime/wan/rgb_dct_terminal_gradient_backend.py": "a714e7d231dafc5ccf6ada2196ebc3991e25960be5756a2107c8082161dbc425",
+      "runtime/wan/trajectory.py": "a0e78f162705a2ec29ad82d9135a4d46ac664f6c763eabd6fdef98ef39a85478",
+      "runtime/wan/vae.py": "ff3aec5659a14238923cd943364c6eda62d4648343b3ac17910cfbecdfec3670",
+      "runtime/wan/videoseal_score_diagnostic.py": "6a10a0f63dc1c82618ca01857f1314c861762bf153294ffc258f612f3db416bd",
+      "runtime/wan/window_state_mse.py": "5979cee0380c9f726d3e14022e3515abb4039a39dab74588b76635706f03ceb1",
+      "experiments/wan_state_clock/configs/video_trajectory_blind_validation_v1.json": "fb477d0a42ad104b2bda4d9f9b9132331545875461b95c51dcd39b3aa51e1e55",
+      "docs/video_trajectory_blind_validation_v1.md": "4e9bc5ee311c40beea8557802c2762c2daa2a34c14826122fdf1185e210571b7",
+      "experiments/wan_state_clock/configs/rgb_dct_structured_terminal_feedback_v1.json": "f70fa657ad9e4dfab07a4ad8365145a4f452355a3680a81a0e82ee4c1fbffcd5",
+      "docs/rgb_dct_structured_terminal_feedback_v1_protocol.md": "0f2dc1b1ecc5a5af6e942ba3078c811a67c27397e608047e3227360b9a1083af"
+    },
+    "source_tree_sha256": "5b3297da17fec6f49070726f23972bd3703f4154ff1eac46217020a298ee2273",
+    "published_binding": false
+  },
+  "points": [
+    {
+      "source": "eval_copperkettle_s2501",
+      "index": 46,
+      "status": "CERTIFIED",
+      "legacy": {
+        "coefficients": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "predicted_q": [
+          0.00960989144870441,
+          0.005253226096391995,
+          -0.0006104949404218047,
+          -0.0009319511075134349,
+          -0.0012817436231825237,
+          -0.00011201443351205899,
+          0.0008940715045655116,
+          0.0005361908548208951,
+          0.0007527003320784524,
+          0.001228173119934295,
+          0.0025159034286135373,
+          -0.002082832423023787,
+          7.164829951935843e-05,
+          0.00029884274518513767,
+          -0.0005575768638495214,
+          0.0004251501389411487,
+          -0.00020951900790069233,
+          -0.0002228765837496311,
+          -0.0024407261288495177,
+          0.0008770578323160593,
+          -0.0003851143629846324,
+          -0.0015100763806813846,
+          0.00016469333581042457,
+          -0.0017993304352730566,
+          -0.0004134142124044125,
+          0.0006722770029434029,
+          0.0012706843163728973,
+          0.0014606296552562667,
+          -0.0001313189666078989,
+          0.00027308154227966567
+        ],
+        "predicted_objective": 7.377284295604379e-07,
+        "predictions_tried": 125,
+        "radius": 0.042943312697648145
+      },
+      "continuous": {
+        "solver": {
+          "name": "projected_gradient_fw_gap_v1",
+          "dtype": "float64",
+          "max_iterations": 200000,
+          "absolute_gap_tolerance": 1e-18,
+          "relative_gap_tolerance": 1e-11,
+          "roundoff_factor": 64
+        },
+        "status": "CERTIFIED",
+        "reason": null,
+        "coefficients": [
+          0.0,
+          0.0005272323010110132,
+          0.0009714170293138886
+        ],
+        "predicted_q": [
+          0.009420137094520569,
+          0.005414923909022153,
+          0.0007567607099955684,
+          -6.973215262549121e-05,
+          -9.551331205857449e-05,
+          -0.0002753824768222897,
+          -0.00021998620137119362,
+          -0.00029308160925024004,
+          -7.039498780967606e-05,
+          0.0008086984687114627,
+          0.0015878730869073013,
+          -0.0013189428575593031,
+          0.00024887368268068064,
+          0.0001731290710062329,
+          -0.0009136393151824338,
+          0.0008170662036277434,
+          -0.00045766349069264225,
+          0.0004335233510793712,
+          -0.0013826001310116623,
+          0.001596925450499641,
+          9.696635891316685e-05,
+          -0.0009459701263478022,
+          -0.00018369835082047463,
+          -0.0004883552422042068,
+          0.00016390073701318488,
+          0.0007786363543693753,
+          0.00032249860718141956,
+          7.41581919262446e-05,
+          0.000614182472556522,
+          0.0005813018825820693
+        ],
+        "iterations": 193,
+        "radius": 0.042943312697648145,
+        "available": [
+          true,
+          true,
+          true
+        ],
+        "max_iterations": 200000,
+        "zero_objective": 7.377284295604379e-07,
+        "tolerance": 7.377284295604379e-18,
+        "derivative_at_zero": [
+          -0.0003262335594226483,
+          -0.0005307290250165795,
+          -0.0005247488497232902
+        ],
+        "lipschitz_bound": 2.476328642526939,
+        "predicted_objective": 2.89005215050064e-07,
+        "gradient": [
+          9.706315213035e-06,
+          2.739205422095799e-16,
+          -1.705878827749246e-16
+        ],
+        "raw_frank_wolfe_gap": 7.30431657587451e-18,
+        "roundoff_cushion": 1.45907626548782e-20,
+        "global_objective_gap_upper_bound": 7.318907338529388e-18
+      },
+      "prior_objective_absolute_delta": 0.0,
+      "reconstructed_J_exact": true,
+      "surrogate_scales": [
+        {
+          "scale": 1.0,
+          "predicted_C": 17,
+          "predicted_lost_groups": [
+            6,
+            7,
+            8,
+            22
+          ],
+          "predicted_hinge_improvement": 4.4884537700478093e-07,
+          "proxy_positive_and_hinge_guard": false,
+          "no_true_native_measurement": true
+        },
+        {
+          "scale": 0.5,
+          "predicted_C": 18,
+          "predicted_lost_groups": [
+            22
+          ],
+          "predicted_hinge_improvement": 3.1389526568085694e-07,
+          "proxy_positive_and_hinge_guard": false,
+          "no_true_native_measurement": true
+        },
+        {
+          "scale": 0.25,
+          "predicted_C": 17,
+          "predicted_lost_groups": [],
+          "predicted_hinge_improvement": 1.7724847925509855e-07,
+          "proxy_positive_and_hinge_guard": true,
+          "no_true_native_measurement": true
+        }
+      ]
+    },
+    {
+      "source": "eval_copperkettle_s2501",
+      "index": 47,
+      "status": "CERTIFIED",
+      "legacy": {
+        "coefficients": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "predicted_q": [
+          0.00960989144870441,
+          0.005253226096391995,
+          -0.0006104949404218047,
+          -0.0009319511075134349,
+          -0.0012817436231825237,
+          -0.00011201443351205899,
+          0.0008940715045655116,
+          0.0005361908548208951,
+          0.0007527003320784524,
+          0.001228173119934295,
+          0.0025159034286135373,
+          -0.002082832423023787,
+          7.164829951935843e-05,
+          0.00029884274518513767,
+          -0.0005575768638495214,
+          0.0004251501389411487,
+          -0.00020951900790069233,
+          -0.0002228765837496311,
+          -0.0024407261288495177,
+          0.0008770578323160593,
+          -0.0003851143629846324,
+          -0.0015100763806813846,
+          0.00016469333581042457,
+          -0.0017993304352730566,
+          -0.0004134142124044125,
+          0.0006722770029434029,
+          0.0012706843163728973,
+          0.0014606296552562667,
+          -0.0001313189666078989,
+          0.00027308154227966567
+        ],
+        "predicted_objective": 7.377284295604379e-07,
+        "predictions_tried": 125,
+        "radius": 0.042943312697648145
+      },
+      "continuous": {
+        "solver": {
+          "name": "projected_gradient_fw_gap_v1",
+          "dtype": "float64",
+          "max_iterations": 200000,
+          "absolute_gap_tolerance": 1e-18,
+          "relative_gap_tolerance": 1e-11,
+          "roundoff_factor": 64
+        },
+        "status": "CERTIFIED",
+        "reason": null,
+        "coefficients": [
+          0.0,
+          0.00021860126296081013,
+          0.0012833689992423221
+        ],
+        "predicted_q": [
+          0.010210325690060102,
+          0.0055226305709050166,
+          -0.0002030981632060693,
+          -0.0003418313612606846,
+          -0.0011076363185860822,
+          0.00019389174123451823,
+          -0.00022343027204610076,
+          0.00037528773992476206,
+          0.0002961847979664478,
+          0.0006577241574013726,
+          0.001035615302491966,
+          -0.0027460470306629138,
+          0.0001568513852217034,
+          0.0005026002046185034,
+          -0.0004061093404878508,
+          0.0008589555008045466,
+          -0.0003000844767456201,
+          0.0004908591910058944,
+          -0.0015528803114850211,
+          0.0005158333641383398,
+          -0.0001456433260522592,
+          -0.001342864974668037,
+          0.0007945879417072983,
+          -0.0008514422899836806,
+          -0.0003352803227047988,
+          0.0011440833844741881,
+          0.0011840505638846962,
+          0.0008761634769900799,
+          0.0004785205965651472,
+          0.00018563059053839504
+        ],
+        "iterations": 569,
+        "radius": 0.042943312697648145,
+        "available": [
+          true,
+          true,
+          true
+        ],
+        "max_iterations": 200000,
+        "zero_objective": 7.377284295604379e-07,
+        "tolerance": 7.377284295604379e-18,
+        "derivative_at_zero": [
+          -4.065696830354101e-05,
+          -0.00013677198432251902,
+          -0.00022036142464997214
+        ],
+        "lipschitz_bound": 2.087828882654244,
+        "predicted_objective": 5.55136820148933e-07,
+        "gradient": [
+          7.536459291651988e-05,
+          1.3870941399320478e-16,
+          -1.7334206334248116e-16
+        ],
+        "raw_frank_wolfe_gap": 7.251742652496729e-18,
+        "roundoff_cushion": 1.8372720230062606e-20,
+        "global_objective_gap_upper_bound": 7.270115372726792e-18
+      },
+      "prior_objective_absolute_delta": 1.0587911840678754e-22,
+      "reconstructed_J_exact": true,
+      "surrogate_scales": [
+        {
+          "scale": 1.0,
+          "predicted_C": 18,
+          "predicted_lost_groups": [
+            6
+          ],
+          "predicted_hinge_improvement": 1.827610916615434e-07,
+          "proxy_positive_and_hinge_guard": false,
+          "no_true_native_measurement": true
+        },
+        {
+          "scale": 0.5,
+          "predicted_C": 19,
+          "predicted_lost_groups": [],
+          "predicted_hinge_improvement": 1.2495094961651782e-07,
+          "proxy_positive_and_hinge_guard": true,
+          "no_true_native_measurement": true
+        },
+        {
+          "scale": 0.25,
+          "predicted_C": 17,
+          "predicted_lost_groups": [],
+          "predicted_hinge_improvement": 7.026414175671195e-08,
+          "proxy_positive_and_hinge_guard": true,
+          "no_true_native_measurement": true
+        }
+      ]
+    },
+    {
+      "source": "eval_copperkettle_s2501",
+      "index": 48,
+      "status": "CERTIFIED",
+      "legacy": {
+        "coefficients": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "predicted_q": [
+          0.00960989144870441,
+          0.005253226096391995,
+          -0.0006104949404218047,
+          -0.0009319511075134349,
+          -0.0012817436231825237,
+          -0.00011201443351205899,
+          0.0008940715045655116,
+          0.0005361908548208951,
+          0.0007527003320784524,
+          0.001228173119934295,
+          0.0025159034286135373,
+          -0.002082832423023787,
+          7.164829951935843e-05,
+          0.00029884274518513767,
+          -0.0005575768638495214,
+          0.0004251501389411487,
+          -0.00020951900790069233,
+          -0.0002228765837496311,
+          -0.0024407261288495177,
+          0.0008770578323160593,
+          -0.0003851143629846324,
+          -0.0015100763806813846,
+          0.00016469333581042457,
+          -0.0017993304352730566,
+          -0.0004134142124044125,
+          0.0006722770029434029,
+          0.0012706843163728973,
+          0.0014606296552562667,
+          -0.0001313189666078989,
+          0.00027308154227966567
+        ],
+        "predicted_objective": 7.377284295604379e-07,
+        "predictions_tried": 125,
+        "radius": 0.042943312697648145
+      },
+      "continuous": {
+        "solver": {
+          "name": "projected_gradient_fw_gap_v1",
+          "dtype": "float64",
+          "max_iterations": 200000,
+          "absolute_gap_tolerance": 1e-18,
+          "relative_gap_tolerance": 1e-11,
+          "roundoff_factor": 64
+        },
+        "status": "CERTIFIED",
+        "reason": null,
+        "coefficients": [
+          0.0014391671361791737,
+          0.0013530100707779273,
+          0.0013190920200848554
+        ],
+        "predicted_q": [
+          0.01022969463440563,
+          0.004963158626732614,
+          0.0005255622856598838,
+          -0.0007500219539188092,
+          -0.0008444106798549775,
+          0.0007050606298032827,
+          9.561462065464134e-05,
+          -1.3435311484907863e-05,
+          9.491011233957571e-05,
+          0.0008893385130468649,
+          0.0015630499154073536,
+          -0.0028543189567775645,
+          0.00020020898604477172,
+          8.638349348536787e-05,
+          -0.0004644500666523278,
+          5.172250915750422e-05,
+          -0.0009839232455799388,
+          0.0007698332739989707,
+          -0.0012279039863034205,
+          0.0008257839989719377,
+          -0.00021581510561121666,
+          -0.001259749863548939,
+          5.30955987060617e-05,
+          -0.0007521511274391015,
+          0.00022518147282006996,
+          0.000203667908885789,
+          0.00040077331155465034,
+          0.0014747339784904137,
+          0.0005730995147808833,
+          0.0010681164682997068
+        ],
+        "iterations": 174,
+        "radius": 0.042943312697648145,
+        "available": [
+          true,
+          true,
+          true
+        ],
+        "max_iterations": 200000,
+        "zero_objective": 7.377284295604379e-07,
+        "tolerance": 7.377284295604379e-18,
+        "derivative_at_zero": [
+          -0.00010736714159368025,
+          -9.714729691756913e-05,
+          -0.00010118094369933846
+        ],
+        "lipschitz_bound": 0.32137708941256055,
+        "predicted_objective": 5.453844399560162e-07,
+        "gradient": [
+          -1.5921741837010128e-16,
+          1.5629668994929084e-16,
+          -9.135695028434938e-17
+        ],
+        "raw_frank_wolfe_gap": 6.699145679385259e-18,
+        "roundoff_cushion": 1.8234130572009415e-20,
+        "global_objective_gap_upper_bound": 6.717379809957269e-18
+      },
+      "prior_objective_absolute_delta": 0.0,
+      "reconstructed_J_exact": true,
+      "surrogate_scales": [
+        {
+          "scale": 1.0,
+          "predicted_C": 20,
+          "predicted_lost_groups": [
+            7
+          ],
+          "predicted_hinge_improvement": 1.9290817380991532e-07,
+          "proxy_positive_and_hinge_guard": false,
+          "no_true_native_measurement": true
+        },
+        {
+          "scale": 0.5,
+          "predicted_C": 19,
+          "predicted_lost_groups": [],
+          "predicted_hinge_improvement": 1.4599185583226403e-07,
+          "proxy_positive_and_hinge_guard": true,
+          "no_true_native_measurement": true
+        },
+        {
+          "scale": 0.25,
+          "predicted_C": 19,
+          "predicted_lost_groups": [],
+          "predicted_hinge_improvement": 8.819086621463038e-08,
+          "proxy_positive_and_hinge_guard": true,
+          "no_true_native_measurement": true
+        }
+      ]
+    },
+    {
+      "source": "eval_paperplane_s2502",
+      "index": 46,
+      "status": "CERTIFIED",
+      "legacy": {
+        "coefficients": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "predicted_q": [
+          -0.0008490836909150488,
+          0.003943866179813156,
+          -0.004652561698578633,
+          -0.0014299048962218867,
+          0.0008393586547649328,
+          -0.005028800607280164,
+          -0.00029337990977289566,
+          -0.004978750437946346,
+          0.006603834274762064,
+          0.008122337856475374,
+          -0.0023594415121382757,
+          0.005533250684189612,
+          0.005812209978630524,
+          -0.0022826479777787326,
+          -0.0023465023144969006,
+          0.003736909498099258,
+          -0.003294252208758331,
+          0.00030128292638349806,
+          0.0023153712762638734,
+          -0.002226434979009761,
+          -0.004095153035839545,
+          -0.0009566958922045132,
+          -0.0045968243943041096,
+          -0.0032769410622803504,
+          -0.0012507957063213923,
+          -0.008214449763204335,
+          0.001427065870198407,
+          -0.0076060224986400716,
+          0.0057724500635468,
+          -0.0037596664726755103
+        ],
+        "predicted_objective": 1.0338002790786726e-05,
+        "predictions_tried": 125,
+        "radius": 0.042943312697648145
+      },
+      "continuous": {
+        "solver": {
+          "name": "projected_gradient_fw_gap_v1",
+          "dtype": "float64",
+          "max_iterations": 200000,
+          "absolute_gap_tolerance": 1e-18,
+          "relative_gap_tolerance": 1e-11,
+          "roundoff_factor": 64
+        },
+        "status": "CERTIFIED",
+        "reason": null,
+        "coefficients": [
+          0.0,
+          0.00047546871392457413,
+          0.00013555698640136074
+        ],
+        "predicted_q": [
+          -0.0014089557551317223,
+          0.0021423100268343517,
+          -0.0033125797127835296,
+          -0.00134895252417944,
+          0.002473300876904966,
+          -0.008129233537733038,
+          0.00010662269518741096,
+          -0.0036516539362652436,
+          0.005272031014333169,
+          0.008258073254284163,
+          -0.0017912988298021976,
+          0.004468658882450807,
+          0.00430238043049062,
+          -0.0012565498692230928,
+          -0.0018320567117485155,
+          0.0025704449377289577,
+          -0.0030292421048368785,
+          -0.0005608960354941947,
+          0.001341802348232649,
+          -0.0013636235905831692,
+          -0.004340913175868396,
+          0.00020092856447056812,
+          -0.004372644251160136,
+          -0.002657610933898631,
+          -0.003969370239931935,
+          -0.004871766353821103,
+          0.0017131382955412988,
+          -0.00725422554147057,
+          0.005304119628651993,
+          -0.0020928912436770546
+        ],
+        "iterations": 145,
+        "radius": 0.042943312697648145,
+        "available": [
+          true,
+          true,
+          true
+        ],
+        "max_iterations": 200000,
+        "zero_objective": 1.0338002790786726e-05,
+        "tolerance": 1.0338002790786725e-16,
+        "derivative_at_zero": [
+          0.0017509807287058718,
+          -0.005122168944003684,
+          -0.0024756367040315377
+        ],
+        "lipschitz_bound": 38.47697219135287,
+        "predicted_objective": 8.93839724786922e-06,
+        "gradient": [
+          0.004735441094502032,
+          -2.2220458959643294e-15,
+          2.6791636140524085e-15
+        ],
+        "raw_frank_wolfe_gap": 9.472867778008353e-17,
+        "roundoff_cushion": 2.7393412038283014e-19,
+        "global_objective_gap_upper_bound": 9.500261190046635e-17
+      },
+      "prior_objective_absolute_delta": 0.0,
+      "reconstructed_J_exact": true,
+      "surrogate_scales": [
+        {
+          "scale": 1.0,
+          "predicted_C": 12,
+          "predicted_lost_groups": [
+            17
+          ],
+          "predicted_hinge_improvement": 1.3996299875369534e-06,
+          "proxy_positive_and_hinge_guard": false,
+          "no_true_native_measurement": true
+        },
+        {
+          "scale": 0.5,
+          "predicted_C": 10,
+          "predicted_lost_groups": [
+            17
+          ],
+          "predicted_hinge_improvement": 1.0500954547461769e-06,
+          "proxy_positive_and_hinge_guard": false,
+          "no_true_native_measurement": true
+        },
+        {
+          "scale": 0.25,
+          "predicted_C": 11,
+          "predicted_lost_groups": [],
+          "predicted_hinge_improvement": 6.106347286082445e-07,
+          "proxy_positive_and_hinge_guard": true,
+          "no_true_native_measurement": true
+        }
+      ]
+    },
+    {
+      "source": "eval_paperplane_s2502",
+      "index": 47,
+      "status": "CERTIFIED",
+      "legacy": {
+        "coefficients": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "predicted_q": [
+          -0.0008490836909150488,
+          0.003943866179813156,
+          -0.004652561698578633,
+          -0.0014299048962218867,
+          0.0008393586547649328,
+          -0.005028800607280164,
+          -0.00029337990977289566,
+          -0.004978750437946346,
+          0.006603834274762064,
+          0.008122337856475374,
+          -0.0023594415121382757,
+          0.005533250684189612,
+          0.005812209978630524,
+          -0.0022826479777787326,
+          -0.0023465023144969006,
+          0.003736909498099258,
+          -0.003294252208758331,
+          0.00030128292638349806,
+          0.0023153712762638734,
+          -0.002226434979009761,
+          -0.004095153035839545,
+          -0.0009566958922045132,
+          -0.0045968243943041096,
+          -0.0032769410622803504,
+          -0.0012507957063213923,
+          -0.008214449763204335,
+          0.001427065870198407,
+          -0.0076060224986400716,
+          0.0057724500635468,
+          -0.0037596664726755103
+        ],
+        "predicted_objective": 1.0338002790786726e-05,
+        "predictions_tried": 125,
+        "radius": 0.042943312697648145
+      },
+      "continuous": {
+        "solver": {
+          "name": "projected_gradient_fw_gap_v1",
+          "dtype": "float64",
+          "max_iterations": 200000,
+          "absolute_gap_tolerance": 1e-18,
+          "relative_gap_tolerance": 1e-11,
+          "roundoff_factor": 64
+        },
+        "status": "CERTIFIED",
+        "reason": null,
+        "coefficients": [
+          0.0,
+          0.001417225108067133,
+          0.00047444439377839257
+        ],
+        "predicted_q": [
+          0.0009059704138475857,
+          0.005124695733730693,
+          4.6162805397011e-05,
+          -0.0007335543008042504,
+          -0.0014263467469222725,
+          -0.005994629270028857,
+          -0.0024355386576898177,
+          -0.0027593581419518573,
+          0.002715114590663453,
+          0.006848720718191444,
+          -0.004840966477918998,
+          0.003865341820415762,
+          0.008076168480022544,
+          -0.000539713283486921,
+          0.0023153825220599577,
+          0.004478271869245029,
+          -0.0032644216423828713,
+          0.0019017151643562023,
+          0.0033550684282215694,
+          -0.002238288504691625,
+          0.0027867251793923043,
+          0.0003590171559090874,
+          -0.003543608911691026,
+          -0.003935253221861538,
+          -0.001779315542812847,
+          -0.0028275520902220916,
+          0.0009303505519354114,
+          -0.005220244578700588,
+          0.0027982631032543778,
+          -6.722057234182042e-06
+        ],
+        "iterations": 251,
+        "radius": 0.042943312697648145,
+        "available": [
+          true,
+          true,
+          true
+        ],
+        "max_iterations": 200000,
+        "zero_objective": 1.0338002790786726e-05,
+        "tolerance": 1.0338002790786725e-16,
+        "derivative_at_zero": [
+          -0.00018916411037339268,
+          -0.005592939089373656,
+          -0.004369886256580036
+        ],
+        "lipschitz_bound": 15.294486035796425,
+        "predicted_objective": 5.778666146510989e-06,
+        "gradient": [
+          0.0006886956868018763,
+          -2.22773984995912e-15,
+          1.6632478183326146e-15
+        ],
+        "raw_frank_wolfe_gap": 9.329843873907453e-17,
+        "roundoff_cushion": 2.290316407623625e-19,
+        "global_objective_gap_upper_bound": 9.35274703798369e-17
+      },
+      "prior_objective_absolute_delta": 8.470329472543003e-22,
+      "reconstructed_J_exact": true,
+      "surrogate_scales": [
+        {
+          "scale": 1.0,
+          "predicted_C": 15,
+          "predicted_lost_groups": [
+            4
+          ],
+          "predicted_hinge_improvement": 4.55956000672471e-06,
+          "proxy_positive_and_hinge_guard": false,
+          "no_true_native_measurement": true
+        },
+        {
+          "scale": 0.5,
+          "predicted_C": 11,
+          "predicted_lost_groups": [
+            4
+          ],
+          "predicted_hinge_improvement": 3.5898074906137793e-06,
+          "proxy_positive_and_hinge_guard": false,
+          "no_true_native_measurement": true
+        },
+        {
+          "scale": 0.25,
+          "predicted_C": 11,
+          "predicted_lost_groups": [],
+          "predicted_hinge_improvement": 2.1525783424510213e-06,
+          "proxy_positive_and_hinge_guard": true,
+          "no_true_native_measurement": true
+        }
+      ]
+    },
+    {
+      "source": "eval_paperplane_s2502",
+      "index": 48,
+      "status": "CERTIFIED",
+      "legacy": {
+        "coefficients": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "predicted_q": [
+          -0.0008490836909150488,
+          0.003943866179813156,
+          -0.004652561698578633,
+          -0.0014299048962218867,
+          0.0008393586547649328,
+          -0.005028800607280164,
+          -0.00029337990977289566,
+          -0.004978750437946346,
+          0.006603834274762064,
+          0.008122337856475374,
+          -0.0023594415121382757,
+          0.005533250684189612,
+          0.005812209978630524,
+          -0.0022826479777787326,
+          -0.0023465023144969006,
+          0.003736909498099258,
+          -0.003294252208758331,
+          0.00030128292638349806,
+          0.0023153712762638734,
+          -0.002226434979009761,
+          -0.004095153035839545,
+          -0.0009566958922045132,
+          -0.0045968243943041096,
+          -0.0032769410622803504,
+          -0.0012507957063213923,
+          -0.008214449763204335,
+          0.001427065870198407,
+          -0.0076060224986400716,
+          0.0057724500635468,
+          -0.0037596664726755103
+        ],
+        "predicted_objective": 1.0338002790786726e-05,
+        "predictions_tried": 125,
+        "radius": 0.042943312697648145
+      },
+      "continuous": {
+        "solver": {
+          "name": "projected_gradient_fw_gap_v1",
+          "dtype": "float64",
+          "max_iterations": 200000,
+          "absolute_gap_tolerance": 1e-18,
+          "relative_gap_tolerance": 1e-11,
+          "roundoff_factor": 64
+        },
+        "status": "CERTIFIED",
+        "reason": null,
+        "coefficients": [
+          0.0,
+          0.002116465558390426,
+          0.0
+        ],
+        "predicted_q": [
+          -0.0021842803214507226,
+          0.0038366125952959767,
+          -0.0032204060273078963,
+          -0.0011464151360187527,
+          0.0009451101355754168,
+          -0.005938164840763267,
+          -0.00018086650549539957,
+          -0.004465616592004963,
+          0.004333822352042263,
+          0.007886281374535033,
+          -0.0014660020788191184,
+          0.004092719949908592,
+          0.006785870138330607,
+          -0.0020421600688899783,
+          -0.003517076801661941,
+          0.0028264739703884227,
+          -0.004872084720721684,
+          0.0030851665334954677,
+          0.001759788269392373,
+          0.002266193761243009,
+          -0.00430010595463021,
+          5.490171274260495e-05,
+          -0.003631089102543777,
+          -0.0034236619224604207,
+          -0.0009746245421186182,
+          -0.005854625460050672,
+          0.004808921614507978,
+          -0.007817001325265088,
+          0.004266504673036208,
+          -0.004549488597005741
+        ],
+        "iterations": 551,
+        "radius": 0.042943312697648145,
+        "available": [
+          true,
+          true,
+          true
+        ],
+        "max_iterations": 200000,
+        "zero_objective": 1.0338002790786726e-05,
+        "tolerance": 1.0338002790786725e-16,
+        "derivative_at_zero": [
+          0.00015362309077124385,
+          -0.0008987023985535525,
+          -0.00027447093912000053
+        ],
+        "lipschitz_bound": 5.823867492378125,
+        "predicted_objective": 9.554950085142347e-06,
+        "gradient": [
+          0.0003770766070981711,
+          -2.456637110246116e-15,
+          0.00014925967703501077
+        ],
+        "raw_frank_wolfe_gap": 1.0029674777664599e-16,
+        "roundoff_cushion": 2.82695863177761e-19,
+        "global_objective_gap_upper_bound": 1.0057944363982375e-16
+      },
+      "prior_objective_absolute_delta": 1.6940658945086007e-21,
+      "reconstructed_J_exact": true,
+      "surrogate_scales": [
+        {
+          "scale": 1.0,
+          "predicted_C": 13,
+          "predicted_lost_groups": [],
+          "predicted_hinge_improvement": 7.835006482903646e-07,
+          "proxy_positive_and_hinge_guard": true,
+          "no_true_native_measurement": true
+        },
+        {
+          "scale": 0.5,
+          "predicted_C": 12,
+          "predicted_lost_groups": [],
+          "predicted_hinge_improvement": 6.322900354242223e-07,
+          "proxy_positive_and_hinge_guard": true,
+          "no_true_native_measurement": true
+        },
+        {
+          "scale": 0.25,
+          "predicted_C": 11,
+          "predicted_lost_groups": [],
+          "predicted_hinge_improvement": 3.958315930787379e-07,
+          "proxy_positive_and_hinge_guard": true,
+          "no_true_native_measurement": true
+        }
+      ]
+    }
+  ],
+  "counts": {
+    "expected": 6,
+    "certified": 6,
+    "failed": 0
+  }
+}
