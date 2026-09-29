@@ -1,0 +1,84 @@
+{
+  "version": "video_temporal_sync_bridge_v1_candidate_v1",
+  "status": "FROZEN_FOR_REVIEW",
+  "created_at": "2026-09-29T14:51:57.558174+00:00",
+  "base": "91afbc71aee9f999ff6f7c1738c5ac0be1249a52",
+  "branch": "dev/video-trajectory-blind-validation-v1",
+  "file_count": 11,
+  "files": {
+    "diagnostics/video_temporal_sync_bridge_v1/implementation_report.md": {
+      "sha256": "fba97aa6a8126e5b85c5c458c08724ea45d8317113febf97a71f0e2d951db1d9",
+      "bytes": 4270,
+      "kind": "new"
+    },
+    "diagnostics/video_temporal_sync_bridge_v1/local_validation.json": {
+      "sha256": "2faa30b9604717e01dc16e24bdfb67cdcc527757e2efbcb6d6aeb23908959706",
+      "bytes": 1579,
+      "kind": "new"
+    },
+    "diagnostics/video_temporal_sync_bridge_v1/pytest_v1.txt": {
+      "sha256": "e7e59633368a36f0e7d223678a87a309d2b6a7066fd5b2e1ed59947955e8c8c3",
+      "bytes": 100,
+      "kind": "new"
+    },
+    "docs/video_temporal_sync_bridge_v1.md": {
+      "sha256": "beb90916300361206f156a34d081df07f79383db40b435ee789664c3c9e04767",
+      "bytes": 11295,
+      "kind": "new"
+    },
+    "experiments/wan_state_clock/configs/video_temporal_sync_bridge_v1.json": {
+      "sha256": "3b8f50b572299737d235a3fa30f7cd175e0003a73c5d01c59a3d746e70880176",
+      "bytes": 3888,
+      "kind": "new"
+    },
+    "experiments/wan_state_clock/video_temporal_sync_bridge_run.py": {
+      "sha256": "92ba5d27c3807953adec4cc085c0d6ac234bc546d56757d506d14552af907ee5",
+      "bytes": 22642,
+      "kind": "new"
+    },
+    "main/tube_state/video_temporal_sync_bridge.py": {
+      "sha256": "4b9e0f23f006209a544d32fcded15613f5ff8cd3868d548666f4caee765c8de0",
+      "bytes": 9477,
+      "kind": "new"
+    },
+    "notebooks/video_temporal_sync_bridge_v1_colab.ipynb": {
+      "sha256": "eea35e5c107f70651383d1f99af0e0aa20db036b8f2557567e6b60c4c8e78766",
+      "bytes": 11499,
+      "kind": "new"
+    },
+    "runtime/wan/video_temporal_sync_bridge.py": {
+      "sha256": "bf355845852900e71f5ea4f758aa4b4fd427507faecf3a672962fc85a0851fc8",
+      "bytes": 6138,
+      "kind": "new"
+    },
+    "scripts/build_video_temporal_sync_bridge_notebook.py": {
+      "sha256": "7b4a4ea21598ec52264006d0af7dd75e10b38afb461d1b157e2beae9adc6941d",
+      "bytes": 10746,
+      "kind": "new"
+    },
+    "tests/test_video_temporal_sync_bridge.py": {
+      "sha256": "4f6e92a81f4b4f2c3d925546bb720874f27aea1b61ec57adac11536e719acdd2",
+      "bytes": 17436,
+      "kind": "new"
+    }
+  },
+  "source_tree_sha256": "92d9ea3e3229740475ffc913abb8f0654402866404190110b32888845c2e0fcf",
+  "source_tree_hash_definition": "sha256(concatenate sorted path + NUL + SHA256 + LF)",
+  "patch": "diagnostics/video_temporal_sync_bridge_v1/candidate_v1.patch",
+  "patch_sha256": "119b9d6baa0511fa8012172c988afc18d4af2b5083cf751f4e3a7012628867fa",
+  "validation": "12 passed in19.24s; zero skips; CPU synthetic/fixture only",
+  "verification": {
+    "python_ast": "PASS",
+    "notebook_static": "PASS",
+    "source_whitespace": "PASS",
+    "reverse_patch_check": "PASS",
+    "all_preexisting_tracked_files_unchanged": true
+  },
+  "publication": {
+    "source_sha": null,
+    "notebook": "UNPUBLISHED_DRAFT"
+  },
+  "scientific_status": "NOT_EXECUTED",
+  "review_status": "A2/A3/A4/A5 pending same-version review",
+  "write_lock": "A1 stops writing pending review"
+}

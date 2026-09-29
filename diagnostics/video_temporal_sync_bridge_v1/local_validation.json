@@ -1,0 +1,57 @@
+{
+  "status": "ENGINEERING_PASS",
+  "command": [
+    "/tmp/image-trajectory-reference-a1-official-20260929/cpu-venv-torch26/bin/python",
+    "-m",
+    "pytest",
+    "tests/test_video_temporal_sync_bridge.py",
+    "-q",
+    "-k",
+    "notebook_static or checkpoint_boundary or terminal_diagnostics_and_batched_search_hard_exit"
+  ],
+  "cwd": "/home/richar/projects/Video-WM/worktrees/Video-Trajectory-Blind-Validation-V1",
+  "returncode": 0,
+  "wall_seconds": 2.0196844470046926,
+  "test_summary": "4 passed, 10 deselected in 1.60s",
+  "python": "3.12.3 (main, Aug 31 2026, 10:18:26) [GCC 13.3.0]",
+  "packages": {
+    "torch": "2.6.0+cpu",
+    "torchvision": "0.21.0+cpu",
+    "diffusers": "0.39.0",
+    "transformers": "4.57.6",
+    "numpy": "2.5.2",
+    "pytest": "9.1.1"
+  },
+  "evidence_kind": "CPU synthetic tensors; real native scheduler; actual synthetic FFmpeg MP4; fixture VAE/children; no model weights",
+  "gpu_executed": false,
+  "model_loaded": false,
+  "colab_executed": false,
+  "source_published": false,
+  "base": "91afbc71aee9f999ff6f7c1738c5ac0be1249a52",
+  "source_sha_binding": null,
+  "first_target_run": "10 passed in36.34s before diagnostic/batch additions; tool output only",
+  "intermediate_run": "12 passed in18.42s before nonfinite-normalizer regression; tool output only",
+  "evidence_ceiling": "CPU delta checks only; original mechanism bytes unchanged and v1 numerical evidence inherited; no model/GPU/Colab",
+  "independent_main_algebra": {
+    "path": "/home/richar/projects/Video-WM/diagnostics/temporal-sync-bridge-main-review-20260929/independent_algebra_and_mapping.json",
+    "sha256": "d010aecb773772da7c2e517f8ea8e26e7a5a071d106927dc8bc92ab46901d09b",
+    "not_produced_by_this_run": true
+  },
+  "v1_inherited": {
+    "command": [
+      "/tmp/image-trajectory-reference-a1-official-20260929/cpu-venv-torch26/bin/python",
+      "-m",
+      "pytest",
+      "tests/test_video_temporal_sync_bridge.py",
+      "-q"
+    ],
+    "test_summary": "12 passed in 19.24s",
+    "wall_seconds": 19.976932674995624,
+    "snapshot": "diagnostics/video_temporal_sync_bridge_v1/snapshot_v1.json",
+    "source_tree_sha256": "92d9ea3e3229740475ffc913abb8f0654402866404190110b32888845c2e0fcf",
+    "log": "diagnostics/video_temporal_sync_bridge_v1/pytest_v1.txt"
+  },
+  "version": "candidate_v2",
+  "delta": "P1 correct existing requirements path plus AST file-existence check; P2 canonical result save before blind projection and both checkpoint-boundary regressions; batch phase retention retained",
+  "v2_log": "diagnostics/video_temporal_sync_bridge_v1/pytest_v2_delta.txt"
+}

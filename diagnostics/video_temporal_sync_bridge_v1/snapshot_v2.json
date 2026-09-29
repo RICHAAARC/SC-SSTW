@@ -1,0 +1,111 @@
+{
+  "version": "video_temporal_sync_bridge_v1_candidate_v2",
+  "status": "FROZEN_FOR_REVIEW",
+  "created_at": "2026-09-29T15:02:54.474006+00:00",
+  "base": "91afbc71aee9f999ff6f7c1738c5ac0be1249a52",
+  "branch": "dev/video-trajectory-blind-validation-v1",
+  "file_count": 12,
+  "files": {
+    "diagnostics/video_temporal_sync_bridge_v1/implementation_report.md": {
+      "sha256": "68353a105531a9483bcbc301497f6d7b09c098d01e1e9c1c2a3eebf5bcb71e6d",
+      "bytes": 6458,
+      "kind": "new"
+    },
+    "diagnostics/video_temporal_sync_bridge_v1/local_validation.json": {
+      "sha256": "509797339e0b4ff7d0b0d729082f23d5a73d1afffd84351e395c7f4e3fe27251",
+      "bytes": 2598,
+      "kind": "new"
+    },
+    "diagnostics/video_temporal_sync_bridge_v1/pytest_v1.txt": {
+      "sha256": "e7e59633368a36f0e7d223678a87a309d2b6a7066fd5b2e1ed59947955e8c8c3",
+      "bytes": 100,
+      "kind": "new"
+    },
+    "diagnostics/video_temporal_sync_bridge_v1/pytest_v2_delta.txt": {
+      "sha256": "ddbcf3aa8c0c7078de04886d9a66669b75047afa3e3b773324d88105539eca9e",
+      "bytes": 113,
+      "kind": "new"
+    },
+    "docs/video_temporal_sync_bridge_v1.md": {
+      "sha256": "beb90916300361206f156a34d081df07f79383db40b435ee789664c3c9e04767",
+      "bytes": 11295,
+      "kind": "new"
+    },
+    "experiments/wan_state_clock/configs/video_temporal_sync_bridge_v1.json": {
+      "sha256": "3b8f50b572299737d235a3fa30f7cd175e0003a73c5d01c59a3d746e70880176",
+      "bytes": 3888,
+      "kind": "new"
+    },
+    "experiments/wan_state_clock/video_temporal_sync_bridge_run.py": {
+      "sha256": "dd3b4e410f9a1e3077953bb754ec20e4406970c1481e1db055613d836248900e",
+      "bytes": 22729,
+      "kind": "new"
+    },
+    "main/tube_state/video_temporal_sync_bridge.py": {
+      "sha256": "4b9e0f23f006209a544d32fcded15613f5ff8cd3868d548666f4caee765c8de0",
+      "bytes": 9477,
+      "kind": "new"
+    },
+    "notebooks/video_temporal_sync_bridge_v1_colab.ipynb": {
+      "sha256": "d7212c585925a5d5ab8a1132e3a20575b443a43832b4e4e2743febdf371930af",
+      "bytes": 11496,
+      "kind": "new"
+    },
+    "runtime/wan/video_temporal_sync_bridge.py": {
+      "sha256": "bf355845852900e71f5ea4f758aa4b4fd427507faecf3a672962fc85a0851fc8",
+      "bytes": 6138,
+      "kind": "new"
+    },
+    "scripts/build_video_temporal_sync_bridge_notebook.py": {
+      "sha256": "da2a14681d5bf71104ff563f41c03ab0687a92d7d37fe82faa49f9af1055eb09",
+      "bytes": 10743,
+      "kind": "new"
+    },
+    "tests/test_video_temporal_sync_bridge.py": {
+      "sha256": "9e32a58169abbea7c74dcb9ae714e1cf48e75d7d2cb3af92580b3faf66b8b03c",
+      "bytes": 20838,
+      "kind": "new"
+    }
+  },
+  "source_tree_sha256": "8a7ffa6ef0cf83468eb349912d9b6fc65b5747b795424904ab1cc2ea55211ce6",
+  "source_tree_hash_definition": "sha256(concatenate sorted path + NUL + SHA256 + LF)",
+  "patch": "diagnostics/video_temporal_sync_bridge_v1/candidate_v2.patch",
+  "patch_sha256": "6a409be23d997f304a2c1cdbad91468f00b5569e811d02b04211a2c277a58e02",
+  "prior_snapshot": {
+    "path": "diagnostics/video_temporal_sync_bridge_v1/snapshot_v1.json",
+    "sha256": "5e7651b8285a54adad16a0e0956980ddf5579f5adc0e75ef58dedcb5013b2360",
+    "patch_sha256": "119b9d6baa0511fa8012172c988afc18d4af2b5083cf751f4e3a7012628867fa",
+    "source_tree_sha256": "92d9ea3e3229740475ffc913abb8f0654402866404190110b32888845c2e0fcf"
+  },
+  "delta": {
+    "changed": [
+      "diagnostics/video_temporal_sync_bridge_v1/implementation_report.md",
+      "diagnostics/video_temporal_sync_bridge_v1/local_validation.json",
+      "experiments/wan_state_clock/video_temporal_sync_bridge_run.py",
+      "notebooks/video_temporal_sync_bridge_v1_colab.ipynb",
+      "scripts/build_video_temporal_sync_bridge_notebook.py",
+      "tests/test_video_temporal_sync_bridge.py"
+    ],
+    "added": [
+      "diagnostics/video_temporal_sync_bridge_v1/pytest_v2_delta.txt"
+    ],
+    "unchanged_v1_files": 5,
+    "scope": "Only P1 dependency path/built notebook/static existence test and P2 canonical checkpoint order/boundary tests, plus reporting. Method/runtime/config/docs unchanged."
+  },
+  "validation": "4 passed,10 deselected in1.60s; no skips; targeted CPU delta only; v1 full12 retained separately",
+  "verification": {
+    "python_ast": "PASS",
+    "notebook_static": "PASS",
+    "source_whitespace": "PASS",
+    "reverse_patch_check": "PASS",
+    "all_preexisting_tracked_files_unchanged": true,
+    "v1_snapshot_patch_log_unchanged": true
+  },
+  "publication": {
+    "source_sha": null,
+    "notebook": "UNPUBLISHED_DRAFT"
+  },
+  "scientific_status": "NOT_EXECUTED",
+  "review_status": "A2 v1 core inherited; A3/A4 v2 delta and A5 pending",
+  "write_lock": "A1 stops writing pending review"
+}
