@@ -1,0 +1,58 @@
+{
+  "status": "ENGINEERING_PASS",
+  "command": [
+    "/tmp/image-trajectory-reference-a1-official-20260929/cpu-venv-torch26/bin/python",
+    "-m",
+    "pytest",
+    "tests/test_grow_video_reference.py",
+    "-q"
+  ],
+  "returncode": 0,
+  "wall_seconds": 14.141867591999471,
+  "python": "3.12.3 (main, Aug 31 2026, 10:18:26) [GCC 13.3.0]",
+  "packages": {
+    "torch": "2.6.0+cpu",
+    "torchvision": "0.21.0+cpu",
+    "diffusers": "0.39.0",
+    "transformers": "4.57.6",
+    "numpy": "2.5.2",
+    "pytest": "9.1.1"
+  },
+  "test_kind": "CPU synthetic tensors; real native UniPC; actual FFmpeg synthetic MP4; fixture VAE, no weights",
+  "gpu_executed": false,
+  "model_loaded": false,
+  "colab_executed": false,
+  "source_published": false,
+  "image_reference_source": "fea8dc9c8c48802d31d34316d6e2f7df2dd8fe08",
+  "reference_run": "20260929T110323836911Z",
+  "evidence_ceiling": "Implementation only; no real video recovery or quality claim",
+  "independent_main_session_gradient_audit": {
+    "path": "/home/richar/projects/Video-WM/diagnostics/video-image-reference-migration-20260929/gradient_scaling_check.json",
+    "sha256": "6d0b59f0b657ea8a3de0e97895a5d13ec38a3c703f69ef40024f064772b5669c",
+    "not_generated_by_this_test": true
+  },
+  "version": "candidate_v2",
+  "v1_inherited": {
+    "snapshot": "diagnostics/grow_video_reference_v1/snapshot_v1.json",
+    "source_tree_sha256": "a51aea6133134f5044b545a4e51eaaa92916ccb1cbd5d6728cd592f7ed768122",
+    "tests": "12 passed in 14.32s; original pytest_v1.txt and snapshot/patch retained unchanged"
+  },
+  "tests": {
+    "full_target": "15 passed in 13.30s",
+    "lifecycle_focused": "3 passed, 12 deselected in 0.95s",
+    "focused_command": [
+      "/tmp/image-trajectory-reference-a1-official-20260929/cpu-venv-torch26/bin/python",
+      "-m",
+      "pytest",
+      "tests/test_grow_video_reference.py",
+      "-q",
+      "-k",
+      "parent_main"
+    ],
+    "logs": [
+      "diagnostics/grow_video_reference_v1/pytest_v2.txt",
+      "diagnostics/grow_video_reference_v1/pytest_v2_lifecycle.txt"
+    ]
+  },
+  "repair": "Parent worker startup/monitor failure: terminate/wait before reload; preserve completed child rows; finalize fixed missing rows; interrupt exits 130 without starting later work. No method/model/reader call changes."
+}

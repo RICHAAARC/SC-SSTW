@@ -1,0 +1,1856 @@
+diff --git a/diagnostics/grow_video_reference_v1/local_validation.json b/diagnostics/grow_video_reference_v1/local_validation.json
+new file mode 100644
+index 0000000..76a7e2e
+--- /dev/null
++++ b/diagnostics/grow_video_reference_v1/local_validation.json
+@@ -0,0 +1,58 @@
++{
++  "status": "ENGINEERING_PASS",
++  "command": [
++    "/tmp/image-trajectory-reference-a1-official-20260929/cpu-venv-torch26/bin/python",
++    "-m",
++    "pytest",
++    "tests/test_grow_video_reference.py",
++    "-q"
++  ],
++  "returncode": 0,
++  "wall_seconds": 14.141867591999471,
++  "python": "3.12.3 (main, Aug 31 2026, 10:18:26) [GCC 13.3.0]",
++  "packages": {
++    "torch": "2.6.0+cpu",
++    "torchvision": "0.21.0+cpu",
++    "diffusers": "0.39.0",
++    "transformers": "4.57.6",
++    "numpy": "2.5.2",
++    "pytest": "9.1.1"
++  },
++  "test_kind": "CPU synthetic tensors; real native UniPC; actual FFmpeg synthetic MP4; fixture VAE, no weights",
++  "gpu_executed": false,
++  "model_loaded": false,
++  "colab_executed": false,
++  "source_published": false,
++  "image_reference_source": "fea8dc9c8c48802d31d34316d6e2f7df2dd8fe08",
++  "reference_run": "20260929T110323836911Z",
++  "evidence_ceiling": "Implementation only; no real video recovery or quality claim",
++  "independent_main_session_gradient_audit": {
++    "path": "/home/richar/projects/Video-WM/diagnostics/video-image-reference-migration-20260929/gradient_scaling_check.json",
++    "sha256": "6d0b59f0b657ea8a3de0e97895a5d13ec38a3c703f69ef40024f064772b5669c",
++    "not_generated_by_this_test": true
++  },
++  "version": "candidate_v2",
++  "v1_inherited": {
++    "snapshot": "diagnostics/grow_video_reference_v1/snapshot_v1.json",
++    "source_tree_sha256": "a51aea6133134f5044b545a4e51eaaa92916ccb1cbd5d6728cd592f7ed768122",
++    "tests": "12 passed in 14.32s; original pytest_v1.txt and snapshot/patch retained unchanged"
++  },
++  "tests": {
++    "full_target": "15 passed in 13.30s",
++    "lifecycle_focused": "3 passed, 12 deselected in 0.95s",
++    "focused_command": [
++      "/tmp/image-trajectory-reference-a1-official-20260929/cpu-venv-torch26/bin/python",
++      "-m",
++      "pytest",
++      "tests/test_grow_video_reference.py",
++      "-q",
++      "-k",
++      "parent_main"
++    ],
++    "logs": [
++      "diagnostics/grow_video_reference_v1/pytest_v2.txt",
++      "diagnostics/grow_video_reference_v1/pytest_v2_lifecycle.txt"
++    ]
++  },
++  "repair": "Parent worker startup/monitor failure: terminate/wait before reload; preserve completed child rows; finalize fixed missing rows; interrupt exits 130 without starting later work. No method/model/reader call changes."
++}
+diff --git a/diagnostics/grow_video_reference_v1/pytest_v1.txt b/diagnostics/grow_video_reference_v1/pytest_v1.txt
+new file mode 100644
+index 0000000..40d336b
+--- /dev/null
++++ b/diagnostics/grow_video_reference_v1/pytest_v1.txt
+@@ -0,0 +1,2 @@
++............                                                             [100%]
++12 passed in 14.32s
+diff --git a/diagnostics/grow_video_reference_v1/pytest_v2.txt b/diagnostics/grow_video_reference_v1/pytest_v2.txt
+new file mode 100644
+index 0000000..dc60049
+--- /dev/null
++++ b/diagnostics/grow_video_reference_v1/pytest_v2.txt
+@@ -0,0 +1,2 @@
++...............                                                          [100%]
++15 passed in 13.30s
+diff --git a/diagnostics/grow_video_reference_v1/pytest_v2_lifecycle.txt b/diagnostics/grow_video_reference_v1/pytest_v2_lifecycle.txt
+new file mode 100644
+index 0000000..9d9a418
+--- /dev/null
++++ b/diagnostics/grow_video_reference_v1/pytest_v2_lifecycle.txt
+@@ -0,0 +1,2 @@
++...                                                                      [100%]
++3 passed, 12 deselected in 0.95s
+diff --git a/docs/grow_video_reference_v1.md b/docs/grow_video_reference_v1.md
+new file mode 100644
+index 0000000..d0c4ff8
+--- /dev/null
++++ b/docs/grow_video_reference_v1.md
+@@ -0,0 +1,172 @@
++# GROW-Video-Reference-V1: fixed image-to-Wan construction
++
++This is one preselected video-source comparison of OFF,MULTI,LAST. It adapts
++the successful image reference's published FFT-real/mean-MSE/conditional-clean
++construction to native Wan Flow. It is not the old three-direction controller,
++a formal-paper DCT reproduction, a temporal synchronizer or a proven video
++watermark. No real model,GPU or Colab run was performed during implementation.
++
++## Fixed reference and construction
++
++The image reference used source `fea8dc9c8c48802d31d34316d6e2f7df2dd8fe08`,
++run `20260929T110323836911Z`, audited by the main session:2 PNGs/4 reads/8
++post-read evaluations complete, GROW/correct-key recovered OKOK with0/32 errors.
++That run used the explicitly selected SD2.1 community mirror; it was not a byte
++identity proof against inaccessible official weights. Its original method
++source remains GROW `6aa69a9c5d4a9e75df457fcca8dfc71b64a6b870`.
++
++The author helper named DCT executes `torch.fft.fft2(...,norm='ortho').real`;
++this construction preserves that execution, including differentiating through
++the entire real FFT and using masked mean MSE. The formal CVF paper's DCT,
++eta100/16-bit/first-channel setup is a distinct reference. The code's image
++setup is mean MSE,N=1600,eta200,32 bits,4 channels,conditional update thenCFG7.5.
++
++| Fixed item | This video reference |
++|---|---|
++| Model | Wan-AI/Wan2.1-T2V-1.3B-Diffusers at `0fad780a534b6463e45facd96134c9f345acfa5b` |
++| Source | Existing first copper-kettle prompt,seed2026092501; one source without selection |
++| Geometry |181frames,320x512,8fps; native normalized latent[1,16,46,40,64] |
++| Sampler | Original nonthresholded flow-prediction UniPC,50steps,zero final sigma; full live native history |
++| Carrier | First4 channels,8 of32 bits/channel,FFT over the final2 spatial dimensions; h8..19,w12..31,K=240 |
++| Time | Same32-bit payload repeated across all46 latent times; this is repetition,not synchronization |
++| Target | Alpha0.5,messageOKOK,keywatermark; wrong-messageNOPE is evaluation-only |
++| Step | Actual mask countN=4*46*240=44160; eta=200*N/1600=5520,computed from the tensor |
++| Arms | OFF no local update; MULTI indices25..49; LAST only49. All start from identical noise and independent complete pristine scheduler copies |
++| Precision | CUDA Transformer BF16 when supported,otherwiseFP16; CPU TransformerFP32. State,conditional/unconditional branches,local gradient,CFG and VAE areFP32 |
++| Media | One H.264/libx264,CRF18,yuv420p save at8fps for every arm |
++
++The common new loop converts both Transformer outputs toFP32 before any CFG.
++OFF uses exactly that same arithmetic as MULTI/LAST; it is not required to be
++bitwise equal to historical OFF,which used different arithmetic. Existing
++shared-loader callers retain their old CUDA/BF16 defaults; optional device and
++dtype arguments enable this new CPU/compatible-CUDA path. No GPU-name or exact
++Python-version gate is introduced.
++
++For each controlled step, compute conditional clean `x0_c=z-sigma*v_c` and
++`L=mean((FFTreal(x0_c)[mask]-target[mask])**2)`. A fresh local leaf gives the
++full gradient with respect to x0_c; no Transformer,previous-step or tail VJP is
++performed. With `delta=-eta*gradient`, map back as `v_c'=v_c-delta/sigma`, then
++form exactly one CFG `v=u+5*(v_c'-u)`. Do not substitute DDIM coefficients or
++apply an extra7.5/5 correction. The chosen invariant is conditional
++per-coefficient step scale,not equal post-CFG displacement with the image run.
++
++The main session's independent
++`diagnostics/video-image-reference-migration-20260929/gradient_scaling_check.json`
++(in the parent project) establishes the local algebra: selected FFT-real
++coefficient residual is multiplied by0.875 for both image1600/200 and
++video44160/5520; unselected12 channels have zero local gradient. The band has
++no conjugate pair/DC/Nyquist collision. ImageCFG7.5 gives local clean gain0.9375;
++WanCFG5 gives0.625. These are local clean-coordinate identities,not native
++scheduler displacement,RMS budgets or final decoded-media guarantees.
++
++The input sigma at index49 is positive; sigma50 is the terminal zero.
++Each arm calls native `scheduler.step` once per index,with continuous
++model_outputs,timestep_list,last_sample and cursor. No reset,set_timesteps,
++manual converted-x0 replacement or speculative tail occurs within an arm.
++MULTI and LAST use the same local step; there is no total-energy budget
++matching. Because MULTI includes49 and there is no FREE49 arm,this experiment
++compares two fixed schemes and cannot isolate a non-last contribution.
++
++## Save/read/truth boundary and fixed denominator
++
++All3 arms save their raw normalized terminal tensors. A separate media process
++loads only the FP32 VAE. For each arm it decodes once and saves the MP4 through
++the existing common RGB8/H.264 adapter. Diagnostic reads observe raw terminal,
++float-RGB reencoding,and RGB8 reencoding; the primary read is saved MP4 bytes
++->FFmpeg RGB24->FP32 Wan VAE posterior mode->`(raw-mean)/std`->FFT-real bits.
++Decode uses `normalized*std+mean`; the SD image scaling factor is not reused.
++VAE cache clearing before/after calls is retained. Actual181x320x512 geometry
++is checked; there is no implicit crop,pad,resample or frame repair.
++
++Primary API `runtime.wan.grow_video_reference.read_mp4_payload` accepts only
++path,public keys/protocol,frozen VAE and an optional observational call counter.
++It receives no writer terminal,writer RGB,target,message or truth-bearing
++configuration. The two keys share one observed MP4 and one VAE feature;
++separate key reads expose the same feature hash and file hash. Diagnostic
++latent/RGB APIs are separate and never substitute for the primary entrypoint.
++
++Every layer reads with `watermark` and `watermark-wrong`. Their seed and actual
++coordinate-to-bit assignment hashes must differ; string difference alone is
++insufficient (`kramretaw` collides with `watermark`). Mask support stays the
++same. Each bit gets240/8*46=1380 sign votes; zeros vote0 and exact ties follow
++the first-vote Counter rule,as in the image reader. Public length is32 bits;
++no truth-selected confidence or robust search occurs.
++
++The fixed denominator is1 source,3 MP4s,4 dependent layers*3arms*2keys=24 raw
++readouts,and48 evaluations after joining registeredOKOK/wrong-messageNOPE.
++All rows exist before execution. Raw reads are persisted in
++`blind_readouts.json` before truth joins; evaluation reopens that file and
++checks its hash remains unchanged. UTF8 text is auxiliary only; raw32-bit
++errors/BER/accuracy/exact recovery are primary. Failed/missing rows remain.
++A failed second key retains a completed first key. Failed diagnostic layers
++continue to the MP4 primary attempt. Worker failures preserve all rows and
++completed work. `EXECUTION_COMPLETE` describes counts,not successful recovery.
++
++## Runtime resources and call accounting
++
++Generation and media use two serial fresh child processes of the current
++`sys.executable`. The generation process loads no VAE; it finishes all arms,
++saves CPU terminals,and exits before the media process loads the VAE. No
++accelerate offload hooks,gradient graph spooling or alternating GPU model
++residency are introduced. Each arm's media tensors are released before the
++next arm; each normalized terminal is about7.19MiB. Model loading still needs
++sufficient available resources; failures are records,not method results.
++
++Planned completed calls are300 Transformer forwards (150 per conditioning
++branch),150 native steps,26 local gradients,3 VAE decodes,9 VAE encodes,
++3 MP4 saves,3 primary MP4 reads and24 bit reads. Actual attempted/completed
++calls are logged by stage; readout slots are not mislabeled as VAE calls.
++No VAE is encoded twice merely to supply two public keys.
++
++After blind-read persistence and post-read evaluation,a separate quality stage
++reads each saved MP4 once more:3 `quality_mp4_read` calls,distinct from primary
++reads. It computes codec-readback RGB RMSE/PSNR relative to OFF by framewise
++FP64 squared-error accumulation,without full-video FP64 copies or another VAE
++call. No thresholds are introduced. A quality failure cannot overwrite raw
++reads/evaluations or their execution outcome. Notebook display shows all
++available saved MP4s for human quality inspection.
++
++## Historical evidence and actual differences
++
++| Earlier construction | Mechanism and retained real evidence |
++|---|---|
++| GROW-Video-Frequency,e04f48ed | True orthonormal DCT-II,channel0/16bits,64coefficients,half-squared-error sum,eta0.1,post-CFG clean local gradient,steps10..29.12 videos/48 layers complete; marked8 exact0 at all four layers; aggregate errors73/71/69/67 |
++| GROW-Spatial-Carrier,a66db918 | Same spatial DCT/half-sum/channel0;steps30..49; LAST matched sum of native squared-response RMS.20 videos/80 layers complete; MULTI terminal3/8,float0/8,RGB8 2/8,MP4 0/8; LAST0/8 at each layer |
++| GROW-Single-Step-Jacobian,001bc592 | Spatial DCT then23 temporal differences,half-sum,eta0.1,step30. JAC used a real current-input VJP and matched LOCAL native response energy.20 videos/80 layers complete,8/8 VJPs complete; LOCAL/JAC exact0/8 at each layer,MP4 errors70/128 and62/128 |
++| Historical temporal-difference paired control | Partial positive evidence remains:run20260919T110131665623Z hard MP4 MULTI4/8,LAST7/8;soft3/8 and5/8. It is incorrect to call every historical GROW video construction unsuccessful |
++| Three-direction continuous saved-tail candidate,39b3126 | RGB-DCT lift/time-bin basis,true-tail finite-difference J,weighted-hinge three-variable constrained solve plus native-budget/positive-group real acceptance.6/6 points,18/18 candidates,0/18 ACCEPT,16/18 loss worsening remain unchanged |
++
++A2 checked the historical implementation against execution commits and original
++records under the corresponding worktrees' `evidence/` directories. The older
++FREQ/SPATIAL methods already differentiated the complete local loss and used
++the same DCT for writing/reading; JAC really did use an input VJP. Those are not
++new distinguishing claims. The present substantive change is FFT-real,
++actual-mask mean scaling,multichannel32-bit construction,and conditional-clean
++update before CFG with native Flow conversion. It also differs from the
++three-direction proxy by directly using a local carrier gradient. None of
++these differences establishes that the new video run will succeed.
++
++## Local validation and notebook handoff
++
++`tests/test_grow_video_reference.py` tests local algebra,exact50-step zero-eta
++state/history equivalence to OFF,Flow/CFG placement,layout/voting,actual
++synthetic MP4 readback with a fixture VAE using posterior mode and Wan
++normalization,geometry rejection,per-key/layer failure retention,separate
++quality failure,device/dtype selection,optional loader arguments and notebook
++setup persistence. The CPU fixture VAE does not validate real VAE survival.
++Test commands/results and package versions are saved in
++`diagnostics/grow_video_reference_v1/local_validation.json`. No real-model
++or GPU evidence is produced by these tests.
++
++The notebook starts with the exact2-line Drive mount. It uses the current
++Python,probes Torch/Torchvision together and repairs them only if that import
++fails; a small candidate dependency-range file inherits the successful image
++reference API ranges and adds Wan's ftfy/sentencepiece. Metadata pip-check
++conflicts are recorded,while actual imports determine availability. There is
++no venv,ensurepip,exact-version gate or hardware-name gate. Its first working
++cell creates full3/24/48 setup rows before source/environment work. Run all
++executes only this fixed case. Failed setup keeps receipts and the denominator.
++
++The local draft has `SOURCE_SHA=None`; publication and immutable notebook
++binding are handled by the main session after review. This implementation
++does not push,merge,run Colab,load model weights or alter historical results.
+diff --git a/experiments/wan_state_clock/configs/grow_video_reference_v1.json b/experiments/wan_state_clock/configs/grow_video_reference_v1.json
+new file mode 100644
+index 0000000..68fedcd
+--- /dev/null
++++ b/experiments/wan_state_clock/configs/grow_video_reference_v1.json
+@@ -0,0 +1,114 @@
++{
++  "name": "grow_video_reference_v1",
++  "image_reference_source": "fea8dc9c8c48802d31d34316d6e2f7df2dd8fe08",
++  "image_reference_run": "20260929T110323836911Z",
++  "upstream_grow_commit": "6aa69a9c5d4a9e75df457fcca8dfc71b64a6b870",
++  "model": {
++    "id": "Wan-AI/Wan2.1-T2V-1.3B-Diffusers",
++    "revision": "0fad780a534b6463e45facd96134c9f345acfa5b"
++  },
++  "generation": {
++    "height": 320,
++    "width": 512,
++    "frames": 181,
++    "fps": 8,
++    "steps": 50,
++    "guidance_scale": 5.0,
++    "max_sequence_length": 512,
++    "negative_prompt": "text, watermark, logo, camera motion, cuts, multiple objects, flicker",
++    "prompt": "locked camera, a copper kettle resting on a plain wooden table, steady soft indoor light, no people, no cuts",
++    "seed": 2026092501
++  },
++  "case_id": "eval_copperkettle_s2501",
++  "arms": [
++    "OFF",
++    "MULTI",
++    "LAST"
++  ],
++  "control": {
++    "channels": [
++      0,
++      1,
++      2,
++      3
++    ],
++    "payload_bits": 32,
++    "alpha": 0.5,
++    "band_min": 0.2,
++    "band_max": 0.5,
++    "all_latent_times": 46,
++    "reference_mask_count": 1600,
++    "reference_eta": 200.0,
++    "actual_mask_count": 44160,
++    "derived_eta": 5520.0,
++    "MULTI": [
++      25,
++      26,
++      27,
++      28,
++      29,
++      30,
++      31,
++      32,
++      33,
++      34,
++      35,
++      36,
++      37,
++      38,
++      39,
++      40,
++      41,
++      42,
++      43,
++      44,
++      45,
++      46,
++      47,
++      48,
++      49
++    ],
++    "LAST": [
++      49
++    ],
++    "cfg_compensation": false,
++    "total_budget_matching": false
++  },
++  "key": "watermark",
++  "wrong_key": "watermark-wrong",
++  "message": "OKOK",
++  "wrong_message": "NOPE",
++  "media": {
++    "fps": 8,
++    "crf": 18,
++    "codec": "libx264",
++    "pixel_format": "yuv420p"
++  },
++  "fixed_denominator": {
++    "sources": 1,
++    "arms": 3,
++    "mp4": 3,
++    "layers_per_arm": 4,
++    "keys": 2,
++    "raw_reads": 24,
++    "evaluations": 48
++  },
++  "planned_calls": {
++    "transformer_conditional": 150,
++    "transformer_unconditional": 150,
++    "native_step": 150,
++    "local_gradient": 26,
++    "vae_decode": 3,
++    "vae_encode": 9,
++    "mp4_save": 3,
++    "mp4_read": 3,
++    "bit_read": 24,
++    "quality_mp4_read": 3
++  },
++  "evidence_ceiling": "One source,3 fixed schemes and4 dependent layers; MP4 primary. No synchronization, lowFPR, generalization or non-last independent contribution claim.",
++  "precision": {
++    "cuda_transformer": "bfloat16 if is_bf16_supported else float16",
++    "cpu_transformer": "float32",
++    "state_control_cfg_vae": "float32"
++  }
++}
+diff --git a/experiments/wan_state_clock/grow_video_reference_run.py b/experiments/wan_state_clock/grow_video_reference_run.py
+new file mode 100644
+index 0000000..e160aba
+--- /dev/null
++++ b/experiments/wan_state_clock/grow_video_reference_run.py
+@@ -0,0 +1,365 @@
++"""Fixed OFF/MULTI/LAST -> MP4 -> blind32 bits, two fresh child phases."""
++from __future__ import annotations
++import argparse
++import copy
++import hashlib
++import importlib.metadata
++import json
++import math
++import os
++from pathlib import Path
++import subprocess
++import sys
++import time
++import traceback
++
++from main.tube_state import grow_video_reference as method
++from runtime.wan import grow_video_reference as backend
++
++ROOT=Path(__file__).resolve().parents[2]
++CONFIG=Path(__file__).parent/"configs/grow_video_reference_v1.json"
++MODULE="experiments.wan_state_clock.grow_video_reference_run"
++KEY_IDS=("CORRECT","WRONG")
++TARGET_IDS=("REGISTERED","WRONG_MESSAGE")
++DENOMINATOR=dict(sources=1,arms=3,mp4=3,layers_per_arm=4,keys=2,raw_reads=24,evaluations=48)
++
++
++def dump(path,value):
++    path=Path(path);temp=path.with_suffix(path.suffix+".tmp")
++    with temp.open("w") as stream:
++        json.dump(value,stream,indent=2,allow_nan=False);stream.write("\n")
++        stream.flush();os.fsync(stream.fileno())
++    os.replace(temp,path)
++
++
++def environment():
++    packages={}
++    for name in ("torch","torchvision","diffusers","transformers","accelerate","numpy","imageio","imageio-ffmpeg"):
++        try:packages[name]=importlib.metadata.version(name)
++        except importlib.metadata.PackageNotFoundError:packages[name]=None
++    return dict(python=sys.version,executable=sys.executable,packages=packages)
++
++
++def load_config():
++    cfg=json.loads(CONFIG.read_text())
++    c=cfg["control"];g=cfg["generation"]
++    if (cfg["fixed_denominator"]!=DENOMINATOR or cfg["arms"]!=list(method.ARMS)
++        or c!={"channels":[0,1,2,3],"payload_bits":32,"alpha":0.5,"band_min":0.2,"band_max":0.5,
++            "all_latent_times":46,"reference_mask_count":1600,"reference_eta":200.0,
++            "actual_mask_count":44160,"derived_eta":5520.0,"MULTI":list(range(25,50)),
++            "LAST":[49],"cfg_compensation":False,"total_budget_matching":False}
++        or (g["height"],g["width"],g["frames"],g["steps"],g["guidance_scale"])!=(320,512,181,50,5.0)):
++        raise ValueError("fixed construction/denominator mismatch")
++    if len(method.message_bits(cfg["message"]))!=32 or len(method.message_bits(cfg["wrong_message"]))!=32:
++        raise ValueError("32-bit truth evaluation targets required")
++    method.layout_receipt(cfg["key"],cfg["wrong_key"])
++    return cfg
++
++
++def initial_result(output):
++    rows={f"{a}/{l}/{k}":dict(status="PENDING",arm=a,layer=l,key_id=k,decoded_bits=None,truth_used=False)
++          for a in method.ARMS for l in method.LAYERS for k in KEY_IDS}
++    sources=("main/tube_state/grow_video_reference.py","runtime/wan/grow_video_reference.py",
++        "runtime/wan/generation.py","runtime/wan/trajectory.py","runtime/wan/vae.py","runtime/wan/io.py",
++        "experiments/wan_state_clock/grow_video_reference_run.py",
++        "experiments/wan_state_clock/configs/grow_video_reference_v1.json",
++        "experiments/wan_state_clock/requirements-grow-video-reference.txt")
++    return dict(status="RUNNING",stage="INITIALIZE",fixed_denominator=DENOMINATOR,
++        source_sha=subprocess.check_output(["git","rev-parse","HEAD"],cwd=ROOT,text=True).strip(),
++        source_files={p:backend.file_sha256(ROOT/p) for p in sources},
++        config_sha256=backend.file_sha256(CONFIG),environment=environment(),output=str(output),
++        generation={a:dict(status="PENDING",steps=[],terminal_path=str(output/a/"terminal.pt")) for a in method.ARMS},
++        videos={a:dict(status="PENDING",path=str(output/a/(a+".mp4"))) for a in method.ARMS},
++        reads=rows,evaluations={f"{key}/{target}":dict(status="PENDING",arm=row["arm"],layer=row["layer"],
++            key_id=row["key_id"],target_id=target,bit_errors=None,ber=None,exact_bits=None)
++            for key,row in rows.items() for target in TARGET_IDS},
++        calls={},workers={},failures=[],quality={a:dict(status="PENDING",diagnostic_only=True) for a in method.ARMS},
++        model_loaded={"generation":False,"media":False},
++        actual_model_calls=False,evidence_ceiling="One-source fixed dependent comparisons; MP4 primary; no scientific PASS inferred from execution")
++
++
++class Store:
++    def __init__(self,output,*,create=False):
++        self.output=Path(output);self.path=self.output/"result.json"
++        if create:
++            self.output.mkdir(parents=True,exist_ok=False);self.data=initial_result(self.output)
++        else:self.data=json.loads(self.path.read_text())
++        self.save()
++    def save(self):
++        d=self.data
++        if len(d["generation"])!=3 or len(d["videos"])!=3 or len(d["reads"])!=24 or len(d["evaluations"])!=48:
++            raise ValueError("fixed denominator changed")
++        d["counts"]=dict(generated=sum(x["status"]=="COMPLETE" for x in d["generation"].values()),
++            saved_mp4=sum(x["status"]=="SAVED" for x in d["videos"].values()),
++            reads=sum(x["status"]=="READ" for x in d["reads"].values()),
++            evaluated=sum(x["status"]=="EVALUATED" for x in d["evaluations"].values()))
++        dump(self.path,d)
++    def count(self,kind,completed):
++        ledger=self.data["calls"].setdefault(self.data["stage"],{})
++        row=ledger.setdefault(kind,dict(attempted=0,completed=0))
++        row["completed" if completed else "attempted"]+=1
++        if kind.startswith(("transformer_","vae_")) and not completed:self.data["actual_model_calls"]=True
++        self.save()
++    def failure(self,stage,exc):
++        self.data["failures"].append(dict(stage=stage,error=f"{type(exc).__name__}: {exc}"))
++        self.save()
++    def blind(self):
++        dump(self.output/"blind_readouts.json",dict(reads=self.data["reads"],public_payload_bits=32,
++            truth_inputs=False,evaluated=False,primary_layer="mp4",fixed_read_rows=24))
++    def set_reads(self,arm,layer,rows=None,error=None):
++        for key in KEY_IDS:
++            row=self.data["reads"][f"{arm}/{layer}/{key}"]
++            if rows is None:row.update(status="MISSING_READOUT",error=error)
++            else:row.update(rows[key])
++        self.blind();self.save()
++
++
++def generation_worker(store,cfg):
++    import torch
++    from runtime.wan.generation import prepare_generation
++    from runtime.wan import trajectory
++    device,dtype=backend.execution_device_dtype()
++    store.data["stage"]="GENERATION_LOAD";store.save()
++    pipe,initial,prompt,negative,input_dtype=prepare_generation(cfg,load_vae=False,device=device,model_dtype=dtype)
++    store.data["model_loaded"]["generation"]=True
++    pristine=copy.deepcopy(pipe.scheduler)
++    initial_fp=trajectory.fingerprint(initial)
++    history_fp=trajectory.fingerprint(vars(pristine))
++    store.data["generation_setup"]=dict(device=device,transformer_dtype=str(input_dtype),
++        state_dtype="torch.float32",control_dtype="torch.float32",cfg_dtype="torch.float32",
++        initial_noise_sha256=initial_fp,pristine_history_sha256=history_fp,
++        model=cfg["model"],case_id=cfg["case_id"],seed=cfg["generation"]["seed"],
++        layout=method.layout_receipt(cfg["key"],cfg["wrong_key"]))
++    store.save()
++    for arm in method.ARMS:
++        store.data["stage"]="GENERATE_"+arm;row=store.data["generation"][arm]
++        row.update(status="RUNNING",initial_noise_sha256=initial_fp,initial_history_sha256=history_fp);store.save()
++        def record(value):row["steps"].append(value);store.save()
++        terminal,meta=backend.run_trajectory(pipe,initial,copy.deepcopy(pristine),prompt,negative,
++            input_dtype,arm,cfg["key"],method.message_bits(cfg["message"]),store.count,record)
++        if trajectory.fingerprint(initial)!=initial_fp or trajectory.fingerprint(vars(pristine))!=history_fp:
++            raise RuntimeError("arm modified shared initial noise/pristine history")
++        path=Path(row["terminal_path"]);path.parent.mkdir(parents=True,exist_ok=True)
++        torch.save(terminal,path)
++        row.update(status="COMPLETE",terminal_file_sha256=backend.file_sha256(path),metadata=meta)
++        store.save();del terminal
++    # Worker exit releases the transformer, embeddings and all scheduler history.
++
++
++def media_worker(store,cfg):
++    import torch
++    from runtime.wan.generation import load_frozen_vae
++    from runtime.wan import vae as vae_adapter,io
++    if not any(x["status"]=="COMPLETE" for x in store.data["generation"].values()):
++        raise RuntimeError("no completed generation terminal for media")
++    store.data["stage"]="MEDIA_VAE_LOAD";store.save()
++    device="cuda" if torch.cuda.is_available() else "cpu"
++    vae=load_frozen_vae(cfg,device=device)
++    store.data["model_loaded"]["media"]=True
++    store.data["media_setup"]=dict(device=device,vae_dtype=str(next(vae.parameters()).dtype),
++        scaling="Wan:decode(normalized*std+mean);encode(mode-mean)/std",model=cfg["model"])
++    store.save()
++    keys=dict(CORRECT=cfg["key"],WRONG=cfg["wrong_key"])
++    for arm in method.ARMS:
++        generated=store.data["generation"][arm];video=store.data["videos"][arm]
++        if generated["status"]!="COMPLETE":
++            video.update(status="MISSING_TERMINAL")
++            for layer in method.LAYERS:store.set_reads(arm,layer,error="generation incomplete")
++            continue
++        try:
++            if backend.file_sha256(generated["terminal_path"])!=generated["terminal_file_sha256"]:
++                raise RuntimeError("saved terminal identity mismatch")
++            terminal=torch.load(generated["terminal_path"],map_location="cpu",weights_only=True)
++            store.data["stage"]="READ_"+arm+"_terminal"
++            try:store.set_reads(arm,"terminal",backend.read_diagnostic_latent(terminal,keys,count=store.count))
++            except Exception as exc:store.failure(store.data["stage"],exc);store.set_reads(arm,"terminal",error=str(exc))
++            store.data["stage"]="DECODE_"+arm
++            rgb=backend.counted(store.count,"vae_decode",lambda:vae_adapter.decode_normalized_latent(
++                vae,terminal.to(device=device,dtype=torch.float32))).detach().cpu()
++            del terminal
++            if tuple(rgb.shape)!=method.PUBLIC.video_shape:raise ValueError("decoded video geometry mismatch")
++            store.data["stage"]="SAVE_"+arm;video["status"]="SAVING";store.save()
++            try:
++                backend.counted(store.count,"mp4_save",lambda:io.encode_rgb(rgb,Path(video["path"]),cfg["media"]["fps"],cfg["media"]["crf"]))
++                video.update(status="SAVED",sha256=backend.file_sha256(video["path"]),bytes=Path(video["path"]).stat().st_size)
++            except Exception as exc:
++                video.update(status="FAILED",error=str(exc));store.failure(store.data["stage"],exc)
++            store.save()
++            for layer in ("float_rgb","rgb8"):
++                store.data["stage"]="READ_"+arm+"_"+layer
++                observed=None
++                try:
++                    observed=rgb if layer=="float_rgb" else vae_adapter.quantize_rgb8_no_codec(rgb).float()/255
++                    rows=backend.reencode_diagnostic_rgb(observed,keys,method.PUBLIC,vae,count=store.count)
++                    store.set_reads(arm,layer,rows)
++                except Exception as exc:store.failure(store.data["stage"],exc);store.set_reads(arm,layer,error=str(exc))
++                finally:del observed
++            del rgb
++            store.data["stage"]="READ_"+arm+"_mp4"
++            if video["status"]=="SAVED":
++                try:
++                    rows=backend.read_mp4_payload(video["path"],keys,method.PUBLIC,vae,count=store.count)
++                    if any(row["mp4_sha256"]!=video["sha256"] for row in rows.values()):raise RuntimeError("MP4 identity mismatch")
++                    store.set_reads(arm,"mp4",rows)
++                except Exception as exc:store.failure(store.data["stage"],exc);store.set_reads(arm,"mp4",error=str(exc))
++            else:store.set_reads(arm,"mp4",error="MP4 save incomplete")
++        except Exception as exc:
++            store.failure(store.data["stage"],exc)
++            if video["status"]!="SAVED":video.update(status="FAILED",error=str(exc))
++            for layer in method.LAYERS:
++                if any(store.data["reads"][f"{arm}/{layer}/{k}"]["status"]=="PENDING" for k in KEY_IDS):
++                    store.set_reads(arm,layer,error=str(exc))
++        store.save()
++    store.blind()
++
++
++def recover_unfinished(store,phase,error):
++    if phase=="generation":
++        for row in store.data["generation"].values():
++            if row["status"] in ("PENDING","RUNNING"):row.update(status="NOT_COMPLETED",error=error)
++    else:
++        for row in store.data["videos"].values():
++            if row["status"] in ("PENDING","SAVING"):row.update(status="NOT_COMPLETED",error=error)
++        for row in store.data["reads"].values():
++            if row["status"]=="PENDING":row.update(status="MISSING_READOUT",error=error)
++        store.blind()
++    store.save()
++
++
++def evaluate_saved_reads(store,cfg):
++    path=store.output/"blind_readouts.json"
++    if not path.is_file():store.blind()
++    before=backend.file_sha256(path);raw=json.loads(path.read_text())
++    truth=dict(REGISTERED=method.message_bits(cfg["message"]),WRONG_MESSAGE=method.message_bits(cfg["wrong_message"]))
++    for identity,read in raw["reads"].items():
++        for target,bits in truth.items():
++            row=store.data["evaluations"][identity+"/"+target]
++            row["status"]="MISSING_READOUT"
++            if read["status"]=="READ":
++                actual=read["decoded_bits"]
++                if len(actual)!=32 or any(type(x) is not int or x not in (0,1) for x in actual):raise ValueError("invalid raw payload")
++                errors=sum(a!=b for a,b in zip(actual,bits,strict=True))
++                row.update(status="EVALUATED",bit_errors=errors,ber=errors/32,bit_accuracy=1-errors/32,
++                    exact_bits=errors==0,decoded_string_diagnostic=bytes(int(''.join(map(str,actual[i:i+8])),2) for i in range(0,32,8)).decode('utf-8',errors='ignore'))
++    if backend.file_sha256(path)!=before:raise RuntimeError("evaluation changed blind evidence")
++    store.data["blind_readouts_sha256"]=before;store.save()
++
++
++def quality_diagnostics(store):
++    """Three extra codec reads; framewise FP64 accumulation, no VAE/truth."""
++    from runtime.wan.io import read_mp4
++    store.data["stage"]="QUALITY_MP4_DIAGNOSTICS"
++    reference=None
++    for arm in method.ARMS:
++        row=store.data["quality"][arm];video=store.data["videos"][arm]
++        observed=None
++        try:
++            if video["status"]!="SAVED":
++                row.update(status="MISSING_MP4");continue
++            if backend.file_sha256(video["path"])!=video["sha256"]:
++                raise RuntimeError("quality MP4 identity mismatch")
++            observed=backend.counted(store.count,"quality_mp4_read",lambda:read_mp4(Path(video["path"])))
++            if tuple(observed.shape)!=method.PUBLIC.video_shape:raise ValueError("quality MP4 geometry mismatch")
++            if arm=="OFF":
++                reference=observed;squared=0.0
++            elif reference is None:
++                row.update(status="MISSING_OFF_REFERENCE");continue
++            else:
++                squared=0.0
++                for index in range(observed.shape[0]):
++                    delta=observed[index].double()-reference[index].double()
++                    squared+=float(delta.square().sum())
++            mse=squared/observed.numel()
++            row.update(status="MEASURED",rgb_rmse=math.sqrt(mse),
++                psnr_db=-10*math.log10(mse) if mse else None,identical_pixels=mse==0,
++                source="same-format MP4 RGB24 readback relative to OFF",threshold=None,
++                mp4_sha256=video["sha256"])
++        except Exception as exc:
++            row.update(status="FAILED",error=f"{type(exc).__name__}: {exc}")
++        finally:
++            observed=None;store.save()
++
++
++def _stop_worker(child):
++    """Reap a started worker before loading its last disk state or proceeding."""
++    if child.poll() is None:
++        try:child.terminate()
++        except ProcessLookupError:pass
++    try:return child.wait(timeout=10)
++    except subprocess.TimeoutExpired:
++        child.kill()
++        return child.wait(timeout=10)
++
++
++def run_worker_phase(output,phase):
++    command=[sys.executable,"-u","-m",MODULE,"--output",str(output),"--worker",phase]
++    start=time.perf_counter();child=None;code=None;error=None;cleanup_error=None;halt=None
++    try:
++        with (output/(phase+".log")).open("w") as log:
++            child=subprocess.Popen(command,cwd=ROOT,stdout=subprocess.PIPE,stderr=subprocess.STDOUT,text=True,bufsize=1)
++            for line in child.stdout:print(line,end="",flush=True);log.write(line);log.flush()
++            code=child.wait()
++    except BaseException as exc:
++        error=f"{type(exc).__name__}: {exc}"
++        if not isinstance(exc,Exception):halt="INTERRUPTED"
++        if child is not None:
++            try:code=_stop_worker(child)
++            except BaseException as cleanup:
++                cleanup_error=f"{type(cleanup).__name__}: {cleanup}"
++                halt=halt or "CLEANUP_FAILED"
++    finally:
++        if child is not None and child.stdout is not None:
++            try:child.stdout.close()
++            except Exception:pass
++    # Never save the parent's stale pre-launch Store over a worker checkpoint.
++    # A child may persist its final completed data during terminate/wait itself.
++    store=Store(output)
++    status=("START_FAILED" if child is None else "MONITOR_FAILED") if error else ("COMPLETE" if code==0 else "NONZERO_EXIT")
++    row=dict(command=command,status=status,returncode=code,elapsed_seconds=time.perf_counter()-start,
++        child_started=child is not None,last_child_stage=store.data["stage"])
++    if error:row["error"]=error
++    if cleanup_error:row["cleanup_error"]=cleanup_error
++    store.data["workers"][phase]=row
++    if status!="COMPLETE":
++        reason=error or f"worker exited{code}"
++        store.data["failures"].append(dict(stage="WORKER_"+phase.upper(),error=reason,cleanup_error=cleanup_error))
++        recover_unfinished(store,phase,reason)
++    store.save()
++    return store,halt
++
++
++def main():
++    parser=argparse.ArgumentParser(description=__doc__)
++    parser.add_argument("--output",type=Path,required=True)
++    parser.add_argument("--worker",choices=("generation","media"))
++    args=parser.parse_args();cfg=load_config()
++    if args.worker:
++        store=Store(args.output)
++        try:(generation_worker if args.worker=="generation" else media_worker)(store,cfg)
++        except Exception as exc:
++            store.failure(store.data["stage"],exc);recover_unfinished(store,args.worker,str(exc));raise
++        return
++    store=Store(args.output,create=True)
++    halt=None
++    for phase in ("generation","media"):
++        store,halt=run_worker_phase(args.output,phase)
++        if halt:
++            if phase=="generation":
++                store.data["workers"]["media"]=dict(status="NOT_STARTED_"+halt,returncode=None,child_started=False)
++            recover_unfinished(store,"media",halt)
++            break
++    evaluate_saved_reads(store,cfg)
++    done=(store.data["counts"]==dict(generated=3,saved_mp4=3,reads=24,evaluated=48)
++          and all(row["status"]=="COMPLETE" for row in store.data["workers"].values()))
++    store.data.update(status=halt or ("EXECUTION_COMPLETE" if done else "INCOMPLETE"),stage="READ_EVALUATION_FINISHED")
++    store.save()
++    if halt:
++        for row in store.data["quality"].values():row.update(status="NOT_RUN_"+halt)
++    else:quality_diagnostics(store)
++    store.data["stage"]="FINISHED"
++    store.save();print(json.dumps(dict(status=store.data["status"],counts=store.data["counts"])))
++    if halt=="INTERRUPTED":raise SystemExit(130)
++    if not done:raise SystemExit(1)
++
++
++if __name__=="__main__":main()
+diff --git a/experiments/wan_state_clock/requirements-grow-video-reference.txt b/experiments/wan_state_clock/requirements-grow-video-reference.txt
+new file mode 100644
+index 0000000..a473723
+--- /dev/null
++++ b/experiments/wan_state_clock/requirements-grow-video-reference.txt
+@@ -0,0 +1,13 @@
++# Reuse Colab's working torch/torchvision pair; no fixed Python or CUDA build.
++# Compatible API ranges allow pip to select wheels for the active Python.
++diffusers>=0.35,<0.40
++transformers>=4.44,<5
++accelerate>=0.34,<2
++numpy>=1.26
++Pillow>=10
++tqdm>=4.66
++PyYAML>=6
++huggingface_hub>=0.34,<1
++safetensors>=0.4
++ftfy>=6
++sentencepiece>=0.2
+diff --git a/main/tube_state/grow_video_reference.py b/main/tube_state/grow_video_reference.py
+new file mode 100644
+index 0000000..9bc1170
+--- /dev/null
++++ b/main/tube_state/grow_video_reference.py
+@@ -0,0 +1,152 @@
++"""Fixed FFT-real image-to-Wan reference: local mean-MSE, no tail gradient."""
++from __future__ import annotations
++from collections import Counter
++from dataclasses import dataclass
++import hashlib
++import json
++import math
++
++
++@dataclass(frozen=True)
++class PublicProtocol:
++    latent_shape: tuple = (1, 16, 46, 40, 64)
++    video_shape: tuple = (181, 320, 512, 3)
++    channels: tuple = (0, 1, 2, 3)
++    payload_bits: int = 32
++    band_min: float = 0.2
++    band_max: float = 0.5
++
++
++PUBLIC = PublicProtocol()
++ARMS = ("OFF", "MULTI", "LAST")
++LAYERS = ("terminal", "float_rgb", "rgb8", "mp4")
++REFERENCE_MASK_COUNT = 1600
++REFERENCE_ETA = 200.0
++ALPHA = 0.5
++
++
++def message_bits(message):
++    return [int(bit) for byte in message.encode("utf-8") for bit in f"{byte:08b}"]
++
++
++def _validate(latent, public):
++    import torch
++    if public != PUBLIC or tuple(latent.shape) != public.latent_shape:
++        raise ValueError("fixed public video/latent protocol required")
++    if not latent.is_floating_point() or not bool(torch.isfinite(latent).all()):
++        raise FloatingPointError("finite normalized floating latent required")
++
++
++def coordinates(key, public=PUBLIC):
++    import numpy as np
++    height,width=public.latent_shape[-2:]
++    coords=[(h,w) for h in range(int(height*public.band_min),int(height*public.band_max))
++                  for w in range(int(width*public.band_min),int(width*public.band_max))]
++    np.random.default_rng(sum(map(ord,key))).shuffle(coords)
++    return coords
++
++
++def layout_receipt(key, wrong_key, public=PUBLIC):
++    def one(value):
++        coords=coordinates(value,public)
++        assignment=sorted((h,w,i%8) for i,(h,w) in enumerate(coords))
++        digest=lambda x:hashlib.sha256(json.dumps(x,separators=(",",":")).encode()).hexdigest()
++        return dict(seed=sum(map(ord,value)),coordinate_sha256=digest(coords),
++                    assignment_sha256=digest(assignment),capacity=len(coords))
++    right,wrong=one(key),one(wrong_key)
++    if (right["seed"]==wrong["seed"] or right["assignment_sha256"]==wrong["assignment_sha256"]):
++        raise ValueError("wrong-key seed/coordinate-to-bit assignment collision")
++    return dict(correct=right,wrong=wrong,mask_support_same=True,assignment_different=True)
++
++
++def build_target(latent,key,bits,public=PUBLIC):
++    """Repeat the same eight bits/channel over all 46 latent times."""
++    import torch
++    _validate(latent,public)
++    if len(bits)!=32 or any(type(x) is not int or x not in (0,1) for x in bits):
++        raise ValueError("writer requires exactly 32 binary payload bits")
++    target=torch.zeros_like(latent)
++    mask=torch.zeros_like(latent,dtype=torch.bool)
++    coords=coordinates(key,public)
++    for i,ch in enumerate(public.channels):
++        for j,(h,w) in enumerate(coords):
++            target[0,ch,:,h,w]=(2*bits[i*8+j%8]-1)*ALPHA
++            mask[0,ch,:,h,w]=True
++    return target,mask
++
++
++def local_delta(clean,target,mask,*,reference_eta=REFERENCE_ETA):
++    """Differentiate through the entire real FFT; mean includes C,T and band.
++
++    The local clean estimate is a fresh leaf. This deliberate video adapter
++    boundary does not differentiate through denoisers or prior native steps.
++    """
++    import torch
++    import torch.nn.functional as F
++    if clean.shape!=target.shape or mask.shape!=clean.shape or mask.dtype!=torch.bool:
++        raise ValueError("target/mask shape mismatch")
++    count=int(mask.sum().item())
++    if count!=44160 or not math.isfinite(reference_eta) or reference_eta<0:
++        raise ValueError("fixed actual mask count and nonnegative reference step required")
++    eta=reference_eta*count/REFERENCE_MASK_COUNT
++    with torch.enable_grad():
++        leaf=clean.detach().clone().requires_grad_(True)
++        spectrum=torch.fft.fft2(leaf,dim=(-2,-1),norm="ortho").real
++        loss=F.mse_loss(spectrum[mask],target[mask])
++        gradient=torch.autograd.grad(loss,leaf,create_graph=False)[0]
++        delta=(-eta*gradient).detach()
++    if not bool(torch.isfinite(delta).all()) or not bool(torch.isfinite(loss)):
++        raise FloatingPointError("nonfinite local loss/gradient")
++    return delta,dict(mask_count=count,eta=eta,loss=float(loss.detach()),
++        gradient_rms=float(gradient.detach().double().square().mean().sqrt()),
++        conditional_clean_delta_rms=float(delta.double().square().mean().sqrt()),
++        gradient_kind="full_local_FFT_real_mean_MSE_wrt_conditional_x0",
++        denoiser_backward=False,tail_backward=False)
++
++
++def guided_velocity(z,conditional,unconditional,sigma,target,mask,*,enabled,
++                    guidance=5.0,reference_eta=REFERENCE_ETA):
++    """Flow x0=z-sigma*v; conditional update precedes one FP32 CFG."""
++    import torch
++    if not math.isfinite(float(sigma)) or float(sigma)<=0:
++        raise ValueError("positive native input sigma required")
++    z,c,u=z.float(),conditional.float(),unconditional.float()
++    receipt=dict(enabled=bool(enabled),branch_dtype="float32",cfg_dtype="float32")
++    if enabled:
++        delta,detail=local_delta(z-float(sigma)*c,target,mask,reference_eta=reference_eta)
++        # Algebraic Flow mapping preserves exact zero-delta equivalence to OFF.
++        c=c-delta/float(sigma)
++        receipt.update(detail)
++        receipt["cfg_clean_delta_rms"]=abs(guidance)*detail["conditional_clean_delta_rms"]
++    velocity=u+guidance*(c-u)
++    if not bool(torch.isfinite(velocity).all()):
++        raise FloatingPointError("nonfinite FP32 CFG velocity")
++    return velocity.detach(),receipt
++
++
++def control_enabled(arm,index):
++    if arm not in ARMS or not 0<=index<50:
++        raise ValueError("fixed arm and 50-step index required")
++    return (arm=="MULTI" and index>=25) or (arm=="LAST" and index==49)
++
++
++def read_latent_bits(normalized,key,public=PUBLIC):
++    """Truth-free diagnostic primitive; no writer target or message argument."""
++    import torch
++    _validate(normalized,public)
++    with torch.no_grad():
++        spectrum=torch.fft.fft2(normalized.float(),dim=(-2,-1),norm="ortho").real
++        coords=coordinates(key,public)
++        h=[x[0] for x in coords];w=[x[1] for x in coords]
++        decoded=[];vote_rows=[]
++        for channel in public.channels:
++            raw=(spectrum[0,channel,:,h,w]>0).to(torch.int64).cpu().numpy()
++            # Time-major then coordinate repetition, matching first-vote tie rule.
++            for bit in range(8):
++                votes=raw[:,bit::8].reshape(-1).tolist()
++                decoded.append(Counter(votes).most_common(1)[0][0])
++                ones=sum(votes);vote_rows.append(dict(ones=ones,zeros=len(votes)-ones,
++                    count=len(votes),tie=ones*2==len(votes)))
++    return dict(status="READ",decoded_bits=decoded,votes=vote_rows,truth_used=False,
++        payload_bits=32,temporal_interpretation="repeat voting over all46; no synchronization",
++        normalized_shape=list(normalized.shape),transform="fft2_ortho_real")
+diff --git a/notebooks/grow_video_reference_v1_colab.ipynb b/notebooks/grow_video_reference_v1_colab.ipynb
+new file mode 100644
+index 0000000..5fd73b4
+--- /dev/null
++++ b/notebooks/grow_video_reference_v1_colab.ipynb
+@@ -0,0 +1,186 @@
++{
++ "nbformat": 4,
++ "nbformat_minor": 5,
++ "cells": [
++  {
++   "cell_type": "code",
++   "metadata": {},
++   "id": "grow-video-0",
++   "source": [
++    "from google.colab import drive\n",
++    "drive.mount('/content/drive')\n"
++   ],
++   "outputs": [],
++   "execution_count": null
++  },
++  {
++   "cell_type": "markdown",
++   "metadata": {},
++   "id": "grow-video-1",
++   "source": [
++    "# Fixed GROW image-to-Wan video reference\n",
++    "\n",
++    "One preselected copper-kettle prompt/seed; OFF, MULTI25..49 and LAST49.\n",
++    "Three saved MP4s; terminal/float-RGB/RGB8/MP4 layers, two blind keys per layer,\n",
++    "24 raw readouts then48 post-read evaluations. MP4 is primary. These dependent\n",
++    "layers are diagnostics, not independent samples. MULTI includes LAST's step;\n",
++    "this comparison cannot isolate the non-last contribution.\n",
++    "\n",
++    "The published GROW FFT-real/mean-MSE construction is adapted to native Wan\n",
++    "Flow x0=z-sigma*v, conditional update then FP32 CFG5. Four channels/32bits,\n",
++    "46 temporal repeats, actual-mask44160 ->eta5520. No total-budget matching,\n",
++    "three-direction solver, positive-group acceptance guard or timing search.\n",
++    "\n",
++    "Run all uses the current Python and fresh serial children. Generation ends\n",
++    "before a separate FP32-VAE/media worker. No virtual environment,ensurepip,\n",
++    "Python-version or GPU-model gate. GPU is recommended; CPU remains allowed.\n",
++    "The notebook has not been executed by the implementation agent. Results use\n",
++    "one new Drive timestamp directory and preserve failures and all fixed rows.\n",
++    "\n",
++    "UNPUBLISHED DRAFT: SOURCE_SHA is intentionally unset.\n"
++   ]
++  },
++  {
++   "cell_type": "code",
++   "metadata": {},
++   "id": "grow-video-2",
++   "source": [
++    "SOURCE_SHA = None\n",
++    "from pathlib import Path\n",
++    "import datetime,hashlib,json,os,subprocess,sys,traceback\n",
++    "STAMP=datetime.datetime.now(datetime.timezone.utc).strftime('%Y%m%dT%H%M%S%fZ')\n",
++    "OUTPUT=Path('/content/drive/MyDrive/Video-WM/GROW-Video-Reference-V1')/STAMP\n",
++    "OUTPUT.mkdir(parents=True,exist_ok=False)\n",
++    "REPO=Path('/content/SC-SSTW-GROW-VIDEO-'+STAMP)\n",
++    "RUN_OUTPUT=OUTPUT/'fixed_reference'\n",
++    "PYTHON=sys.executable\n",
++    "ARMS=('OFF','MULTI','LAST');LAYERS=('terminal','float_rgb','rgb8','mp4');KEYS=('CORRECT','WRONG')\n",
++    "FIXED=dict(sources=1,arms=3,mp4=3,layers_per_arm=4,keys=2,raw_reads=24,evaluations=48)\n",
++    "setup=dict(status='SETUP_STARTED',source_sha=SOURCE_SHA,fixed_denominator=FIXED,\n",
++    "    generation={a:{'status':'NOT_RUN_SETUP'} for a in ARMS},\n",
++    "    videos={a:{'status':'NOT_RUN_SETUP'} for a in ARMS},\n",
++    "    reads={a+'/'+l+'/'+k:{'status':'NOT_RUN_SETUP'} for a in ARMS for l in LAYERS for k in KEYS},\n",
++    "    evaluations={a+'/'+l+'/'+k+'/'+t:{'status':'NOT_RUN_SETUP'} for a in ARMS for l in LAYERS for k in KEYS for t in ('REGISTERED','WRONG_MESSAGE')})\n",
++    "def write_json(path,value):\n",
++    "    temp=path.with_suffix(path.suffix+'.tmp');temp.write_text(json.dumps(value,indent=2)+'\\n');os.replace(temp,path)\n",
++    "def failed(stage,exc):\n",
++    "    setup.update(status='SETUP_FAILED',stage=stage,error=f'{type(exc).__name__}: {exc}')\n",
++    "    write_json(OUTPUT/'setup_receipt.json',setup)\n",
++    "    write_json(OUTPUT/'setup_failure.json',dict(stage=stage,error=str(exc),traceback=traceback.format_exc()))\n",
++    "def logged(command,stage,cwd=None,check=True):\n",
++    "    try:\n",
++    "        with (OUTPUT/'execution.log').open('a') as log:\n",
++    "            log.write('COMMAND '+repr(command)+'\\n');log.flush()\n",
++    "            child=subprocess.Popen(command,cwd=cwd,stdout=subprocess.PIPE,stderr=subprocess.STDOUT,text=True,bufsize=1)\n",
++    "            for line in child.stdout:print(line,end='',flush=True);log.write(line);log.flush()\n",
++    "            code=child.wait();log.write('EXIT '+str(code)+'\\n')\n",
++    "        if check and code:raise subprocess.CalledProcessError(code,command)\n",
++    "        return code\n",
++    "    except Exception as exc:failed(stage,exc);raise\n",
++    "write_json(OUTPUT/'setup_receipt.json',setup)\n",
++    "print('Fixed output:',OUTPUT)\n",
++    "if SOURCE_SHA is None:\n",
++    "    error=RuntimeError('Unpublished draft: bind verified published source SHA before Run all')\n",
++    "    failed('SOURCE_BINDING',error);raise error\n"
++   ],
++   "outputs": [],
++   "execution_count": null
++  },
++  {
++   "cell_type": "code",
++   "metadata": {},
++   "id": "grow-video-3",
++   "source": [
++    "try:\n",
++    "    logged(['git','clone','--filter=blob:none','https://github.com/RICHAAARC/SC-SSTW.git',str(REPO)],'SOURCE_CLONE')\n",
++    "    logged(['git','-C',str(REPO),'fetch','origin',SOURCE_SHA],'SOURCE_FETCH')\n",
++    "    logged(['git','-C',str(REPO),'checkout','--detach',SOURCE_SHA],'SOURCE_CHECKOUT')\n",
++    "    actual=subprocess.check_output(['git','-C',str(REPO),'rev-parse','HEAD'],text=True).strip()\n",
++    "    dirty=subprocess.check_output(['git','-C',str(REPO),'status','--porcelain'],text=True)\n",
++    "    if actual!=SOURCE_SHA or dirty:raise RuntimeError('source SHA/clean checkout mismatch')\n",
++    "    write_json(OUTPUT/'source_receipt.json',dict(source_sha=actual,clean=True))\n",
++    "    torch_ok=logged([PYTHON,'-c','import torch,torchvision; print(torch.__version__,torchvision.__version__)'],'TORCH_PROBE',check=False)==0\n",
++    "    if not torch_ok:\n",
++    "        logged([PYTHON,'-m','pip','install','--upgrade','torch','torchvision'],'TORCH_REPAIR')\n",
++    "    logged([PYTHON,'-m','pip','install','-r',str(REPO/'experiments/wan_state_clock/requirements-grow-video-reference.txt')],'DEPENDENCIES')\n",
++    "    dependency_code=logged([PYTHON,'-m','pip','check'],'DEPENDENCY_REPORT',check=False)\n",
++    "    setup['dependency_check_returncode']=dependency_code\n",
++    "    if dependency_code:print('Metadata conflicts retained; actual imports determine availability.')\n",
++    "    (OUTPUT/'environment_freeze.txt').write_text(subprocess.check_output([PYTHON,'-m','pip','freeze'],text=True))\n",
++    "    import_code='import json,torch; from diffusers import WanPipeline,AutoencoderKLWan,UniPCMultistepScheduler; from experiments.wan_state_clock.grow_video_reference_run import environment; r=environment(); r.update(cuda_available=torch.cuda.is_available()); print(json.dumps(r))'\n",
++    "    env=json.loads(subprocess.check_output([PYTHON,'-c',import_code],cwd=REPO,text=True))\n",
++    "    write_json(OUTPUT/'environment_receipt.json',env)\n",
++    "    if not env['cuda_available']:print('CUDA unavailable: CPU path selected; much slower.')\n",
++    "    logged(['ffmpeg','-version'],'FFMPEG_PROBE');logged(['ffprobe','-version'],'FFPROBE_PROBE')\n",
++    "    setup.update(status='SETUP_COMPLETE',python_executable=PYTHON,environment_strategy='current_python_fresh_children')\n",
++    "    write_json(OUTPUT/'setup_receipt.json',setup)\n",
++    "except Exception as exc:failed('SOURCE_OR_ENVIRONMENT',exc);raise\n"
++   ],
++   "outputs": [],
++   "execution_count": null
++  },
++  {
++   "cell_type": "code",
++   "metadata": {},
++   "id": "grow-video-4",
++   "source": [
++    "try:\n",
++    "    from google.colab import userdata\n",
++    "    token=userdata.get('HF_TOKEN')\n",
++    "    if token:os.environ['HF_TOKEN']=token\n",
++    "except Exception:\n",
++    "    pass\n",
++    "finally:\n",
++    "    token=None\n",
++    "command=[PYTHON,'-u','-m','experiments.wan_state_clock.grow_video_reference_run','--output',str(RUN_OUTPUT)]\n",
++    "try:\n",
++    "    returncode=logged(command,'FIXED_RUN',cwd=REPO,check=False)\n",
++    "    RESULT_PATH=RUN_OUTPUT/'result.json'\n",
++    "    write_json(OUTPUT/'execution_receipt.json',dict(command=command,returncode=returncode,result_path=str(RESULT_PATH),result_exists=RESULT_PATH.is_file()))\n",
++    "    if not RESULT_PATH.is_file():raise RuntimeError('No runner result; full setup denominator is retained')\n",
++    "    setup.update(status='SUPERSEDED_BY_RESULT',result_path=str(RESULT_PATH));write_json(OUTPUT/'setup_receipt.json',setup)\n",
++    "except Exception as exc:failed('RUNNER',exc);raise\n"
++   ],
++   "outputs": [],
++   "execution_count": null
++  },
++  {
++   "cell_type": "code",
++   "metadata": {},
++   "id": "grow-video-5",
++   "source": [
++    "result=json.loads(RESULT_PATH.read_text())\n",
++    "if result['source_sha']!=SOURCE_SHA or result['fixed_denominator']!=FIXED:raise RuntimeError('result identity/denominator mismatch')\n",
++    "print(result['status'],result['counts'])\n",
++    "print('Primary MP4 payload results:')\n",
++    "for name,row in result['evaluations'].items():\n",
++    "    if row['layer']=='mp4':print(name,row['status'],'errors=',row.get('bit_errors'),'BER=',row.get('ber'),'exact=',row.get('exact_bits'))\n",
++    "print('All48 evaluation rows and24 raw readouts retained at',RUN_OUTPUT)\n",
++    "print('MP4 relative-to-OFF quality diagnostics:',result.get('quality'))\n",
++    "print('Evidence ceiling:',result['evidence_ceiling'])\n",
++    "from IPython.display import Video,display\n",
++    "for arm,row in result['videos'].items():\n",
++    "    print(arm,row['status'])\n",
++    "    if row['status']=='SAVED' and Path(row['path']).is_file():display(Video(filename=row['path'],embed=True))\n",
++    "print('Inspect visible quality separately; recovery results do not imply quality PASS.')\n"
++   ],
++   "outputs": [],
++   "execution_count": null
++  }
++ ],
++ "metadata": {
++  "kernelspec": {
++   "display_name": "Python3",
++   "language": "python",
++   "name": "python3"
++  },
++  "language_info": {
++   "name": "python"
++  },
++  "candidate_binding": {
++   "source_sha": null,
++   "status": "UNPUBLISHED_DRAFT",
++   "execution": "User-run only; no agent GPU/Colab execution"
++  }
++ }
++}
+diff --git a/runtime/wan/generation.py b/runtime/wan/generation.py
+index 0bc126b..4e660ee 100644
+--- a/runtime/wan/generation.py
++++ b/runtime/wan/generation.py
+@@ -29,9 +29,11 @@ def _load_args(model: dict[str, Any], *, torch_dtype: Any, subfolder: str | None
+     return args
+ 
+ 
+-def load_frozen_vae(config: dict[str, Any]) -> Any:
++def load_frozen_vae(config: dict[str, Any], *, device: Any = None) -> Any:
+     """Load only the fixed FP32 Wan VAE for a C2A readout.
+ 
++    Optional device preserves the legacy CUDA default for existing callers.
++
+     This intentionally does not instantiate ``WanPipeline`` or a transformer.
+     """
+ 
+@@ -45,24 +47,28 @@ def load_frozen_vae(config: dict[str, Any]) -> Any:
+         disable()
+     for parameter in vae.parameters():
+         parameter.requires_grad_(False)
+-    return vae.to(torch.device("cuda"))
++    return vae.to(torch.device("cuda") if device is None else torch.device(device))
+ 
+ 
+-def prepare_generation(config: dict[str, Any], *, load_vae: bool = True):
++def prepare_generation(config: dict[str, Any], *, load_vae: bool = True,
++                       device: Any = None, model_dtype: Any = None):
+     """Prepare a fresh prompt-conditioned Wan noise state and native scheduler.
+ 
+     ``load_vae=False`` is the generation-worker path: the transformer process
+     owns no VAE, and the later media worker loads the VAE independently.
++    Optional device/model_dtype preserve old CUDA/BF16 defaults; the new image
++    reference migration can select CPU/FP32 without a hardware-name gate.
+     """
+ 
+     import torch
+     from diffusers import WanPipeline
+ 
+     model, generation = config["model"], config["generation"]
+-    device = torch.device("cuda")
++    device = torch.device("cuda") if device is None else torch.device(device)
++    model_dtype = torch.bfloat16 if model_dtype is None else model_dtype
+     pipe = WanPipeline.from_pretrained(
+         model["id"],
+-        **_load_args(model, torch_dtype=torch.bfloat16),
++        **_load_args(model, torch_dtype=model_dtype),
+         **({} if load_vae else {"vae": None}),
+     )
+     if (
+@@ -81,13 +87,13 @@ def prepare_generation(config: dict[str, Any], *, load_vae: bool = True):
+             max_sequence_length=generation["max_sequence_length"],
+             device=device,
+         )
+-    prompt, negative = prompt.to(torch.bfloat16), negative.to(torch.bfloat16)
++    prompt, negative = prompt.to(model_dtype), negative.to(model_dtype)
+     pipe.text_encoder = None
+     pipe.vae = None
+     gc.collect()
+     torch.cuda.empty_cache()
+     if load_vae:
+-        vae = load_frozen_vae(config)
++        vae = load_frozen_vae(config, device=device)
+         pipe.vae = vae
+         pipe.vae_scale_factor_temporal = getattr(vae.config, "scale_factor_temporal", None) or 2 ** sum(vae.config.temperal_downsample)
+         pipe.vae_scale_factor_spatial = getattr(vae.config, "scale_factor_spatial", None) or 2 ** len(vae.config.temperal_downsample)
+diff --git a/runtime/wan/grow_video_reference.py b/runtime/wan/grow_video_reference.py
+new file mode 100644
+index 0000000..a9772d2
+--- /dev/null
++++ b/runtime/wan/grow_video_reference.py
+@@ -0,0 +1,120 @@
++"""Native Wan trajectories and public-only MP4 payload reception."""
++from __future__ import annotations
++import hashlib
++from pathlib import Path
++
++from main.tube_state import grow_video_reference as method
++from runtime.wan import trajectory
++from runtime.wan import io, vae as vae_adapter
++
++
++def execution_device_dtype():
++    import torch
++    if not torch.cuda.is_available():return "cpu",torch.float32
++    return "cuda",torch.bfloat16 if torch.cuda.is_bf16_supported() else torch.float16
++
++
++def counted(count,kind,function):
++    if count: count(kind,False)
++    value=function()
++    if count: count(kind,True)
++    return value
++
++
++def file_sha256(path):
++    with Path(path).open("rb") as stream:
++        return hashlib.file_digest(stream,"sha256").hexdigest()
++
++
++def predict_branches(pipe,z,scheduler,prompt,negative,dtype,index,count):
++    import torch
++    outputs=[]
++    with torch.no_grad():
++        for name,embedding in (("transformer_conditional",prompt),("transformer_unconditional",negative)):
++            value=counted(count,name,lambda:pipe.transformer(
++                hidden_states=z.to(dtype),timestep=scheduler.timesteps[index].expand(z.shape[0]),
++                encoder_hidden_states=embedding,attention_kwargs=None,return_dict=False)[0])
++            if not bool(torch.isfinite(value).all()):
++                raise FloatingPointError("nonfinite conditional/unconditional branch")
++            outputs.append(value.float())
++    return outputs[0],outputs[1]
++
++
++def run_trajectory(pipe,initial,scheduler,prompt,negative,dtype,arm,key,bits,count,
++                   record_step,*,reference_eta=method.REFERENCE_ETA):
++    """Caller supplies a separate complete pristine scheduler for each arm."""
++    import torch
++    trajectory.validate_scheduler(scheduler)
++    if scheduler.step_index is not None:
++        raise ValueError("arm must start with pristine complete native history")
++    z=initial.detach().float().clone()
++    target,mask=method.build_target(z,key,bits)
++    for index in range(50):
++        c,u=predict_branches(pipe,z,scheduler,prompt,negative,dtype,index,count)
++        enabled=method.control_enabled(arm,index)
++        sigma=float(scheduler.sigmas[index])
++        if enabled: count("local_gradient",False)
++        velocity,update=method.guided_velocity(z,c,u,sigma,target,mask,
++            enabled=enabled,guidance=5.0,reference_eta=reference_eta)
++        if enabled: count("local_gradient",True)
++        before=scheduler.step_index
++        # No reset, deepcopy or speculative tail inside an arm.
++        z=trajectory.native_step(scheduler,z,velocity,index,count,kind="native_step")
++        record_step(dict(index=index,sigma=sigma,cursor_before=before,
++            cursor_after=scheduler.step_index,**update))
++    if scheduler.step_index!=50:
++        raise RuntimeError("native trajectory did not complete50 steps")
++    return z.detach().cpu(),dict(scheduler_class=type(scheduler).__name__,
++        scheduler_config=dict(scheduler.config),final_cursor=scheduler.step_index,
++        final_history_sha256=trajectory.fingerprint(vars(scheduler)),
++        terminal_sha256=trajectory.fingerprint(z),transformer_dtype=str(dtype),
++        state_dtype=str(z.dtype),control_dtype="torch.float32",cfg_dtype="torch.float32")
++
++
++def read_diagnostic_latent(normalized,keys,public=method.PUBLIC,*,count=None):
++    """Separate diagnostic API; never used as the primary MP4 receiver."""
++    feature=trajectory.fingerprint(normalized)
++    rows={}
++    for name,key in keys.items():
++        try:
++            row=counted(count,"bit_read",lambda:method.read_latent_bits(normalized,key,public))
++        except Exception as exc:
++            row=dict(status="FAILED",decoded_bits=None,truth_used=False,error=f"{type(exc).__name__}: {exc}")
++        rows[name]=dict(**row,feature_sha256=feature,feature_kind="diagnostic_normalized_latent")
++    return rows
++
++
++def reencode_diagnostic_rgb(rgb,keys,public,frozen_vae,*,count=None):
++    if tuple(rgb.shape)!=public.video_shape:
++        raise ValueError("fixed181x320x512 RGB diagnostic required")
++    normalized=counted(count,"vae_encode",lambda:vae_adapter.reencode_rgb24_readback(frozen_vae,rgb))
++    return read_diagnostic_latent(normalized,keys,public,count=count)
++
++
++def read_mp4_payload(path,keys,public,frozen_vae,*,count=None):
++    """Primary receiver: file + public keys/protocol + frozen VAE only.
++
++    Two keys share one observed file/one VAE feature. There is no terminal,
++    writer RGB, payload truth, target, confidence search or carrier argument.
++    ``count`` only records attempts/completions and cannot supply model inputs.
++    """
++    path=Path(path)
++    before=file_sha256(path)
++    received=counted(count,"mp4_read",lambda:io.read_mp4(path))
++    if tuple(received.shape)!=public.video_shape:
++        raise ValueError(f"MP4 geometry mismatch: {tuple(received.shape)}")
++    normalized=counted(count,"vae_encode",lambda:vae_adapter.reencode_rgb24_readback(frozen_vae,received))
++    del received
++    feature=trajectory.fingerprint(normalized)
++    rows={}
++    for name,key in keys.items():
++        try:
++            row=counted(count,"bit_read",lambda:method.read_latent_bits(normalized,key,public))
++        except Exception as exc:
++            row=dict(status="FAILED",decoded_bits=None,truth_used=False,error=f"{type(exc).__name__}: {exc}")
++        rows[name]=dict(**row,feature_sha256=feature,
++            input_kind="saved_MP4_RGB24_posterior_mode_Wan_normalized",
++            mp4_sha256=before,public_feature_shared_between_keys=True)
++    if file_sha256(path)!=before:
++        raise RuntimeError("MP4 bytes changed during primary read")
++    return rows
+diff --git a/scripts/build_grow_video_reference_notebook.py b/scripts/build_grow_video_reference_notebook.py
+new file mode 100644
+index 0000000..242d517
+--- /dev/null
++++ b/scripts/build_grow_video_reference_notebook.py
+@@ -0,0 +1,145 @@
++"""Build fixed video-reference Colab; published source binds later."""
++from pathlib import Path
++import argparse
++import ast
++import json
++import re
++
++ROOT=Path(__file__).resolve().parents[1]
++OUTPUT=ROOT/"notebooks/grow_video_reference_v1_colab.ipynb"
++
++
++def build(source_sha=None,output=OUTPUT):
++    if source_sha is not None and not re.fullmatch("[0-9a-f]{40}",source_sha):
++        raise ValueError("immutable published source SHA required")
++    cells=[]
++    def add(kind,source):
++        cell=dict(cell_type=kind,metadata={},id=f"grow-video-{len(cells)}",source=source.splitlines(keepends=True))
++        if kind=="code":ast.parse(source);cell.update(outputs=[],execution_count=None)
++        cells.append(cell)
++    add("code","from google.colab import drive\ndrive.mount('/content/drive')\n")
++    add("markdown","""# Fixed GROW image-to-Wan video reference
++
++One preselected copper-kettle prompt/seed; OFF, MULTI25..49 and LAST49.
++Three saved MP4s; terminal/float-RGB/RGB8/MP4 layers, two blind keys per layer,
++24 raw readouts then48 post-read evaluations. MP4 is primary. These dependent
++layers are diagnostics, not independent samples. MULTI includes LAST's step;
++this comparison cannot isolate the non-last contribution.
++
++The published GROW FFT-real/mean-MSE construction is adapted to native Wan
++Flow x0=z-sigma*v, conditional update then FP32 CFG5. Four channels/32bits,
++46 temporal repeats, actual-mask44160 ->eta5520. No total-budget matching,
++three-direction solver, positive-group acceptance guard or timing search.
++
++Run all uses the current Python and fresh serial children. Generation ends
++before a separate FP32-VAE/media worker. No virtual environment,ensurepip,
++Python-version or GPU-model gate. GPU is recommended; CPU remains allowed.
++The notebook has not been executed by the implementation agent. Results use
++one new Drive timestamp directory and preserve failures and all fixed rows.
++
++"""+("Published source bound.\n" if source_sha else "UNPUBLISHED DRAFT: SOURCE_SHA is intentionally unset.\n"))
++    add("code",f"SOURCE_SHA = {source_sha!r}\n"+r'''from pathlib import Path
++import datetime,hashlib,json,os,subprocess,sys,traceback
++STAMP=datetime.datetime.now(datetime.timezone.utc).strftime('%Y%m%dT%H%M%S%fZ')
++OUTPUT=Path('/content/drive/MyDrive/Video-WM/GROW-Video-Reference-V1')/STAMP
++OUTPUT.mkdir(parents=True,exist_ok=False)
++REPO=Path('/content/SC-SSTW-GROW-VIDEO-'+STAMP)
++RUN_OUTPUT=OUTPUT/'fixed_reference'
++PYTHON=sys.executable
++ARMS=('OFF','MULTI','LAST');LAYERS=('terminal','float_rgb','rgb8','mp4');KEYS=('CORRECT','WRONG')
++FIXED=dict(sources=1,arms=3,mp4=3,layers_per_arm=4,keys=2,raw_reads=24,evaluations=48)
++setup=dict(status='SETUP_STARTED',source_sha=SOURCE_SHA,fixed_denominator=FIXED,
++    generation={a:{'status':'NOT_RUN_SETUP'} for a in ARMS},
++    videos={a:{'status':'NOT_RUN_SETUP'} for a in ARMS},
++    reads={a+'/'+l+'/'+k:{'status':'NOT_RUN_SETUP'} for a in ARMS for l in LAYERS for k in KEYS},
++    evaluations={a+'/'+l+'/'+k+'/'+t:{'status':'NOT_RUN_SETUP'} for a in ARMS for l in LAYERS for k in KEYS for t in ('REGISTERED','WRONG_MESSAGE')})
++def write_json(path,value):
++    temp=path.with_suffix(path.suffix+'.tmp');temp.write_text(json.dumps(value,indent=2)+'\n');os.replace(temp,path)
++def failed(stage,exc):
++    setup.update(status='SETUP_FAILED',stage=stage,error=f'{type(exc).__name__}: {exc}')
++    write_json(OUTPUT/'setup_receipt.json',setup)
++    write_json(OUTPUT/'setup_failure.json',dict(stage=stage,error=str(exc),traceback=traceback.format_exc()))
++def logged(command,stage,cwd=None,check=True):
++    try:
++        with (OUTPUT/'execution.log').open('a') as log:
++            log.write('COMMAND '+repr(command)+'\n');log.flush()
++            child=subprocess.Popen(command,cwd=cwd,stdout=subprocess.PIPE,stderr=subprocess.STDOUT,text=True,bufsize=1)
++            for line in child.stdout:print(line,end='',flush=True);log.write(line);log.flush()
++            code=child.wait();log.write('EXIT '+str(code)+'\n')
++        if check and code:raise subprocess.CalledProcessError(code,command)
++        return code
++    except Exception as exc:failed(stage,exc);raise
++write_json(OUTPUT/'setup_receipt.json',setup)
++print('Fixed output:',OUTPUT)
++if SOURCE_SHA is None:
++    error=RuntimeError('Unpublished draft: bind verified published source SHA before Run all')
++    failed('SOURCE_BINDING',error);raise error
++''')
++    add("code",r'''try:
++    logged(['git','clone','--filter=blob:none','https://github.com/RICHAAARC/SC-SSTW.git',str(REPO)],'SOURCE_CLONE')
++    logged(['git','-C',str(REPO),'fetch','origin',SOURCE_SHA],'SOURCE_FETCH')
++    logged(['git','-C',str(REPO),'checkout','--detach',SOURCE_SHA],'SOURCE_CHECKOUT')
++    actual=subprocess.check_output(['git','-C',str(REPO),'rev-parse','HEAD'],text=True).strip()
++    dirty=subprocess.check_output(['git','-C',str(REPO),'status','--porcelain'],text=True)
++    if actual!=SOURCE_SHA or dirty:raise RuntimeError('source SHA/clean checkout mismatch')
++    write_json(OUTPUT/'source_receipt.json',dict(source_sha=actual,clean=True))
++    torch_ok=logged([PYTHON,'-c','import torch,torchvision; print(torch.__version__,torchvision.__version__)'],'TORCH_PROBE',check=False)==0
++    if not torch_ok:
++        logged([PYTHON,'-m','pip','install','--upgrade','torch','torchvision'],'TORCH_REPAIR')
++    logged([PYTHON,'-m','pip','install','-r',str(REPO/'experiments/wan_state_clock/requirements-grow-video-reference.txt')],'DEPENDENCIES')
++    dependency_code=logged([PYTHON,'-m','pip','check'],'DEPENDENCY_REPORT',check=False)
++    setup['dependency_check_returncode']=dependency_code
++    if dependency_code:print('Metadata conflicts retained; actual imports determine availability.')
++    (OUTPUT/'environment_freeze.txt').write_text(subprocess.check_output([PYTHON,'-m','pip','freeze'],text=True))
++    import_code='import json,torch; from diffusers import WanPipeline,AutoencoderKLWan,UniPCMultistepScheduler; from experiments.wan_state_clock.grow_video_reference_run import environment; r=environment(); r.update(cuda_available=torch.cuda.is_available()); print(json.dumps(r))'
++    env=json.loads(subprocess.check_output([PYTHON,'-c',import_code],cwd=REPO,text=True))
++    write_json(OUTPUT/'environment_receipt.json',env)
++    if not env['cuda_available']:print('CUDA unavailable: CPU path selected; much slower.')
++    logged(['ffmpeg','-version'],'FFMPEG_PROBE');logged(['ffprobe','-version'],'FFPROBE_PROBE')
++    setup.update(status='SETUP_COMPLETE',python_executable=PYTHON,environment_strategy='current_python_fresh_children')
++    write_json(OUTPUT/'setup_receipt.json',setup)
++except Exception as exc:failed('SOURCE_OR_ENVIRONMENT',exc);raise
++''')
++    add("code",r'''try:
++    from google.colab import userdata
++    token=userdata.get('HF_TOKEN')
++    if token:os.environ['HF_TOKEN']=token
++except Exception:
++    pass
++finally:
++    token=None
++command=[PYTHON,'-u','-m','experiments.wan_state_clock.grow_video_reference_run','--output',str(RUN_OUTPUT)]
++try:
++    returncode=logged(command,'FIXED_RUN',cwd=REPO,check=False)
++    RESULT_PATH=RUN_OUTPUT/'result.json'
++    write_json(OUTPUT/'execution_receipt.json',dict(command=command,returncode=returncode,result_path=str(RESULT_PATH),result_exists=RESULT_PATH.is_file()))
++    if not RESULT_PATH.is_file():raise RuntimeError('No runner result; full setup denominator is retained')
++    setup.update(status='SUPERSEDED_BY_RESULT',result_path=str(RESULT_PATH));write_json(OUTPUT/'setup_receipt.json',setup)
++except Exception as exc:failed('RUNNER',exc);raise
++''')
++    add("code",r'''result=json.loads(RESULT_PATH.read_text())
++if result['source_sha']!=SOURCE_SHA or result['fixed_denominator']!=FIXED:raise RuntimeError('result identity/denominator mismatch')
++print(result['status'],result['counts'])
++print('Primary MP4 payload results:')
++for name,row in result['evaluations'].items():
++    if row['layer']=='mp4':print(name,row['status'],'errors=',row.get('bit_errors'),'BER=',row.get('ber'),'exact=',row.get('exact_bits'))
++print('All48 evaluation rows and24 raw readouts retained at',RUN_OUTPUT)
++print('MP4 relative-to-OFF quality diagnostics:',result.get('quality'))
++print('Evidence ceiling:',result['evidence_ceiling'])
++from IPython.display import Video,display
++for arm,row in result['videos'].items():
++    print(arm,row['status'])
++    if row['status']=='SAVED' and Path(row['path']).is_file():display(Video(filename=row['path'],embed=True))
++print('Inspect visible quality separately; recovery results do not imply quality PASS.')
++''')
++    notebook=dict(nbformat=4,nbformat_minor=5,cells=cells,metadata=dict(
++        kernelspec=dict(display_name="Python3",language="python",name="python3"),
++        language_info=dict(name="python"),candidate_binding=dict(source_sha=source_sha,
++            status="PUBLISHED_SHA_BOUND" if source_sha else "UNPUBLISHED_DRAFT",
++            execution="User-run only; no agent GPU/Colab execution")))
++    Path(output).write_text(json.dumps(notebook,indent=1)+'\n');return Path(output)
++
++
++if __name__=="__main__":
++    p=argparse.ArgumentParser(description=__doc__);p.add_argument("--source-sha");p.add_argument("--output",type=Path,default=OUTPUT)
++    a=p.parse_args();print(build(a.source_sha,a.output))
+diff --git a/tests/test_grow_video_reference.py b/tests/test_grow_video_reference.py
+new file mode 100644
+index 0000000..111cec9
+--- /dev/null
++++ b/tests/test_grow_video_reference.py
+@@ -0,0 +1,381 @@
++"""CPU implementation checks; synthetic tensors/fixture VAE, no model loading."""
++from __future__ import annotations
++import copy
++import dataclasses
++import inspect
++import json
++from pathlib import Path
++import shutil
++import subprocess
++from types import SimpleNamespace
++
++import pytest
++import torch
++
++from main.tube_state import grow_video_reference as method
++from runtime.wan import grow_video_reference as backend,trajectory,vae as vae_adapter
++from experiments.wan_state_clock import grow_video_reference_run as run
++
++pytestmark=pytest.mark.unit
++
++
++@pytest.fixture(autouse=True)
++def one_thread():
++    old=torch.get_num_threads();torch.set_num_threads(1)
++    yield
++    torch.set_num_threads(old)
++
++
++def make_clean(dtype=torch.float32):
++    base=torch.zeros(method.PUBLIC.latent_shape,dtype=dtype)
++    target,mask=method.build_target(base,"watermark",method.message_bits("OKOK"))
++    return torch.fft.ifft2(target,dim=(-2,-1),norm="ortho").real,target,mask
++
++
++def scheduler():
++    from diffusers import UniPCMultistepScheduler
++    result=UniPCMultistepScheduler(prediction_type="flow_prediction",thresholding=False,
++        predict_x0=True,lower_order_final=True,use_flow_sigmas=True,
++        flow_shift=3.0,final_sigmas_type="zero")
++    result.set_timesteps(50,device="cpu");result.set_begin_index(0)
++    return result
++
++
++def test_actual_mean_mask_full_fft_gradient_and_scaling():
++    clean,target,mask=make_clean(torch.float64)
++    clean=clean+torch.randn(clean.shape,generator=torch.Generator().manual_seed(42),dtype=clean.dtype)*.02
++    delta,receipt=method.local_delta(clean,target,mask)
++    assert receipt["mask_count"]==44160 and receipt["eta"]==5520
++    before=torch.fft.fft2(clean,norm="ortho").real[mask]-target[mask]
++    after=torch.fft.fft2(clean+delta,norm="ortho").real[mask]-target[mask]
++    torch.testing.assert_close(after,.875*before,rtol=1e-11,atol=1e-12)
++    assert torch.count_nonzero(delta[:,4:])==0
++    assert not delta.requires_grad and not receipt["denoiser_backward"]
++    with pytest.raises(ValueError,match="actual mask"):
++        method.local_delta(clean,target,torch.zeros_like(mask))
++
++
++def test_flow_mapping_before_fp32_cfg_without_hidden_compensation():
++    clean,target,mask=make_clean()
++    z=clean+.2;c=torch.full_like(z,.1234).bfloat16();u=torch.full_like(z,-.03125).bfloat16()
++    sigma=.4
++    delta,_=method.local_delta(z-sigma*c.float(),target,mask)
++    result,row=method.guided_velocity(z,c,u,sigma,target,mask,enabled=True)
++    baseline=u.float()+5*(c.float()-u.float())
++    torch.testing.assert_close(result,baseline-5*delta/sigma,rtol=1e-5,atol=2e-6)
++    assert result.dtype==torch.float32 and row["cfg_clean_delta_rms"]==5*row["conditional_clean_delta_rms"]
++    assert sum(method.control_enabled("MULTI",i) for i in range(50))==25
++    assert sum(method.control_enabled("LAST",i) for i in range(50))==1
++    with pytest.raises(ValueError,match="positive"):
++        method.guided_velocity(z,c,u,0,target,mask,enabled=True)
++
++
++def test_zero_eta_full_native_state_and_history_equal_off():
++    class Transformer:
++        def __call__(self,hidden_states,encoder_hidden_states,**kwargs):
++            return (hidden_states*.01+encoder_hidden_states.mean(),)
++    pipe=SimpleNamespace(transformer=Transformer())
++    initial=torch.randn(method.PUBLIC.latent_shape,generator=torch.Generator().manual_seed(4))*.05
++    pristine=scheduler();before=trajectory.fingerprint(vars(pristine))
++    results=[];counts=[]
++    for arm in ("OFF","MULTI","LAST"):
++        clone=copy.deepcopy(pristine);rows=[];ledger={}
++        def count(kind,complete):
++            entry=ledger.setdefault(kind,[0,0]);entry[int(complete)]+=1
++        final,receipt=backend.run_trajectory(pipe,initial,clone,torch.tensor([.03]),torch.tensor([-.02]),
++            torch.bfloat16,arm,"watermark",method.message_bits("OKOK"),count,rows.append,reference_eta=0)
++        results.append((final,trajectory.fingerprint(vars(clone))))
++        counts.append(ledger)
++        assert [x["cursor_after"] for x in rows]==list(range(1,51))
++        assert receipt["final_cursor"]==50 and rows[49]["sigma"]>0 and float(clone.sigmas[50])==0
++        assert receipt["cfg_dtype"]=="torch.float32"
++    for final,history in results[1:]:
++        assert torch.equal(final,results[0][0]) and history==results[0][1]
++    assert trajectory.fingerprint(vars(pristine))==before
++    assert counts[0]["native_step"]==[50,50]
++    assert counts[1]["local_gradient"]==[25,25] and counts[2]["local_gradient"]==[1,1]
++
++
++def test_layout_and_truth_free_repeated_payload_reader():
++    clean,_,_=make_clean()
++    row=method.read_latent_bits(clean,"watermark")
++    assert row["decoded_bits"]==method.message_bits("OKOK")
++    assert len(row["votes"])==32 and all(v["count"]==1380 for v in row["votes"])
++    assert "message" not in inspect.signature(method.read_latent_bits).parameters
++    assert not hasattr(method.PUBLIC,"message")
++    receipt=method.layout_receipt("watermark","watermark-wrong")
++    assert receipt["mask_support_same"] and receipt["assignment_different"]
++    with pytest.raises(ValueError,match="collision"):method.layout_receipt("watermark","kramretaw")
++
++
++class FakeVAE:
++    def __init__(self,normalized):
++        self.parameter=torch.nn.Parameter(torch.zeros(()),requires_grad=False)
++        self.config=SimpleNamespace(latents_mean=[.1*i for i in range(16)],latents_std=[.5+.01*i for i in range(16)])
++        self.normalized=normalized;self.mode_calls=0;self.encode_calls=0;self.clear_calls=0
++    def parameters(self):yield self.parameter
++    def clear_cache(self):self.clear_calls+=1
++    def encode(self,video):
++        self.encode_calls+=1
++        assert video.shape==(1,3,181,320,512) and video.dtype==torch.float32
++        assert -1<=float(video.min())<=float(video.max())<=1
++        mean=torch.tensor(self.config.latents_mean).reshape(1,16,1,1,1)
++        std=torch.tensor(self.config.latents_std).reshape(1,16,1,1,1)
++        def mode():self.mode_calls+=1;return self.normalized*std+mean
++        def sample():raise AssertionError("posterior sampling is forbidden")
++        return SimpleNamespace(latent_dist=SimpleNamespace(mode=mode,sample=sample,mean=torch.full_like(self.normalized,float('nan'))))
++
++
++@pytest.fixture
++def actual_mp4(tmp_path):
++    if not shutil.which("ffmpeg") or not shutil.which("ffprobe"):pytest.skip("FFmpeg executables unavailable")
++    path=tmp_path/"fixture.mp4"
++    subprocess.run(["ffmpeg","-v","error","-f","lavfi","-i","color=c=gray:s=512x320:r=8",
++        "-frames:v","181","-c:v","libx264","-crf","18","-pix_fmt","yuv420p",str(path)],check=True,capture_output=True)
++    return path
++
++
++def test_primary_real_mp4_readback_mode_normalization_and_partial_key_failure(actual_mp4,monkeypatch):
++    clean,_,_=make_clean();vae=FakeVAE(clean);ledger={}
++    def count(kind,complete):ledger.setdefault(kind,[0,0])[int(complete)]+=1
++    original=method.read_latent_bits
++    def partial(latent,key,public):
++        if key=="watermark-wrong":raise RuntimeError("injected wrong-key reader error")
++        return original(latent,key,public)
++    monkeypatch.setattr(method,"read_latent_bits",partial)
++    rows=backend.read_mp4_payload(actual_mp4,dict(CORRECT="watermark",WRONG="watermark-wrong"),method.PUBLIC,vae,count=count)
++    assert rows["CORRECT"]["decoded_bits"]==method.message_bits("OKOK")
++    assert rows["CORRECT"]["status"]=="READ" and rows["WRONG"]["status"]=="FAILED"
++    assert rows["CORRECT"]["mp4_sha256"]==rows["WRONG"]["mp4_sha256"]
++    assert rows["CORRECT"]["feature_sha256"]==rows["WRONG"]["feature_sha256"]
++    assert vae.mode_calls==vae.encode_calls==1 and vae.clear_calls==2
++    assert ledger==dict(mp4_read=[1,1],vae_encode=[1,1],bit_read=[2,1])
++    assert tuple(inspect.signature(backend.read_mp4_payload).parameters)==("path","keys","public","frozen_vae","count")
++
++
++def test_primary_wrong_geometry_rejected_before_vae(tmp_path,monkeypatch):
++    path=tmp_path/"bad.mp4";path.write_bytes(b"geometry-fixture")
++    monkeypatch.setattr(backend.io,"read_mp4",lambda _:torch.zeros(1,1,1,3).expand(180,320,512,3))
++    vae=FakeVAE(torch.zeros(method.PUBLIC.latent_shape))
++    with pytest.raises(ValueError,match="geometry mismatch"):
++        backend.read_mp4_payload(path,dict(CORRECT="watermark",WRONG="watermark-wrong"),method.PUBLIC,vae)
++    assert vae.encode_calls==0
++
++
++def test_fixed_rows_partial_failure_truth_join_and_hard_exit_recovery(tmp_path):
++    store=run.Store(tmp_path/"run",create=True);cfg=run.load_config()
++    rows=dict(CORRECT=dict(status="READ",decoded_bits=method.message_bits("OKOK"),truth_used=False),
++              WRONG=dict(status="FAILED",decoded_bits=None,truth_used=False,error="fixture"))
++    store.set_reads("OFF","mp4",rows)
++    run.recover_unfinished(store,"media","worker hard-exit fixture")
++    path=store.output/"blind_readouts.json";before=path.read_bytes()
++    run.evaluate_saved_reads(store,cfg)
++    assert path.read_bytes()==before and [len(store.data[x]) for x in ("videos","reads","evaluations")]==[3,24,48]
++    assert store.data["counts"]["reads"]==1 and store.data["counts"]["evaluated"]==2
++    assert store.data["evaluations"]["OFF/mp4/CORRECT/REGISTERED"]["exact_bits"] is True
++    cfg["wrong_message"]="ABCD";run.evaluate_saved_reads(store,cfg)
++    assert path.read_bytes()==before
++
++
++def test_media_layer_failure_continues_to_primary(tmp_path,monkeypatch):
++    from runtime.wan import generation,io
++    store=run.Store(tmp_path/"media",create=True);cfg=run.load_config()
++    for arm in method.ARMS:store.data["generation"][arm]["status"]="NOT_COMPLETED"
++    path=Path(store.data["generation"]["OFF"]["terminal_path"]);path.parent.mkdir();torch.save(torch.zeros(method.PUBLIC.latent_shape),path)
++    store.data["generation"]["OFF"].update(status="COMPLETE",terminal_file_sha256=backend.file_sha256(path))
++    monkeypatch.setattr(generation,"load_frozen_vae",lambda *a,**k:FakeVAE(torch.zeros(method.PUBLIC.latent_shape)))
++    monkeypatch.setattr(vae_adapter,"decode_normalized_latent",lambda *a:torch.zeros(1,1,1,3).expand(method.PUBLIC.video_shape))
++    monkeypatch.setattr(vae_adapter,"quantize_rgb8_no_codec",lambda _:torch.zeros(1,1,1,3,dtype=torch.uint8).expand(method.PUBLIC.video_shape))
++    monkeypatch.setattr(io,"encode_rgb",lambda rgb,path,*args:path.write_bytes(b"saved-synthetic-mp4"))
++    bits=method.message_bits("OKOK")
++    def rows():return {k:dict(status="READ",decoded_bits=bits,truth_used=False) for k in run.KEY_IDS}
++    monkeypatch.setattr(backend,"read_diagnostic_latent",lambda *a,**k:rows())
++    attempts=[]
++    def diagnostic(*a,**k):
++        attempts.append("diagnostic")
++        if len(attempts)==1:raise RuntimeError("floatRGB encode fixture failure")
++        return rows()
++    monkeypatch.setattr(backend,"reencode_diagnostic_rgb",diagnostic)
++    def primary(path,*a,**k):
++        attempts.append("primary");return {name:dict(**row,mp4_sha256=backend.file_sha256(path)) for name,row in rows().items()}
++    monkeypatch.setattr(backend,"read_mp4_payload",primary)
++    run.media_worker(store,cfg)
++    assert attempts==["diagnostic","diagnostic","primary"]
++    assert store.data["reads"]["OFF/float_rgb/CORRECT"]["status"]=="MISSING_READOUT"
++    assert store.data["reads"]["OFF/mp4/CORRECT"]["status"]=="READ"
++    assert len(store.data["reads"])==24 and store.data["counts"]["saved_mp4"]==1
++
++
++def test_quality_is_separate_chunked_diagnostic(tmp_path,monkeypatch):
++    from runtime.wan import io
++    store=run.Store(tmp_path/"quality",create=True)
++    store.data["status"]="EXECUTION_COMPLETE";before=copy.deepcopy(store.data["reads"])
++    public=dataclasses.replace(method.PUBLIC,video_shape=(2,4,5,3));monkeypatch.setattr(method,"PUBLIC",public)
++    values={}
++    for arm,value in zip(method.ARMS,(0.2,0.3,0.4)):
++        path=Path(store.data["videos"][arm]["path"]);path.parent.mkdir();path.write_bytes(arm.encode())
++        store.data["videos"][arm].update(status="SAVED",sha256=backend.file_sha256(path))
++        values[str(path)]=torch.full(public.video_shape,value)
++    def read(path):
++        if Path(path).stem=="LAST":raise RuntimeError("quality-only failure")
++        return values[str(path)]
++    monkeypatch.setattr(io,"read_mp4",read)
++    run.quality_diagnostics(store)
++    assert store.data["status"]=="EXECUTION_COMPLETE" and store.data["reads"]==before
++    assert store.data["quality"]["MULTI"]["rgb_rmse"]==pytest.approx(.1,abs=1e-7)
++    assert store.data["quality"]["MULTI"]["psnr_db"]==pytest.approx(20,abs=1e-5)
++    assert store.data["quality"]["LAST"]["status"]=="FAILED"
++    assert store.data["calls"]["QUALITY_MP4_DIAGNOSTICS"]["quality_mp4_read"]==dict(attempted=3,completed=2)
++
++
++def test_precision_selection_has_no_model_name_gate(monkeypatch):
++    monkeypatch.setattr(torch.cuda,"is_available",lambda:False)
++    assert backend.execution_device_dtype()==("cpu",torch.float32)
++    monkeypatch.setattr(torch.cuda,"is_available",lambda:True)
++    monkeypatch.setattr(torch.cuda,"is_bf16_supported",lambda:True)
++    assert backend.execution_device_dtype()==("cuda",torch.bfloat16)
++    monkeypatch.setattr(torch.cuda,"is_bf16_supported",lambda:False)
++    assert backend.execution_device_dtype()==("cuda",torch.float16)
++
++
++def test_notebook_draft_setup_denominator_and_no_environment_gate(tmp_path):
++    import ast
++    from scripts.build_grow_video_reference_notebook import build
++    path=build(output=tmp_path/"draft.ipynb");nb=json.loads(path.read_text())
++    assert ''.join(nb['cells'][0]['source'])=="from google.colab import drive\ndrive.mount('/content/drive')\n"
++    sources=[]
++    for cell in nb['cells']:
++        if cell['cell_type']=='code':
++            text=''.join(cell['source']);sources.append(text);ast.parse(text)
++            assert cell['outputs']==[] and cell['execution_count'] is None
++    text='\n'.join(sources)
++    assert 'sys.version_info' not in text and "'-m','venv'" not in text and 'ensurepip' not in text
++    assert 'sys.executable' in text and 'requirements-grow-video-reference.txt' in text
++    setup=sources[1].replace("Path('/content/drive/MyDrive/Video-WM/GROW-Video-Reference-V1')",f"Path({str(tmp_path)!r})")
++    with pytest.raises(RuntimeError,match='Unpublished draft'):exec(compile(setup,'setup','exec'),{})
++    receipt=json.loads(next(tmp_path.glob('*/setup_receipt.json')).read_text())
++    assert [len(receipt[x]) for x in ('videos','reads','evaluations')]==[3,24,48]
++
++
++def test_shared_loader_optional_cpu_dtype_preserves_default_signature(monkeypatch):
++    import diffusers
++    from runtime.wan import generation
++    captured={}
++    class Transformer(torch.nn.Module):
++        def __init__(self):
++            super().__init__();self.patch_embedding=torch.nn.Linear(1,1,bias=False)
++            self.config=SimpleNamespace(in_channels=16)
++    class Pipe:
++        config=SimpleNamespace();vae_scale_factor_temporal=4;vae_scale_factor_spatial=8
++        def __init__(self):
++            self.text_encoder=torch.nn.Linear(1,1);self.transformer=Transformer();self.scheduler=scheduler()
++        def encode_prompt(self,**kwargs):
++            captured['prompt_device']=str(kwargs['device'])
++            return torch.zeros(1,3,2,dtype=torch.float64),torch.zeros(1,3,2,dtype=torch.float64)
++        def prepare_latents(self,b,c,h,w,t,dtype,device,generator,unused):
++            captured['latent_device']=str(device);captured['seed']=generator.initial_seed()
++            return torch.zeros((b,c,(t-1)//4+1,h//8,w//8),dtype=dtype,device=device)
++    def load(*args,**kwargs):captured.update(kwargs);return Pipe()
++    monkeypatch.setattr(diffusers.WanPipeline,'from_pretrained',load)
++    pipe,z,prompt,negative,dtype=generation.prepare_generation(run.load_config(),load_vae=False,device='cpu',model_dtype=torch.float32)
++    assert captured['torch_dtype']==torch.float32 and captured['vae'] is None
++    assert captured['prompt_device']==captured['latent_device']=='cpu'
++    assert captured['seed']==2026092501 and z.shape==method.PUBLIC.latent_shape
++    assert prompt.dtype==negative.dtype==dtype==torch.float32 and pipe.scheduler.step_index is None
++    assert inspect.signature(generation.prepare_generation).parameters['device'].default is None
++    assert inspect.signature(generation.prepare_generation).parameters['model_dtype'].default is None
++
++
++def main_fixture(monkeypatch,tmp_path):
++    output=tmp_path/'orchestrated'
++    monkeypatch.setattr(run.sys,'argv',['review','--output',str(output)])
++    monkeypatch.setattr(run.subprocess,'check_output',lambda *a,**k:'92583b6bdd58733427434ad54943c82dc7a9dcc2\n')
++    return output
++
++
++def assert_final_fixed_rows(output):
++    result=json.loads((output/'result.json').read_text())
++    assert [len(result[x]) for x in ('generation','videos','reads','evaluations')]==[3,3,24,48]
++    assert all(row['status']!='PENDING' for name in ('generation','videos','reads','evaluations') for row in result[name].values())
++    raw=json.loads((output/'blind_readouts.json').read_text())
++    assert len(raw['reads'])==24 and raw['truth_inputs'] is False
++    return result
++
++
++def test_parent_main_worker_spawn_failure_finalizes_fixed_rows(tmp_path,monkeypatch):
++    output=main_fixture(monkeypatch,tmp_path);attempts=[]
++    def spawn(command,**kwargs):
++        attempts.append(command[-1]);raise OSError('injected worker spawn failure')
++    monkeypatch.setattr(run.subprocess,'Popen',spawn)
++    with pytest.raises(SystemExit) as caught:run.main()
++    result=assert_final_fixed_rows(output)
++    assert caught.value.code==1 and attempts==['generation','media']
++    assert result['status']=='INCOMPLETE' and result['stage']=='FINISHED'
++    assert result['counts']==dict(generated=0,saved_mp4=0,reads=0,evaluated=0)
++    assert all(row['status']=='START_FAILED' for row in result['workers'].values())
++    assert len(result['failures'])==2 and result['actual_model_calls'] is False
++
++
++def test_parent_main_monitor_failure_reaps_before_reload_and_preserves_child_data(tmp_path,monkeypatch):
++    output=main_fixture(monkeypatch,tmp_path);events=[]
++    class Stream:
++        def __init__(self,phase):self.phase=phase
++        def __iter__(self):
++            if self.phase=='media':raise OSError('injected stdout monitor failure')
++            return iter(())
++        def close(self):events.append('close_'+self.phase)
++    class Child:
++        def __init__(self,phase):self.phase=phase;self.stdout=Stream(phase)
++        def poll(self):return None
++        def terminate(self):events.append('terminate_'+self.phase)
++        def wait(self,timeout=None):
++            events.append('wait_'+self.phase)
++            child_store=run.Store(output)
++            if self.phase=='generation':
++                for row in child_store.data['generation'].values():row.update(status='COMPLETE')
++                child_store.save();return 0
++            # A final media checkpoint produced during shutdown must win over
++            # the parent's pre-launch Store, including successful raw bits.
++            child_store.data['videos']['OFF'].update(status='SAVED',sha256='fixture-sha')
++            child_store.set_reads('OFF','mp4',{
++                'CORRECT':dict(status='READ',decoded_bits=method.message_bits('OKOK'),truth_used=False),
++                'WRONG':dict(status='FAILED',decoded_bits=None,truth_used=False,error='fixture key failure')})
++            child_store.data['stage']='CHILD_FINAL_CHECKPOINT';child_store.save()
++            return -15
++    def spawn(command,**kwargs):
++        events.append('spawn_'+command[-1]);return Child(command[-1])
++    monkeypatch.setattr(run.subprocess,'Popen',spawn)
++    with pytest.raises(SystemExit) as caught:run.main()
++    result=assert_final_fixed_rows(output)
++    assert caught.value.code==1 and events==['spawn_generation','wait_generation','close_generation',
++        'spawn_media','terminate_media','wait_media','close_media']
++    assert result['counts']==dict(generated=3,saved_mp4=1,reads=1,evaluated=2)
++    assert result['reads']['OFF/mp4/CORRECT']['status']=='READ'
++    assert result['reads']['OFF/mp4/WRONG']['status']=='FAILED'
++    assert result['evaluations']['OFF/mp4/CORRECT/REGISTERED']['exact_bits'] is True
++    assert result['workers']['generation']['status']=='COMPLETE'
++    assert result['workers']['media']['status']=='MONITOR_FAILED'
++    assert result['workers']['media']['last_child_stage']=='CHILD_FINAL_CHECKPOINT'
++    assert result['status']=='INCOMPLETE' and len(result['failures'])==1
++
++
++def test_parent_main_keyboard_interrupt_reaps_and_does_not_start_media(tmp_path,monkeypatch):
++    output=main_fixture(monkeypatch,tmp_path);events=[]
++    class Stream:
++        def __iter__(self):raise KeyboardInterrupt('injected user interruption')
++        def close(self):events.append('close')
++    class Child:
++        stdout=Stream()
++        def poll(self):return None
++        def terminate(self):events.append('terminate')
++        def wait(self,timeout=None):events.append('wait');return -15
++    def spawn(command,**kwargs):events.append('spawn_'+command[-1]);return Child()
++    monkeypatch.setattr(run.subprocess,'Popen',spawn)
++    monkeypatch.setattr(run,'quality_diagnostics',lambda *a:pytest.fail('interrupted run must not start diagnostics'))
++    with pytest.raises(SystemExit) as caught:run.main()
++    result=assert_final_fixed_rows(output)
++    assert caught.value.code==130 and events==['spawn_generation','terminate','wait','close']
++    assert result['status']=='INTERRUPTED' and result['stage']=='FINISHED'
++    assert result['workers']['media']['status']=='NOT_STARTED_INTERRUPTED'
++    assert all(row['status']=='NOT_RUN_INTERRUPTED' for row in result['quality'].values())
++    assert result['counts']==dict(generated=0,saved_mp4=0,reads=0,evaluated=0)

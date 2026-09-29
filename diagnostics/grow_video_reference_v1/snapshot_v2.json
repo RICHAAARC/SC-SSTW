@@ -1,0 +1,120 @@
+{
+  "version": "grow_video_reference_v1_candidate_v2",
+  "status": "FROZEN_FOR_REVIEW",
+  "created_at": "2026-09-29T12:24:52.998818+00:00",
+  "base": "92583b6bdd58733427434ad54943c82dc7a9dcc2",
+  "branch": "dev/video-trajectory-blind-validation-v1",
+  "file_count": 14,
+  "files": {
+    "diagnostics/grow_video_reference_v1/local_validation.json": {
+      "sha256": "320016325d93cf050d329464912a7475e07b6d137a63d991da7c5b59f89e42ac",
+      "bytes": 2296,
+      "kind": "new"
+    },
+    "diagnostics/grow_video_reference_v1/pytest_v1.txt": {
+      "sha256": "ce4916fff7746392a7bb09b6010c5e8cc130f3f0a6434375608bce7de3b7a045",
+      "bytes": 100,
+      "kind": "new"
+    },
+    "diagnostics/grow_video_reference_v1/pytest_v2.txt": {
+      "sha256": "8e268960ae743e56a44eaeeb30da789353a15235d9e2f2c94249bc2a8c3306b3",
+      "bytes": 100,
+      "kind": "new"
+    },
+    "diagnostics/grow_video_reference_v1/pytest_v2_lifecycle.txt": {
+      "sha256": "80edc080e3f70782395a618080d8d1500ab89bab683bbfbea32190bc8d78979f",
+      "bytes": 113,
+      "kind": "new"
+    },
+    "docs/grow_video_reference_v1.md": {
+      "sha256": "3d3f52782188f9bb396c7fc543250a615db1f4b49f3c4d17041edcf95ca6f8d4",
+      "bytes": 11853,
+      "kind": "new"
+    },
+    "experiments/wan_state_clock/configs/grow_video_reference_v1.json": {
+      "sha256": "fb4c7860f9c51ee3ce1771d05557cebc03199bfc16a15c1790832209cf1ffeee",
+      "bytes": 2523,
+      "kind": "new"
+    },
+    "experiments/wan_state_clock/grow_video_reference_run.py": {
+      "sha256": "480bb35239ac636bfd99c7d43d9e6d20dbc06e52e67827e033b5a5298a7a5388",
+      "bytes": 19629,
+      "kind": "new"
+    },
+    "experiments/wan_state_clock/requirements-grow-video-reference.txt": {
+      "sha256": "4c9fb7f727f2923f7e1b33893f9094905fa9071358b81b7f77a13cd172bf407e",
+      "bytes": 330,
+      "kind": "new"
+    },
+    "main/tube_state/grow_video_reference.py": {
+      "sha256": "35b186833dee508552235df1bb3c2524db01848e507402f87c0b9655016c8ead",
+      "bytes": 6860,
+      "kind": "new"
+    },
+    "notebooks/grow_video_reference_v1_colab.ipynb": {
+      "sha256": "127d482f32ecac60f6ae01867b31bda9a7d8f645695ac81567158a4cedd0bf43",
+      "bytes": 9729,
+      "kind": "new"
+    },
+    "runtime/wan/generation.py": {
+      "sha256": "3538921118a429339412eee4d72e57268c9cb232d6ebb6e8677e2e55f143bde3",
+      "bytes": 7674,
+      "kind": "modified"
+    },
+    "runtime/wan/grow_video_reference.py": {
+      "sha256": "de03c0c2e5c987dc5a8b198e8d0c29b99cbd99a0bf00625677d0d407a234afd8",
+      "bytes": 5609,
+      "kind": "new"
+    },
+    "scripts/build_grow_video_reference_notebook.py": {
+      "sha256": "fed20052acb37f9b7af628704a714106fa37b370669af5997262665f51662870",
+      "bytes": 9147,
+      "kind": "new"
+    },
+    "tests/test_grow_video_reference.py": {
+      "sha256": "6aea16a2d0346ac131cd4bd58a5b8e59f9383f0f5588b2be9261e782d744869a",
+      "bytes": 21529,
+      "kind": "new"
+    }
+  },
+  "source_tree_sha256": "7dbcaf6d718347136116fa3f06d6b32f3fc29556f8017612e81d7b357bf652d8",
+  "source_tree_hash_definition": "sha256(concatenate sorted path + NUL + SHA256 + LF)",
+  "patch": "diagnostics/grow_video_reference_v1/candidate_v2.patch",
+  "patch_sha256": "516a7b78ee9ee27f17b2ec88d8f3591a80f2a582ec5b3c54eb87c4e25d78fbc6",
+  "prior_snapshot": {
+    "path": "diagnostics/grow_video_reference_v1/snapshot_v1.json",
+    "sha256": "c83043579e2dc493a253cd87ce1f0d670d112c6d2a9cca740d7539fac3c40524",
+    "patch_sha256": "f8a06362172dc9f583c29fbf357a10c05caedbab62cc900764319dee89854d99",
+    "source_tree_sha256": "a51aea6133134f5044b545a4e51eaaa92916ccb1cbd5d6728cd592f7ed768122"
+  },
+  "delta_from_v1": {
+    "changed": [
+      "diagnostics/grow_video_reference_v1/local_validation.json",
+      "experiments/wan_state_clock/grow_video_reference_run.py",
+      "tests/test_grow_video_reference.py"
+    ],
+    "added": [
+      "diagnostics/grow_video_reference_v1/pytest_v2.txt",
+      "diagnostics/grow_video_reference_v1/pytest_v2_lifecycle.txt"
+    ],
+    "unchanged_v1_file_count": 9,
+    "scope": "Only parent worker lifecycle, three actual-main fault regressions, and CPU validation records. Core method/runtime/config/protocol/notebook/builder/dependencies unchanged."
+  },
+  "tests": {
+    "focused": "3 passed, 12 deselected in 0.95s",
+    "full_target": "15 passed in 13.30s; zero skips",
+    "evidence_ceiling": "CPU/fake child fault injection; real native scheduler and synthetic codec fixture; fixture VAE; no model load/GPU/Colab"
+  },
+  "verification": {
+    "python_ast": "PASS",
+    "all_source_whitespace": "PASS",
+    "reverse_patch_check": "PASS",
+    "v1_snapshot_and_patch_unchanged": true
+  },
+  "scientific_status": "NOT_EXECUTED",
+  "publication": {
+    "source_sha": null,
+    "notebook": "UNPUBLISHED_DRAFT"
+  },
+  "write_lock": "A1 stops writing frozen source and evidence pending same-version review"
+}
