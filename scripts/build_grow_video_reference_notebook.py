@@ -129,7 +129,11 @@ print('Evidence ceiling:',result['evidence_ceiling'])
 from IPython.display import Video,display
 for arm,row in result['videos'].items():
     print(arm,row['status'])
-    if row['status']=='SAVED' and Path(row['path']).is_file():display(Video(filename=row['path'],embed=True))
+    if row['status']=='SAVED' and Path(row['path']).is_file():
+        try:
+            display(Video(str(row['path']),embed=True))
+        except Exception as exc:
+            print('Preview unavailable; saved MP4 remains at',row['path'],type(exc).__name__,str(exc))
 print('Inspect visible quality separately; recovery results do not imply quality PASS.')
 ''')
     notebook=dict(nbformat=4,nbformat_minor=5,cells=cells,metadata=dict(
