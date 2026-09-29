@@ -1,0 +1,180 @@
+{
+  "date": "2026-09-29",
+  "method": "Windows HTTPS PyPI JSON metadata; no package installation",
+  "python": "3.12",
+  "packages": [
+    {
+      "requires_python": ">=3.10.0",
+      "pure_wheel": true,
+      "package": "diffusers",
+      "cp312_wheel": false,
+      "status": 200,
+      "version": "0.39.0",
+      "base_requires_dist": [
+        "importlib_metadata",
+        "filelock",
+        "httpx<1.0.0",
+        "huggingface-hub<2.0,>=0.34.0",
+        "numpy",
+        "regex!=2019.12.17",
+        "requests",
+        "safetensors>=0.8.0",
+        "Pillow"
+      ]
+    },
+    {
+      "requires_python": ">=3.9.0",
+      "pure_wheel": true,
+      "package": "transformers",
+      "cp312_wheel": false,
+      "status": 200,
+      "version": "4.57.6",
+      "base_requires_dist": [
+        "filelock",
+        "huggingface-hub<1.0,>=0.34.0",
+        "numpy>=1.17",
+        "packaging>=20.0",
+        "pyyaml>=5.1",
+        "regex!=2019.12.17",
+        "requests",
+        "tokenizers<=0.23.0,>=0.22.0",
+        "safetensors>=0.4.3",
+        "tqdm>=4.27"
+      ]
+    },
+    {
+      "requires_python": ">=3.10.0",
+      "pure_wheel": true,
+      "package": "accelerate",
+      "cp312_wheel": false,
+      "status": 200,
+      "version": "1.11.0",
+      "base_requires_dist": [
+        "numpy>=1.17",
+        "packaging>=20.0",
+        "psutil",
+        "pyyaml",
+        "torch>=2.0.0",
+        "huggingface_hub>=0.21.0",
+        "safetensors>=0.4.3"
+      ]
+    },
+    {
+      "requires_python": ">=3.12",
+      "pure_wheel": false,
+      "package": "numpy",
+      "cp312_wheel": true,
+      "status": 200,
+      "version": "2.5.2",
+      "base_requires_dist": []
+    },
+    {
+      "requires_python": ">=3.10",
+      "pure_wheel": false,
+      "package": "Pillow",
+      "cp312_wheel": true,
+      "status": 200,
+      "version": "12.3.0",
+      "base_requires_dist": []
+    },
+    {
+      "requires_python": ">=3.8",
+      "pure_wheel": true,
+      "package": "tqdm",
+      "cp312_wheel": false,
+      "status": 200,
+      "version": "4.70.0",
+      "base_requires_dist": [
+        "colorama; platform_system == \"Windows\""
+      ]
+    },
+    {
+      "requires_python": ">=3.8",
+      "pure_wheel": false,
+      "package": "PyYAML",
+      "cp312_wheel": true,
+      "status": 200,
+      "version": "6.0.3",
+      "base_requires_dist": []
+    },
+    {
+      "requires_python": ">=3.8.0",
+      "pure_wheel": true,
+      "package": "huggingface_hub",
+      "cp312_wheel": false,
+      "status": 200,
+      "version": "0.36.2",
+      "base_requires_dist": [
+        "filelock",
+        "fsspec>=2023.5.0",
+        "hf-xet<2.0.0,>=1.1.3; platform_machine == \"x86_64\" or platform_machine == \"amd64\" or platform_machine == \"arm64\" or platform_machine == \"aarch64\"",
+        "packaging>=20.9",
+        "pyyaml>=5.1",
+        "requests",
+        "tqdm>=4.42.1",
+        "typing-extensions>=3.7.4.3"
+      ]
+    },
+    {
+      "requires_python": ">=3.10",
+      "pure_wheel": false,
+      "package": "safetensors",
+      "cp312_wheel": false,
+      "status": 200,
+      "version": "0.8.0",
+      "base_requires_dist": []
+    }
+  ],
+  "local_numpy_torch_interop": "Python3.12.3/torch2.6.0+cpu/torchvision0.21.0+cpu/numpy2.5.2: float32 NumPy->torch->NumPy matched in isolated temp venv",
+  "limitations": [
+    "Package metadata and local CPU fixtures are not full Colab/model execution proof",
+    "Direct dependencies pinned; transitive resolution recorded by pip freeze during user run"
+  ],
+  "superseded_initial_torch_choice": {
+    "torch": "2.5.1",
+    "torchvision": "0.20.1",
+    "reason": "Avoid optional diffusers[torch]>=2.6 and Transformers .bin loading compatibility risk before freeze; no method change"
+  },
+  "pytorch_wheels": [
+    {
+      "package": "torch",
+      "version": "2.6.0",
+      "channel": "cpu",
+      "index_url": "https://download.pytorch.org/whl/cpu/torch/",
+      "wheel": "https://download-r2.pytorch.org/whl/cpu/torch-2.6.0%2Bcpu-cp312-cp312-linux_x86_64.whl#sha256=59e78aa0c690f70734e42670036d6b541930b8eabbaa18d94e090abf14cc4d91"
+    },
+    {
+      "package": "torchvision",
+      "version": "0.21.0",
+      "channel": "cpu",
+      "index_url": "https://download.pytorch.org/whl/cpu/torchvision/",
+      "wheel": "https://download-r2.pytorch.org/whl/cpu/torchvision-0.21.0%2Bcpu-cp312-cp312-linux_x86_64.whl#sha256=d6874431e678ba107b60a83f255c33f3755f06bad587b1b919aa514ec325dcd8"
+    },
+    {
+      "package": "torch",
+      "version": "2.6.0",
+      "channel": "cu124",
+      "index_url": "https://download.pytorch.org/whl/cu124/torch/",
+      "wheel": "https://download-r2.pytorch.org/whl/cu124/torch-2.6.0%2Bcu124-cp312-cp312-linux_x86_64.whl#sha256=a393b506844035c0dac2f30ea8478c343b8e95a429f06f3b3cadfc7f53adb597"
+    },
+    {
+      "package": "torchvision",
+      "version": "0.21.0",
+      "channel": "cu124",
+      "index_url": "https://download.pytorch.org/whl/cu124/torchvision/",
+      "wheel": "https://download-r2.pytorch.org/whl/cu124/torchvision-0.21.0%2Bcu124-cp312-cp312-linux_x86_64.whl#sha256=efb53ea0af7bf09b7b53e2a18b9be6d245f7d46a90b51d5cf97f37e9b929a991"
+    }
+  ],
+  "accelerate_cpu_wheel": {
+    "version": "1.11.0",
+    "sha256": "a628fa6beb069b8e549460fc449135d5bd8d73e7a11fd09f0bc9fc4ace7f06f1",
+    "verification": "Compared downloaded wheel SHA256 with PyPI metadata before local installation"
+  },
+  "local_psutil_transitive": {
+    "package": "psutil",
+    "version": "7.2.2",
+    "filename": "psutil-7.2.2-cp36-abi3-manylinux2010_x86_64.manylinux_2_12_x86_64.manylinux_2_28_x86_64.whl",
+    "sha256": "076a2d2f923fd4821644f5ba89f059523da90dc9014e85f8e45a5774ca5bc6f9",
+    "url": "https://files.pythonhosted.org/packages/b5/70/5d8df3b09e25bce090399cf48e452d25c935ab72dad19406c77f4e828045/psutil-7.2.2-cp36-abi3-manylinux2010_x86_64.manylinux_2_12_x86_64.manylinux_2_28_x86_64.whl"
+  }
+}

@@ -1,0 +1,453 @@
+{
+  "status": "COMPLETE_SOURCE_TREES_VERIFIED",
+  "core_handoff_matches": 7,
+  "repositories": [
+    {
+      "repo": "luopengchen/GROW",
+      "commit": "6aa69a9c5d4a9e75df457fcca8dfc71b64a6b870",
+      "local_root": "/tmp/image-trajectory-reference-a1-official-20260929/grow-tree/luopengchen-GROW-6aa69a9",
+      "tree_api_sha": "6aa69a9c5d4a9e75df457fcca8dfc71b64a6b870",
+      "tree_complete": true,
+      "files": {
+        "GROW/CITATION.cff": {
+          "bytes": 1115,
+          "git_blob_sha1": "4ab32f0584c8d9ed49baeadb6fdada729e302bf7",
+          "sha256": "f3758162de9176193e46289c7d004e8257bd60a2ebc2e54a33f1a2d2f662ed8d"
+        },
+        "GROW/CONTRIBUTING.md": {
+          "bytes": 1105,
+          "git_blob_sha1": "5048e4330d6ad4dc515a618bf1c2f0fab12ce832",
+          "sha256": "6354d693878db7e0131efef8dadaaf8d731e2f6f24e24ee058142c1f2d5e2dac"
+        },
+        "GROW/LICENSE": {
+          "bytes": 1118,
+          "git_blob_sha1": "4e563d6727a1b3bfa93794fb27982f54e75370e0",
+          "sha256": "958a57f511ae7176c2eaf3ed81fc16e4b4dde44efe1f89191bfb44d091bb0c37"
+        },
+        "GROW/MANIFEST.in": {
+          "bytes": 141,
+          "git_blob_sha1": "e5e53dc9d6e207e03a4d10e7024a88c10b416f4f",
+          "sha256": "c93c962f4db0183a0f27b6abed68b9274810ea7e5ab17d849d32d5bad6869e55"
+        },
+        "GROW/README.md": {
+          "bytes": 12144,
+          "git_blob_sha1": "056ff5c8e490da572554b3492daed11590e05f18",
+          "sha256": "674deb49a846e8dd7c2c7108502a943fda000883c69d517d38bf7d85e8e4f521"
+        },
+        "GROW/assets/README.md": {
+          "bytes": 2780,
+          "git_blob_sha1": "3bc055516e486b7bbd0676773b21daf62e1730b4",
+          "sha256": "0774347bafcfe0365fc5d7ff3dbe978796b404def77b4ea1ed80709b772261a9"
+        },
+        "GROW/configs/default.yaml": {
+          "bytes": 426,
+          "git_blob_sha1": "5526d55a3e13839a1ac320b145252999775bbf7c",
+          "sha256": "e72d41acfe493672f3f13a701683c3dc3f8085616a89bdc6c1f59a28d6c61b77"
+        },
+        "GROW/docs/hyperparameters.md": {
+          "bytes": 2816,
+          "git_blob_sha1": "eb450feaad60fd24bb64f24d6b6f31dcb3c52fa3",
+          "sha256": "73089d60099ebc0ba410a268de6cc0c93d5858fc6c23d16719ac0a5e5b0ce3e6"
+        },
+        "GROW/docs/robustness.md": {
+          "bytes": 2724,
+          "git_blob_sha1": "74c95ff563c451dcf096476ba37c1dd0f49bf66b",
+          "sha256": "0612b3ebee1c24ccfd34f1060f901d3a892769b77192eb0057a4ad97d953eac2"
+        },
+        "GROW/grow/__init__.py": {
+          "bytes": 922,
+          "git_blob_sha1": "c62101d58097afbe86c60c018ca382256a8ca4d3",
+          "sha256": "9ef1e958c7b511707d188d2b8f393546801b757cba9da9571203184ce594f9d3"
+        },
+        "GROW/grow/attacks.py": {
+          "bytes": 4229,
+          "git_blob_sha1": "4ddfed2d5f3f8bd44800fe13bb61910ef4371828",
+          "sha256": "7a184e54bc66a9fe96b5511c1601e809fad741b352871a82c31a6284ae10aaeb"
+        },
+        "GROW/grow/codec.py": {
+          "bytes": 955,
+          "git_blob_sha1": "0b74eff29f76eca4c6b3f6eeb483de06b8302784",
+          "sha256": "b6578d7a81d9da9c667dd5b68d580dae9a213a3b4652a755135cebe459d6a821"
+        },
+        "GROW/grow/config.py": {
+          "bytes": 1952,
+          "git_blob_sha1": "fe013709018bacf85f1327e0d60a77ed341dd7b5",
+          "sha256": "5d849ea1c1766f1008cf31b6c19e6be71161dde583b2f22fffa6bb0a476b9c71"
+        },
+        "GROW/grow/utils.py": {
+          "bytes": 2852,
+          "git_blob_sha1": "31ab910070ec67d1a581038c4494a1b21301eb11",
+          "sha256": "8536f3b1c3fc7b51982ae52a70f2777936a80c318029cd5ca593a380f694f229"
+        },
+        "GROW/grow/watermark.py": {
+          "bytes": 16905,
+          "git_blob_sha1": "a499e78aa9cecbae00d2a97c05e89cf69781d044",
+          "sha256": "46cdbe79506a1b0d8b1601313817accd4f2de269dec83013079fcfe17b90dbd5"
+        },
+        "GROW/pyproject.toml": {
+          "bytes": 1311,
+          "git_blob_sha1": "1ade77d216c89c9b95352156dccbeef9dc81ed62",
+          "sha256": "8b56e0371132dfc33ad6b55dd997b1efc9e7a51d2cda48e623592bc6585d8e4b"
+        },
+        "GROW/requirements.txt": {
+          "bytes": 128,
+          "git_blob_sha1": "588cdb5fa0008a42fb4159c6a1ef80ae974a3202",
+          "sha256": "b32002d26e605280a99f527c228ff5583985ca6ed8682f1643cd7bd00b8c3435"
+        },
+        "GROW/scripts/extract.py": {
+          "bytes": 1972,
+          "git_blob_sha1": "cc4b7c4b67cf9e4d93b398fa9f9abcce0955bf9f",
+          "sha256": "6f0120a7bdf3b94a0d464f3431698c620a9d26a8091b712b41710575142ee234"
+        },
+        "GROW/scripts/run_demo.py": {
+          "bytes": 3297,
+          "git_blob_sha1": "5992d5164e2e1ce7bddc29d18049eb92f918caa3",
+          "sha256": "cf02e7f1b646be87c600eaa99fb9d9fb21d0fae442bba1390a0e0b3c101addad"
+        },
+        "GROW/setup.py": {
+          "bytes": 1115,
+          "git_blob_sha1": "e341b0bb391a1f3a5f8a693c1853a2057d95d681",
+          "sha256": "ec1cfdbec8c3b81d4f9bfded56ffa4beaf5446cf37cf039135fa6eea7b8b485b"
+        },
+        "README.md": {
+          "bytes": 10178,
+          "git_blob_sha1": "28b281c6a394f4d50346623b9e583a02d1bc237d",
+          "sha256": "afe0bd95f2d70736201abec4b10ed239763a9953f76b1176a0f9db419e0f48dd"
+        }
+      },
+      "archive_url": "https://api.github.com/repos/luopengchen/GROW/zipball/6aa69a9c5d4a9e75df457fcca8dfc71b64a6b870",
+      "archive_sha256": "459d6e22352a5f08b851cbc8fbb1a883b762b31acdeef04ee8a5d93ffd290ea0"
+    },
+    {
+      "repo": "EnoalG/Guidance-Watermarking-for-Diffusion-Models",
+      "commit": "d1f8e48946f830087baf32356e5ce0eeec68e27e",
+      "local_root": "/tmp/image-trajectory-reference-a1-official-20260929/guidance-tree/EnoalG-Guidance-Watermarking-for-Diffusion-Models-d1f8e48",
+      "tree_api_sha": "d1f8e48946f830087baf32356e5ce0eeec68e27e",
+      "tree_complete": true,
+      "files": {
+        "README.md": {
+          "bytes": 1629,
+          "git_blob_sha1": "69217329985b5340c96472c01ee0d07d85e4e11b",
+          "sha256": "d6caa84eeb3b7abcb336a5075a54254985bc35adafe9f6e35fed65fb82ce7b7a"
+        },
+        "guidance-watermarking-for-diffusion-models/__init__.py": {
+          "bytes": 0,
+          "git_blob_sha1": "e69de29bb2d1d6434b8b29ae775ad8c2e48c5391",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "guidance-watermarking-for-diffusion-models/benchmarks/__init__.py": {
+          "bytes": 890,
+          "git_blob_sha1": "accd62b489756247bffb44c4e88246c1638833e9",
+          "sha256": "7b0bf1ace1b3a31e63451024bf8e5d0ddf2ad3b138d0ba4f266216b1525eb8c0"
+        },
+        "guidance-watermarking-for-diffusion-models/benchmarks/benchmarks.py": {
+          "bytes": 2239,
+          "git_blob_sha1": "556cbe9cdb8d4feb90c3ff637f7b84ab209055a8",
+          "sha256": "3299e02718f3fbcca9eda61c702f5728544b57013eb6b8832d1fb8380e61bd29"
+        },
+        "guidance-watermarking-for-diffusion-models/benchmarks/datasets.py": {
+          "bytes": 6483,
+          "git_blob_sha1": "87b5b0a337504675aa67d637f26bedd20972737f",
+          "sha256": "88b1f244ca72020396b380b52e1062b2a4ae30063f8f2328735bb46a14479339"
+        },
+        "guidance-watermarking-for-diffusion-models/configs/detector/videoseal_w.yaml": {
+          "bytes": 88,
+          "git_blob_sha1": "41d20113e4bd3991c42d0f7230fd16031d5b8a43",
+          "sha256": "81e94ffbd21cb9b1df03d9b62d9560b0e12c24400631bf3d4df537a16ff23e2a"
+        },
+        "guidance-watermarking-for-diffusion-models/configs/flux.yaml": {
+          "bytes": 396,
+          "git_blob_sha1": "fe62c35fadd82d1b10740aa4111a531f284793a9",
+          "sha256": "63276b2fccb2680a713c5bfa91e456c866c3d74bf0129796ba9f657bd850e915"
+        },
+        "guidance-watermarking-for-diffusion-models/configs/sana.yaml": {
+          "bytes": 439,
+          "git_blob_sha1": "ce2f18c2de1d27ecd16d83fcb54b0d5242255fa6",
+          "sha256": "fb352ea9e6ee0e7f296331445c2d931490346134816676808670ffc252957e9b"
+        },
+        "guidance-watermarking-for-diffusion-models/configs/sd2.yaml": {
+          "bytes": 406,
+          "git_blob_sha1": "eeb227afa51314f6654847fe6548c26c65001250",
+          "sha256": "6ca653a70e201bc2a173c485af5ae6ccdc13ed5a3a73a59d0dc3b150a0669034"
+        },
+        "guidance-watermarking-for-diffusion-models/configs/test_params/flux.yaml": {
+          "bytes": 71,
+          "git_blob_sha1": "845cc1e54d15daf329d856a370127af916092eaa",
+          "sha256": "7e11245ac8951211726f1a6d2b004f20a6b28ae4d002e5d21dc30dc5f635c3c8"
+        },
+        "guidance-watermarking-for-diffusion-models/configs/test_params/sana.yaml": {
+          "bytes": 71,
+          "git_blob_sha1": "665d6b42a29e9f25f18dfac31addd55fa3928ba1",
+          "sha256": "0674a43d2b8eada98efa77d27af296af7e94d1d09ea803b9f1234f55a037c637"
+        },
+        "guidance-watermarking-for-diffusion-models/configs/test_params/sd2.yaml": {
+          "bytes": 71,
+          "git_blob_sha1": "cbeb737ef2cbe717cf2ae74e093be699abac87f8",
+          "sha256": "1aa531665db86bc94619e9477ad21c401f0f3a4a22b1cd0b147cd381d23acef3"
+        },
+        "guidance-watermarking-for-diffusion-models/configs/transforms/none.yaml": {
+          "bytes": 13,
+          "git_blob_sha1": "f3fcc53d4dc3cfcdeeaa97571fb32a55f2a52600",
+          "sha256": "324fb6f5218aafe6154a4a71bf2002dcfb701cc9360f008cf9c1f20f7b3b5aa7"
+        },
+        "guidance-watermarking-for-diffusion-models/configs/transforms/standard_ssig.yaml": {
+          "bytes": 233,
+          "git_blob_sha1": "181740dd3e012ecf0bf9c63729c1074f7a24a641",
+          "sha256": "7cb20a108da4344a31fc66afb0b50de6c874f45ed8a1fc5cb20b4506b7a1b639"
+        },
+        "guidance-watermarking-for-diffusion-models/configs/transforms/standard_ssig_real.yaml": {
+          "bytes": 231,
+          "git_blob_sha1": "8676bab9788da12cae8f03d3507c0d9697f22184",
+          "sha256": "f45df6cfbff5cd586a78720edf7eb45b7145e43ea7922443113ce5358e1e2a5a"
+        },
+        "guidance-watermarking-for-diffusion-models/configs/watermarker/prob-guidance.yaml": {
+          "bytes": 130,
+          "git_blob_sha1": "1e9995aadbe84ae4a084755cf96da9b58adeb18c",
+          "sha256": "1e0a5e7365dc6e6baf87c1948eaf173499c939d0e2b33e1843b886d73c5d003f"
+        },
+        "guidance-watermarking-for-diffusion-models/configs/watermarker/videoseal.yaml": {
+          "bytes": 34,
+          "git_blob_sha1": "8fee91ca1e35dce5a5fa8d01d2011c56c959fa46",
+          "sha256": "a749544c22dab2db2d1878a2bbb11d2c68d0cc2816caf60bbaa34c5d0f48aef4"
+        },
+        "guidance-watermarking-for-diffusion-models/dataset.jsonl": {
+          "bytes": 2114,
+          "git_blob_sha1": "b9c6f451d3ab981bbecfa8f946fdc2cd89c77b47",
+          "sha256": "0153aa0af55d5502988aee744ba2c29c52c4d994128b32e92b41cb74437966b1"
+        },
+        "guidance-watermarking-for-diffusion-models/detector/__init__.py": {
+          "bytes": 1776,
+          "git_blob_sha1": "8ec48900ccbf3185ae3ebc44ea7574747c647cf4",
+          "sha256": "8cfe37941cbf612854f9ae91d04e4afd4a7aca3079e98c8a2966aba2898e7f76"
+        },
+        "guidance-watermarking-for-diffusion-models/detector/detector.py": {
+          "bytes": 6380,
+          "git_blob_sha1": "f5f99bcd403027ebe970ec7b0f653c0714218ce2",
+          "sha256": "75def22e65bd69c5391df570fb203fa3a3a9bb67f9346dd075c9e0d689147b24"
+        },
+        "guidance-watermarking-for-diffusion-models/detector/special.py": {
+          "bytes": 65,
+          "git_blob_sha1": "85764da6bae31df897e5660a1eafc2fbf5e29fb1",
+          "sha256": "082fe4e87ff1e5a3c1fdf204fd3688776d00226c18f5000d10e377dfa6a76f75"
+        },
+        "guidance-watermarking-for-diffusion-models/detector_benchmark.py": {
+          "bytes": 8740,
+          "git_blob_sha1": "a66db729342481bd9f3ef684823800cc5502688d",
+          "sha256": "2d2532ffba90580eeaa2149f31c3853bf9cb45374cda7d79e996fe32864f6aaf"
+        },
+        "guidance-watermarking-for-diffusion-models/generate.py": {
+          "bytes": 4731,
+          "git_blob_sha1": "13366e2da4c0287a0394c0e3812dac27fe576288",
+          "sha256": "01b76d2c22185a5e90e4e82c71adeae75cdbdea675158cabe2d70459f6688941"
+        },
+        "guidance-watermarking-for-diffusion-models/guidance_benchmark.py": {
+          "bytes": 5676,
+          "git_blob_sha1": "d29ad1304fccf113e236cc7c6f1e1ae7c340a815",
+          "sha256": "57a92201ea465f55a3d4bd3d36c7e5032893376714ccfa00f01cecebc7ce05b2"
+        },
+        "guidance-watermarking-for-diffusion-models/post_hoc_benchmark.py": {
+          "bytes": 4495,
+          "git_blob_sha1": "c07405efc37483cfeca3f40b478aa23536adfe54",
+          "sha256": "3309a77a8b1e8c57ce39a8f9f41f3e58811aab524cecc981865b1e208131c9a3"
+        },
+        "guidance-watermarking-for-diffusion-models/quality_benchmark.py": {
+          "bytes": 4432,
+          "git_blob_sha1": "8b5627afa9cd5484db55e4410293ffeab0e5aa20",
+          "sha256": "b5113dccf8cc31caa91a5178d39118a0c718f4e9f373f337d5c07a975528d9cb"
+        },
+        "guidance-watermarking-for-diffusion-models/scripts/flux.sh": {
+          "bytes": 680,
+          "git_blob_sha1": "3421f9c9da1b20e4a5b002f72ced2afbb3d44bfe",
+          "sha256": "2816b97841ebd6971eea8e38f2036c2eb4abe2f66e21d1f857247935d30454ed"
+        },
+        "guidance-watermarking-for-diffusion-models/scripts/sana.sh": {
+          "bytes": 679,
+          "git_blob_sha1": "1fdee3de91ff71fa0278f915efb56022ad2a0f80",
+          "sha256": "2403167d843cde80791e5660b6c4d0e6ae46bc5ad6e01dae48980b5e005f3ab3"
+        },
+        "guidance-watermarking-for-diffusion-models/scripts/sd2.sh": {
+          "bytes": 677,
+          "git_blob_sha1": "d859ead6d36667ef04ce616cb75273a1b7218de2",
+          "sha256": "452e71fabccea4d26d20cee4ca71eba5c5b3b6f84307b062330594d20c9285bd"
+        },
+        "guidance-watermarking-for-diffusion-models/tests/__init__.py": {
+          "bytes": 605,
+          "git_blob_sha1": "ba941e2fac686c9c580cf8a6f299392a09279bc3",
+          "sha256": "0fbd610315b8be28f1c5f338666d831e701c3119dee563304f3b669f5a56de5d"
+        },
+        "guidance-watermarking-for-diffusion-models/tests/example.py": {
+          "bytes": 539,
+          "git_blob_sha1": "09ee3aa46c54b492a03cbf000b21165495a7ffe5",
+          "sha256": "3be8ab155001d63c42eb352092786b9104687b2aca98d850824cedf3d214faeb"
+        },
+        "guidance-watermarking-for-diffusion-models/tests/test_benchmark.py": {
+          "bytes": 4842,
+          "git_blob_sha1": "7a3c9b94d38ce7a4b8c259ab94184562b8784a27",
+          "sha256": "7b7b494c8ec5b47a5d0891e36d1b5a7897db413b062a5672aa1e64f39e0b074e"
+        },
+        "guidance-watermarking-for-diffusion-models/tests/test_data/cover_test.jsonl": {
+          "bytes": 65,
+          "git_blob_sha1": "cbfde43b97e9d1b1a8bd714043aa06a1f8e1d7b4",
+          "sha256": "6519f41f43e58f743967efb8a2170ff8ec06fa1dea9319d7d65fb712c803579a"
+        },
+        "guidance-watermarking-for-diffusion-models/tests/test_data/sd2_ssig.jsonl": {
+          "bytes": 84890,
+          "git_blob_sha1": "64020e105071257798c906124073195015483784",
+          "sha256": "2bb52638b206c5fa1153d41ebc03c65e8fe914040e21ea6f7c709aad0b71a655"
+        },
+        "guidance-watermarking-for-diffusion-models/tests/test_data/sd2_trustmark.jsonl": {
+          "bytes": 136890,
+          "git_blob_sha1": "545b935a6dabc0bff62a6eed65357db39869b7ca",
+          "sha256": "1659c72ef05c0a8d473f6bce199f7d2adea4b7cf7a79b0931a22c64fc12098b6"
+        },
+        "guidance-watermarking-for-diffusion-models/tests/test_detector.py": {
+          "bytes": 4411,
+          "git_blob_sha1": "84b4857827aa565f690c0911f23231c75a90f2c2",
+          "sha256": "86ce96c3830d50ea3205e54511f94ab46976b22f07ac82702262d41df0be09cd"
+        },
+        "guidance-watermarking-for-diffusion-models/tests/test_images/0.jpg": {
+          "bytes": 200140,
+          "git_blob_sha1": "5f0e11680fdbb9b8ed8064bd279b6e625d95f06f",
+          "sha256": "12dc00a1ac5b1c67f87ae29866ff1ccdf6cc3c71310e288d276bddfb3dedff11"
+        },
+        "guidance-watermarking-for-diffusion-models/tests/test_images/1.jpg": {
+          "bytes": 131210,
+          "git_blob_sha1": "6b5f56dd1db760371586544e478a1a75f0b5e2be",
+          "sha256": "9918f15588d42ba2cefd2f84b599412026c96c8f249ed701234d64d84cc43d0e"
+        },
+        "guidance-watermarking-for-diffusion-models/tests/test_transform.py": {
+          "bytes": 1940,
+          "git_blob_sha1": "190898b4344ce1301cde36629022d94edf5b07bd",
+          "sha256": "82c7a5c01898d525bdfb51058adde6f0612f1a1d699273ef4b224af4bfbc1432"
+        },
+        "guidance-watermarking-for-diffusion-models/tests/test_watermarking.py": {
+          "bytes": 1532,
+          "git_blob_sha1": "ba0887585f2d3c7a86ea6681519da271ef739012",
+          "sha256": "845e606f19cf221ccc5476ab66c2411f1017bb6b64d42622ce5518fd2bd498e7"
+        },
+        "guidance-watermarking-for-diffusion-models/tests/watermarking/__init__.py": {
+          "bytes": 0,
+          "git_blob_sha1": "e69de29bb2d1d6434b8b29ae775ad8c2e48c5391",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "guidance-watermarking-for-diffusion-models/tests/watermarking/guidance_watermark.py": {
+          "bytes": 6385,
+          "git_blob_sha1": "64426a45db0e3e64c7d26041fda70479835b6629",
+          "sha256": "afa884f87770e14c5a41e9a40022fef6a5073a6e1133bdd21b6f87ab24350d61"
+        },
+        "guidance-watermarking-for-diffusion-models/tests/watermarking/trustmark.py": {
+          "bytes": 5963,
+          "git_blob_sha1": "5e59c41c7bf2a5367de529d4f79c4d98a3edf675",
+          "sha256": "9df8bf8a2b40a05bad148880faf57ad01f1ea980a3d08025a19c1fedea892c96"
+        },
+        "guidance-watermarking-for-diffusion-models/tests/watermarking/vae_post_hoc.py": {
+          "bytes": 3656,
+          "git_blob_sha1": "223b902900ff643585e175df94a1c4bf8bc02bd6",
+          "sha256": "01901ed5564881d4dd8fe2d200a86b00dae0d1e465f15822ac604221136cec82"
+        },
+        "guidance-watermarking-for-diffusion-models/transforms/__init__.py": {
+          "bytes": 923,
+          "git_blob_sha1": "092c36e6ab5dd20bd8083468af88bc3befad088d",
+          "sha256": "5cd014049c0ed550a5877e95f7f17d65bfcb6f0f58ad4c3076bd81cac78a4869"
+        },
+        "guidance-watermarking-for-diffusion-models/transforms/attacks.py": {
+          "bytes": 1352,
+          "git_blob_sha1": "fcf84a55c20986462bd9e299cfa93b6f7275db5e",
+          "sha256": "2b56c37d5c2b50a4c89490a5c97a24a7e4b33fa2bfc9bef6e841696ae8fc8e5c"
+        },
+        "guidance-watermarking-for-diffusion-models/transforms/geometric.py": {
+          "bytes": 2071,
+          "git_blob_sha1": "cbc384b708dff7dd31bafdc8632195aacb3aed55",
+          "sha256": "0d23325e42ff43f729f3615df55dbefa2bcf60ac76eeb7a00825b65ab018329a"
+        },
+        "guidance-watermarking-for-diffusion-models/transforms/quality.py": {
+          "bytes": 1390,
+          "git_blob_sha1": "bb5698ee836928e4abd4f86b542e632a69c4d3c4",
+          "sha256": "06955c147840cc660521b842e1b9fd3a19808c4830a59bc3b49980c6bcb9284e"
+        },
+        "guidance-watermarking-for-diffusion-models/transforms/transforms.py": {
+          "bytes": 1369,
+          "git_blob_sha1": "915dd5743aae122cd98037c8584fcc5ceaf790d4",
+          "sha256": "98e2f5a66a8de7b0ae235ecad783d9890ac79fa0a5683f4860004de101613574"
+        },
+        "guidance-watermarking-for-diffusion-models/transforms/valuemetric.py": {
+          "bytes": 4335,
+          "git_blob_sha1": "e6e6263b38ea6ca6920ee137a02542f1bb6da84b",
+          "sha256": "b22b0abc229366c74e89d7a753a0295e8c6979237067f730212b64367b251850"
+        },
+        "guidance-watermarking-for-diffusion-models/util/__init__.py": {
+          "bytes": 0,
+          "git_blob_sha1": "e69de29bb2d1d6434b8b29ae775ad8c2e48c5391",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "guidance-watermarking-for-diffusion-models/util/util_benchmark.py": {
+          "bytes": 1876,
+          "git_blob_sha1": "07b797f647690fcbc2846dba1e1b56072d107a5c",
+          "sha256": "5f0aabc9bb5c2cfbba172c2a867f884f0cb01a50407cca61102bc733240d11f4"
+        },
+        "guidance-watermarking-for-diffusion-models/util/util_detector.py": {
+          "bytes": 139,
+          "git_blob_sha1": "cd906370a98ce4d7bcea8c9b230338c596b983b2",
+          "sha256": "1bb93d39885b26ea1b54b236f08c2f8158b3cb81ffd697ba8a0774fedffd0dd1"
+        },
+        "guidance-watermarking-for-diffusion-models/util/util_images.py": {
+          "bytes": 2055,
+          "git_blob_sha1": "ac6166f110595a0c3fd81db931e4f8229ab1899f",
+          "sha256": "82149524796771450f2d29b26262caa98dba50116b6fe8bd5c3226de756d876d"
+        },
+        "guidance-watermarking-for-diffusion-models/watermarking/__init__.py": {
+          "bytes": 3269,
+          "git_blob_sha1": "46e649ce46c8fd3cabc83a34a25aaee8e4185119",
+          "sha256": "e94467c81b8d305831fec3412e3638f451258926b1709fb408d9bfd3a5c99a12"
+        },
+        "guidance-watermarking-for-diffusion-models/watermarking/aggregation.py": {
+          "bytes": 7954,
+          "git_blob_sha1": "3fd75c27ab633a735a75cc617647fc082a23438a",
+          "sha256": "484a0797b8f5c3328457d455ba4be166c135464cd330ed8c9d295cc279c9afde"
+        },
+        "guidance-watermarking-for-diffusion-models/watermarking/losses.py": {
+          "bytes": 7127,
+          "git_blob_sha1": "34b062861cf13e84690ec1aeb57b64317292a99e",
+          "sha256": "655036451f97d754356e43d22b4e382b633cd155cd685f5735fc6c56926ba25f"
+        },
+        "guidance-watermarking-for-diffusion-models/watermarking/modified_diffusers/__init__.py": {
+          "bytes": 0,
+          "git_blob_sha1": "e69de29bb2d1d6434b8b29ae775ad8c2e48c5391",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "guidance-watermarking-for-diffusion-models/watermarking/modified_diffusers/flux.py": {
+          "bytes": 43339,
+          "git_blob_sha1": "3215fd7787d38c214e7d84ef9a7b2145ee650bea",
+          "sha256": "a8f1a9440519b8179550331583d44d418afc8158e5d18ae8a40113c7058c02cf"
+        },
+        "guidance-watermarking-for-diffusion-models/watermarking/modified_diffusers/sana.py": {
+          "bytes": 36585,
+          "git_blob_sha1": "ca9df32222d0d4bda3bda0740352468ff1598915",
+          "sha256": "7187b89df11503bfc909b46b99582fd57b2b0ecc315d326652282248065da3f9"
+        },
+        "guidance-watermarking-for-diffusion-models/watermarking/modified_diffusers/stable_diffusion.py": {
+          "bytes": 36111,
+          "git_blob_sha1": "84518237ea97c8df3ee357847062f54518f712e7",
+          "sha256": "df6effcf493a0708536c550a66d5565de5f0762420d19ae20e1715424de2f34c"
+        },
+        "guidance-watermarking-for-diffusion-models/watermarking/watermark.py": {
+          "bytes": 27131,
+          "git_blob_sha1": "d5df339d3ba64a1d149285a35aea99d13d64ad36",
+          "sha256": "605ba593eb1edaea7027eea8e3ddf4a137d0f543e1740f41b7ea7bbd71a2a4e7"
+        },
+        "guidance-watermarking-for-diffusion-models/whitening.py": {
+          "bytes": 4998,
+          "git_blob_sha1": "27293e94b4011b57de18d2e1883f176bce9bfa8b",
+          "sha256": "cd32aebee9024d71776068a408e1cd1ba5d45e377dea9b03fbfb936c27fd4472"
+        }
+      },
+      "archive_url": "https://api.github.com/repos/EnoalG/Guidance-Watermarking-for-Diffusion-Models/zipball/d1f8e48946f830087baf32356e5ce0eeec68e27e",
+      "archive_sha256": "7cb8c267bbfa7f7a23b36594f0ce24cfd62d4426e14dc68f8dba203a8aceca05"
+    }
+  ],
+  "additional_core_handoff_match": {
+    "path": "GROW/grow/utils.py",
+    "sha256": "8536f3b1c3fc7b51982ae52a70f2777936a80c318029cd5ca593a380f694f229",
+    "source": "Separate 2026-09-29 handoff grow_utils.py; original six-file handoff manifest unchanged"
+  }
+}

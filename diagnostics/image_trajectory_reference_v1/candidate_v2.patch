@@ -1,0 +1,2133 @@
+diff --git a/diagnostics/image_trajectory_reference_v1/asset_probe.json b/diagnostics/image_trajectory_reference_v1/asset_probe.json
+new file mode 100644
+index 0000000..00bd762
+--- /dev/null
++++ b/diagnostics/image_trajectory_reference_v1/asset_probe.json
+@@ -0,0 +1,42 @@
++{
++  "observed_at": "2026-09-29T02:34:09.9383984Z",
++  "authentication": "anonymous",
++  "method": "Windows HTTPS metadata only; no weights downloaded",
++  "observations": [
++    {
++      "url": "https://huggingface.co/api/models/stabilityai/stable-diffusion-2-1-base",
++      "status": 401,
++      "error": "Response status code does not indicate success: 401 (Unauthorized).",
++      "detail": "\r\n{\r\n  \"error\": \"Invalid username or password.\"\r\n}"
++    },
++    {
++      "url": "https://huggingface.co/stabilityai/stable-diffusion-2-1-base/resolve/main/model_index.json",
++      "status": 401,
++      "error": "Response status code does not indicate success: 401 (Unauthorized).",
++      "detail": "Invalid username or password."
++    }
++  ],
++  "conclusion": "ASSET_ACCESS_REQUIRED; anonymous original model inaccessible; cause (gated/private/deleted/other) not established",
++  "model_weights_downloaded": false,
++  "model_loaded": false,
++  "replacement_model": null,
++  "guidance_assets": {
++    "status": "INCOMPLETE_ASSET_INSTRUCTIONS",
++    "source_commit": "d1f8e48946f830087baf32356e5ce0eeec68e27e",
++    "absent_from_source": [
++      "detector/models/videoseal_y_256b_img_dec.pt",
++      "detector/models/whitener",
++      "setup.py",
++      "pyproject.toml"
++    ],
++    "external_whitener_path": "placeholder WHITENER_PATH; samples.pt not provided",
++    "source_review": "A3 read-only source review, detector/__init__.py:15-34 and full tree"
++  },
++  "required_for_real_grow_run": [
++    "Access to original stabilityai/stable-diffusion-2-1-base model repository; optional HF_TOKEN does not guarantee this",
++    "Resolve original model commit SHA and load scheduler/pipeline components at that same SHA",
++    "Published candidate source SHA bound by notebook builder; clean source verification",
++    "Python3.12 and successful isolated pinned dependency installation/import checks",
++    "User-authorized Colab CUDA execution of this fixed 2/4/8 experiment"
++  ]
++}
+diff --git a/diagnostics/image_trajectory_reference_v1/dependency_probe.json b/diagnostics/image_trajectory_reference_v1/dependency_probe.json
+new file mode 100644
+index 0000000..17b6b44
+--- /dev/null
++++ b/diagnostics/image_trajectory_reference_v1/dependency_probe.json
+@@ -0,0 +1,180 @@
++{
++  "date": "2026-09-29",
++  "method": "Windows HTTPS PyPI JSON metadata; no package installation",
++  "python": "3.12",
++  "packages": [
++    {
++      "requires_python": ">=3.10.0",
++      "pure_wheel": true,
++      "package": "diffusers",
++      "cp312_wheel": false,
++      "status": 200,
++      "version": "0.39.0",
++      "base_requires_dist": [
++        "importlib_metadata",
++        "filelock",
++        "httpx<1.0.0",
++        "huggingface-hub<2.0,>=0.34.0",
++        "numpy",
++        "regex!=2019.12.17",
++        "requests",
++        "safetensors>=0.8.0",
++        "Pillow"
++      ]
++    },
++    {
++      "requires_python": ">=3.9.0",
++      "pure_wheel": true,
++      "package": "transformers",
++      "cp312_wheel": false,
++      "status": 200,
++      "version": "4.57.6",
++      "base_requires_dist": [
++        "filelock",
++        "huggingface-hub<1.0,>=0.34.0",
++        "numpy>=1.17",
++        "packaging>=20.0",
++        "pyyaml>=5.1",
++        "regex!=2019.12.17",
++        "requests",
++        "tokenizers<=0.23.0,>=0.22.0",
++        "safetensors>=0.4.3",
++        "tqdm>=4.27"
++      ]
++    },
++    {
++      "requires_python": ">=3.10.0",
++      "pure_wheel": true,
++      "package": "accelerate",
++      "cp312_wheel": false,
++      "status": 200,
++      "version": "1.11.0",
++      "base_requires_dist": [
++        "numpy>=1.17",
++        "packaging>=20.0",
++        "psutil",
++        "pyyaml",
++        "torch>=2.0.0",
++        "huggingface_hub>=0.21.0",
++        "safetensors>=0.4.3"
++      ]
++    },
++    {
++      "requires_python": ">=3.12",
++      "pure_wheel": false,
++      "package": "numpy",
++      "cp312_wheel": true,
++      "status": 200,
++      "version": "2.5.2",
++      "base_requires_dist": []
++    },
++    {
++      "requires_python": ">=3.10",
++      "pure_wheel": false,
++      "package": "Pillow",
++      "cp312_wheel": true,
++      "status": 200,
++      "version": "12.3.0",
++      "base_requires_dist": []
++    },
++    {
++      "requires_python": ">=3.8",
++      "pure_wheel": true,
++      "package": "tqdm",
++      "cp312_wheel": false,
++      "status": 200,
++      "version": "4.70.0",
++      "base_requires_dist": [
++        "colorama; platform_system == \"Windows\""
++      ]
++    },
++    {
++      "requires_python": ">=3.8",
++      "pure_wheel": false,
++      "package": "PyYAML",
++      "cp312_wheel": true,
++      "status": 200,
++      "version": "6.0.3",
++      "base_requires_dist": []
++    },
++    {
++      "requires_python": ">=3.8.0",
++      "pure_wheel": true,
++      "package": "huggingface_hub",
++      "cp312_wheel": false,
++      "status": 200,
++      "version": "0.36.2",
++      "base_requires_dist": [
++        "filelock",
++        "fsspec>=2023.5.0",
++        "hf-xet<2.0.0,>=1.1.3; platform_machine == \"x86_64\" or platform_machine == \"amd64\" or platform_machine == \"arm64\" or platform_machine == \"aarch64\"",
++        "packaging>=20.9",
++        "pyyaml>=5.1",
++        "requests",
++        "tqdm>=4.42.1",
++        "typing-extensions>=3.7.4.3"
++      ]
++    },
++    {
++      "requires_python": ">=3.10",
++      "pure_wheel": false,
++      "package": "safetensors",
++      "cp312_wheel": false,
++      "status": 200,
++      "version": "0.8.0",
++      "base_requires_dist": []
++    }
++  ],
++  "local_numpy_torch_interop": "Python3.12.3/torch2.6.0+cpu/torchvision0.21.0+cpu/numpy2.5.2: float32 NumPy->torch->NumPy matched in isolated temp venv",
++  "limitations": [
++    "Package metadata and local CPU fixtures are not full Colab/model execution proof",
++    "Direct dependencies pinned; transitive resolution recorded by pip freeze during user run"
++  ],
++  "superseded_initial_torch_choice": {
++    "torch": "2.5.1",
++    "torchvision": "0.20.1",
++    "reason": "Avoid optional diffusers[torch]>=2.6 and Transformers .bin loading compatibility risk before freeze; no method change"
++  },
++  "pytorch_wheels": [
++    {
++      "package": "torch",
++      "version": "2.6.0",
++      "channel": "cpu",
++      "index_url": "https://download.pytorch.org/whl/cpu/torch/",
++      "wheel": "https://download-r2.pytorch.org/whl/cpu/torch-2.6.0%2Bcpu-cp312-cp312-linux_x86_64.whl#sha256=59e78aa0c690f70734e42670036d6b541930b8eabbaa18d94e090abf14cc4d91"
++    },
++    {
++      "package": "torchvision",
++      "version": "0.21.0",
++      "channel": "cpu",
++      "index_url": "https://download.pytorch.org/whl/cpu/torchvision/",
++      "wheel": "https://download-r2.pytorch.org/whl/cpu/torchvision-0.21.0%2Bcpu-cp312-cp312-linux_x86_64.whl#sha256=d6874431e678ba107b60a83f255c33f3755f06bad587b1b919aa514ec325dcd8"
++    },
++    {
++      "package": "torch",
++      "version": "2.6.0",
++      "channel": "cu124",
++      "index_url": "https://download.pytorch.org/whl/cu124/torch/",
++      "wheel": "https://download-r2.pytorch.org/whl/cu124/torch-2.6.0%2Bcu124-cp312-cp312-linux_x86_64.whl#sha256=a393b506844035c0dac2f30ea8478c343b8e95a429f06f3b3cadfc7f53adb597"
++    },
++    {
++      "package": "torchvision",
++      "version": "0.21.0",
++      "channel": "cu124",
++      "index_url": "https://download.pytorch.org/whl/cu124/torchvision/",
++      "wheel": "https://download-r2.pytorch.org/whl/cu124/torchvision-0.21.0%2Bcu124-cp312-cp312-linux_x86_64.whl#sha256=efb53ea0af7bf09b7b53e2a18b9be6d245f7d46a90b51d5cf97f37e9b929a991"
++    }
++  ],
++  "accelerate_cpu_wheel": {
++    "version": "1.11.0",
++    "sha256": "a628fa6beb069b8e549460fc449135d5bd8d73e7a11fd09f0bc9fc4ace7f06f1",
++    "verification": "Compared downloaded wheel SHA256 with PyPI metadata before local installation"
++  },
++  "local_psutil_transitive": {
++    "package": "psutil",
++    "version": "7.2.2",
++    "filename": "psutil-7.2.2-cp36-abi3-manylinux2010_x86_64.manylinux_2_12_x86_64.manylinux_2_28_x86_64.whl",
++    "sha256": "076a2d2f923fd4821644f5ba89f059523da90dc9014e85f8e45a5774ca5bc6f9",
++    "url": "https://files.pythonhosted.org/packages/b5/70/5d8df3b09e25bce090399cf48e452d25c935ab72dad19406c77f4e828045/psutil-7.2.2-cp36-abi3-manylinux2010_x86_64.manylinux_2_12_x86_64.manylinux_2_28_x86_64.whl"
++  }
++}
+diff --git a/diagnostics/image_trajectory_reference_v1/local_validation.json b/diagnostics/image_trajectory_reference_v1/local_validation.json
+new file mode 100644
+index 0000000..8bfc60f
+--- /dev/null
++++ b/diagnostics/image_trajectory_reference_v1/local_validation.json
+@@ -0,0 +1,82 @@
++{
++  "status": "ENGINEERING_PASS",
++  "command": [
++    "/tmp/image-trajectory-reference-a1-official-20260929/cpu-venv-torch26/bin/python",
++    "-m",
++    "pytest",
++    "tests/test_image_trajectory_reference.py",
++    "-q"
++  ],
++  "returncode": 0,
++  "wall_seconds": 7.085256066005968,
++  "python": "3.12.3 (main, Aug 31 2026, 10:18:26) [GCC 13.3.0]",
++  "packages": {
++    "torch": "2.6.0+cpu",
++    "torchvision": "0.21.0+cpu",
++    "diffusers": "0.39.0",
++    "transformers": "4.57.6",
++    "accelerate": "1.11.0",
++    "numpy": "2.5.2",
++    "Pillow": "12.3.0",
++    "tqdm": "4.70.0",
++    "PyYAML": "6.0.3",
++    "huggingface_hub": "0.36.2",
++    "safetensors": "0.8.0",
++    "pytest": "9.1.1",
++    "psutil": "7.2.2"
++  },
++  "environment": "/tmp/image-trajectory-reference-a1-official-20260929/cpu-venv-torch26",
++  "dependency_isolation": "New temporary venv installs torch2.6.0+cpu,torchvision0.21.0+cpu,accelerate1.11.0 and its missing psutil7.2.2 transitive dependency; .pth reuses other CEG environment dependencies read-only. No existing environment files changed.",
++  "cpu_fixture": "Actual byte-verified official GROW writer and _read_bits plus real DDIMScheduler; fake UNet,VAE,tokenizer,text_encoder, no model weights",
++  "core_imports": [
++    "torch",
++    "torchvision",
++    "accelerate",
++    "DDIMScheduler",
++    "StableDiffusionPipeline"
++  ],
++  "numpy_torch_interop": "float32 roundtrip matched",
++  "gpu_executed": false,
++  "model_loaded": false,
++  "colab_setup_executed": false,
++  "published_source_sha": null,
++  "evidence_ceiling": "CPU fake/engineering only, no image-watermark efficacy claim",
++  "historical_preupgrade_tests": "7 passed in5.10s with original local torch2.5.1+cpu; superseded for compatibility validation by this isolated torch2.6 run",
++  "prior_real_video_result": "Retained unchanged:6/6 points,18/18 candidates,0/18 ACCEPT,16/18 loss worsening; not a result of this image candidate",
++  "pip_check": {
++    "returncode": 0,
++    "output": "No broken requirements found.\n",
++    "evidence_version": "v1; dependency environment unchanged"
++  },
++  "environment_variables": {
++    "GROW_REFERENCE_SOURCE_ROOT": "/tmp/image-trajectory-reference-a1-official-20260929/grow-tree/luopengchen-GROW-6aa69a9"
++  },
++  "pytest_summary": "14 passed in 5.76s",
++  "skipped_in_main_validation": 0,
++  "absent_cache_isolation": {
++    "status": "PASS",
++    "summary": "2 passed, 5 skipped in 1.12s",
++    "source_path": "/tmp/image-reference-intentionally-missing-source",
++    "meaning": "Explicit skip for unavailable upstream fixture; never counted as upstream-method test PASS",
++    "evidence_version": "v1 independent isolation check, not rerun for v2"
++  },
++  "v1_inherited": {
++    "command": [
++      "/tmp/image-trajectory-reference-a1-official-20260929/cpu-venv-torch26/bin/python",
++      "-m",
++      "pytest",
++      "tests/test_image_trajectory_reference.py",
++      "-q"
++    ],
++    "summary": "7 passed in 5.00s",
++    "evidence": "snapshot_v1.json + candidate_v1.patch + unchanged pytest_v1.txt",
++    "meaning": "Original 7-test validation at v1; retained distinctly from v2"
++  },
++  "revision": "v2_metadata_error_classification_and_paper_description",
++  "delta": [
++    "MODEL_INFO HTTP401/403/404 remain ASSET_ACCESS_REQUIRED",
++    "MODEL_INFO HTTP429/503/TimeoutError/invalid revision become RESOLVE_FAILED + ENGINEERING_FAILURE",
++    "All14 tests actually ran; fixed2/4/8 rows retained and no model/CUDA probe on metadata failures",
++    "Paper description removes nonexistent explicit per-step detach; original official writer bytes unchanged"
++  ]
++}
+diff --git a/diagnostics/image_trajectory_reference_v1/official_source_manifest.json b/diagnostics/image_trajectory_reference_v1/official_source_manifest.json
+new file mode 100644
+index 0000000..d1f2be7
+--- /dev/null
++++ b/diagnostics/image_trajectory_reference_v1/official_source_manifest.json
+@@ -0,0 +1,453 @@
++{
++  "status": "COMPLETE_SOURCE_TREES_VERIFIED",
++  "core_handoff_matches": 7,
++  "repositories": [
++    {
++      "repo": "luopengchen/GROW",
++      "commit": "6aa69a9c5d4a9e75df457fcca8dfc71b64a6b870",
++      "local_root": "/tmp/image-trajectory-reference-a1-official-20260929/grow-tree/luopengchen-GROW-6aa69a9",
++      "tree_api_sha": "6aa69a9c5d4a9e75df457fcca8dfc71b64a6b870",
++      "tree_complete": true,
++      "files": {
++        "GROW/CITATION.cff": {
++          "bytes": 1115,
++          "git_blob_sha1": "4ab32f0584c8d9ed49baeadb6fdada729e302bf7",
++          "sha256": "f3758162de9176193e46289c7d004e8257bd60a2ebc2e54a33f1a2d2f662ed8d"
++        },
++        "GROW/CONTRIBUTING.md": {
++          "bytes": 1105,
++          "git_blob_sha1": "5048e4330d6ad4dc515a618bf1c2f0fab12ce832",
++          "sha256": "6354d693878db7e0131efef8dadaaf8d731e2f6f24e24ee058142c1f2d5e2dac"
++        },
++        "GROW/LICENSE": {
++          "bytes": 1118,
++          "git_blob_sha1": "4e563d6727a1b3bfa93794fb27982f54e75370e0",
++          "sha256": "958a57f511ae7176c2eaf3ed81fc16e4b4dde44efe1f89191bfb44d091bb0c37"
++        },
++        "GROW/MANIFEST.in": {
++          "bytes": 141,
++          "git_blob_sha1": "e5e53dc9d6e207e03a4d10e7024a88c10b416f4f",
++          "sha256": "c93c962f4db0183a0f27b6abed68b9274810ea7e5ab17d849d32d5bad6869e55"
++        },
++        "GROW/README.md": {
++          "bytes": 12144,
++          "git_blob_sha1": "056ff5c8e490da572554b3492daed11590e05f18",
++          "sha256": "674deb49a846e8dd7c2c7108502a943fda000883c69d517d38bf7d85e8e4f521"
++        },
++        "GROW/assets/README.md": {
++          "bytes": 2780,
++          "git_blob_sha1": "3bc055516e486b7bbd0676773b21daf62e1730b4",
++          "sha256": "0774347bafcfe0365fc5d7ff3dbe978796b404def77b4ea1ed80709b772261a9"
++        },
++        "GROW/configs/default.yaml": {
++          "bytes": 426,
++          "git_blob_sha1": "5526d55a3e13839a1ac320b145252999775bbf7c",
++          "sha256": "e72d41acfe493672f3f13a701683c3dc3f8085616a89bdc6c1f59a28d6c61b77"
++        },
++        "GROW/docs/hyperparameters.md": {
++          "bytes": 2816,
++          "git_blob_sha1": "eb450feaad60fd24bb64f24d6b6f31dcb3c52fa3",
++          "sha256": "73089d60099ebc0ba410a268de6cc0c93d5858fc6c23d16719ac0a5e5b0ce3e6"
++        },
++        "GROW/docs/robustness.md": {
++          "bytes": 2724,
++          "git_blob_sha1": "74c95ff563c451dcf096476ba37c1dd0f49bf66b",
++          "sha256": "0612b3ebee1c24ccfd34f1060f901d3a892769b77192eb0057a4ad97d953eac2"
++        },
++        "GROW/grow/__init__.py": {
++          "bytes": 922,
++          "git_blob_sha1": "c62101d58097afbe86c60c018ca382256a8ca4d3",
++          "sha256": "9ef1e958c7b511707d188d2b8f393546801b757cba9da9571203184ce594f9d3"
++        },
++        "GROW/grow/attacks.py": {
++          "bytes": 4229,
++          "git_blob_sha1": "4ddfed2d5f3f8bd44800fe13bb61910ef4371828",
++          "sha256": "7a184e54bc66a9fe96b5511c1601e809fad741b352871a82c31a6284ae10aaeb"
++        },
++        "GROW/grow/codec.py": {
++          "bytes": 955,
++          "git_blob_sha1": "0b74eff29f76eca4c6b3f6eeb483de06b8302784",
++          "sha256": "b6578d7a81d9da9c667dd5b68d580dae9a213a3b4652a755135cebe459d6a821"
++        },
++        "GROW/grow/config.py": {
++          "bytes": 1952,
++          "git_blob_sha1": "fe013709018bacf85f1327e0d60a77ed341dd7b5",
++          "sha256": "5d849ea1c1766f1008cf31b6c19e6be71161dde583b2f22fffa6bb0a476b9c71"
++        },
++        "GROW/grow/utils.py": {
++          "bytes": 2852,
++          "git_blob_sha1": "31ab910070ec67d1a581038c4494a1b21301eb11",
++          "sha256": "8536f3b1c3fc7b51982ae52a70f2777936a80c318029cd5ca593a380f694f229"
++        },
++        "GROW/grow/watermark.py": {
++          "bytes": 16905,
++          "git_blob_sha1": "a499e78aa9cecbae00d2a97c05e89cf69781d044",
++          "sha256": "46cdbe79506a1b0d8b1601313817accd4f2de269dec83013079fcfe17b90dbd5"
++        },
++        "GROW/pyproject.toml": {
++          "bytes": 1311,
++          "git_blob_sha1": "1ade77d216c89c9b95352156dccbeef9dc81ed62",
++          "sha256": "8b56e0371132dfc33ad6b55dd997b1efc9e7a51d2cda48e623592bc6585d8e4b"
++        },
++        "GROW/requirements.txt": {
++          "bytes": 128,
++          "git_blob_sha1": "588cdb5fa0008a42fb4159c6a1ef80ae974a3202",
++          "sha256": "b32002d26e605280a99f527c228ff5583985ca6ed8682f1643cd7bd00b8c3435"
++        },
++        "GROW/scripts/extract.py": {
++          "bytes": 1972,
++          "git_blob_sha1": "cc4b7c4b67cf9e4d93b398fa9f9abcce0955bf9f",
++          "sha256": "6f0120a7bdf3b94a0d464f3431698c620a9d26a8091b712b41710575142ee234"
++        },
++        "GROW/scripts/run_demo.py": {
++          "bytes": 3297,
++          "git_blob_sha1": "5992d5164e2e1ce7bddc29d18049eb92f918caa3",
++          "sha256": "cf02e7f1b646be87c600eaa99fb9d9fb21d0fae442bba1390a0e0b3c101addad"
++        },
++        "GROW/setup.py": {
++          "bytes": 1115,
++          "git_blob_sha1": "e341b0bb391a1f3a5f8a693c1853a2057d95d681",
++          "sha256": "ec1cfdbec8c3b81d4f9bfded56ffa4beaf5446cf37cf039135fa6eea7b8b485b"
++        },
++        "README.md": {
++          "bytes": 10178,
++          "git_blob_sha1": "28b281c6a394f4d50346623b9e583a02d1bc237d",
++          "sha256": "afe0bd95f2d70736201abec4b10ed239763a9953f76b1176a0f9db419e0f48dd"
++        }
++      },
++      "archive_url": "https://api.github.com/repos/luopengchen/GROW/zipball/6aa69a9c5d4a9e75df457fcca8dfc71b64a6b870",
++      "archive_sha256": "459d6e22352a5f08b851cbc8fbb1a883b762b31acdeef04ee8a5d93ffd290ea0"
++    },
++    {
++      "repo": "EnoalG/Guidance-Watermarking-for-Diffusion-Models",
++      "commit": "d1f8e48946f830087baf32356e5ce0eeec68e27e",
++      "local_root": "/tmp/image-trajectory-reference-a1-official-20260929/guidance-tree/EnoalG-Guidance-Watermarking-for-Diffusion-Models-d1f8e48",
++      "tree_api_sha": "d1f8e48946f830087baf32356e5ce0eeec68e27e",
++      "tree_complete": true,
++      "files": {
++        "README.md": {
++          "bytes": 1629,
++          "git_blob_sha1": "69217329985b5340c96472c01ee0d07d85e4e11b",
++          "sha256": "d6caa84eeb3b7abcb336a5075a54254985bc35adafe9f6e35fed65fb82ce7b7a"
++        },
++        "guidance-watermarking-for-diffusion-models/__init__.py": {
++          "bytes": 0,
++          "git_blob_sha1": "e69de29bb2d1d6434b8b29ae775ad8c2e48c5391",
++          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
++        },
++        "guidance-watermarking-for-diffusion-models/benchmarks/__init__.py": {
++          "bytes": 890,
++          "git_blob_sha1": "accd62b489756247bffb44c4e88246c1638833e9",
++          "sha256": "7b0bf1ace1b3a31e63451024bf8e5d0ddf2ad3b138d0ba4f266216b1525eb8c0"
++        },
++        "guidance-watermarking-for-diffusion-models/benchmarks/benchmarks.py": {
++          "bytes": 2239,
++          "git_blob_sha1": "556cbe9cdb8d4feb90c3ff637f7b84ab209055a8",
++          "sha256": "3299e02718f3fbcca9eda61c702f5728544b57013eb6b8832d1fb8380e61bd29"
++        },
++        "guidance-watermarking-for-diffusion-models/benchmarks/datasets.py": {
++          "bytes": 6483,
++          "git_blob_sha1": "87b5b0a337504675aa67d637f26bedd20972737f",
++          "sha256": "88b1f244ca72020396b380b52e1062b2a4ae30063f8f2328735bb46a14479339"
++        },
++        "guidance-watermarking-for-diffusion-models/configs/detector/videoseal_w.yaml": {
++          "bytes": 88,
++          "git_blob_sha1": "41d20113e4bd3991c42d0f7230fd16031d5b8a43",
++          "sha256": "81e94ffbd21cb9b1df03d9b62d9560b0e12c24400631bf3d4df537a16ff23e2a"
++        },
++        "guidance-watermarking-for-diffusion-models/configs/flux.yaml": {
++          "bytes": 396,
++          "git_blob_sha1": "fe62c35fadd82d1b10740aa4111a531f284793a9",
++          "sha256": "63276b2fccb2680a713c5bfa91e456c866c3d74bf0129796ba9f657bd850e915"
++        },
++        "guidance-watermarking-for-diffusion-models/configs/sana.yaml": {
++          "bytes": 439,
++          "git_blob_sha1": "ce2f18c2de1d27ecd16d83fcb54b0d5242255fa6",
++          "sha256": "fb352ea9e6ee0e7f296331445c2d931490346134816676808670ffc252957e9b"
++        },
++        "guidance-watermarking-for-diffusion-models/configs/sd2.yaml": {
++          "bytes": 406,
++          "git_blob_sha1": "eeb227afa51314f6654847fe6548c26c65001250",
++          "sha256": "6ca653a70e201bc2a173c485af5ae6ccdc13ed5a3a73a59d0dc3b150a0669034"
++        },
++        "guidance-watermarking-for-diffusion-models/configs/test_params/flux.yaml": {
++          "bytes": 71,
++          "git_blob_sha1": "845cc1e54d15daf329d856a370127af916092eaa",
++          "sha256": "7e11245ac8951211726f1a6d2b004f20a6b28ae4d002e5d21dc30dc5f635c3c8"
++        },
++        "guidance-watermarking-for-diffusion-models/configs/test_params/sana.yaml": {
++          "bytes": 71,
++          "git_blob_sha1": "665d6b42a29e9f25f18dfac31addd55fa3928ba1",
++          "sha256": "0674a43d2b8eada98efa77d27af296af7e94d1d09ea803b9f1234f55a037c637"
++        },
++        "guidance-watermarking-for-diffusion-models/configs/test_params/sd2.yaml": {
++          "bytes": 71,
++          "git_blob_sha1": "cbeb737ef2cbe717cf2ae74e093be699abac87f8",
++          "sha256": "1aa531665db86bc94619e9477ad21c401f0f3a4a22b1cd0b147cd381d23acef3"
++        },
++        "guidance-watermarking-for-diffusion-models/configs/transforms/none.yaml": {
++          "bytes": 13,
++          "git_blob_sha1": "f3fcc53d4dc3cfcdeeaa97571fb32a55f2a52600",
++          "sha256": "324fb6f5218aafe6154a4a71bf2002dcfb701cc9360f008cf9c1f20f7b3b5aa7"
++        },
++        "guidance-watermarking-for-diffusion-models/configs/transforms/standard_ssig.yaml": {
++          "bytes": 233,
++          "git_blob_sha1": "181740dd3e012ecf0bf9c63729c1074f7a24a641",
++          "sha256": "7cb20a108da4344a31fc66afb0b50de6c874f45ed8a1fc5cb20b4506b7a1b639"
++        },
++        "guidance-watermarking-for-diffusion-models/configs/transforms/standard_ssig_real.yaml": {
++          "bytes": 231,
++          "git_blob_sha1": "8676bab9788da12cae8f03d3507c0d9697f22184",
++          "sha256": "f45df6cfbff5cd586a78720edf7eb45b7145e43ea7922443113ce5358e1e2a5a"
++        },
++        "guidance-watermarking-for-diffusion-models/configs/watermarker/prob-guidance.yaml": {
++          "bytes": 130,
++          "git_blob_sha1": "1e9995aadbe84ae4a084755cf96da9b58adeb18c",
++          "sha256": "1e0a5e7365dc6e6baf87c1948eaf173499c939d0e2b33e1843b886d73c5d003f"
++        },
++        "guidance-watermarking-for-diffusion-models/configs/watermarker/videoseal.yaml": {
++          "bytes": 34,
++          "git_blob_sha1": "8fee91ca1e35dce5a5fa8d01d2011c56c959fa46",
++          "sha256": "a749544c22dab2db2d1878a2bbb11d2c68d0cc2816caf60bbaa34c5d0f48aef4"
++        },
++        "guidance-watermarking-for-diffusion-models/dataset.jsonl": {
++          "bytes": 2114,
++          "git_blob_sha1": "b9c6f451d3ab981bbecfa8f946fdc2cd89c77b47",
++          "sha256": "0153aa0af55d5502988aee744ba2c29c52c4d994128b32e92b41cb74437966b1"
++        },
++        "guidance-watermarking-for-diffusion-models/detector/__init__.py": {
++          "bytes": 1776,
++          "git_blob_sha1": "8ec48900ccbf3185ae3ebc44ea7574747c647cf4",
++          "sha256": "8cfe37941cbf612854f9ae91d04e4afd4a7aca3079e98c8a2966aba2898e7f76"
++        },
++        "guidance-watermarking-for-diffusion-models/detector/detector.py": {
++          "bytes": 6380,
++          "git_blob_sha1": "f5f99bcd403027ebe970ec7b0f653c0714218ce2",
++          "sha256": "75def22e65bd69c5391df570fb203fa3a3a9bb67f9346dd075c9e0d689147b24"
++        },
++        "guidance-watermarking-for-diffusion-models/detector/special.py": {
++          "bytes": 65,
++          "git_blob_sha1": "85764da6bae31df897e5660a1eafc2fbf5e29fb1",
++          "sha256": "082fe4e87ff1e5a3c1fdf204fd3688776d00226c18f5000d10e377dfa6a76f75"
++        },
++        "guidance-watermarking-for-diffusion-models/detector_benchmark.py": {
++          "bytes": 8740,
++          "git_blob_sha1": "a66db729342481bd9f3ef684823800cc5502688d",
++          "sha256": "2d2532ffba90580eeaa2149f31c3853bf9cb45374cda7d79e996fe32864f6aaf"
++        },
++        "guidance-watermarking-for-diffusion-models/generate.py": {
++          "bytes": 4731,
++          "git_blob_sha1": "13366e2da4c0287a0394c0e3812dac27fe576288",
++          "sha256": "01b76d2c22185a5e90e4e82c71adeae75cdbdea675158cabe2d70459f6688941"
++        },
++        "guidance-watermarking-for-diffusion-models/guidance_benchmark.py": {
++          "bytes": 5676,
++          "git_blob_sha1": "d29ad1304fccf113e236cc7c6f1e1ae7c340a815",
++          "sha256": "57a92201ea465f55a3d4bd3d36c7e5032893376714ccfa00f01cecebc7ce05b2"
++        },
++        "guidance-watermarking-for-diffusion-models/post_hoc_benchmark.py": {
++          "bytes": 4495,
++          "git_blob_sha1": "c07405efc37483cfeca3f40b478aa23536adfe54",
++          "sha256": "3309a77a8b1e8c57ce39a8f9f41f3e58811aab524cecc981865b1e208131c9a3"
++        },
++        "guidance-watermarking-for-diffusion-models/quality_benchmark.py": {
++          "bytes": 4432,
++          "git_blob_sha1": "8b5627afa9cd5484db55e4410293ffeab0e5aa20",
++          "sha256": "b5113dccf8cc31caa91a5178d39118a0c718f4e9f373f337d5c07a975528d9cb"
++        },
++        "guidance-watermarking-for-diffusion-models/scripts/flux.sh": {
++          "bytes": 680,
++          "git_blob_sha1": "3421f9c9da1b20e4a5b002f72ced2afbb3d44bfe",
++          "sha256": "2816b97841ebd6971eea8e38f2036c2eb4abe2f66e21d1f857247935d30454ed"
++        },
++        "guidance-watermarking-for-diffusion-models/scripts/sana.sh": {
++          "bytes": 679,
++          "git_blob_sha1": "1fdee3de91ff71fa0278f915efb56022ad2a0f80",
++          "sha256": "2403167d843cde80791e5660b6c4d0e6ae46bc5ad6e01dae48980b5e005f3ab3"
++        },
++        "guidance-watermarking-for-diffusion-models/scripts/sd2.sh": {
++          "bytes": 677,
++          "git_blob_sha1": "d859ead6d36667ef04ce616cb75273a1b7218de2",
++          "sha256": "452e71fabccea4d26d20cee4ca71eba5c5b3b6f84307b062330594d20c9285bd"
++        },
++        "guidance-watermarking-for-diffusion-models/tests/__init__.py": {
++          "bytes": 605,
++          "git_blob_sha1": "ba941e2fac686c9c580cf8a6f299392a09279bc3",
++          "sha256": "0fbd610315b8be28f1c5f338666d831e701c3119dee563304f3b669f5a56de5d"
++        },
++        "guidance-watermarking-for-diffusion-models/tests/example.py": {
++          "bytes": 539,
++          "git_blob_sha1": "09ee3aa46c54b492a03cbf000b21165495a7ffe5",
++          "sha256": "3be8ab155001d63c42eb352092786b9104687b2aca98d850824cedf3d214faeb"
++        },
++        "guidance-watermarking-for-diffusion-models/tests/test_benchmark.py": {
++          "bytes": 4842,
++          "git_blob_sha1": "7a3c9b94d38ce7a4b8c259ab94184562b8784a27",
++          "sha256": "7b7b494c8ec5b47a5d0891e36d1b5a7897db413b062a5672aa1e64f39e0b074e"
++        },
++        "guidance-watermarking-for-diffusion-models/tests/test_data/cover_test.jsonl": {
++          "bytes": 65,
++          "git_blob_sha1": "cbfde43b97e9d1b1a8bd714043aa06a1f8e1d7b4",
++          "sha256": "6519f41f43e58f743967efb8a2170ff8ec06fa1dea9319d7d65fb712c803579a"
++        },
++        "guidance-watermarking-for-diffusion-models/tests/test_data/sd2_ssig.jsonl": {
++          "bytes": 84890,
++          "git_blob_sha1": "64020e105071257798c906124073195015483784",
++          "sha256": "2bb52638b206c5fa1153d41ebc03c65e8fe914040e21ea6f7c709aad0b71a655"
++        },
++        "guidance-watermarking-for-diffusion-models/tests/test_data/sd2_trustmark.jsonl": {
++          "bytes": 136890,
++          "git_blob_sha1": "545b935a6dabc0bff62a6eed65357db39869b7ca",
++          "sha256": "1659c72ef05c0a8d473f6bce199f7d2adea4b7cf7a79b0931a22c64fc12098b6"
++        },
++        "guidance-watermarking-for-diffusion-models/tests/test_detector.py": {
++          "bytes": 4411,
++          "git_blob_sha1": "84b4857827aa565f690c0911f23231c75a90f2c2",
++          "sha256": "86ce96c3830d50ea3205e54511f94ab46976b22f07ac82702262d41df0be09cd"
++        },
++        "guidance-watermarking-for-diffusion-models/tests/test_images/0.jpg": {
++          "bytes": 200140,
++          "git_blob_sha1": "5f0e11680fdbb9b8ed8064bd279b6e625d95f06f",
++          "sha256": "12dc00a1ac5b1c67f87ae29866ff1ccdf6cc3c71310e288d276bddfb3dedff11"
++        },
++        "guidance-watermarking-for-diffusion-models/tests/test_images/1.jpg": {
++          "bytes": 131210,
++          "git_blob_sha1": "6b5f56dd1db760371586544e478a1a75f0b5e2be",
++          "sha256": "9918f15588d42ba2cefd2f84b599412026c96c8f249ed701234d64d84cc43d0e"
++        },
++        "guidance-watermarking-for-diffusion-models/tests/test_transform.py": {
++          "bytes": 1940,
++          "git_blob_sha1": "190898b4344ce1301cde36629022d94edf5b07bd",
++          "sha256": "82c7a5c01898d525bdfb51058adde6f0612f1a1d699273ef4b224af4bfbc1432"
++        },
++        "guidance-watermarking-for-diffusion-models/tests/test_watermarking.py": {
++          "bytes": 1532,
++          "git_blob_sha1": "ba0887585f2d3c7a86ea6681519da271ef739012",
++          "sha256": "845e606f19cf221ccc5476ab66c2411f1017bb6b64d42622ce5518fd2bd498e7"
++        },
++        "guidance-watermarking-for-diffusion-models/tests/watermarking/__init__.py": {
++          "bytes": 0,
++          "git_blob_sha1": "e69de29bb2d1d6434b8b29ae775ad8c2e48c5391",
++          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
++        },
++        "guidance-watermarking-for-diffusion-models/tests/watermarking/guidance_watermark.py": {
++          "bytes": 6385,
++          "git_blob_sha1": "64426a45db0e3e64c7d26041fda70479835b6629",
++          "sha256": "afa884f87770e14c5a41e9a40022fef6a5073a6e1133bdd21b6f87ab24350d61"
++        },
++        "guidance-watermarking-for-diffusion-models/tests/watermarking/trustmark.py": {
++          "bytes": 5963,
++          "git_blob_sha1": "5e59c41c7bf2a5367de529d4f79c4d98a3edf675",
++          "sha256": "9df8bf8a2b40a05bad148880faf57ad01f1ea980a3d08025a19c1fedea892c96"
++        },
++        "guidance-watermarking-for-diffusion-models/tests/watermarking/vae_post_hoc.py": {
++          "bytes": 3656,
++          "git_blob_sha1": "223b902900ff643585e175df94a1c4bf8bc02bd6",
++          "sha256": "01901ed5564881d4dd8fe2d200a86b00dae0d1e465f15822ac604221136cec82"
++        },
++        "guidance-watermarking-for-diffusion-models/transforms/__init__.py": {
++          "bytes": 923,
++          "git_blob_sha1": "092c36e6ab5dd20bd8083468af88bc3befad088d",
++          "sha256": "5cd014049c0ed550a5877e95f7f17d65bfcb6f0f58ad4c3076bd81cac78a4869"
++        },
++        "guidance-watermarking-for-diffusion-models/transforms/attacks.py": {
++          "bytes": 1352,
++          "git_blob_sha1": "fcf84a55c20986462bd9e299cfa93b6f7275db5e",
++          "sha256": "2b56c37d5c2b50a4c89490a5c97a24a7e4b33fa2bfc9bef6e841696ae8fc8e5c"
++        },
++        "guidance-watermarking-for-diffusion-models/transforms/geometric.py": {
++          "bytes": 2071,
++          "git_blob_sha1": "cbc384b708dff7dd31bafdc8632195aacb3aed55",
++          "sha256": "0d23325e42ff43f729f3615df55dbefa2bcf60ac76eeb7a00825b65ab018329a"
++        },
++        "guidance-watermarking-for-diffusion-models/transforms/quality.py": {
++          "bytes": 1390,
++          "git_blob_sha1": "bb5698ee836928e4abd4f86b542e632a69c4d3c4",
++          "sha256": "06955c147840cc660521b842e1b9fd3a19808c4830a59bc3b49980c6bcb9284e"
++        },
++        "guidance-watermarking-for-diffusion-models/transforms/transforms.py": {
++          "bytes": 1369,
++          "git_blob_sha1": "915dd5743aae122cd98037c8584fcc5ceaf790d4",
++          "sha256": "98e2f5a66a8de7b0ae235ecad783d9890ac79fa0a5683f4860004de101613574"
++        },
++        "guidance-watermarking-for-diffusion-models/transforms/valuemetric.py": {
++          "bytes": 4335,
++          "git_blob_sha1": "e6e6263b38ea6ca6920ee137a02542f1bb6da84b",
++          "sha256": "b22b0abc229366c74e89d7a753a0295e8c6979237067f730212b64367b251850"
++        },
++        "guidance-watermarking-for-diffusion-models/util/__init__.py": {
++          "bytes": 0,
++          "git_blob_sha1": "e69de29bb2d1d6434b8b29ae775ad8c2e48c5391",
++          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
++        },
++        "guidance-watermarking-for-diffusion-models/util/util_benchmark.py": {
++          "bytes": 1876,
++          "git_blob_sha1": "07b797f647690fcbc2846dba1e1b56072d107a5c",
++          "sha256": "5f0aabc9bb5c2cfbba172c2a867f884f0cb01a50407cca61102bc733240d11f4"
++        },
++        "guidance-watermarking-for-diffusion-models/util/util_detector.py": {
++          "bytes": 139,
++          "git_blob_sha1": "cd906370a98ce4d7bcea8c9b230338c596b983b2",
++          "sha256": "1bb93d39885b26ea1b54b236f08c2f8158b3cb81ffd697ba8a0774fedffd0dd1"
++        },
++        "guidance-watermarking-for-diffusion-models/util/util_images.py": {
++          "bytes": 2055,
++          "git_blob_sha1": "ac6166f110595a0c3fd81db931e4f8229ab1899f",
++          "sha256": "82149524796771450f2d29b26262caa98dba50116b6fe8bd5c3226de756d876d"
++        },
++        "guidance-watermarking-for-diffusion-models/watermarking/__init__.py": {
++          "bytes": 3269,
++          "git_blob_sha1": "46e649ce46c8fd3cabc83a34a25aaee8e4185119",
++          "sha256": "e94467c81b8d305831fec3412e3638f451258926b1709fb408d9bfd3a5c99a12"
++        },
++        "guidance-watermarking-for-diffusion-models/watermarking/aggregation.py": {
++          "bytes": 7954,
++          "git_blob_sha1": "3fd75c27ab633a735a75cc617647fc082a23438a",
++          "sha256": "484a0797b8f5c3328457d455ba4be166c135464cd330ed8c9d295cc279c9afde"
++        },
++        "guidance-watermarking-for-diffusion-models/watermarking/losses.py": {
++          "bytes": 7127,
++          "git_blob_sha1": "34b062861cf13e84690ec1aeb57b64317292a99e",
++          "sha256": "655036451f97d754356e43d22b4e382b633cd155cd685f5735fc6c56926ba25f"
++        },
++        "guidance-watermarking-for-diffusion-models/watermarking/modified_diffusers/__init__.py": {
++          "bytes": 0,
++          "git_blob_sha1": "e69de29bb2d1d6434b8b29ae775ad8c2e48c5391",
++          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
++        },
++        "guidance-watermarking-for-diffusion-models/watermarking/modified_diffusers/flux.py": {
++          "bytes": 43339,
++          "git_blob_sha1": "3215fd7787d38c214e7d84ef9a7b2145ee650bea",
++          "sha256": "a8f1a9440519b8179550331583d44d418afc8158e5d18ae8a40113c7058c02cf"
++        },
++        "guidance-watermarking-for-diffusion-models/watermarking/modified_diffusers/sana.py": {
++          "bytes": 36585,
++          "git_blob_sha1": "ca9df32222d0d4bda3bda0740352468ff1598915",
++          "sha256": "7187b89df11503bfc909b46b99582fd57b2b0ecc315d326652282248065da3f9"
++        },
++        "guidance-watermarking-for-diffusion-models/watermarking/modified_diffusers/stable_diffusion.py": {
++          "bytes": 36111,
++          "git_blob_sha1": "84518237ea97c8df3ee357847062f54518f712e7",
++          "sha256": "df6effcf493a0708536c550a66d5565de5f0762420d19ae20e1715424de2f34c"
++        },
++        "guidance-watermarking-for-diffusion-models/watermarking/watermark.py": {
++          "bytes": 27131,
++          "git_blob_sha1": "d5df339d3ba64a1d149285a35aea99d13d64ad36",
++          "sha256": "605ba593eb1edaea7027eea8e3ddf4a137d0f543e1740f41b7ea7bbd71a2a4e7"
++        },
++        "guidance-watermarking-for-diffusion-models/whitening.py": {
++          "bytes": 4998,
++          "git_blob_sha1": "27293e94b4011b57de18d2e1883f176bce9bfa8b",
++          "sha256": "cd32aebee9024d71776068a408e1cd1ba5d45e377dea9b03fbfb936c27fd4472"
++        }
++      },
++      "archive_url": "https://api.github.com/repos/EnoalG/Guidance-Watermarking-for-Diffusion-Models/zipball/d1f8e48946f830087baf32356e5ce0eeec68e27e",
++      "archive_sha256": "7cb8c267bbfa7f7a23b36594f0ce24cfd62d4426e14dc68f8dba203a8aceca05"
++    }
++  ],
++  "additional_core_handoff_match": {
++    "path": "GROW/grow/utils.py",
++    "sha256": "8536f3b1c3fc7b51982ae52a70f2777936a80c318029cd5ca593a380f694f229",
++    "source": "Separate 2026-09-29 handoff grow_utils.py; original six-file handoff manifest unchanged"
++  }
++}
+diff --git a/diagnostics/image_trajectory_reference_v1/paper_source_receipt.json b/diagnostics/image_trajectory_reference_v1/paper_source_receipt.json
+new file mode 100644
+index 0000000..50a0e86
+--- /dev/null
++++ b/diagnostics/image_trajectory_reference_v1/paper_source_receipt.json
+@@ -0,0 +1,20 @@
++{
++  "date": "2026-09-29",
++  "papers": [
++    {
++      "url": "https://openaccess.thecvf.com/content/CVPR2026/papers/Luo_GROW_Watermark_Generation_with_Progressive_Guidance_for_Diffusion_Models_CVPR_2026_paper.pdf",
++      "local_cache": "/tmp/image-trajectory-reference-a1-official-20260929/grow_cvf_paper.pdf",
++      "sha256": "484969c867bf2b879aa675ca1eec6de4093d10f7225547c301d0ee32bede4fce",
++      "bytes": 10045973,
++      "kind": "formal CVPR 2026 proceedings, primary comparison"
++    },
++    {
++      "url": "https://zexijia.github.io/assets/files/GROW__Watermark_Generation_with_Progressive_Guidance_for_Diffusion_Models-2.pdf",
++      "local_cache": "/tmp/image-trajectory-reference-a1-official-20260929/grow_author_paper.pdf",
++      "sha256": "dcba12b1e58fd203bd28077ee48009d509b025973814113368430b5de999fdae",
++      "bytes": 13151080,
++      "kind": "author-hosted CVPR Submission #8345 review copy; separate source"
++    }
++  ],
++  "review": "Root and A2 independently verified formal CVF pages35980-35982; the author review copy was also checked separately and is not substituted for final."
++}
+diff --git a/diagnostics/image_trajectory_reference_v1/pytest_v1.txt b/diagnostics/image_trajectory_reference_v1/pytest_v1.txt
+new file mode 100644
+index 0000000..cc9e0f4
+--- /dev/null
++++ b/diagnostics/image_trajectory_reference_v1/pytest_v1.txt
+@@ -0,0 +1,2 @@
++.......                                                                  [100%]
++7 passed in 5.00s
+diff --git a/diagnostics/image_trajectory_reference_v1/pytest_v2.txt b/diagnostics/image_trajectory_reference_v1/pytest_v2.txt
+new file mode 100644
+index 0000000..e2c7632
+--- /dev/null
++++ b/diagnostics/image_trajectory_reference_v1/pytest_v2.txt
+@@ -0,0 +1,2 @@
++..............                                                           [100%]
++14 passed in 5.76s
+diff --git a/docs/image_trajectory_reference_v1.md b/docs/image_trajectory_reference_v1.md
+new file mode 100644
+index 0000000..fab0660
+--- /dev/null
++++ b/docs/image_trajectory_reference_v1.md
+@@ -0,0 +1,175 @@
++# Image-Trajectory-Reference-V1: fixed published-code candidate
++
++This candidate chooses the author's **GROW released code** at
++`6aa69a9c5d4a9e75df457fcca8dfc71b64a6b870`. Its writer, loss, transform,
++receiver, scheduler and default image settings remain the upstream execution.
++It is a one-image-source reference, not a paper DCT reproduction or a new
++video method. No real model has been loaded or run for this delivery.
++
++## Source and asset decision
++
++`diagnostics/image_trajectory_reference_v1/official_source_manifest.json`
++records all 21 GROW and 63 Guidance files, each SHA256 and Git blob SHA1,
++matched against complete, nontruncated GitHub trees at the fixed commits.
++The original six handoff files plus `grow/utils.py` match (7/7); the original
++handoff is unchanged. Source archives live only in the stated `/tmp` cache.
++They are not vendored or patched. The loader verifies the complete GROW file
++manifest before importing the original `config.py`, `watermark.py`, `codec.py`
++and their original dependencies. A namespace wrapper skips only the package
++facade that imports unused AttackSuite/torchvision; no method body is copied.
++
++GROW has a complete writer/receiver, packaging and declared dependencies, and
++needs no separate learned detector or whitener. Guidance's actual demo needs
++VideoSeal plus missing whitener samples and unresolved asset instructions.
++GROW is therefore the more complete source-level baseline. This does **not**
++mean its model assets are currently complete: anonymous requests to the
++original `stabilityai/stable-diffusion-2-1-base` API and `model_index.json`
++both returned HTTP 401 on 2026-09-29 (`asset_probe.json`). The observation does
++not establish whether the cause is gating, privacy, removal or another access
++condition. There is no replacement checkpoint, mirror or invented revision.
++
++A real run requires access to that original repository, then a resolved
++immutable model SHA and successful component loads at that same SHA. An
++optional Colab Secret `HF_TOKEN` can supply credentials in the child process
++environment; its value is not printed or saved, and it does not guarantee
++access. API/config/weight 401, 403, 404 and missing resource errors retain
++`ASSET_ACCESS_REQUIRED` and the asset stage. OOM remains an execution failure.
++All fixed rows remain present. Asset access failure is not a watermark result.
++
++## GROW: formal paper versus fixed released execution
++
++Primary paper: [formal CVPR 2026 proceedings PDF](https://openaccess.thecvf.com/content/CVPR2026/papers/Luo_GROW_Watermark_Generation_with_Progressive_Guidance_for_Diffusion_Models_CVPR_2026_paper.pdf),
++SHA256 `484969c867bf2b879aa675ca1eec6de4093d10f7225547c301d0ee32bede4fce`.
++Root and A2 independently verified formal CVF pages35980-35982; the author review copy was also checked separately. The separately fetched
++author-hosted Submission #8345 review copy has a different identity; its hash
++and source are preserved in `paper_source_receipt.json`, not substituted for
++the formal paper.
++
++| Item | Formal paper | Released code used here |
++|---|---|---|
++| Transform | p35980 section 4.2.1: DCT | `grow/utils.py:36-48`: `fft2(...,norm='ortho').real`; inverse helper is real IFFT, not DCT-II |
++| Objective | p35981 Eq5 prose says MSE; displayed formula is squared L2 without 1/N | `watermark.py:275`: `F.mse_loss` default mean over 1600 selected values |
++| Gradient path | Eq6 gradient in predicted clean latent | `watermark.py:258-285`: conditional x0 estimate; local gradient requested with respect to x0; UNet under no_grad; no explicit per-step detach; x0 minus eta*g then conditional epsilon |
++| CFG placement | Eq7 guided conditional prediction then CFG | `watermark.py:286-290`: same ordering, CFG 7.5 |
++| Timing | p35982 Algorithm1 uses descending t=T..1 and `t > T*r_start` | forward enumerate step index >=25 of50, last25 updates; notation/execution difference retained without assuming equivalence |
++| Payload/strength | section5.2:16 bits, first channel, alpha0.5, eta100 | dataclass defaults: UTF8 `OKOK`=32 bits, channels0..3, alpha0.5, eta200 |
++| Model/runtime | section5.2: PyTorch1.13/T4,50 steps | `GrowConfig`/constructor: original SD2.1-base, DDIM,FP32,512px,50 steps; requirements only lower bounds (torch>=2,diffusers>=0.21), no exact lock |
++| Blind input | EXTRACT(image,key) pseudocode does not spell out length | `_read_bits` also needs public bit length32; it does not need message content |
++| Readout | signs/votes in frequency representation | VAE encode mean times scaling, FFT real, keyed coordinate sign votes; `Counter` tie order, UTF8 decode ignores bad bytes |
++
++Fixed code links:
++[defaults](https://github.com/luopengchen/GROW/blob/6aa69a9c5d4a9e75df457fcca8dfc71b64a6b870/GROW/grow/config.py),
++[writer and reader](https://github.com/luopengchen/GROW/blob/6aa69a9c5d4a9e75df457fcca8dfc71b64a6b870/GROW/grow/watermark.py),
++[actual transform](https://github.com/luopengchen/GROW/blob/6aa69a9c5d4a9e75df457fcca8dfc71b64a6b870/GROW/grow/utils.py).
++`run_demo.py:52-64` constructs the dataclass; it does not load the YAML.
++
++## Guidance: actual demo chain, not the similarly named class
++
++Pinned source is [Guidance d1f8e489](https://github.com/EnoalG/Guidance-Watermarking-for-Diffusion-Models/tree/d1f8e48946f830087baf32356e5ce0eeec68e27e).
++Paths below are relative to `guidance-watermarking-for-diffusion-models/`.
++Primary paper: [Guidance sections4.1-4.5](https://arxiv.org/html/2509.22126).
++The paper itself uses an identity backward-Jacobian approximation and clipped
++gradient divided by max(eta,norm); it is not a claim of full tail backpropagation.
++
++| Execution item | Source-grounded finding |
++|---|---|
++| Entry/class | `scripts/{sd2,sana,flux}.sh` -> `guidance_benchmark.py:23-61` -> `configs/watermarker/prob-guidance.yaml` -> factory `watermarking/__init__.py:13-15,52-54` -> `ProbGuidanceWatermarker`, not Norm |
++| Loss | config selects PCGrad/cossim. `watermarking/losses.py:76-89` returns cosine itself, not 1-cos or log. Keep distinct from paper Eq6 1-cos and Eq9 gradient of log loss; do not repair or assert equivalence |
++| Gradient | `watermark.py:521-576`: remaining-tail backward with ones gives dx; separate image loss and VAE VJP gives dy; final elementwise dx*dy |
++| Denoiser boundary | `watermarking/modified_diffusers/stable_diffusion.py:358-367,638-653`, `watermarking/modified_diffusers/sana.py:364-385,631-641`, `watermarking/modified_diffusers/flux.py:385-414,758-776` wrap denoisers in no_grad. Scheduler sample dependence remains; this is not the full denoiser tail Jacobian VJP |
++| Update | original gradient L2 norm is measured before top10% amplitude clipping, then clipped vector divided by that original norm with cap; CFG precedes injection `eps -= wm_scale*sqrt(1-alpha)*grad` |
++| Fixed configs | SD2 Euler FP16 scale250/top.1/cap.3; Sana FlowEuler modelFP16 latentFP32 scale600/.1/.5; FluxFP16 scale500/.1/.5, scheduler from model config |
++| Selection | `watermark.py:578-581,470-479`: minimum message-bit errors selects best_latents, decoded at finish; not the same as GROW's unconditional final latent |
++| Assets | `detector/__init__.py:15-34`: external `videoseal_y_256b_img_dec.pt`, placeholder WHITENER_PATH and missing samples.pt; source has no setup/pyproject despite install instructions |
++| Payload/receiver | `configs/detector/videoseal_w.yaml`: M=256. `guidance_benchmark.py:30-37` uses CLI key or dataset generation; `benchmarks/datasets.py:21-23,149-159` samples torch.rand(M)>.5 and caches by index. Decode/logit signs need no message content; zero-bit cosine/p-value reporting needs a preregistered key and is not unconditional blind payload detection |
++| Blind API fault | `detector.py:66-82` forward(key=None) uses unassigned pval_0bit (A3 CPU AST reproduction). Lower-level preprocess/decode_message/process_message can read without truth if assets exist; adding truth to avoid the exception is not a blind read |
++| Save boundary | benchmark scores memory first; tests save PNG later. That score is not saved-file readback evidence |
++
++## Why neither existing video path is this image reference
++
++| Mechanism | Historical GROW-Video-Frequency adaptation | Current three-direction saved-tail candidate |
++|---|---|---|
++| Carrier/observation | true orthonormal DCT-II in Wan channel0,64 coefficients,16 bits,4 repeats per frame across46 latent times | RGB-DCT thirty-group q; deterministic RGB carrier/VAE lift split into three latent time bins [1,15),[15,30),[30,45), normalized on support |
++| Objective | one-half sum of squared masked residuals over46*64, no mean reduction | mean weighted squared hinge `(1e-4-q)^2_+`, weight4 for baseline-positive groups else1, plus1e-4 times coefficient squared norm |
++| Direction/gradient | detached post-CFG clean estimate z-sigma*v, local DCT gradient; no transformer backward | baseline plus3 real native-scheduler tail rollouts, decode terminal q; J column=(probe_q-base_q)/measured immediate support RMS; no full gradient |
++| Update/constraints | steps10..29, u=-.1*g, velocity v-u/sigma, native UniPC | nonnegative3 coefficients, sum <=remaining R*=0.042943312697648145; deterministic continuous convex solver with global surrogate objective-gap certificate; unavailable directions fixed0 |
++| Real decision | historical adaptation-specific controls, not official GROW | scale1,.5,.25 true tails; native RMS budget and peak<=.25; no positive-group loss; true hinge improvement>=1e-8. Surrogate improvement alone never accepts |
++| State/denominator | video settings181frames,320x512,CFG5,Wan1.3B | fixed two sources T46/47/48 each restored independently with full saved scheduler history; no sequential chain inferred; sequential MULTI must recompute q/J after accepted state |
++
++Historical implementation is
++`worktrees/GROW-Video-Frequency/main/tube_state/grow_frequency.py` and its
++`experiments/wan_state_clock/GROW_VIDEO_FREQUENCY.md`; it explicitly calls
++itself an adaptation. Current three-direction source is fixed commit
++`39b312669ff45de08617cae439f4d07a7ca6c37d` in
++`worktrees/Video-Trajectory-Blind-Validation-V1`: entry
++`experiments/wan_state_clock/video_trajectory_blind_validation_run.py`, shared
++`rgb_dct_structured_terminal_feedback_run.py:476-771`, pure
++`main/tube_state/rgb_dct_structured_feedback.py`,
++`rgb_dct_continuous_solver.py`. These are comparison references only and are
++not imported. The recorded prior result remains **6/6 points,18/18 candidates,
++0/18 ACCEPT,16/18 loss worsening** (`diagnostics/six-point-audit-20260929/audit.md`
++in the parent project). It is a negative for that tested construction, not
++proof against the author's image mechanism. No old video bytes are changed.
++
++## Frozen minimum case and independent save/read/evaluate chain
++
++- One prompt: `a sharp wildlife photo of an owl with feather details, perched on an old tree branch`; seed42.
++- Two arms call original `generate_normal` / `generate_with_watermark`; all dataclass defaults listed in `config.json` are checked against upstream. Original SD2.1-base/DDIM/FP32 retained.
++- Save each output as512x512 PNG and discard the in-memory result. OFF and GROW each have correct/wrong-key independent `_read_bits` calls:4 readouts.
++- Correct key `watermark` has seed974. Wrong `watermark-wrong` must differ in both seed and coordinate-to-bit assignment hash. A different string can collide (`kramretaw` does). The entire band mask is the same; key changes the bit assignment, not mask support.
++- Each reader gets only image, original pipeline, key and public geometry/32-bit length through `PublicReaderConfig`, which has no message field. It calls the actual official reader, not `extract_with_confidence` or robust/truth-selected search.
++- Persist all4 raw32-bit rows in `blind_readouts.json` before evaluation. Reopen that JSON in a separate evaluation stage, then join `OKOK`/`NOPE`:8 rows. The blind-file hash must remain unchanged.
++- Primary metrics are raw bit errors/32,BER,bit accuracy,exact32bit. UTF8 string is diagnostic only because upstream silently discards invalid byte sequences. OFF/wrongkey/wrongmessage are controls, not population FPR estimates.
++- Paired saved-PNG RMSE/PSNR and displayed saved images support quality inspection. No invented quality or significance threshold. `FIXED_REFERENCE_COMPLETE` means all reads finished, not that recovery succeeded.
++
++The original demo saves a PNG then evaluates its in-memory image. The explicit
++reopen-and-independent-reader boundary above is an evaluation-envelope change,
++not an undisclosed modification to the upstream writer or reader.
++
++`result.json` starts with all2 images/4 reads/8 evaluations before source/model
++work; retains every failure/missing row; records model asset revision, config,
++source file hashes, seed, call ledgers and paths. Observational forward hooks
++count attempted/completed UNet,VAE encoder,VAE decoder calls by phase without
++extra model evaluations. `model_loaded` and `model_calls_executed` are separate.
++An abrupt worker termination may leave RUNNING/PENDING rows and a nonzero exit
++receipt; those are incomplete evidence, never successful method outcomes.
++
++## Candidate runtime, notebook and local evidence
++
++`requirements-colab.txt` pins the declared upstream packages plus Hub/safetensors
++for Python3.12, with torch2.6.0/torchvision0.21.0 from official cu124 wheels.
++These are this candidate's environment choices, not the paper's Torch1.13
++runtime or an author-provided exact lock. All declared GROW dependencies remain
++installed. Other transitive packages are recorded by pip freeze. Wheel/PyPI
++metadata are retained in `dependency_probe.json`; local CPU checks are recorded
++separately in `local_validation.json`. Full Colab setup and GPU/model paths are
++unexecuted; CPU fake results are engineering evidence only. In an isolated
++Python3.12.3 CPU venv, torch2.6.0+cpu/vision0.21.0+cpu and all selected package
++imports passed, pip check found no broken requirements, and the initial7 tests passed
++in5.00s with zero skips. The v2 metadata-classification repair adds7 cases;
++all14 tests passed (see `local_validation.json` for the exact command/result). The actual upstream functions ran with fake model
++components, including50+50 UNet calls,4 VAE encoder calls and2 decoder calls.
++
++For local reproduction, set `GROW_REFERENCE_SOURCE_ROOT` to the verified GROW
++archive root and run `python -m pytest tests/test_image_trajectory_reference.py -q`.
++When that cache is absent, source-dependent tests explicitly skip with an
++instruction to set the path, leaving2 generic tests. The v1 fresh-clone check
++was2 passed/5 skipped; the v2 metadata cases also require the source fixture.
++Skipped cases are never counted as upstream-method PASS.
++
++`notebooks/image_trajectory_reference_v1_colab.ipynb` reuses the earlier working
++notebook's exact two-line Drive mount in the first executable cell, isolated
++environment, serial child process, log and save pattern. Its first working
++cell creates fixed2/4/8 setup rows before cloning/installing. Dependency,
++source or asset failures retain the output directory and receipts. The final
++cell opens saved OFF/GROW PNGs for display. No scans or optional experiment
++modes are exposed. No GPU model-name gate is imposed.
++
++The draft deliberately has `SOURCE_SHA=None` and refuses to run unbound while
++persisting the setup failure. It is **not yet published and has no runnable
++published Colab link**. After separate publication authorization: publish this
++special dev branch, verify its immutable SHA, run
++`scripts/build_image_trajectory_reference_notebook.py --source-sha <verified SHA>`,
++review that bound artifact, and supply the user its Colab link. Only the user
++runs the fixed case. This delivery alone authorizes neither publication nor
++execution, sequential video control, blind synchronization or a payload phase.
+diff --git a/experiments/image_trajectory_reference/__init__.py b/experiments/image_trajectory_reference/__init__.py
+new file mode 100644
+index 0000000..8fcc79a
+--- /dev/null
++++ b/experiments/image_trajectory_reference/__init__.py
+@@ -0,0 +1 @@
++"""Isolated fixed official image-code reference; no video-method imports."""
+diff --git a/experiments/image_trajectory_reference/config.json b/experiments/image_trajectory_reference/config.json
+new file mode 100644
+index 0000000..72a02a0
+--- /dev/null
++++ b/experiments/image_trajectory_reference/config.json
+@@ -0,0 +1,24 @@
++{
++  "name": "image_trajectory_reference_v1_grow_published_code",
++  "upstream_repo": "luopengchen/GROW",
++  "upstream_commit": "6aa69a9c5d4a9e75df457fcca8dfc71b64a6b870",
++  "official_config": {
++    "model_id": "stabilityai/stable-diffusion-2-1-base",
++    "device": "cuda", "dtype": "float32", "seed": 42,
++    "image_size": 512, "num_inference_steps": 50, "cfg_scale": 7.5,
++    "secret_key": "watermark", "message": "OKOK",
++    "watermark_strength": 0.5, "guidance_scale": 200.0,
++    "watermark_start_ratio": 0.5, "dct_min": 0.2, "dct_max": 0.5,
++    "channels": [0,1,2,3], "center_ratio": 1.0
++  },
++  "case": {
++    "id": "official_owl_seed42",
++    "prompt": "a sharp wildlife photo of an owl with feather details, perched on an old tree branch"
++  },
++  "wrong_key": "watermark-wrong",
++  "wrong_message": "NOPE",
++  "public_payload_bits": 32,
++  "fixed_denominator": {"sources": 1, "png_images": 2, "blind_readouts": 4, "evaluations": 8},
++  "model_asset_policy": "Resolve only the original official model to one immutable revision before all component loads; no replacement checkpoint.",
++  "evidence_ceiling": "One-source saved-PNG official-published-code reference only; not paper DCT reproduction, low FPR, generalization, robustness or video migration evidence."
++}
+diff --git a/experiments/image_trajectory_reference/official_bridge.py b/experiments/image_trajectory_reference/official_bridge.py
+new file mode 100644
+index 0000000..ea3e22a
+--- /dev/null
++++ b/experiments/image_trajectory_reference/official_bridge.py
+@@ -0,0 +1,119 @@
++"""Load byte-verified upstream core and expose a truth-free PNG reader."""
++from __future__ import annotations
++import hashlib
++import importlib
++import json
++from pathlib import Path
++import sys
++import types
++from dataclasses import dataclass
++
++ROOT = Path(__file__).resolve().parents[2]
++MANIFEST = ROOT / "diagnostics/image_trajectory_reference_v1/official_source_manifest.json"
++UPSTREAM_SHA = "6aa69a9c5d4a9e75df457fcca8dfc71b64a6b870"
++
++
++def sha256(path):
++    with Path(path).open("rb") as stream:
++        return hashlib.file_digest(stream, "sha256").hexdigest()
++
++
++def verify_source(upstream_root):
++    root = Path(upstream_root).resolve()
++    entry = next(r for r in json.loads(MANIFEST.read_text())["repositories"]
++                 if r["repo"] == "luopengchen/GROW")
++    if entry["commit"] != UPSTREAM_SHA:
++        raise ValueError("fixed upstream commit mismatch")
++    for rel, item in entry["files"].items():
++        if sha256(root / rel) != item["sha256"]:
++            raise ValueError(f"upstream byte mismatch: {rel}")
++    return dict(repo=entry["repo"], commit=UPSTREAM_SHA, files_verified=len(entry["files"]),
++                files={p: item["sha256"] for p,item in entry["files"].items()})
++
++
++def load_official(upstream_root):
++    """Execute unchanged core files, avoiding the unused AttackSuite facade.
++
++    No upstream function body is copied, monkeypatched or reimplemented. The
++    namespace wrapper omits grow/__init__.py's unrelated torchvision attacks.
++    """
++    verify_source(upstream_root)
++    package_path = (Path(upstream_root) / "GROW/grow").resolve()
++    name = "_fixed_image_reference_grow"
++    if name in sys.modules:
++        if list(sys.modules[name].__path__) != [str(package_path)]:
++            raise ValueError("upstream module already bound to another source root")
++    else:
++        package = types.ModuleType(name)
++        package.__path__ = [str(package_path)]
++        sys.modules[name] = package
++    config = importlib.import_module(name + ".config")
++    watermark = importlib.import_module(name + ".watermark")
++    codec = importlib.import_module(name + ".codec")
++    return config.GrowConfig, watermark.GrowWatermarker, codec
++
++
++@dataclass(frozen=True)
++class PublicReaderConfig:
++    """No message, writer output, confidence target or truth field exists."""
++    device: str
++    dtype: str
++    secret_key: str
++    message_bit_length: int = 32
++    dct_min: float = 0.2
++    dct_max: float = 0.5
++    channels: tuple = (0, 1, 2, 3)
++    center_ratio: float = 1.0
++
++
++def read_saved_png(path, public_config, pipe, upstream_root):
++    from PIL import Image
++    _, Watermarker, codec = load_official(upstream_root)
++    if not isinstance(public_config, PublicReaderConfig):
++        raise TypeError("independent public reader configuration required")
++    if public_config.message_bit_length != 32:
++        raise ValueError("fixed public 32-bit payload length required")
++    path = Path(path)
++    digest_before = sha256(path)
++    reader = Watermarker(public_config, pipe=pipe)
++    with Image.open(path) as opened:
++        if opened.format != "PNG" or opened.size != (512,512):
++            raise ValueError("fixed 512x512 PNG readback required")
++        opened.load()
++        image = opened.convert("RGB")
++    # The only upstream reading call. It has no truth or confidence selection.
++    bits = reader._read_bits(image)
++    if len(bits) != 32 or any(type(bit) is not int or bit not in (0,1) for bit in bits):
++        raise ValueError("invalid 32-bit official readout")
++    if sha256(path) != digest_before:
++        raise RuntimeError("PNG changed during readback")
++    return dict(status="READ", png_sha256=digest_before, decoded_bits=bits,
++                decoded_string_diagnostic=codec.bits_to_message(bits),
++                input_kind="reopened_saved_PNG", truth_used=False,
++                public_message_bit_length=32,
++                function="GrowWatermarker._read_bits")
++
++
++def layout_receipt(correct_key, wrong_key):
++    """Audit the upstream coordinate seed/order; no alternate receiver."""
++    import numpy as np
++    def one(key):
++        seed = sum(map(ord,key))
++        coords = [(h,w) for h in range(12,32) for w in range(12,32)]
++        np.random.default_rng(seed).shuffle(coords)
++        # Each channel carries 8 bits. Order alone is insufficient: also check
++        # the coordinate-to-bit assignment (j % 8) used by the official reader.
++        assignment = sorted((h,w,j%8) for j,(h,w) in enumerate(coords))
++        digest = lambda x: hashlib.sha256(json.dumps(x,separators=(",",":")).encode()).hexdigest()
++        return dict(seed=seed, coordinate_order_sha256=digest(coords),
++                    bit_assignment_sha256=digest(assignment), coordinates=coords,
++                    assignment=assignment)
++    correct, wrong = one(correct_key), one(wrong_key)
++    if (correct["seed"] == wrong["seed"] or correct["coordinates"] == wrong["coordinates"]
++            or correct["assignment"] == wrong["assignment"]):
++        raise ValueError("wrong-key layout or bit assignment collides")
++    for item in (correct,wrong):
++        item.pop("coordinates");item.pop("assignment")
++    return dict(correct=correct, wrong=wrong, layout_different=True,
++                public_latent_shape=[1,4,64,64], mask_elements=1600,
++                audit_only=True)
+diff --git a/experiments/image_trajectory_reference/requirements-colab.txt b/experiments/image_trajectory_reference/requirements-colab.txt
+new file mode 100644
+index 0000000..d4ba5ae
+--- /dev/null
++++ b/experiments/image_trajectory_reference/requirements-colab.txt
+@@ -0,0 +1,13 @@
++# Candidate runtime pins; upstream supplies lower bounds, not this exact lock.
++# Torch/CUDA wheels are installed first from the cu124 index by the notebook.
++torch==2.6.0
++torchvision==0.21.0
++diffusers==0.39.0
++transformers==4.57.6
++accelerate==1.11.0
++numpy==2.5.2
++Pillow==12.3.0
++tqdm==4.70.0
++PyYAML==6.0.3
++huggingface_hub==0.36.2
++safetensors==0.8.0
+diff --git a/experiments/image_trajectory_reference/run.py b/experiments/image_trajectory_reference/run.py
+new file mode 100644
+index 0000000..ea28381
+--- /dev/null
++++ b/experiments/image_trajectory_reference/run.py
+@@ -0,0 +1,288 @@
++"""Fixed official GROW writer -> PNG -> independent bits -> separate evaluation."""
++from __future__ import annotations
++import argparse
++import importlib.metadata
++import json
++import math
++import os
++from pathlib import Path
++import subprocess
++import time
++import traceback
++
++from .official_bridge import (ROOT, UPSTREAM_SHA, PublicReaderConfig, layout_receipt,
++                              load_official, read_saved_png, sha256, verify_source)
++
++CONFIG_PATH = Path(__file__).with_name("config.json")
++ARMS = ("OFF", "GROW")
++KEYS = ("CORRECT", "WRONG")
++TARGETS = ("REGISTERED", "WRONG_MESSAGE")
++DENOMINATOR = dict(sources=1, png_images=2, blind_readouts=4, evaluations=8)
++
++
++def atomic_json(path, data):
++    path = Path(path)
++    temp = path.with_name(path.name + ".tmp")
++    with temp.open("w",encoding="utf-8") as stream:
++        json.dump(data,stream,indent=2,allow_nan=False)
++        stream.write("\n");stream.flush();os.fsync(stream.fileno())
++    os.replace(temp,path)
++
++
++def load_config(upstream_root):
++    cfg = json.loads(CONFIG_PATH.read_text())
++    GrowConfig, _, codec = load_official(upstream_root)
++    defaults = GrowConfig()
++    if (cfg["upstream_commit"] != UPSTREAM_SHA or cfg["fixed_denominator"] != DENOMINATOR
++            or cfg["public_payload_bits"] != 32):
++        raise ValueError("fixed upstream/denominator/payload contract mismatch")
++    if any(getattr(defaults,k) != v for k,v in cfg["official_config"].items()):
++        raise ValueError("official default parameter changed")
++    if any(len(codec.message_to_bits(value)) != 32 for value in
++           (cfg["official_config"]["message"],cfg["wrong_message"])):
++        raise ValueError("fixed 32-bit evaluation targets required")
++    if cfg["wrong_message"] == cfg["official_config"]["message"]:
++        raise ValueError("wrong message equals registered message")
++    return cfg
++
++
++def initial_result(output):
++    output = Path(output)
++    return dict(status="RUNNING", stage="INITIALIZE", fixed_denominator=DENOMINATOR,
++        config_sha256=sha256(CONFIG_PATH),
++        source_sha=subprocess.check_output(["git","rev-parse","HEAD"],cwd=ROOT,text=True).strip(),
++        source_files={str(p.relative_to(ROOT)):sha256(p) for p in (
++            Path(__file__),Path(__file__).with_name("official_bridge.py"),CONFIG_PATH)},
++        real_model_executed=False, model_loaded=False, model_calls_executed=False,
++        calls={}, upstream=None, assets=None, environment=None,
++        images={arm:dict(status="PENDING",path=str(output/f"{arm}.png"),sha256=None,
++                         bytes=None,seed=42,error=None) for arm in ARMS},
++        reads={f"{arm}/{key}":dict(status="PENDING",image_id=arm,key_id=key,
++            decoded_bits=None,truth_used=False,error=None) for arm in ARMS for key in KEYS},
++        evaluations={f"{arm}/{key}/{target}":dict(status="PENDING",image_id=arm,
++            key_id=key,target_id=target,bit_errors=None,ber=None,bit_accuracy=None,
++            exact_bits=None) for arm in ARMS for key in KEYS for target in TARGETS},
++        failures=[], quality=None,output_dir=str(output), elapsed_seconds=None,
++        evidence_ceiling="One fixed official-code saved-PNG comparison; no paper-reproduction, population-FPR, robustness or video claim")
++
++
++def save_result(path,result):
++    if (len(result["images"])!=2 or len(result["reads"])!=4 or len(result["evaluations"])!=8):
++        raise RuntimeError("fixed 2/4/8 denominator changed")
++    result["counts"] = dict(saved_images=sum(r["status"]=="SAVED" for r in result["images"].values()),
++        readouts=sum(r["status"]=="READ" for r in result["reads"].values()),
++        evaluated=sum(r["status"]=="EVALUATED" for r in result["evaluations"].values()))
++    atomic_json(path,result)
++
++
++def preserve_unfinished(result,reason):
++    for group in ("images","reads","evaluations"):
++        for row in result[group].values():
++            if row["status"] in ("PENDING","GENERATING","READING"):
++                row.update(status="NOT_COMPLETED",error=reason)
++
++
++def environment_receipt():
++    packages=("torch","torchvision","diffusers","transformers","accelerate","numpy","Pillow","tqdm","PyYAML","huggingface_hub","safetensors")
++    versions={}
++    for name in packages:
++        try: versions[name]=importlib.metadata.version(name)
++        except importlib.metadata.PackageNotFoundError: versions[name]=None
++    return dict(packages=versions,selection="candidate environment, not upstream lock or paper environment")
++
++
++def load_real_pipeline(config, record_assets):
++    """Resolve one immutable original-model revision before loading components."""
++    from huggingface_hub import HfApi
++    model_id=config["official_config"]["model_id"]
++    receipt=dict(model_id=model_id,status="RESOLVING",stage="MODEL_INFO",revision=None,
++                 replacement_checkpoint=False)
++    record_assets(receipt)
++    try:
++        info=HfApi().model_info(model_id)
++        revision=info.sha
++        if not isinstance(revision,str) or len(revision)!=40:
++            raise ValueError("model API did not supply immutable revision")
++        receipt.update(status="RESOLVED",revision=revision)
++        record_assets(receipt)
++    except Exception as exc:
++        receipt.update(status="ASSET_ACCESS_REQUIRED" if asset_access_error(exc) else "RESOLVE_FAILED",
++            error=f"{type(exc).__name__}: {exc}",
++            http_status=getattr(getattr(exc,"response",None),"status_code",None))
++        record_assets(receipt)
++        raise
++    import torch
++    from diffusers import DDIMScheduler, StableDiffusionPipeline
++    if not torch.cuda.is_available():
++        raise RuntimeError("CUDA unavailable for the user-run image reference")
++    try:
++        receipt.update(stage="SCHEDULER_LOAD");record_assets(receipt)
++        scheduler=DDIMScheduler.from_pretrained(model_id,subfolder="scheduler",revision=revision)
++        receipt.update(stage="PIPELINE_LOAD");record_assets(receipt)
++        pipe=StableDiffusionPipeline.from_pretrained(model_id,scheduler=scheduler,
++            torch_dtype=torch.float32,revision=revision).to("cuda")
++    except Exception as exc:
++        receipt.update(status="ASSET_ACCESS_REQUIRED" if asset_access_error(exc) else "LOAD_FAILED",
++                       error=f"{type(exc).__name__}: {exc}")
++        record_assets(receipt)
++        raise
++    receipt.update(status="LOADED",stage="LOADED",scheduler=type(pipe.scheduler).__name__,
++        scheduler_config=dict(pipe.scheduler.config),dtype="float32",
++        device=torch.cuda.get_device_name(0),all_components_revision=revision)
++    record_assets(receipt)
++    return pipe
++
++
++def asset_access_error(exc):
++    """Classify access/missing assets through wrapped Hub errors, not OOM."""
++    seen=set()
++    while exc is not None and id(exc) not in seen:
++        seen.add(id(exc))
++        status=getattr(getattr(exc,"response",None),"status_code",None)
++        if status in (401,403,404) or isinstance(exc,FileNotFoundError):
++            return True
++        exc=exc.__cause__ or exc.__context__
++    return False
++
++
++def observe_calls(pipe,result,persist):
++    """Hooks observe actual upstream calls without extra model evaluations."""
++    handles=[]
++    for name,module in (("unet",pipe.unet),("vae_encoder",pipe.vae.encoder),("vae_decoder",pipe.vae.decoder)):
++        def before(_module,_inputs,kind=name):
++            ledger=result["calls"].setdefault(result["stage"],{})
++            ledger.setdefault(kind,dict(attempted=0,completed=0))["attempted"]+=1
++            result["model_calls_executed"]=True
++            result["real_model_executed"]=result["model_loaded"]
++            persist()
++        def after(_module,_inputs,_output,kind=name):
++            result["calls"][result["stage"]][kind]["completed"]+=1
++            persist()
++        handles.append(module.register_forward_pre_hook(before))
++        handles.append(module.register_forward_hook(after))
++    return handles
++
++def evaluate_readouts(blind_path, config, codec):
++    """Truth enters only after persisted readout bytes are reopened."""
++    blind=json.loads(Path(blind_path).read_text())
++    targets=dict(REGISTERED=config["official_config"]["message"],WRONG_MESSAGE=config["wrong_message"])
++    rows={}
++    for identity,read in blind["reads"].items():
++        for target_id,message in targets.items():
++            row=dict(status="MISSING_READOUT",image_id=read["image_id"],key_id=read["key_id"],
++                target_id=target_id,bit_errors=None,ber=None,bit_accuracy=None,exact_bits=None)
++            if read["status"]=="READ":
++                actual=read["decoded_bits"];truth=codec.message_to_bits(message)
++                if len(actual)!=32 or len(truth)!=32:
++                    raise ValueError("fixed bit denominator mismatch")
++                errors=sum(a!=b for a,b in zip(actual,truth,strict=True))
++                row.update(status="EVALUATED",bit_errors=errors,ber=errors/32,
++                           bit_accuracy=1-errors/32,exact_bits=errors==0)
++            rows[f"{identity}/{target_id}"]=row
++    if len(rows)!=8: raise ValueError("fixed evaluation denominator mismatch")
++    return rows
++
++
++def run_fixed(output,upstream_root,*,pipeline_factory=load_real_pipeline,device="cuda"):
++    """Only the dependency factory/device can be replaced by CPU test fixtures."""
++    output=Path(output)
++    output.mkdir(parents=True,exist_ok=False)
++    result=initial_result(output);result_path=output/"result.json"
++    save_result(result_path,result)
++    started=time.perf_counter();pipe=None;handles=[]
++    try:
++        result["upstream"]=verify_source(upstream_root)
++        config=load_config(upstream_root)
++        result["environment"]=environment_receipt()
++        result["layout"]=layout_receipt(config["official_config"]["secret_key"],config["wrong_key"])
++        GrowConfig,Watermarker,codec=load_official(upstream_root)
++        result["stage"]="MODEL_ASSETS"
++        save_result(result_path,result)
++        def asset_record(value):
++            result["assets"]=dict(value);save_result(result_path,result)
++        pipe=pipeline_factory(config,asset_record)
++        result["model_loaded"]=(pipeline_factory is load_real_pipeline)
++        result["execution_kind"]="REAL_MODEL" if result["model_loaded"] else "CPU_FAKE_COMPONENTS_OFFICIAL_FUNCTIONS"
++        handles=observe_calls(pipe,result,lambda:save_result(result_path,result))
++        writer_config=dict(config["official_config"]);writer_config["device"]=device
++        writer=Watermarker(GrowConfig(**writer_config),pipe=pipe)
++        for arm in ARMS:
++            row=result["images"][arm]
++            result["stage"]=f"GENERATE_{arm}";row["status"]="GENERATING";save_result(result_path,result)
++            try:
++                function=writer.generate_normal if arm=="OFF" else writer.generate_with_watermark
++                image=function(config["case"]["prompt"],seed=42)
++                image.save(row["path"],format="PNG")
++                del image
++                row.update(status="SAVED",sha256=sha256(row["path"]),bytes=Path(row["path"]).stat().st_size,
++                           official_function=function.__name__)
++            except Exception as exc:
++                row.update(status="FAILED",error=f"{type(exc).__name__}: {exc}")
++                result["failures"].append(dict(stage=result["stage"],error=row["error"]))
++            save_result(result_path,result)
++        del writer
++        blind_path=output/"blind_readouts.json"
++        key_values=dict(CORRECT=config["official_config"]["secret_key"],WRONG=config["wrong_key"])
++        for identity,row in result["reads"].items():
++            arm,key_id=row["image_id"],row["key_id"]
++            result["stage"]=f"BLIND_READ_{arm}_{key_id}"
++            if result["images"][arm]["status"]!="SAVED":
++                row.update(status="MISSING_IMAGE",error="generation did not save a PNG")
++            else:
++                row["status"]="READING";save_result(result_path,result)
++                try:
++                    public=PublicReaderConfig(device=device,dtype="float32",secret_key=key_values[key_id])
++                    decoded=read_saved_png(result["images"][arm]["path"],public,pipe,upstream_root)
++                    if decoded["png_sha256"]!=result["images"][arm]["sha256"]:
++                        raise RuntimeError("saved PNG identity changed")
++                    row.update(decoded)
++                except Exception as exc:
++                    row.update(status="FAILED",error=f"{type(exc).__name__}: {exc}")
++                    result["failures"].append(dict(stage=result["stage"],error=row["error"]))
++            atomic_json(blind_path,dict(reads=result["reads"],public_payload_bits=32,
++                evaluation_performed=False,no_truth_inputs=True))
++            save_result(result_path,result)
++        # All four fixed read rows now exist on disk, even after read failures.
++        result["stage"]="SEPARATE_TRUTH_EVALUATION"
++        result["blind_readouts_sha256_before_evaluation"]=sha256(blind_path)
++        save_result(result_path,result)
++        result["evaluations"]=evaluate_readouts(blind_path,config,codec)
++        if sha256(blind_path)!=result["blind_readouts_sha256_before_evaluation"]:
++            raise RuntimeError("evaluation changed blind evidence")
++        if all(row["status"]=="SAVED" for row in result["images"].values()):
++            from PIL import Image
++            import numpy as np
++            with Image.open(output/"OFF.png") as a,Image.open(output/"GROW.png") as b:
++                delta=np.asarray(a.convert("RGB"),dtype=np.float64)/255-np.asarray(b.convert("RGB"),dtype=np.float64)/255
++            mse=float(np.mean(delta*delta))
++            result["quality"]=dict(paired_png_rmse=math.sqrt(mse),
++                psnr_db=-10*math.log10(mse) if mse else None,
++                identical_png_pixels=mse==0,diagnostic_only=True,no_quality_pass_threshold=True)
++        result["status"]="FIXED_REFERENCE_COMPLETE" if all(row["status"]=="READ" for row in result["reads"].values()) else "INCOMPLETE"
++        result["stage"]="FINISHED"
++    except Exception as exc:
++        reason=f"{type(exc).__name__}: {exc}"
++        asset=result.get("assets") or {}
++        result["status"]="ASSET_ACCESS_REQUIRED" if asset.get("status")=="ASSET_ACCESS_REQUIRED" else "ENGINEERING_FAILURE"
++        result["failures"].append(dict(stage=result["stage"],error=reason,traceback=traceback.format_exc()))
++        preserve_unfinished(result,reason)
++    finally:
++        for handle in handles: handle.remove()
++        if pipe is not None:
++            del pipe
++        result["elapsed_seconds"]=time.perf_counter()-started
++        save_result(result_path,result)
++    return result
++
++
++def main():
++    parser=argparse.ArgumentParser(description=__doc__)
++    parser.add_argument("--upstream-root",type=Path,required=True)
++    parser.add_argument("--output",type=Path,required=True)
++    args=parser.parse_args()
++    result=run_fixed(args.output,args.upstream_root)
++    print(json.dumps(dict(status=result["status"],counts=result["counts"])))
++    if result["status"]!="FIXED_REFERENCE_COMPLETE": raise SystemExit(1)
++
++
++if __name__=="__main__": main()
+diff --git a/notebooks/image_trajectory_reference_v1_colab.ipynb b/notebooks/image_trajectory_reference_v1_colab.ipynb
+new file mode 100644
+index 0000000..e6b7a56
+--- /dev/null
++++ b/notebooks/image_trajectory_reference_v1_colab.ipynb
+@@ -0,0 +1,239 @@
++{
++ "nbformat": 4,
++ "nbformat_minor": 5,
++ "cells": [
++  {
++   "cell_type": "code",
++   "metadata": {},
++   "source": [
++    "from google.colab import drive\n",
++    "drive.mount('/content/drive')\n"
++   ],
++   "id": "image-reference-0",
++   "outputs": [],
++   "execution_count": null
++  },
++  {
++   "cell_type": "markdown",
++   "metadata": {},
++   "source": [
++    "# Fixed GROW published-code image reference\n",
++    "\n",
++    "One official owl prompt, seed 42: OFF + GROW, two saved PNGs, four independent\n",
++    "32-bit reads (correct/wrong layout), eight post-read evaluations (OKOK/NOPE).\n",
++    "This follows the pinned author's released FFT-real/mean-MSE code, not a claim\n",
++    "of reproducing the paper's DCT/settings. No parameter scan or video guard.\n",
++    "\n",
++    "Status: UNPUBLISHED DRAFT; source SHA intentionally unset.\n",
++    "\n",
++    "The original SD2.1-base model currently returns anonymous HTTP 401. Access to\n",
++    "that original asset is a prerequisite; the notebook records missing assets\n",
++    "and retains 2/4/8 rows, without substituting checkpoints. It resolves one\n",
++    "immutable original model revision before loading all components. No GPU run\n",
++    "has been performed by the implementation agent. After publication and source\n",
++    "binding, the user runs all once. Results go to a new Drive timestamp directory.\n",
++    "The candidate environment requires Python 3.12; its complete Colab installation\n",
++    "and GPU path have not been executed. An optional Colab Secret named HF_TOKEN\n",
++    "can supply access to the original model; its value is never printed or saved.\n",
++    "Without that secret the run remains anonymous; a token does not guarantee access.\n"
++   ],
++   "id": "image-reference-1"
++  },
++  {
++   "cell_type": "code",
++   "metadata": {},
++   "source": [
++    "SOURCE_SHA = None\n",
++    "from pathlib import Path\n",
++    "import datetime, hashlib, json, os, subprocess, sys, traceback\n",
++    "STAMP = datetime.datetime.now(datetime.timezone.utc).strftime('%Y%m%dT%H%M%S%fZ')\n",
++    "OUTPUT = Path('/content/drive/MyDrive/Video-WM/Image-Trajectory-Reference-V1') / STAMP\n",
++    "OUTPUT.mkdir(parents=True, exist_ok=False)\n",
++    "RUN_OUTPUT = OUTPUT / 'fixed_reference'\n",
++    "REPO = Path('/content/SC-SSTW-IMAGE-REFERENCE-' + STAMP)\n",
++    "VENV = Path('/content/image-reference-venv-' + STAMP)\n",
++    "PYTHON = VENV / 'bin/python'\n",
++    "FIXED = {'sources': 1, 'png_images': 2, 'blind_readouts': 4, 'evaluations': 8}\n",
++    "setup = {'status': 'SETUP_STARTED', 'source_sha': SOURCE_SHA, 'fixed_denominator': FIXED,\n",
++    "         'images': {a: {'status': 'NOT_RUN_SETUP'} for a in ('OFF','GROW')},\n",
++    "         'reads': {a+'/'+k: {'status': 'NOT_RUN_SETUP'} for a in ('OFF','GROW') for k in ('CORRECT','WRONG')},\n",
++    "         'evaluations': {a+'/'+k+'/'+t: {'status': 'NOT_RUN_SETUP'} for a in ('OFF','GROW') for k in ('CORRECT','WRONG') for t in ('REGISTERED','WRONG_MESSAGE')}}\n",
++    "def write_json(path,data):\n",
++    "    temp=path.with_suffix(path.suffix+'.tmp')\n",
++    "    temp.write_text(json.dumps(data,indent=2)+'\\n')\n",
++    "    os.replace(temp,path)\n",
++    "def failed(stage,exc):\n",
++    "    setup.update(status='SETUP_FAILED',stage=stage,error=f'{type(exc).__name__}: {exc}')\n",
++    "    write_json(OUTPUT/'setup_receipt.json',setup)\n",
++    "    write_json(OUTPUT/'setup_failure.json',{'stage':stage,'error':str(exc),'traceback':traceback.format_exc()})\n",
++    "def logged(command,stage,cwd=None,check=True):\n",
++    "    try:\n",
++    "        with (OUTPUT/'execution.log').open('a') as log:\n",
++    "            log.write('COMMAND '+repr(command)+'\\n');log.flush()\n",
++    "            child=subprocess.Popen(command,cwd=cwd,stdout=subprocess.PIPE,stderr=subprocess.STDOUT,text=True,bufsize=1)\n",
++    "            for line in child.stdout:\n",
++    "                print(line,end='',flush=True);log.write(line);log.flush()\n",
++    "            code=child.wait();log.write('EXIT '+str(code)+'\\n')\n",
++    "        if check and code: raise subprocess.CalledProcessError(code,command)\n",
++    "        return code\n",
++    "    except Exception as exc:\n",
++    "        failed(stage,exc);raise\n",
++    "write_json(OUTPUT/'setup_receipt.json',setup)\n",
++    "print('Fixed output:',OUTPUT)\n",
++    "if SOURCE_SHA is None:\n",
++    "    error=RuntimeError('Unpublished draft: bind the verified published candidate SHA before Run all.')\n",
++    "    failed('SOURCE_BINDING',error)\n",
++    "    raise error\n"
++   ],
++   "id": "image-reference-2",
++   "outputs": [],
++   "execution_count": null
++  },
++  {
++   "cell_type": "code",
++   "metadata": {},
++   "source": [
++    "try:\n",
++    "    logged(['git','clone','--filter=blob:none','https://github.com/RICHAAARC/SC-SSTW.git',str(REPO)],'SOURCE_CLONE')\n",
++    "    logged(['git','-C',str(REPO),'fetch','origin',SOURCE_SHA],'SOURCE_FETCH')\n",
++    "    logged(['git','-C',str(REPO),'checkout','--detach',SOURCE_SHA],'SOURCE_CHECKOUT')\n",
++    "    actual=subprocess.check_output(['git','-C',str(REPO),'rev-parse','HEAD'],text=True).strip()\n",
++    "    dirty=subprocess.check_output(['git','-C',str(REPO),'status','--porcelain'],text=True)\n",
++    "    if actual!=SOURCE_SHA or dirty: raise RuntimeError('source identity/clean checkout mismatch')\n",
++    "    source_files={str(p.relative_to(REPO)):hashlib.sha256(p.read_bytes()).hexdigest()\n",
++    "        for p in (REPO/'experiments/image_trajectory_reference').glob('*') if p.is_file()}\n",
++    "    write_json(OUTPUT/'source_receipt.json',{'source_sha':actual,'clean':True,'files':source_files})\n",
++    "except Exception as exc:\n",
++    "    failed('SOURCE',exc);raise\n"
++   ],
++   "id": "image-reference-3",
++   "outputs": [],
++   "execution_count": null
++  },
++  {
++   "cell_type": "code",
++   "metadata": {},
++   "source": [
++    "try:\n",
++    "    if sys.version_info[:2] != (3,12):\n",
++    "        raise RuntimeError('This pinned candidate environment requires Python 3.12')\n",
++    "    logged([sys.executable,'-m','venv',str(VENV)],'ISOLATED_ENV')\n",
++    "    logged([str(PYTHON),'-m','pip','install','torch==2.6.0','torchvision==0.21.0','--index-url','https://download.pytorch.org/whl/cu124'],'TORCH_INSTALL')\n",
++    "    logged([str(PYTHON),'-m','pip','install','-r',str(REPO/'experiments/image_trajectory_reference/requirements-colab.txt')],'PINNED_DEPENDENCIES')\n",
++    "    logged([str(PYTHON),'-m','pip','check'],'DEPENDENCY_CHECK')\n",
++    "    frozen=subprocess.check_output([str(PYTHON),'-m','pip','freeze'],text=True)\n",
++    "    (OUTPUT/'environment_freeze.txt').write_text(frozen)\n",
++    "except Exception as exc:\n",
++    "    failed('ENVIRONMENT',exc);raise\n"
++   ],
++   "id": "image-reference-4",
++   "outputs": [],
++   "execution_count": null
++  },
++  {
++   "cell_type": "code",
++   "metadata": {},
++   "source": [
++    "try:\n",
++    "    import urllib.request, zipfile\n",
++    "    sha='6aa69a9c5d4a9e75df457fcca8dfc71b64a6b870'\n",
++    "    archive=Path('/content/grow-reference-'+STAMP+'.zip')\n",
++    "    url='https://api.github.com/repos/luopengchen/GROW/zipball/'+sha\n",
++    "    urllib.request.urlretrieve(url,archive)\n",
++    "    extracted=Path('/content/grow-reference-'+STAMP)\n",
++    "    extracted.mkdir()\n",
++    "    with zipfile.ZipFile(archive) as package:\n",
++    "        for item in package.infolist():\n",
++    "            if not (extracted/item.filename).resolve().is_relative_to(extracted.resolve()):\n",
++    "                raise ValueError('invalid archive path')\n",
++    "        package.extractall(extracted)\n",
++    "    roots=[p for p in extracted.iterdir() if p.is_dir()]\n",
++    "    if len(roots)!=1: raise RuntimeError('unexpected official archive root')\n",
++    "    UPSTREAM=roots[0]\n",
++    "    verify_code='from experiments.image_trajectory_reference.official_bridge import verify_source; import json,sys; print(json.dumps(verify_source(sys.argv[1])))'\n",
++    "    checked=subprocess.check_output([str(PYTHON),'-c',verify_code,str(UPSTREAM)],cwd=REPO,text=True)\n",
++    "    write_json(OUTPUT/'upstream_receipt.json',{'url':url,'archive_sha256':hashlib.sha256(archive.read_bytes()).hexdigest(),'verification':json.loads(checked)})\n",
++    "    environment_code='import json,torch; from experiments.image_trajectory_reference.run import environment_receipt; from diffusers import DDIMScheduler,StableDiffusionPipeline; r=environment_receipt(); r.update(cuda_available=torch.cuda.is_available()); print(json.dumps(r))'\n",
++    "    environment=json.loads(subprocess.check_output([str(PYTHON),'-c',environment_code],cwd=REPO,text=True))\n",
++    "    write_json(OUTPUT/'environment_receipt.json',environment)\n",
++    "    if not environment['cuda_available']: raise RuntimeError('Select a Colab GPU runtime before running this fixed experiment')\n",
++    "    setup.update(status='SETUP_COMPLETE',upstream=str(UPSTREAM));write_json(OUTPUT/'setup_receipt.json',setup)\n",
++    "except Exception as exc:\n",
++    "    failed('UPSTREAM_OR_ENVIRONMENT',exc);raise\n"
++   ],
++   "id": "image-reference-5",
++   "outputs": [],
++   "execution_count": null
++  },
++  {
++   "cell_type": "code",
++   "metadata": {},
++   "source": [
++    "# Only the child process environment receives the optional secret.\n",
++    "try:\n",
++    "    from google.colab import userdata\n",
++    "    token=userdata.get('HF_TOKEN')\n",
++    "    if token: os.environ['HF_TOKEN']=token\n",
++    "except Exception:\n",
++    "    pass  # No secret or no permission: retain anonymous access.\n",
++    "finally:\n",
++    "    token=None\n",
++    "command=[str(PYTHON),'-u','-m','experiments.image_trajectory_reference.run','--upstream-root',str(UPSTREAM),'--output',str(RUN_OUTPUT)]\n",
++    "try:\n",
++    "    returncode=logged(command,'FIXED_RUN',cwd=REPO,check=False)\n",
++    "    RESULT_PATH=RUN_OUTPUT/'result.json'\n",
++    "    write_json(OUTPUT/'execution_receipt.json',{'command':command,'returncode':returncode,'result_path':str(RESULT_PATH),'result_exists':RESULT_PATH.is_file()})\n",
++    "    if not RESULT_PATH.is_file(): raise RuntimeError('runner failed before retained result; fixed setup rows remain in setup_receipt.json')\n",
++    "    setup.update(status='SUPERSEDED_BY_RESULT',result_path=str(RESULT_PATH));write_json(OUTPUT/'setup_receipt.json',setup)\n",
++    "except Exception as exc:\n",
++    "    failed('RUNNER',exc);raise\n"
++   ],
++   "id": "image-reference-6",
++   "outputs": [],
++   "execution_count": null
++  },
++  {
++   "cell_type": "code",
++   "metadata": {},
++   "source": [
++    "result=json.loads(RESULT_PATH.read_text())\n",
++    "if result['source_sha']!=SOURCE_SHA or result['fixed_denominator']!=FIXED:\n",
++    "    raise RuntimeError('source/denominator mismatch')\n",
++    "print('Status:',result['status'])\n",
++    "print('Model assets:',result.get('assets'))\n",
++    "print('Fixed counts:',result['counts'])\n",
++    "for name,row in result['evaluations'].items():\n",
++    "    print(name,row['status'],'bit errors=',row.get('bit_errors'),'BER=',row.get('ber'),'exact=',row.get('exact_bits'))\n",
++    "print('Saved-PNG quality diagnostic:',result.get('quality'))\n",
++    "print('Evidence ceiling:',result['evidence_ceiling'])\n",
++    "print('Retained result:',RESULT_PATH)\n",
++    "from IPython.display import display\n",
++    "from PIL import Image\n",
++    "for arm,row in result['images'].items():\n",
++    "    print(arm,row['status'])\n",
++    "    path=Path(row['path'])\n",
++    "    if row['status']=='SAVED' and path.is_file():\n",
++    "        with Image.open(path) as saved_png:\n",
++    "            display(saved_png.copy())\n"
++   ],
++   "id": "image-reference-7",
++   "outputs": [],
++   "execution_count": null
++  }
++ ],
++ "metadata": {
++  "kernelspec": {
++   "display_name": "Python 3",
++   "language": "python",
++   "name": "python3"
++  },
++  "language_info": {
++   "name": "python"
++  },
++  "candidate_binding": {
++   "source_sha": null,
++   "status": "UNPUBLISHED_DRAFT",
++   "execution": "User-run Colab only; local AST/CPU validation does not execute this notebook"
++  }
++ }
++}
+diff --git a/scripts/build_image_trajectory_reference_notebook.py b/scripts/build_image_trajectory_reference_notebook.py
+new file mode 100644
+index 0000000..eb58597
+--- /dev/null
++++ b/scripts/build_image_trajectory_reference_notebook.py
+@@ -0,0 +1,187 @@
++"""Build the fixed image-reference Colab draft; publish before SHA binding."""
++from pathlib import Path
++import argparse
++import ast
++import json
++import re
++
++ROOT=Path(__file__).resolve().parents[1]
++OUTPUT=ROOT/"notebooks/image_trajectory_reference_v1_colab.ipynb"
++
++
++def build(source_sha=None,output=OUTPUT):
++    if source_sha is not None and not re.fullmatch("[0-9a-f]{40}",source_sha):
++        raise ValueError("published immutable source SHA required")
++    template=json.loads((ROOT/"notebooks/rgb_dct_structured_terminal_feedback_v1_colab.ipynb").read_text())
++    mount="".join(template["cells"][0]["source"])
++    assert mount=="from google.colab import drive\ndrive.mount('/content/drive')\n"
++    cells=[]
++    def add(kind,text):
++        cell=dict(cell_type=kind,metadata={},source=text.splitlines(keepends=True),id=f"image-reference-{len(cells)}")
++        if kind=="code":
++            ast.parse(text);cell.update(outputs=[],execution_count=None)
++        cells.append(cell)
++    add("code",mount)
++    add("markdown","""# Fixed GROW published-code image reference
++
++One official owl prompt, seed 42: OFF + GROW, two saved PNGs, four independent
++32-bit reads (correct/wrong layout), eight post-read evaluations (OKOK/NOPE).
++This follows the pinned author's released FFT-real/mean-MSE code, not a claim
++of reproducing the paper's DCT/settings. No parameter scan or video guard.
++
++Status: """+("published source bound.\n" if source_sha else "UNPUBLISHED DRAFT; source SHA intentionally unset.\n")+"""
++The original SD2.1-base model currently returns anonymous HTTP 401. Access to
++that original asset is a prerequisite; the notebook records missing assets
++and retains 2/4/8 rows, without substituting checkpoints. It resolves one
++immutable original model revision before loading all components. No GPU run
++has been performed by the implementation agent. After publication and source
++binding, the user runs all once. Results go to a new Drive timestamp directory.
++The candidate environment requires Python 3.12; its complete Colab installation
++and GPU path have not been executed. An optional Colab Secret named HF_TOKEN
++can supply access to the original model; its value is never printed or saved.
++Without that secret the run remains anonymous; a token does not guarantee access.
++""")
++    add("code",f"SOURCE_SHA = {source_sha!r}\n"+r'''from pathlib import Path
++import datetime, hashlib, json, os, subprocess, sys, traceback
++STAMP = datetime.datetime.now(datetime.timezone.utc).strftime('%Y%m%dT%H%M%S%fZ')
++OUTPUT = Path('/content/drive/MyDrive/Video-WM/Image-Trajectory-Reference-V1') / STAMP
++OUTPUT.mkdir(parents=True, exist_ok=False)
++RUN_OUTPUT = OUTPUT / 'fixed_reference'
++REPO = Path('/content/SC-SSTW-IMAGE-REFERENCE-' + STAMP)
++VENV = Path('/content/image-reference-venv-' + STAMP)
++PYTHON = VENV / 'bin/python'
++FIXED = {'sources': 1, 'png_images': 2, 'blind_readouts': 4, 'evaluations': 8}
++setup = {'status': 'SETUP_STARTED', 'source_sha': SOURCE_SHA, 'fixed_denominator': FIXED,
++         'images': {a: {'status': 'NOT_RUN_SETUP'} for a in ('OFF','GROW')},
++         'reads': {a+'/'+k: {'status': 'NOT_RUN_SETUP'} for a in ('OFF','GROW') for k in ('CORRECT','WRONG')},
++         'evaluations': {a+'/'+k+'/'+t: {'status': 'NOT_RUN_SETUP'} for a in ('OFF','GROW') for k in ('CORRECT','WRONG') for t in ('REGISTERED','WRONG_MESSAGE')}}
++def write_json(path,data):
++    temp=path.with_suffix(path.suffix+'.tmp')
++    temp.write_text(json.dumps(data,indent=2)+'\n')
++    os.replace(temp,path)
++def failed(stage,exc):
++    setup.update(status='SETUP_FAILED',stage=stage,error=f'{type(exc).__name__}: {exc}')
++    write_json(OUTPUT/'setup_receipt.json',setup)
++    write_json(OUTPUT/'setup_failure.json',{'stage':stage,'error':str(exc),'traceback':traceback.format_exc()})
++def logged(command,stage,cwd=None,check=True):
++    try:
++        with (OUTPUT/'execution.log').open('a') as log:
++            log.write('COMMAND '+repr(command)+'\n');log.flush()
++            child=subprocess.Popen(command,cwd=cwd,stdout=subprocess.PIPE,stderr=subprocess.STDOUT,text=True,bufsize=1)
++            for line in child.stdout:
++                print(line,end='',flush=True);log.write(line);log.flush()
++            code=child.wait();log.write('EXIT '+str(code)+'\n')
++        if check and code: raise subprocess.CalledProcessError(code,command)
++        return code
++    except Exception as exc:
++        failed(stage,exc);raise
++write_json(OUTPUT/'setup_receipt.json',setup)
++print('Fixed output:',OUTPUT)
++if SOURCE_SHA is None:
++    error=RuntimeError('Unpublished draft: bind the verified published candidate SHA before Run all.')
++    failed('SOURCE_BINDING',error)
++    raise error
++''')
++    add("code",r'''try:
++    logged(['git','clone','--filter=blob:none','https://github.com/RICHAAARC/SC-SSTW.git',str(REPO)],'SOURCE_CLONE')
++    logged(['git','-C',str(REPO),'fetch','origin',SOURCE_SHA],'SOURCE_FETCH')
++    logged(['git','-C',str(REPO),'checkout','--detach',SOURCE_SHA],'SOURCE_CHECKOUT')
++    actual=subprocess.check_output(['git','-C',str(REPO),'rev-parse','HEAD'],text=True).strip()
++    dirty=subprocess.check_output(['git','-C',str(REPO),'status','--porcelain'],text=True)
++    if actual!=SOURCE_SHA or dirty: raise RuntimeError('source identity/clean checkout mismatch')
++    source_files={str(p.relative_to(REPO)):hashlib.sha256(p.read_bytes()).hexdigest()
++        for p in (REPO/'experiments/image_trajectory_reference').glob('*') if p.is_file()}
++    write_json(OUTPUT/'source_receipt.json',{'source_sha':actual,'clean':True,'files':source_files})
++except Exception as exc:
++    failed('SOURCE',exc);raise
++''')
++    add("code",r'''try:
++    if sys.version_info[:2] != (3,12):
++        raise RuntimeError('This pinned candidate environment requires Python 3.12')
++    logged([sys.executable,'-m','venv',str(VENV)],'ISOLATED_ENV')
++    logged([str(PYTHON),'-m','pip','install','torch==2.6.0','torchvision==0.21.0','--index-url','https://download.pytorch.org/whl/cu124'],'TORCH_INSTALL')
++    logged([str(PYTHON),'-m','pip','install','-r',str(REPO/'experiments/image_trajectory_reference/requirements-colab.txt')],'PINNED_DEPENDENCIES')
++    logged([str(PYTHON),'-m','pip','check'],'DEPENDENCY_CHECK')
++    frozen=subprocess.check_output([str(PYTHON),'-m','pip','freeze'],text=True)
++    (OUTPUT/'environment_freeze.txt').write_text(frozen)
++except Exception as exc:
++    failed('ENVIRONMENT',exc);raise
++''')
++    add("code",r'''try:
++    import urllib.request, zipfile
++    sha='6aa69a9c5d4a9e75df457fcca8dfc71b64a6b870'
++    archive=Path('/content/grow-reference-'+STAMP+'.zip')
++    url='https://api.github.com/repos/luopengchen/GROW/zipball/'+sha
++    urllib.request.urlretrieve(url,archive)
++    extracted=Path('/content/grow-reference-'+STAMP)
++    extracted.mkdir()
++    with zipfile.ZipFile(archive) as package:
++        for item in package.infolist():
++            if not (extracted/item.filename).resolve().is_relative_to(extracted.resolve()):
++                raise ValueError('invalid archive path')
++        package.extractall(extracted)
++    roots=[p for p in extracted.iterdir() if p.is_dir()]
++    if len(roots)!=1: raise RuntimeError('unexpected official archive root')
++    UPSTREAM=roots[0]
++    verify_code='from experiments.image_trajectory_reference.official_bridge import verify_source; import json,sys; print(json.dumps(verify_source(sys.argv[1])))'
++    checked=subprocess.check_output([str(PYTHON),'-c',verify_code,str(UPSTREAM)],cwd=REPO,text=True)
++    write_json(OUTPUT/'upstream_receipt.json',{'url':url,'archive_sha256':hashlib.sha256(archive.read_bytes()).hexdigest(),'verification':json.loads(checked)})
++    environment_code='import json,torch; from experiments.image_trajectory_reference.run import environment_receipt; from diffusers import DDIMScheduler,StableDiffusionPipeline; r=environment_receipt(); r.update(cuda_available=torch.cuda.is_available()); print(json.dumps(r))'
++    environment=json.loads(subprocess.check_output([str(PYTHON),'-c',environment_code],cwd=REPO,text=True))
++    write_json(OUTPUT/'environment_receipt.json',environment)
++    if not environment['cuda_available']: raise RuntimeError('Select a Colab GPU runtime before running this fixed experiment')
++    setup.update(status='SETUP_COMPLETE',upstream=str(UPSTREAM));write_json(OUTPUT/'setup_receipt.json',setup)
++except Exception as exc:
++    failed('UPSTREAM_OR_ENVIRONMENT',exc);raise
++''')
++    add("code",r'''# Only the child process environment receives the optional secret.
++try:
++    from google.colab import userdata
++    token=userdata.get('HF_TOKEN')
++    if token: os.environ['HF_TOKEN']=token
++except Exception:
++    pass  # No secret or no permission: retain anonymous access.
++finally:
++    token=None
++command=[str(PYTHON),'-u','-m','experiments.image_trajectory_reference.run','--upstream-root',str(UPSTREAM),'--output',str(RUN_OUTPUT)]
++try:
++    returncode=logged(command,'FIXED_RUN',cwd=REPO,check=False)
++    RESULT_PATH=RUN_OUTPUT/'result.json'
++    write_json(OUTPUT/'execution_receipt.json',{'command':command,'returncode':returncode,'result_path':str(RESULT_PATH),'result_exists':RESULT_PATH.is_file()})
++    if not RESULT_PATH.is_file(): raise RuntimeError('runner failed before retained result; fixed setup rows remain in setup_receipt.json')
++    setup.update(status='SUPERSEDED_BY_RESULT',result_path=str(RESULT_PATH));write_json(OUTPUT/'setup_receipt.json',setup)
++except Exception as exc:
++    failed('RUNNER',exc);raise
++''')
++    add("code",r'''result=json.loads(RESULT_PATH.read_text())
++if result['source_sha']!=SOURCE_SHA or result['fixed_denominator']!=FIXED:
++    raise RuntimeError('source/denominator mismatch')
++print('Status:',result['status'])
++print('Model assets:',result.get('assets'))
++print('Fixed counts:',result['counts'])
++for name,row in result['evaluations'].items():
++    print(name,row['status'],'bit errors=',row.get('bit_errors'),'BER=',row.get('ber'),'exact=',row.get('exact_bits'))
++print('Saved-PNG quality diagnostic:',result.get('quality'))
++print('Evidence ceiling:',result['evidence_ceiling'])
++print('Retained result:',RESULT_PATH)
++from IPython.display import display
++from PIL import Image
++for arm,row in result['images'].items():
++    print(arm,row['status'])
++    path=Path(row['path'])
++    if row['status']=='SAVED' and path.is_file():
++        with Image.open(path) as saved_png:
++            display(saved_png.copy())
++''')
++    notebook=dict(nbformat=4,nbformat_minor=5,cells=cells,metadata=dict(
++        kernelspec=dict(display_name="Python 3",language="python",name="python3"),
++        language_info=dict(name="python"),candidate_binding=dict(
++            source_sha=source_sha,status="PUBLISHED_SHA_BOUND" if source_sha else "UNPUBLISHED_DRAFT",
++            execution="User-run Colab only; local AST/CPU validation does not execute this notebook")))
++    Path(output).write_text(json.dumps(notebook,indent=1)+'\n')
++    return Path(output)
++
++
++if __name__=="__main__":
++    p=argparse.ArgumentParser(description=__doc__);p.add_argument("--source-sha");p.add_argument("--output",type=Path,default=OUTPUT)
++    args=p.parse_args();print(build(args.source_sha,args.output))
+diff --git a/tests/test_image_trajectory_reference.py b/tests/test_image_trajectory_reference.py
+new file mode 100644
+index 0000000..5e53036
+--- /dev/null
++++ b/tests/test_image_trajectory_reference.py
+@@ -0,0 +1,210 @@
++"""CPU fake components, but unchanged pinned upstream writer/reader bodies."""
++from __future__ import annotations
++import copy
++import dataclasses
++import json
++import os
++from pathlib import Path
++from types import SimpleNamespace
++import numpy as np
++import pytest
++from PIL import Image
++from experiments.image_trajectory_reference import official_bridge as bridge
++from experiments.image_trajectory_reference import run
++
++pytestmark=pytest.mark.unit
++UPSTREAM=Path(os.environ.get("GROW_REFERENCE_SOURCE_ROOT",
++    "/tmp/image-trajectory-reference-a1-official-20260929/grow-tree/luopengchen-GROW-6aa69a9"))
++
++
++@pytest.fixture(scope="session")
++def official_source():
++    if not UPSTREAM.is_dir():
++        pytest.skip("Pinned upstream source absent; set GROW_REFERENCE_SOURCE_ROOT to its verified extraction")
++    bridge.verify_source(UPSTREAM)
++    return UPSTREAM
++
++
++@pytest.fixture(autouse=True)
++def one_cpu_thread():
++    import torch
++    old=torch.get_num_threads();torch.set_num_threads(1)
++    yield
++    torch.set_num_threads(old)
++
++
++def fake_pipeline():
++    import torch
++    from diffusers import DDIMScheduler
++    class UNet(torch.nn.Module):
++        config=SimpleNamespace(in_channels=4)
++        def forward(self,x,t,encoder_hidden_states):
++            return SimpleNamespace(sample=.05*x)
++    class Encoder(torch.nn.Module):
++        def forward(self,x):
++            pooled=torch.nn.functional.avg_pool2d(x,8)
++            return torch.cat((pooled,pooled.mean(1,keepdim=True)),1)
++    class Decoder(torch.nn.Module):
++        def forward(self,x):
++            return torch.nn.functional.interpolate(x[:,:3].tanh(),scale_factor=8,mode="nearest")
++    class VAE:
++        config=SimpleNamespace(scaling_factor=.18215)
++        encoder=Encoder();decoder=Decoder()
++        def encode(self,x):return SimpleNamespace(latent_dist=SimpleNamespace(mean=self.encoder(x)))
++        def decode(self,x):return SimpleNamespace(sample=self.decoder(x))
++    class Tokenizer:
++        model_max_length=77
++        def __call__(self,*_,**__):return SimpleNamespace(input_ids=torch.zeros((1,77),dtype=torch.long))
++    return SimpleNamespace(unet=UNet(),vae=VAE(),tokenizer=Tokenizer(),
++        text_encoder=lambda ids:(torch.zeros((1,77,8)),),
++        scheduler=DDIMScheduler(beta_start=.00085,beta_end=.012,beta_schedule="scaled_linear",
++                                clip_sample=False,set_alpha_to_one=False))
++
++
++@pytest.mark.usefixtures("official_source")
++def test_exact_official_defaults_layout_and_truth_free_reader(tmp_path):
++    cfg=run.load_config(UPSTREAM)
++    assert cfg["official_config"]["guidance_scale"]==200 and cfg["public_payload_bits"]==32
++    receipt=bridge.layout_receipt("watermark","watermark-wrong")
++    assert receipt["correct"]["seed"]==974
++    assert receipt["correct"]["bit_assignment_sha256"]!=receipt["wrong"]["bit_assignment_sha256"]
++    with pytest.raises(ValueError,match="collides"):
++        bridge.layout_receipt("watermark","kramretaw")
++    image_path=tmp_path/"input.png"
++    Image.fromarray(np.random.default_rng(42).integers(0,256,(512,512,3),dtype=np.uint8)).save(image_path)
++    public=bridge.PublicReaderConfig(device="cpu",dtype="float32",secret_key="watermark")
++    assert not hasattr(public,"message")
++    result=bridge.read_saved_png(image_path,public,fake_pipeline(),UPSTREAM)
++    assert result["status"]=="READ" and len(result["decoded_bits"])==32
++    assert result["truth_used"] is False
++
++
++@pytest.mark.usefixtures("official_source")
++def test_actual_official_writer_saved_png_read_bits_then_evaluate(tmp_path):
++    def factory(config,record):
++        record(dict(status="CPU_FAKE",revision=None));return fake_pipeline()
++    result=run.run_fixed(tmp_path/"run",UPSTREAM,pipeline_factory=factory,device="cpu")
++    assert result["status"]=="FIXED_REFERENCE_COMPLETE", result["failures"]
++    assert result["counts"]==dict(saved_images=2,readouts=4,evaluated=8)
++    assert result["model_calls_executed"] and not result["model_loaded"] and not result["real_model_executed"]
++    assert result["calls"]["GENERATE_OFF"]["unet"]==dict(attempted=50,completed=50)
++    assert result["calls"]["GENERATE_GROW"]["unet"]==dict(attempted=50,completed=50)
++    assert sum(row.get("vae_encoder",{}).get("completed",0) for row in result["calls"].values())==4
++    assert sum(row.get("vae_decoder",{}).get("completed",0) for row in result["calls"].values())==2
++    blind=tmp_path/"run/blind_readouts.json"
++    assert bridge.sha256(blind)==result["blind_readouts_sha256_before_evaluation"]
++    content=json.loads(blind.read_text())
++    assert not content["evaluation_performed"] and content["no_truth_inputs"]
++    for identity,row in result["reads"].items():
++        arm=identity.split("/")[0]
++        assert row["png_sha256"]==result["images"][arm]["sha256"]
++    before=blind.read_bytes()
++    config=run.load_config(UPSTREAM)
++    _,_,codec=bridge.load_official(UPSTREAM)
++    changed=copy.deepcopy(config);changed["wrong_message"]="ABCD"
++    run.evaluate_readouts(blind,changed,codec)
++    assert blind.read_bytes()==before
++    assert all(type(row["exact_bits"]) is bool for row in result["evaluations"].values())
++
++
++@pytest.mark.usefixtures("official_source")
++def test_png_reopen_not_memory_object(tmp_path):
++    path=tmp_path/"roundtrip.png"
++    image=Image.new("RGB",(512,512),(10,20,30));image.save(path)
++    image.paste((255,255,255),(0,0,512,512))
++    public=bridge.PublicReaderConfig(device="cpu",dtype="float32",secret_key="watermark")
++    first=bridge.read_saved_png(path,public,fake_pipeline(),UPSTREAM)
++    image.save(path)
++    second=bridge.read_saved_png(path,public,fake_pipeline(),UPSTREAM)
++    assert first["png_sha256"]!=second["png_sha256"]
++
++
++@pytest.mark.usefixtures("official_source")
++def test_asset_missing_keeps_all_fixed_rows(tmp_path):
++    def unavailable(config,record):
++        record(dict(status="ASSET_ACCESS_REQUIRED",http_status=401,stage="MODEL_INFO"))
++        raise RuntimeError("original checkpoint unavailable")
++    result=run.run_fixed(tmp_path/"missing",UPSTREAM,pipeline_factory=unavailable,device="cpu")
++    assert result["status"]=="ASSET_ACCESS_REQUIRED"
++    assert result["counts"]==dict(saved_images=0,readouts=0,evaluated=0)
++    assert [len(result[group]) for group in ("images","reads","evaluations")]==[2,4,8]
++    assert all(row["status"]=="NOT_COMPLETED" for group in ("images","reads","evaluations") for row in result[group].values())
++    assert not result["model_calls_executed"]
++
++
++@pytest.mark.parametrize("failure,asset_status,top_status", [
++    (401,"ASSET_ACCESS_REQUIRED","ASSET_ACCESS_REQUIRED"),
++    (403,"ASSET_ACCESS_REQUIRED","ASSET_ACCESS_REQUIRED"),
++    (404,"ASSET_ACCESS_REQUIRED","ASSET_ACCESS_REQUIRED"),
++    (429,"RESOLVE_FAILED","ENGINEERING_FAILURE"),
++    (503,"RESOLVE_FAILED","ENGINEERING_FAILURE"),
++    ("timeout","RESOLVE_FAILED","ENGINEERING_FAILURE"),
++    ("invalid_revision","RESOLVE_FAILED","ENGINEERING_FAILURE"),
++])
++@pytest.mark.usefixtures("official_source")
++def test_model_metadata_failure_classification(monkeypatch,tmp_path,failure,asset_status,top_status):
++    from huggingface_hub import HfApi
++    import torch
++    def model_info(_self,_model_id):
++        if failure=="invalid_revision":
++            return SimpleNamespace(sha="not-an-immutable-revision")
++        if failure=="timeout":
++            raise TimeoutError("metadata request timed out")
++        exc=OSError(f"metadata HTTP {failure}")
++        exc.response=SimpleNamespace(status_code=failure)
++        raise exc
++    def no_cuda_probe():
++        raise AssertionError("metadata failure must stop before model/CUDA work")
++    monkeypatch.setattr(HfApi,"model_info",model_info)
++    monkeypatch.setattr(torch.cuda,"is_available",no_cuda_probe)
++    result=run.run_fixed(tmp_path/str(failure),UPSTREAM)
++    assert result["status"]==top_status
++    assert result["assets"]["status"]==asset_status
++    assert result["assets"]["stage"]=="MODEL_INFO"
++    assert result["assets"]["http_status"]==(failure if isinstance(failure,int) else None)
++    assert result["assets"]["error"]
++    assert result["counts"]==dict(saved_images=0,readouts=0,evaluated=0)
++    assert [len(result[group]) for group in ("images","reads","evaluations")]==[2,4,8]
++    assert not result["model_loaded"] and not result["model_calls_executed"]
++    assert all(row["status"]=="NOT_COMPLETED" for group in ("images","reads","evaluations") for row in result[group].values())
++
++
++def test_wrapped_resource_errors_are_not_confused_with_oom():
++    class ResourceError(Exception):
++        response=SimpleNamespace(status_code=403)
++    wrapped=OSError("component unavailable");wrapped.__cause__=ResourceError()
++    assert run.asset_access_error(wrapped)
++    assert run.asset_access_error(FileNotFoundError("checkpoint"))
++    assert not run.asset_access_error(RuntimeError("CUDA out of memory"))
++
++
++@pytest.mark.usefixtures("official_source")
++def test_bit_evaluation_retains_invalid_utf8_raw_bits(tmp_path):
++    config=run.load_config(UPSTREAM);_,_,codec=bridge.load_official(UPSTREAM)
++    rows={f"{arm}/{key}":dict(status="READ",image_id=arm,key_id=key,decoded_bits=[1]*32)
++          for arm in run.ARMS for key in run.KEYS}
++    path=tmp_path/"blind.json";run.atomic_json(path,dict(reads=rows))
++    assert codec.bits_to_message([1]*32)==""
++    scores=run.evaluate_readouts(path,config,codec)
++    assert len(scores)==8 and all(row["exact_bits"] is False for row in scores.values())
++
++
++def test_unpublished_notebook_retains_setup_denominator_before_failure(tmp_path):
++    import ast
++    from scripts.build_image_trajectory_reference_notebook import build
++    notebook_path=build(output=tmp_path/"draft.ipynb")
++    notebook=json.loads(notebook_path.read_text())
++    assert "".join(notebook["cells"][0]["source"])=="from google.colab import drive\ndrive.mount('/content/drive')\n"
++    for cell in notebook["cells"]:
++        if cell["cell_type"]=="code":
++            ast.parse("".join(cell["source"]))
++            assert cell["outputs"]==[] and cell["execution_count"] is None
++    setup="".join(notebook["cells"][2]["source"])
++    setup=setup.replace("Path('/content/drive/MyDrive/Video-WM/Image-Trajectory-Reference-V1')",f"Path({str(tmp_path)!r})")
++    with pytest.raises(RuntimeError,match="Unpublished draft"):
++        exec(compile(setup,"notebook-setup","exec"),{})
++    receipts=list(tmp_path.glob("*/setup_receipt.json"))
++    assert len(receipts)==1
++    receipt=json.loads(receipts[0].read_text())
++    assert receipt["status"]=="SETUP_FAILED"
++    assert [len(receipt[group]) for group in ("images","reads","evaluations")]==[2,4,8]

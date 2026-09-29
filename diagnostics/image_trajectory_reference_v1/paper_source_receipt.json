@@ -1,0 +1,20 @@
+{
+  "date": "2026-09-29",
+  "papers": [
+    {
+      "url": "https://openaccess.thecvf.com/content/CVPR2026/papers/Luo_GROW_Watermark_Generation_with_Progressive_Guidance_for_Diffusion_Models_CVPR_2026_paper.pdf",
+      "local_cache": "/tmp/image-trajectory-reference-a1-official-20260929/grow_cvf_paper.pdf",
+      "sha256": "484969c867bf2b879aa675ca1eec6de4093d10f7225547c301d0ee32bede4fce",
+      "bytes": 10045973,
+      "kind": "formal CVPR 2026 proceedings, primary comparison"
+    },
+    {
+      "url": "https://zexijia.github.io/assets/files/GROW__Watermark_Generation_with_Progressive_Guidance_for_Diffusion_Models-2.pdf",
+      "local_cache": "/tmp/image-trajectory-reference-a1-official-20260929/grow_author_paper.pdf",
+      "sha256": "dcba12b1e58fd203bd28077ee48009d509b025973814113368430b5de999fdae",
+      "bytes": 13151080,
+      "kind": "author-hosted CVPR Submission #8345 review copy; separate source"
+    }
+  ],
+  "review": "Root and A2 independently verified formal CVF pages35980-35982; the author review copy was also checked separately and is not substituted for final."
+}

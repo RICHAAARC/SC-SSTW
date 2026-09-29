@@ -1,0 +1,127 @@
+{
+  "status": "ENGINEERING_PASS",
+  "command": [
+    "/tmp/image-trajectory-reference-a1-official-20260929/cpu-venv-torch26/bin/python",
+    "-m",
+    "pytest",
+    "tests/test_image_trajectory_reference.py",
+    "-q"
+  ],
+  "returncode": 0,
+  "wall_seconds": 6.307956406002631,
+  "python": "3.12.3 (main, Aug 31 2026, 10:18:26) [GCC 13.3.0]",
+  "packages": {
+    "torch": "2.6.0+cpu",
+    "torchvision": "0.21.0+cpu",
+    "diffusers": "0.39.0",
+    "transformers": "4.57.6",
+    "accelerate": "1.11.0",
+    "numpy": "2.5.2",
+    "Pillow": "12.3.0",
+    "tqdm": "4.70.0",
+    "PyYAML": "6.0.3",
+    "huggingface_hub": "0.36.2",
+    "safetensors": "0.8.0",
+    "pytest": "9.1.1",
+    "psutil": "7.2.2"
+  },
+  "environment": "/tmp/image-trajectory-reference-a1-official-20260929/cpu-venv-torch26",
+  "dependency_isolation": "New temporary venv installs torch2.6.0+cpu,torchvision0.21.0+cpu,accelerate1.11.0 and its missing psutil7.2.2 transitive dependency; .pth reuses other CEG environment dependencies read-only. No existing environment files changed.",
+  "cpu_fixture": "Actual byte-verified official GROW writer and _read_bits plus real DDIMScheduler; fake UNet,VAE,tokenizer,text_encoder, no model weights",
+  "core_imports": [
+    "torch",
+    "torchvision",
+    "accelerate",
+    "DDIMScheduler",
+    "StableDiffusionPipeline"
+  ],
+  "numpy_torch_interop": "float32 roundtrip matched",
+  "gpu_executed": false,
+  "model_loaded": false,
+  "colab_setup_executed": false,
+  "published_source_sha": null,
+  "evidence_ceiling": "CPU fake/engineering only, no image-watermark efficacy claim",
+  "historical_preupgrade_tests": "7 passed in5.10s with original local torch2.5.1+cpu; superseded for compatibility validation by this isolated torch2.6 run",
+  "prior_real_video_result": "Retained unchanged:6/6 points,18/18 candidates,0/18 ACCEPT,16/18 loss worsening; not a result of this image candidate",
+  "pip_check": {
+    "returncode": 0,
+    "output": "No broken requirements found.\n",
+    "evidence_version": "v1; dependency environment unchanged"
+  },
+  "environment_variables": {
+    "GROW_REFERENCE_SOURCE_ROOT": "/tmp/image-trajectory-reference-a1-official-20260929/grow-tree/luopengchen-GROW-6aa69a9"
+  },
+  "pytest_summary": "14 passed in 5.02s",
+  "skipped_in_main_validation": 0,
+  "absent_cache_isolation": {
+    "status": "PASS",
+    "summary": "2 passed, 5 skipped in 1.12s",
+    "source_path": "/tmp/image-reference-intentionally-missing-source",
+    "meaning": "Explicit skip for unavailable upstream fixture; never counted as upstream-method test PASS",
+    "evidence_version": "v1 independent isolation check, not rerun for v2"
+  },
+  "v1_inherited": {
+    "command": [
+      "/tmp/image-trajectory-reference-a1-official-20260929/cpu-venv-torch26/bin/python",
+      "-m",
+      "pytest",
+      "tests/test_image_trajectory_reference.py",
+      "-q"
+    ],
+    "summary": "7 passed in 5.00s",
+    "evidence": "snapshot_v1.json + candidate_v1.patch + unchanged pytest_v1.txt",
+    "meaning": "Original 7-test validation at v1; retained distinctly from v2"
+  },
+  "revision": "v3_test_import_precondition_only",
+  "delta": [
+    "Test preloads unchanged official dependency modules before patching the real pipeline CUDA admission check",
+    "Separate fresh processes pass metadata-only 7 cases and full14 targeted tests",
+    "Dependency imports may query CUDA availability; intercepted actual model-loading CUDA check was not reached in metadata failures",
+    "No run/config/bridge/notebook/upstream method bytes changed"
+  ],
+  "v2_inherited": {
+    "command": [
+      "/tmp/image-trajectory-reference-a1-official-20260929/cpu-venv-torch26/bin/python",
+      "-m",
+      "pytest",
+      "tests/test_image_trajectory_reference.py",
+      "-q"
+    ],
+    "summary": "14 passed in 5.76s",
+    "evidence": "snapshot_v2.json + candidate_v2.patch + unchanged pytest_v2.txt",
+    "limitation": "v2 full-file order loaded Diffusers before CUDA interception; isolated metadata-only selection was not proven at v2"
+  },
+  "v3_validation": {
+    "isolated_metadata": {
+      "command": [
+        "/tmp/image-trajectory-reference-a1-official-20260929/cpu-venv-torch26/bin/python",
+        "-m",
+        "pytest",
+        "tests/test_image_trajectory_reference.py",
+        "-q",
+        "-k",
+        "model_metadata_failure_classification"
+      ],
+      "returncode": 0,
+      "wall_seconds": 5.612523208001221,
+      "summary": "7 passed, 7 deselected in 4.31s",
+      "log": "pytest_v3_metadata.txt",
+      "new_process": true
+    },
+    "all_targeted": {
+      "command": [
+        "/tmp/image-trajectory-reference-a1-official-20260929/cpu-venv-torch26/bin/python",
+        "-m",
+        "pytest",
+        "tests/test_image_trajectory_reference.py",
+        "-q"
+      ],
+      "returncode": 0,
+      "wall_seconds": 6.307956406002631,
+      "summary": "14 passed in 5.02s",
+      "log": "pytest_v3.txt",
+      "new_process": true
+    }
+  },
+  "model_cuda_boundary": "No model loaded or generation executed. Diffusers dependency import may query availability. The post-import load_real_pipeline CUDA check is intercepted and proven unentered for metadata failures."
+}

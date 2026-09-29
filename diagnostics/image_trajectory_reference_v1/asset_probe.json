@@ -1,0 +1,42 @@
+{
+  "observed_at": "2026-09-29T02:34:09.9383984Z",
+  "authentication": "anonymous",
+  "method": "Windows HTTPS metadata only; no weights downloaded",
+  "observations": [
+    {
+      "url": "https://huggingface.co/api/models/stabilityai/stable-diffusion-2-1-base",
+      "status": 401,
+      "error": "Response status code does not indicate success: 401 (Unauthorized).",
+      "detail": "\r\n{\r\n  \"error\": \"Invalid username or password.\"\r\n}"
+    },
+    {
+      "url": "https://huggingface.co/stabilityai/stable-diffusion-2-1-base/resolve/main/model_index.json",
+      "status": 401,
+      "error": "Response status code does not indicate success: 401 (Unauthorized).",
+      "detail": "Invalid username or password."
+    }
+  ],
+  "conclusion": "ASSET_ACCESS_REQUIRED; anonymous original model inaccessible; cause (gated/private/deleted/other) not established",
+  "model_weights_downloaded": false,
+  "model_loaded": false,
+  "replacement_model": null,
+  "guidance_assets": {
+    "status": "INCOMPLETE_ASSET_INSTRUCTIONS",
+    "source_commit": "d1f8e48946f830087baf32356e5ce0eeec68e27e",
+    "absent_from_source": [
+      "detector/models/videoseal_y_256b_img_dec.pt",
+      "detector/models/whitener",
+      "setup.py",
+      "pyproject.toml"
+    ],
+    "external_whitener_path": "placeholder WHITENER_PATH; samples.pt not provided",
+    "source_review": "A3 read-only source review, detector/__init__.py:15-34 and full tree"
+  },
+  "required_for_real_grow_run": [
+    "Access to original stabilityai/stable-diffusion-2-1-base model repository; optional HF_TOKEN does not guarantee this",
+    "Resolve original model commit SHA and load scheduler/pipeline components at that same SHA",
+    "Published candidate source SHA bound by notebook builder; clean source verification",
+    "Python3.12 and successful isolated pinned dependency installation/import checks",
+    "User-authorized Colab CUDA execution of this fixed 2/4/8 experiment"
+  ]
+}

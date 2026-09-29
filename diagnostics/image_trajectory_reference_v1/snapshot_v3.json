@@ -1,0 +1,117 @@
+{
+  "version": "candidate_v3",
+  "status": "FROZEN_FOR_DELTA_REVIEW",
+  "created_at": "2026-09-29T03:09:12.693950+00:00",
+  "base": "92583b6bdd58733427434ad54943c82dc7a9dcc2",
+  "branch": "dev/image-trajectory-reference-v1",
+  "file_count": 18,
+  "files": {
+    "diagnostics/image_trajectory_reference_v1/asset_probe.json": {
+      "sha256": "536312c8b7b60b25b9f1860f142e9449c5d8276502bd96ecd9b8df591a21b7b2",
+      "bytes": 1952
+    },
+    "diagnostics/image_trajectory_reference_v1/dependency_probe.json": {
+      "sha256": "7cd167a037ce7e20084401f7f14bce61eb316e57e23d025ec3f1b6b4f2878c4d",
+      "bytes": 5866
+    },
+    "diagnostics/image_trajectory_reference_v1/local_validation.json": {
+      "sha256": "4fa11270be9f15fdaf33e2d995cc9b8b71cf147e532b5cc003223e8e91f627f2",
+      "bytes": 5182
+    },
+    "diagnostics/image_trajectory_reference_v1/official_source_manifest.json": {
+      "sha256": "3fd92a46ca018d9d4048dc9d1f8f21b76b4c1b394b93d308a2b6905fff70563b",
+      "bytes": 23618
+    },
+    "diagnostics/image_trajectory_reference_v1/paper_source_receipt.json": {
+      "sha256": "af2cb7c9ef0e06bb8f160322cf393ee24964ad2de36d04a13138009d0fcb0620",
+      "bytes": 1096
+    },
+    "diagnostics/image_trajectory_reference_v1/pytest_v1.txt": {
+      "sha256": "1eb52d6d938e6135dc2749714fa775b7551c4103edd49f5925c33830379aebdd",
+      "bytes": 98
+    },
+    "diagnostics/image_trajectory_reference_v1/pytest_v2.txt": {
+      "sha256": "108f80d626d8b816bc6247cb551ab1bc4d581b1fc5c5405554558e6b74e96721",
+      "bytes": 99
+    },
+    "diagnostics/image_trajectory_reference_v1/pytest_v3.txt": {
+      "sha256": "78986312fa79fea944f52a8cf41da929a5abc68b8f622024d6137639b00fd9b0",
+      "bytes": 99
+    },
+    "diagnostics/image_trajectory_reference_v1/pytest_v3_metadata.txt": {
+      "sha256": "4bd4597362e88fe6246c6604349b957ae46c44440c818f5a304750358d1a2129",
+      "bytes": 112
+    },
+    "docs/image_trajectory_reference_v1.md": {
+      "sha256": "e92c54fa6184bb3f2d830d4d99ff2d47c0f3adfba1b99977eec753444432e215",
+      "bytes": 15778
+    },
+    "experiments/image_trajectory_reference/__init__.py": {
+      "sha256": "0778a4271a2f028d6c77842a5b2dce45361564ec788d22e048b0a3ce07bcc95e",
+      "bytes": 77
+    },
+    "experiments/image_trajectory_reference/config.json": {
+      "sha256": "a1d154a4a7e35338824b25576a40400dd5bb3c25bcb462abdf3c0a818a207a55",
+      "bytes": 1260
+    },
+    "experiments/image_trajectory_reference/official_bridge.py": {
+      "sha256": "82eedaa35882de5b32366794c83f2f5273976c0aabcb06b972c26a1dda46f519",
+      "bytes": 5275
+    },
+    "experiments/image_trajectory_reference/requirements-colab.txt": {
+      "sha256": "2e029b6843f00774031feb1006bebbf59c324423a8591182cfc77465f0bc0170",
+      "bytes": 346
+    },
+    "experiments/image_trajectory_reference/run.py": {
+      "sha256": "1096f39c5d8a711f1c4b9b2857b62040275db841053dbd82d3ec3d3bac34483b",
+      "bytes": 15036
+    },
+    "notebooks/image_trajectory_reference_v1_colab.ipynb": {
+      "sha256": "aad31f618a15276d6b647e8132240201e1ed2c88b0092beef0908a8a4463b1cf",
+      "bytes": 11983
+    },
+    "scripts/build_image_trajectory_reference_notebook.py": {
+      "sha256": "68da536a5a6214d2b9e69c7eec9bd2adda3df9c5aca51303cfb2ab780c4984d0",
+      "bytes": 11038
+    },
+    "tests/test_image_trajectory_reference.py": {
+      "sha256": "82c64d7bb0d8ff3568d25031029ea1925c0fdc13d3a885a5042510699b171464",
+      "bytes": 10711
+    }
+  },
+  "source_tree_sha256": "d333bf5294a465e6a89956b96949655f1c8ea56fcafea2a78369caee703da8c7",
+  "source_tree_hash_definition": "sha256(concatenate sorted path + NUL + file SHA256 + LF)",
+  "patch": "diagnostics/image_trajectory_reference_v1/candidate_v3.patch",
+  "patch_sha256": "169021681a724c5b9c8a742ed026e110d837082441f6107b1113887f65baf7ca",
+  "prior_snapshot": "diagnostics/image_trajectory_reference_v1/snapshot_v2.json",
+  "prior_snapshot_sha256": "bd5c136f1a969ac0ae98f7fe83054a64dc79900b1a787f53840b82abee280a7e",
+  "delta_files": [
+    "diagnostics/image_trajectory_reference_v1/local_validation.json",
+    "diagnostics/image_trajectory_reference_v1/pytest_v3.txt",
+    "diagnostics/image_trajectory_reference_v1/pytest_v3_metadata.txt",
+    "tests/test_image_trajectory_reference.py"
+  ],
+  "unchanged_prior_files": 14,
+  "verification": {
+    "all_candidate_whitespace": "PASS",
+    "tracked_diff_check": "PASS",
+    "reverse_patch_check": "PASS",
+    "v1_v2_snapshot_patch_preserved": "PASS"
+  },
+  "tests": {
+    "isolated_metadata": "7 passed,7 deselected in4.31s",
+    "all_targeted": "14 passed in5.02s",
+    "skipped": 0,
+    "processes": "Each command in a new process",
+    "cuda_boundary": "Dependency imports may query availability; actual model-loading CUDA check unentered for metadata failures"
+  },
+  "method_change": false,
+  "runtime_source_changed": false,
+  "notebook_changed": false,
+  "scientific_status": "NOT_EXECUTED; no real model/GPU/Colab",
+  "publication": {
+    "source_sha": null,
+    "notebook": "UNPUBLISHED_DRAFT"
+  },
+  "write_lock": "A1 stops all candidate writes after v3 freeze pending review"
+}

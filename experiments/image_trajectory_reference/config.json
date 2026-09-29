@@ -1,0 +1,24 @@
+{
+  "name": "image_trajectory_reference_v1_grow_published_code",
+  "upstream_repo": "luopengchen/GROW",
+  "upstream_commit": "6aa69a9c5d4a9e75df457fcca8dfc71b64a6b870",
+  "official_config": {
+    "model_id": "stabilityai/stable-diffusion-2-1-base",
+    "device": "cuda", "dtype": "float32", "seed": 42,
+    "image_size": 512, "num_inference_steps": 50, "cfg_scale": 7.5,
+    "secret_key": "watermark", "message": "OKOK",
+    "watermark_strength": 0.5, "guidance_scale": 200.0,
+    "watermark_start_ratio": 0.5, "dct_min": 0.2, "dct_max": 0.5,
+    "channels": [0,1,2,3], "center_ratio": 1.0
+  },
+  "case": {
+    "id": "official_owl_seed42",
+    "prompt": "a sharp wildlife photo of an owl with feather details, perched on an old tree branch"
+  },
+  "wrong_key": "watermark-wrong",
+  "wrong_message": "NOPE",
+  "public_payload_bits": 32,
+  "fixed_denominator": {"sources": 1, "png_images": 2, "blind_readouts": 4, "evaluations": 8},
+  "model_asset_policy": "Resolve only the original official model to one immutable revision before all component loads; no replacement checkpoint.",
+  "evidence_ceiling": "One-source saved-PNG official-published-code reference only; not paper DCT reproduction, low FPR, generalization, robustness or video migration evidence."
+}
