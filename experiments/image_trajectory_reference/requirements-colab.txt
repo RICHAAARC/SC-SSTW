@@ -1,13 +1,11 @@
-# Candidate runtime pins; upstream supplies lower bounds, not this exact lock.
-# Torch/CUDA wheels are installed first from the cu124 index by the notebook.
-torch==2.6.0
-torchvision==0.21.0
-diffusers==0.39.0
-transformers==4.57.6
-accelerate==1.11.0
-numpy==2.5.2
-Pillow==12.3.0
-tqdm==4.70.0
-PyYAML==6.0.3
-huggingface_hub==0.36.2
-safetensors==0.8.0
+# Reuse Colab's working torch/torchvision pair; no fixed Python or CUDA build.
+# Compatible API ranges allow pip to select wheels for the active Python.
+diffusers>=0.35,<0.40
+transformers>=4.44,<5
+accelerate>=0.34,<2
+numpy>=1.26
+Pillow>=10
+tqdm>=4.66
+PyYAML>=6
+huggingface_hub>=0.34,<1
+safetensors>=0.4

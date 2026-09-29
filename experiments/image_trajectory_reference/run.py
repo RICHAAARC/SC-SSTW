@@ -7,6 +7,7 @@ import math
 import os
 from pathlib import Path
 import subprocess
+import sys
 import time
 import traceback
 
@@ -88,47 +89,38 @@ def environment_receipt():
     for name in packages:
         try: versions[name]=importlib.metadata.version(name)
         except importlib.metadata.PackageNotFoundError: versions[name]=None
-    return dict(packages=versions,selection="candidate environment, not upstream lock or paper environment")
+    return dict(python=sys.version,packages=versions,selection="active compatible runtime; recorded, not an exact-version gate")
 
 
 def load_real_pipeline(config, record_assets):
-    """Resolve one immutable original-model revision before loading components."""
-    from huggingface_hub import HfApi
-    model_id=config["official_config"]["model_id"]
-    receipt=dict(model_id=model_id,status="RESOLVING",stage="MODEL_INFO",revision=None,
-                 replacement_checkpoint=False)
-    record_assets(receipt)
-    try:
-        info=HfApi().model_info(model_id)
-        revision=info.sha
-        if not isinstance(revision,str) or len(revision)!=40:
-            raise ValueError("model API did not supply immutable revision")
-        receipt.update(status="RESOLVED",revision=revision)
-        record_assets(receipt)
-    except Exception as exc:
-        receipt.update(status="ASSET_ACCESS_REQUIRED" if asset_access_error(exc) else "RESOLVE_FAILED",
-            error=f"{type(exc).__name__}: {exc}",
-            http_status=getattr(getattr(exc,"response",None),"status_code",None))
-        record_assets(receipt)
-        raise
+    """Load the selected SD2.1-base mirror; metadata APIs are not a prerequisite."""
     import torch
     from diffusers import DDIMScheduler, StableDiffusionPipeline
-    if not torch.cuda.is_available():
-        raise RuntimeError("CUDA unavailable for the user-run image reference")
+    asset=config["model_asset"]
+    model_id,revision=asset["repo_id"],asset["revision"]
+    device="cuda" if torch.cuda.is_available() else "cpu"
+    receipt=dict(model_id=model_id,original_model_id=asset["original_repo_id"],
+        source_kind=asset["kind"],status="LOADING",stage="SCHEDULER_LOAD",
+        revision=revision,device=device,metadata_api_required=False,
+        asset_source_changed=True)
+    if device=="cpu":
+        receipt["runtime_note"]="CUDA unavailable: running on CPU; GPU is recommended for speed."
+    record_assets(receipt)
     try:
-        receipt.update(stage="SCHEDULER_LOAD");record_assets(receipt)
         scheduler=DDIMScheduler.from_pretrained(model_id,subfolder="scheduler",revision=revision)
         receipt.update(stage="PIPELINE_LOAD");record_assets(receipt)
         pipe=StableDiffusionPipeline.from_pretrained(model_id,scheduler=scheduler,
-            torch_dtype=torch.float32,revision=revision).to("cuda")
+            torch_dtype=torch.float32,revision=revision,use_safetensors=True).to(device)
     except Exception as exc:
         receipt.update(status="ASSET_ACCESS_REQUIRED" if asset_access_error(exc) else "LOAD_FAILED",
-                       error=f"{type(exc).__name__}: {exc}")
+                       error=f"{type(exc).__name__}: {exc}",
+                       http_status=getattr(getattr(exc,"response",None),"status_code",None))
         record_assets(receipt)
         raise
     receipt.update(status="LOADED",stage="LOADED",scheduler=type(pipe.scheduler).__name__,
         scheduler_config=dict(pipe.scheduler.config),dtype="float32",
-        device=torch.cuda.get_device_name(0),all_components_revision=revision)
+        device_name=torch.cuda.get_device_name(0) if device=="cuda" else "CPU",
+        all_components_revision=revision)
     record_assets(receipt)
     return pipe
 
@@ -183,7 +175,7 @@ def evaluate_readouts(blind_path, config, codec):
     return rows
 
 
-def run_fixed(output,upstream_root,*,pipeline_factory=load_real_pipeline,device="cuda"):
+def run_fixed(output,upstream_root,*,pipeline_factory=load_real_pipeline,device=None):
     """Only the dependency factory/device can be replaced by CPU test fixtures."""
     output=Path(output)
     output.mkdir(parents=True,exist_ok=False)
@@ -204,6 +196,8 @@ def run_fixed(output,upstream_root,*,pipeline_factory=load_real_pipeline,device=
         result["model_loaded"]=(pipeline_factory is load_real_pipeline)
         result["execution_kind"]="REAL_MODEL" if result["model_loaded"] else "CPU_FAKE_COMPONENTS_OFFICIAL_FUNCTIONS"
         handles=observe_calls(pipe,result,lambda:save_result(result_path,result))
+        device=device or str(getattr(pipe,"device",(result.get("assets") or {}).get("device","cpu")))
+        result["runtime_device"]=device
         writer_config=dict(config["official_config"]);writer_config["device"]=device
         writer=Watermarker(GrowConfig(**writer_config),pipe=pipe)
         for arm in ARMS:

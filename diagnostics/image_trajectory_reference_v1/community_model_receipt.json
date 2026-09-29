@@ -1,0 +1,69 @@
+{
+  "checked_at": "2026-09-29",
+  "repo_id": "sd2-community/stable-diffusion-2-1-base",
+  "revision": "4e63672c03103b6c636b8fb4119ba982469b2955",
+  "private": false,
+  "gated": false,
+  "required_diffusers_files_present": [
+    "model_index.json",
+    "scheduler/scheduler_config.json",
+    "unet/config.json",
+    "unet/diffusion_pytorch_model.safetensors",
+    "vae/config.json",
+    "vae/diffusion_pytorch_model.safetensors",
+    "text_encoder/config.json",
+    "text_encoder/model.safetensors",
+    "tokenizer/tokenizer_config.json",
+    "tokenizer/special_tokens_map.json",
+    "tokenizer/vocab.json",
+    "tokenizer/merges.txt",
+    "feature_extractor/preprocessor_config.json"
+  ],
+  "weight_metadata": {
+    "unet/diffusion_pytorch_model.safetensors": {
+      "sha256": "6dfae3e5f7d459b50f4b0850ead945972c75bb0e1897628933e169eb43974214",
+      "size": 3463726498,
+      "pointerSize": 135
+    },
+    "vae/diffusion_pytorch_model.safetensors": {
+      "sha256": "a1d993488569e928462932c8c38a0760b874d166399b14414135bd9c42df5815",
+      "size": 334643276,
+      "pointerSize": 134
+    },
+    "text_encoder/model.safetensors": {
+      "sha256": "cce6febb0b6d876ee5eb24af35e27e764eb4f9b1d0b7c026c8c3333d4cfc916c",
+      "size": 1361597018,
+      "pointerSize": 135
+    }
+  },
+  "weights_head": [
+    {
+      "file": "text_encoder/model.safetensors",
+      "status": 200
+    },
+    {
+      "file": "unet/diffusion_pytorch_model.safetensors",
+      "status": 200
+    },
+    {
+      "file": "vae/diffusion_pytorch_model.safetensors",
+      "status": 200
+    }
+  ],
+  "configuration_sha256": {
+    "model_index.json": "518553e098fdaa4153d9a92139e344e44f53bb329c22f383293e3099c4f1bad2",
+    "scheduler__scheduler_config.json": "11ac5627d7df0fa344b875c4b5722b1767a8a2aa1684c2cf8b4d614300127234",
+    "unet__config.json": "ce0c6d379e3b1d3e1f79338de70c80a1e36f17a6372439a8249b6fb0dfa1b608",
+    "vae__config.json": "424117cb534ce03497c41305ed868980123917b2b6abba4bbaa615e968772903",
+    "text_encoder__config.json": "7e33bfc475f6cf76e69b28b101993ca834d1f22ff4d35caefde32d63d4f42fba"
+  },
+  "architecture": {
+    "pipeline": "StableDiffusionPipeline",
+    "unet_sample_size": 64,
+    "unet_in_channels": 4,
+    "cross_attention_dim": 1024,
+    "scheduler_prediction_type": "epsilon",
+    "image_size": 512
+  },
+  "scope": "Public API/config retrieval and weight HEAD requests only; no model weights downloaded or executed. Community source, not independently proved byte-identical to unavailable official repository."
+}

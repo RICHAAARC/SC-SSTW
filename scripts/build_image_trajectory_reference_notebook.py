@@ -30,16 +30,17 @@ This follows the pinned author's released FFT-real/mean-MSE code, not a claim
 of reproducing the paper's DCT/settings. No parameter scan or video guard.
 
 Status: """+("published source bound.\n" if source_sha else "UNPUBLISHED DRAFT; source SHA intentionally unset.\n")+"""
-The original SD2.1-base model currently returns anonymous HTTP 401. Access to
-that original asset is a prerequisite; the notebook records missing assets
-and retains 2/4/8 rows, without substituting checkpoints. It resolves one
-immutable original model revision before loading all components. No GPU run
-has been performed by the implementation agent. After publication and source
-binding, the user runs all once. Results go to a new Drive timestamp directory.
-The candidate environment requires Python 3.12; its complete Colab installation
-and GPU path have not been executed. An optional Colab Secret named HF_TOKEN
-can supply access to the original model; its value is never printed or saved.
-Without that secret the run remains anonymous; a token does not guarantee access.
+This run uses the public community mirror sd2-community/stable-diffusion-2-1-base
+at revision 4e63672c03103b6c636b8fb4119ba982469b2955. It needs no mandatory HF_TOKEN
+or live model-info lookup. The original author methods and fixed 2/4/8 rows
+are retained. This is a community-source reference, not a claim that every
+weight was compared against the inaccessible official repository.
+
+Use Run all in the current Colab Python runtime. Setup reuses its working
+Torch/Torchvision pair, installs compatible missing dependencies, and records
+actual versions. GPU is recommended; CPU remains allowed. There is no exact
+Python version or GPU model requirement. No real-model run has been performed
+by the agent. Results go to a new Drive timestamp directory.
 """)
     add("code",f"SOURCE_SHA = {source_sha!r}\n"+r'''from pathlib import Path
 import datetime, hashlib, json, os, subprocess, sys, traceback
@@ -96,12 +97,16 @@ except Exception as exc:
     failed('SOURCE',exc);raise
 ''')
     add("code",r'''try:
-    if sys.version_info[:2] != (3,12):
-        raise RuntimeError('This pinned candidate environment requires Python 3.12')
-    logged([sys.executable,'-m','venv',str(VENV)],'ISOLATED_ENV')
-    logged([str(PYTHON),'-m','pip','install','torch==2.6.0','torchvision==0.21.0','--index-url','https://download.pytorch.org/whl/cu124'],'TORCH_INSTALL')
-    logged([str(PYTHON),'-m','pip','install','-r',str(REPO/'experiments/image_trajectory_reference/requirements-colab.txt')],'PINNED_DEPENDENCIES')
-    logged([str(PYTHON),'-m','pip','check'],'DEPENDENCY_CHECK')
+    logged([sys.executable,'-m','venv','--system-site-packages',str(VENV)],'RUNTIME_ENV')
+    # Probe in a child process so repairs do not require a notebook restart.
+    torch_ok=logged([str(PYTHON),'-c','import torch, torchvision; print(torch.__version__, torchvision.__version__)'],'TORCH_PROBE',check=False)==0
+    if not torch_ok:
+        logged([str(PYTHON),'-m','pip','install','--upgrade','torch','torchvision'],'TORCH_REPAIR')
+    logged([str(PYTHON),'-m','pip','install','-r',str(REPO/'experiments/image_trajectory_reference/requirements-colab.txt')],'COMPATIBLE_DEPENDENCIES')
+    dependency_code=logged([str(PYTHON),'-m','pip','check'],'DEPENDENCY_REPORT',check=False)
+    setup['dependency_check_returncode']=dependency_code
+    if dependency_code:
+        print('Package metadata conflicts recorded; continuing to actual import and run checks.')
     frozen=subprocess.check_output([str(PYTHON),'-m','pip','freeze'],text=True)
     (OUTPUT/'environment_freeze.txt').write_text(frozen)
 except Exception as exc:
@@ -129,18 +134,18 @@ except Exception as exc:
     environment_code='import json,torch; from experiments.image_trajectory_reference.run import environment_receipt; from diffusers import DDIMScheduler,StableDiffusionPipeline; r=environment_receipt(); r.update(cuda_available=torch.cuda.is_available()); print(json.dumps(r))'
     environment=json.loads(subprocess.check_output([str(PYTHON),'-c',environment_code],cwd=REPO,text=True))
     write_json(OUTPUT/'environment_receipt.json',environment)
-    if not environment['cuda_available']: raise RuntimeError('Select a Colab GPU runtime before running this fixed experiment')
+    if not environment['cuda_available']: print('GPU unavailable; continuing on CPU (slower).')
     setup.update(status='SETUP_COMPLETE',upstream=str(UPSTREAM));write_json(OUTPUT/'setup_receipt.json',setup)
 except Exception as exc:
     failed('UPSTREAM_OR_ENVIRONMENT',exc);raise
 ''')
-    add("code",r'''# Only the child process environment receives the optional secret.
+    add("code",r'''# Optional access token for Hub download rate limits; the public mirror needs none.
 try:
     from google.colab import userdata
     token=userdata.get('HF_TOKEN')
     if token: os.environ['HF_TOKEN']=token
 except Exception:
-    pass  # No secret or no permission: retain anonymous access.
+    pass  # Public mirror: anonymous access is supported.
 finally:
     token=None
 command=[str(PYTHON),'-u','-m','experiments.image_trajectory_reference.run','--upstream-root',str(UPSTREAM),'--output',str(RUN_OUTPUT)]

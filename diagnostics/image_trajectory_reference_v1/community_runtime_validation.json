@@ -1,0 +1,27 @@
+{
+  "status": "LOCAL_CPU_VALIDATION_PASS",
+  "tests": "..................                                                       [100%]\n18 passed in 4.30s",
+  "real_model_executed": false,
+  "gpu_executed": false,
+  "notebook_code_cells_ast": "PASS",
+  "environment_scenarios": [
+    "Python 3.13 without version gate",
+    "reuse working torch/torchvision",
+    "repair only failed torch/torchvision import",
+    "pip check nonzero recorded not blocking"
+  ],
+  "loading_scenarios": [
+    "pinned community source without model-info request",
+    "same revision scheduler and pipeline",
+    "CUDA available or CPU fallback",
+    "401/403/404 and 429/503/timeout actual component failures retained"
+  ],
+  "method": "original GROW functions and fixed 2/4/8 denominator retained",
+  "files": {
+    "experiments/image_trajectory_reference/config.json": "bbc523d66c2ee3e6f535334c37dfd77a89dec149aa5b58ac0c5f89873cf135cc",
+    "experiments/image_trajectory_reference/run.py": "b3efa163af33c5b23896ce3094e27353da89168b69196198ff3fdeef1adcc50f",
+    "experiments/image_trajectory_reference/requirements-colab.txt": "85e9930862bab3c16538db13c5c5c268cd9c57a6b4d189914999062d99912bb9",
+    "scripts/build_image_trajectory_reference_notebook.py": "c8f9cd0af1bd7a93cfb8a8e8afa3d66dade3d7912a21321a4bdc2f1d8cb95f42",
+    "tests/test_image_trajectory_reference.py": "06a4cc20b3dd8edf8033801deb6c3aa7c53dce91a07bc3d250bfd0f03a8c388c"
+  }
+}

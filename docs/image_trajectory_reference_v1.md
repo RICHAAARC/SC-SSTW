@@ -22,19 +22,22 @@ GROW has a complete writer/receiver, packaging and declared dependencies, and
 needs no separate learned detector or whitener. Guidance's actual demo needs
 VideoSeal plus missing whitener samples and unresolved asset instructions.
 GROW is therefore the more complete source-level baseline. This does **not**
-mean its model assets are currently complete: anonymous requests to the
-original `stabilityai/stable-diffusion-2-1-base` API and `model_index.json`
-both returned HTTP 401 on 2026-09-29 (`asset_probe.json`). The observation does
-not establish whether the cause is gating, privacy, removal or another access
-condition. There is no replacement checkpoint, mirror or invented revision.
+mean all assets were accessible at that delivery. The historical anonymous401
+probe remains in `asset_probe.json`. Following the user's explicit adoption of
+a third-party source, the current runner uses
+[sd2-community/stable-diffusion-2-1-base](https://huggingface.co/sd2-community/stable-diffusion-2-1-base)
+at `4e63672c03103b6c636b8fb4119ba982469b2955`.
+`community_model_receipt.json` records public/no-gating metadata, all required
+Diffusers files, downloaded configuration hashes and successful HEAD requests
+for the three full-precision safetensors components. This is a 512-base,
+epsilon-prediction model source; the original author methods still use DDIM.
+No claim of independently proving byte equality with unavailable official
+weights is made. No weights were downloaded or run by the agent.
 
-A real run requires access to that original repository, then a resolved
-immutable model SHA and successful component loads at that same SHA. An
-optional Colab Secret `HF_TOKEN` can supply credentials in the child process
-environment; its value is not printed or saved, and it does not guarantee
-access. API/config/weight 401, 403, 404 and missing resource errors retain
-`ASSET_ACCESS_REQUIRED` and the asset stage. OOM remains an execution failure.
-All fixed rows remain present. Asset access failure is not a watermark result.
+The runtime loads this recorded revision directly, without a live model-info
+API prerequisite or mandatory HF token. It chooses CUDA when available and CPU
+otherwise. Actual component download/load errors are retained with all fixed
+rows; environment differences themselves do not count as method failures.
 
 ## GROW: formal paper versus fixed released execution
 
@@ -114,7 +117,7 @@ proof against the author's image mechanism. No old video bytes are changed.
 ## Frozen minimum case and independent save/read/evaluate chain
 
 - One prompt: `a sharp wildlife photo of an owl with feather details, perched on an old tree branch`; seed42.
-- Two arms call original `generate_normal` / `generate_with_watermark`; all dataclass defaults listed in `config.json` are checked against upstream. Original SD2.1-base/DDIM/FP32 retained.
+- Two arms call original `generate_normal` / `generate_with_watermark`; all dataclass defaults listed in `config.json` are checked against upstream. SD2.1-base community source with DDIM/FP32; original model_id remains in the author-default record, actual asset identity is separately recorded.
 - Save each output as512x512 PNG and discard the in-memory result. OFF and GROW each have correct/wrong-key independent `_read_bits` calls:4 readouts.
 - Correct key `watermark` has seed974. Wrong `watermark-wrong` must differ in both seed and coordinate-to-bit assignment hash. A different string can collide (`kramretaw` does). The entire band mask is the same; key changes the bit assignment, not mask support.
 - Each reader gets only image, original pipeline, key and public geometry/32-bit length through `PublicReaderConfig`, which has no message field. It calls the actual official reader, not `extract_with_confidence` or robust/truth-selected search.
@@ -136,40 +139,40 @@ receipt; those are incomplete evidence, never successful method outcomes.
 
 ## Candidate runtime, notebook and local evidence
 
-`requirements-colab.txt` pins the declared upstream packages plus Hub/safetensors
-for Python3.12, with torch2.6.0/torchvision0.21.0 from official cu124 wheels.
-These are this candidate's environment choices, not the paper's Torch1.13
-runtime or an author-provided exact lock. All declared GROW dependencies remain
-installed. Other transitive packages are recorded by pip freeze. Wheel/PyPI
-metadata are retained in `dependency_probe.json`; local CPU checks are recorded
-separately in `local_validation.json`. Full Colab setup and GPU/model paths are
-unexecuted; CPU fake results are engineering evidence only. In an isolated
-Python3.12.3 CPU venv, torch2.6.0+cpu/vision0.21.0+cpu and all selected package
-imports passed, pip check found no broken requirements, and the initial7 tests passed
-in5.00s with zero skips. The v2 metadata-classification repair adds7 cases;
-all14 tests passed (see `local_validation.json` for the exact command/result). The actual upstream functions ran with fake model
-components, including50+50 UNet calls,4 VAE encoder calls and2 decoder calls.
+The current notebook uses the active Python interpreter and a venv with
+`--system-site-packages`, reusing Colab's working Torch/Torchvision pair.
+Only a failed actual Torch/Torchvision import triggers installation repair.
+`requirements-colab.txt` specifies compatible library API ranges, not exact
+Python, Torch or CUDA versions. `pip check` is recorded and does not stop the
+run because of unrelated base-environment package conflicts. Actual imports
+and model/component operations determine compatibility. A CPU runtime is
+allowed with a speed note; there is no Python-version or GPU-name gate.
+Actual installed versions are saved with the results.
+
+Historical environment probes and v1/v2/v3 snapshots remain unchanged as
+records of the older candidate. The community-source update was checked with
+CPU fake components and the unchanged original GROW functions: 50+50 UNet
+calls, four saved-PNG VAE reads and two decodes. Component failure tests retain
+all 2/4/8 rows, and loading tests prove both CPU and CUDA selection, one mirror
+revision for all components, and no preliminary Hub model-info API call.
+Notebook environment-cell tests exercise Python3.13, working/broken Torch
+imports and a nonzero pip-check report without executing installs or models.
+Full Colab installation and real-model/GPU execution remain user-run.
 
 For local reproduction, set `GROW_REFERENCE_SOURCE_ROOT` to the verified GROW
 archive root and run `python -m pytest tests/test_image_trajectory_reference.py -q`.
-When that cache is absent, source-dependent tests explicitly skip with an
-instruction to set the path, leaving2 generic tests. The v1 fresh-clone check
-was2 passed/5 skipped; the v2 metadata cases also require the source fixture.
-Skipped cases are never counted as upstream-method PASS.
+Source-dependent tests skip if that cache is absent; skipped cases are never
+counted as successful upstream validation.
 
-`notebooks/image_trajectory_reference_v1_colab.ipynb` reuses the earlier working
-notebook's exact two-line Drive mount in the first executable cell, isolated
-environment, serial child process, log and save pattern. Its first working
-cell creates fixed2/4/8 setup rows before cloning/installing. Dependency,
-source or asset failures retain the output directory and receipts. The final
-cell opens saved OFF/GROW PNGs for display. No scans or optional experiment
-modes are exposed. No GPU model-name gate is imposed.
+`notebooks/image_trajectory_reference_v1_colab.ipynb` retains the exact two-line
+Drive mount in cell zero, a child-process run and fixed 2/4/8 setup records.
+The final cell reopens OFF/GROW PNGs for display. Run all executes the fixed
+case without parameter modes or model-type selection.
 
-The draft deliberately has `SOURCE_SHA=None` and refuses to run unbound while
-persisting the setup failure. It is **not yet published and has no runnable
-published Colab link**. After separate publication authorization: publish this
-special dev branch, verify its immutable SHA, run
+Publication uses the already-authorized dedicated development branch. Publish
+source first, verify its immutable SHA, build the bound notebook with
 `scripts/build_image_trajectory_reference_notebook.py --source-sha <verified SHA>`,
-review that bound artifact, and supply the user its Colab link. Only the user
-runs the fixed case. This delivery alone authorizes neither publication nor
-execution, sequential video control, blind synchronization or a payload phase.
+then publish that notebook and deliver its fixed Colab link. A builder invoked
+without a SHA still produces an explicitly unbound development draft. No
+real-model success, video migration or blind temporal detection is inferred
+from this delivery.

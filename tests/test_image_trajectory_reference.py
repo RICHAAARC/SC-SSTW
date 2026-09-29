@@ -79,11 +79,13 @@ def test_exact_official_defaults_layout_and_truth_free_reader(tmp_path):
     assert result["truth_used"] is False
 
 
+@pytest.mark.parametrize("device",["cpu",None])
 @pytest.mark.usefixtures("official_source")
-def test_actual_official_writer_saved_png_read_bits_then_evaluate(tmp_path):
+def test_actual_official_writer_saved_png_read_bits_then_evaluate(tmp_path,device):
     def factory(config,record):
         record(dict(status="CPU_FAKE",revision=None));return fake_pipeline()
-    result=run.run_fixed(tmp_path/"run",UPSTREAM,pipeline_factory=factory,device="cpu")
+    result=run.run_fixed(tmp_path/"run",UPSTREAM,pipeline_factory=factory,device=device)
+    assert result["runtime_device"]=="cpu"
     assert result["status"]=="FIXED_REFERENCE_COMPLETE", result["failures"]
     assert result["counts"]==dict(saved_images=2,readouts=4,evaluated=8)
     assert result["model_calls_executed"] and not result["model_loaded"] and not result["real_model_executed"]
@@ -136,40 +138,88 @@ def test_asset_missing_keeps_all_fixed_rows(tmp_path):
     (401,"ASSET_ACCESS_REQUIRED","ASSET_ACCESS_REQUIRED"),
     (403,"ASSET_ACCESS_REQUIRED","ASSET_ACCESS_REQUIRED"),
     (404,"ASSET_ACCESS_REQUIRED","ASSET_ACCESS_REQUIRED"),
-    (429,"RESOLVE_FAILED","ENGINEERING_FAILURE"),
-    (503,"RESOLVE_FAILED","ENGINEERING_FAILURE"),
-    ("timeout","RESOLVE_FAILED","ENGINEERING_FAILURE"),
-    ("invalid_revision","RESOLVE_FAILED","ENGINEERING_FAILURE"),
+    (429,"LOAD_FAILED","ENGINEERING_FAILURE"),
+    (503,"LOAD_FAILED","ENGINEERING_FAILURE"),
+    ("timeout","LOAD_FAILED","ENGINEERING_FAILURE"),
 ])
 @pytest.mark.usefixtures("official_source")
-def test_model_metadata_failure_classification(monkeypatch,tmp_path,failure,asset_status,top_status):
-    # Diffusers may probe CUDA availability while importing dependencies. Load
-    # them before intercepting the later, real pipeline CUDA admission check.
+def test_component_load_failure_classification(monkeypatch,tmp_path,failure,asset_status,top_status):
     bridge.load_official(UPSTREAM)
+    from diffusers import DDIMScheduler
     from huggingface_hub import HfApi
-    import torch
-    def model_info(_self,_model_id):
-        if failure=="invalid_revision":
-            return SimpleNamespace(sha="not-an-immutable-revision")
-        if failure=="timeout":
-            raise TimeoutError("metadata request timed out")
-        exc=OSError(f"metadata HTTP {failure}")
+    def no_model_info(*args,**kwargs):
+        raise AssertionError("live metadata must not block the pinned mirror")
+    monkeypatch.setattr(HfApi,"model_info",no_model_info)
+    def load(*args,**kwargs):
+        if failure=="timeout": raise TimeoutError("component request timed out")
+        exc=OSError(f"component HTTP {failure}")
         exc.response=SimpleNamespace(status_code=failure)
         raise exc
-    def no_cuda_probe():
-        raise AssertionError("metadata failure must stop before the real pipeline CUDA check")
-    monkeypatch.setattr(HfApi,"model_info",model_info)
-    monkeypatch.setattr(torch.cuda,"is_available",no_cuda_probe)
+    monkeypatch.setattr(DDIMScheduler,"from_pretrained",load)
     result=run.run_fixed(tmp_path/str(failure),UPSTREAM)
     assert result["status"]==top_status
     assert result["assets"]["status"]==asset_status
-    assert result["assets"]["stage"]=="MODEL_INFO"
+    assert result["assets"]["stage"]=="SCHEDULER_LOAD"
     assert result["assets"]["http_status"]==(failure if isinstance(failure,int) else None)
     assert result["assets"]["error"]
     assert result["counts"]==dict(saved_images=0,readouts=0,evaluated=0)
     assert [len(result[group]) for group in ("images","reads","evaluations")]==[2,4,8]
     assert not result["model_loaded"] and not result["model_calls_executed"]
     assert all(row["status"]=="NOT_COMPLETED" for group in ("images","reads","evaluations") for row in result[group].values())
+
+
+@pytest.mark.parametrize("cuda",[False,True])
+@pytest.mark.usefixtures("official_source")
+def test_mirror_loads_same_revision_without_metadata_or_cuda_gate(monkeypatch,cuda):
+    bridge.load_official(UPSTREAM)
+    import torch
+    from diffusers import DDIMScheduler,StableDiffusionPipeline
+    from huggingface_hub import HfApi
+    monkeypatch.setattr(HfApi,"model_info",lambda *a,**k:pytest.fail("unnecessary metadata lookup"))
+    monkeypatch.setattr(torch.cuda,"is_available",lambda:cuda)
+    monkeypatch.setattr(torch.cuda,"get_device_name",lambda _:"mock GPU")
+    calls=[]
+    scheduler=SimpleNamespace(config={"prediction_type":"epsilon"})
+    def scheduler_load(repo,**kwargs):
+        calls.append((repo,kwargs));return scheduler
+    class MockPipe:
+        def __init__(self): self.scheduler=scheduler
+        def to(self,device): self.device=device;return self
+    def pipe_load(repo,**kwargs):
+        calls.append((repo,kwargs));return MockPipe()
+    monkeypatch.setattr(DDIMScheduler,"from_pretrained",scheduler_load)
+    monkeypatch.setattr(StableDiffusionPipeline,"from_pretrained",pipe_load)
+    cfg=run.load_config(UPSTREAM);receipts=[]
+    pipe=run.load_real_pipeline(cfg,receipts.append)
+    assert pipe.device==("cuda" if cuda else "cpu")
+    assert all(repo=="sd2-community/stable-diffusion-2-1-base" for repo,_ in calls)
+    assert all(k["revision"]==cfg["model_asset"]["revision"] for _,k in calls)
+    assert calls[1][1]["use_safetensors"] is True
+    assert calls[1][1]["torch_dtype"] is torch.float32
+    assert receipts[-1]["status"]=="LOADED"
+    assert receipts[-1]["asset_source_changed"] is True
+
+
+@pytest.mark.parametrize("working_torch",[True,False])
+def test_notebook_reuses_runtime_and_dependency_conflicts_do_not_stop(monkeypatch,tmp_path,working_torch):
+    from scripts.build_image_trajectory_reference_notebook import build
+    nb=json.loads(build(source_sha="a"*40,output=tmp_path/"test.ipynb").read_text())
+    commands=[]
+    def logged(command,stage,**kwargs):
+        commands.append((command,stage,kwargs))
+        if stage=="TORCH_PROBE": return 0 if working_torch else 1
+        if stage=="DEPENDENCY_REPORT": return 1  # unrelated base-environment conflicts
+        return 0
+    namespace=dict(sys=SimpleNamespace(executable="/current/python",version_info=(3,13,0)),
+        subprocess=SimpleNamespace(check_output=lambda *a,**k:"recorded versions"),
+        PYTHON=tmp_path/"env/bin/python",VENV=tmp_path/"env",REPO=tmp_path,
+        OUTPUT=tmp_path,setup={},logged=logged,
+        failed=lambda *a:pytest.fail("environment unnecessarily blocked"))
+    exec(compile("".join(nb["cells"][4]["source"]),"environment-cell","exec"),namespace)
+    assert commands[0][0][:4]==["/current/python","-m","venv","--system-site-packages"]
+    assert any(stage=="TORCH_REPAIR" for _,stage,_ in commands)==(not working_torch)
+    assert namespace["setup"]["dependency_check_returncode"]==1
+    assert (tmp_path/"environment_freeze.txt").is_file()
 
 
 def test_wrapped_resource_errors_are_not_confused_with_oom():
