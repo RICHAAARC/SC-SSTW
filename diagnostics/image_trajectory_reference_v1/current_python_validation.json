@@ -1,0 +1,10 @@
+{
+  "failure_run": "20260929T105616013910Z",
+  "observed_failure": "venv invoked ensurepip and exited 1 before model loading; finer ensurepip cause not exposed in saved log",
+  "repair": "Use current sys.executable for pip, checks and fresh runner child. Remove venv/ensurepip entirely.",
+  "test_result": "..................                                                       [100%]\n18 passed in 5.92s",
+  "regression": "Environment cell tested with stale failed-venv interpreter, Python3.13, working/broken Torch imports and pip-check conflicts; all child commands select current interpreter.",
+  "notebook_ast": "PASS; no VENV or ensurepip in any code cell",
+  "model_execution": false,
+  "method_change": false
+}

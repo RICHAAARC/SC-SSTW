@@ -139,8 +139,11 @@ receipt; those are incomplete evidence, never successful method outcomes.
 
 ## Candidate runtime, notebook and local evidence
 
-The current notebook uses the active Python interpreter and a venv with
-`--system-site-packages`, reusing Colab's working Torch/Torchvision pair.
+The current notebook directly uses `sys.executable` for pip, import checks and
+the model child process, reusing Colab's working Torch/Torchvision pair. It
+does not create a virtual environment or call ensurepip. The prior venv setup
+failed before model loading in run `20260929T105616013910Z`; removing that
+unnecessary setup step addresses the observed failure without OS packages.
 Only a failed actual Torch/Torchvision import triggers installation repair.
 `requirements-colab.txt` specifies compatible library API ranges, not exact
 Python, Torch or CUDA versions. `pip check` is recorded and does not stop the

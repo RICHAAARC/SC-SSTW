@@ -36,8 +36,9 @@ or live model-info lookup. The original author methods and fixed 2/4/8 rows
 are retained. This is a community-source reference, not a claim that every
 weight was compared against the inaccessible official repository.
 
-Use Run all in the current Colab Python runtime. Setup reuses its working
-Torch/Torchvision pair, installs compatible missing dependencies, and records
+Use Run all in the current Colab Python runtime; no virtual environment or
+ensurepip is needed. Setup reuses its working Torch/Torchvision pair, installs
+compatible missing dependencies, and records
 actual versions. GPU is recommended; CPU remains allowed. There is no exact
 Python version or GPU model requirement. No real-model run has been performed
 by the agent. Results go to a new Drive timestamp directory.
@@ -49,8 +50,7 @@ OUTPUT = Path('/content/drive/MyDrive/Video-WM/Image-Trajectory-Reference-V1') /
 OUTPUT.mkdir(parents=True, exist_ok=False)
 RUN_OUTPUT = OUTPUT / 'fixed_reference'
 REPO = Path('/content/SC-SSTW-IMAGE-REFERENCE-' + STAMP)
-VENV = Path('/content/image-reference-venv-' + STAMP)
-PYTHON = VENV / 'bin/python'
+PYTHON = sys.executable
 FIXED = {'sources': 1, 'png_images': 2, 'blind_readouts': 4, 'evaluations': 8}
 setup = {'status': 'SETUP_STARTED', 'source_sha': SOURCE_SHA, 'fixed_denominator': FIXED,
          'images': {a: {'status': 'NOT_RUN_SETUP'} for a in ('OFF','GROW')},
@@ -97,7 +97,10 @@ except Exception as exc:
     failed('SOURCE',exc);raise
 ''')
     add("code",r'''try:
-    logged([sys.executable,'-m','venv','--system-site-packages',str(VENV)],'RUNTIME_ENV')
+    PYTHON = sys.executable
+    setup['python_executable'] = PYTHON
+    setup['environment_strategy'] = 'current_colab_python_fresh_child_process'
+    print('Using current Colab Python:', PYTHON)
     # Probe in a child process so repairs do not require a notebook restart.
     torch_ok=logged([str(PYTHON),'-c','import torch, torchvision; print(torch.__version__, torchvision.__version__)'],'TORCH_PROBE',check=False)==0
     if not torch_ok:

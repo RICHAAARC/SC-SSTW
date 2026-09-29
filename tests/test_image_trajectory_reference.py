@@ -206,17 +206,22 @@ def test_notebook_reuses_runtime_and_dependency_conflicts_do_not_stop(monkeypatc
     nb=json.loads(build(source_sha="a"*40,output=tmp_path/"test.ipynb").read_text())
     commands=[]
     def logged(command,stage,**kwargs):
+        assert "venv" not in command and "ensurepip" not in command
         commands.append((command,stage,kwargs))
         if stage=="TORCH_PROBE": return 0 if working_torch else 1
         if stage=="DEPENDENCY_REPORT": return 1  # unrelated base-environment conflicts
         return 0
     namespace=dict(sys=SimpleNamespace(executable="/current/python",version_info=(3,13,0)),
         subprocess=SimpleNamespace(check_output=lambda *a,**k:"recorded versions"),
-        PYTHON=tmp_path/"env/bin/python",VENV=tmp_path/"env",REPO=tmp_path,
+        PYTHON="/stale/failed-venv/bin/python",REPO=tmp_path,
         OUTPUT=tmp_path,setup={},logged=logged,
         failed=lambda *a:pytest.fail("environment unnecessarily blocked"))
     exec(compile("".join(nb["cells"][4]["source"]),"environment-cell","exec"),namespace)
-    assert commands[0][0][:4]==["/current/python","-m","venv","--system-site-packages"]
+    assert namespace["PYTHON"]=="/current/python"
+    assert all(command[0]=="/current/python" for command,_,_ in commands)
+    assert namespace["setup"]["python_executable"]=="/current/python"
+    setup_source="".join(nb["cells"][2]["source"])
+    assert "PYTHON = sys.executable" in setup_source and "VENV" not in setup_source
     assert any(stage=="TORCH_REPAIR" for _,stage,_ in commands)==(not working_torch)
     assert namespace["setup"]["dependency_check_returncode"]==1
     assert (tmp_path/"environment_freeze.txt").is_file()
