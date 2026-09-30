@@ -1,0 +1,218 @@
+{
+  "model": {
+    "id": "Wan-AI/Wan2.1-T2V-1.3B-Diffusers",
+    "revision": "0fad780a534b6463e45facd96134c9f345acfa5b"
+  },
+  "generation": {
+    "height": 320,
+    "width": 512,
+    "frames": 181,
+    "fps": 8,
+    "steps": 50,
+    "guidance_scale": 5.0,
+    "max_sequence_length": 512,
+    "negative_prompt": "text, watermark, logo, camera motion, cuts, multiple objects, flicker",
+    "prompt": "locked camera, a copper kettle resting on a plain wooden table, steady soft indoor light, no people, no cuts",
+    "seed": 2026092501
+  },
+  "case_id": "eval_copperkettle_s2501",
+  "key": "watermark",
+  "wrong_key": "watermark-wrong",
+  "message": "OKOK",
+  "wrong_message": "NOPE",
+  "media": {
+    "fps": 8,
+    "crf": 18,
+    "codec": "libx264",
+    "pixel_format": "yuv420p"
+  },
+  "precision": {
+    "cuda_transformer": "bfloat16 if is_bf16_supported else float16",
+    "cpu_transformer": "float32",
+    "state_control_cfg_vae": "float32"
+  },
+  "views": {
+    "FULL_RESAVED181": {
+      "start": 0,
+      "length": 181
+    },
+    "CROP4_129": {
+      "start": 4,
+      "length": 129
+    },
+    "CROP5_129": {
+      "start": 5,
+      "length": 129
+    },
+    "CROP6_129": {
+      "start": 6,
+      "length": 129
+    },
+    "CROP7_129": {
+      "start": 7,
+      "length": 129
+    }
+  },
+  "name": "video_overlap_zero_mean_c1_v1",
+  "arms": [
+    "OFF",
+    "PAYLOAD_MULTI",
+    "OVERLAP_MULTI"
+  ],
+  "mechanism_config_sha256": "6b8d8da7e8cedacc383530618bc7f50d806de4d0c4f14e35583bb8fb7e7c6c78",
+  "control": {
+    "steps": [
+      25,
+      26,
+      27,
+      28,
+      29,
+      30,
+      31,
+      32,
+      33,
+      34,
+      35,
+      36,
+      37,
+      38,
+      39,
+      40,
+      41,
+      42,
+      43,
+      44,
+      45,
+      46,
+      47,
+      48,
+      49
+    ],
+    "initial_identity_index": 25,
+    "payload_mask_count": 44160,
+    "payload_eta": 5520,
+    "pilot_active_coefficients": 1392,
+    "pilot_eta": 174,
+    "pilot_delta_cap": 1.0,
+    "target_l2": 1.0,
+    "total_budget_matched": false
+  },
+  "receiver": {
+    "phases": [
+      0,
+      1,
+      2,
+      3
+    ],
+    "common_R": {
+      "181": 44,
+      "129": 31
+    },
+    "cost": "frozen mean SSE, each phase same common R; global minimum, all ties",
+    "tie_atol": 1e-12,
+    "threshold": null,
+    "accepted_payload": false,
+    "state_path_accepted": false,
+    "extra_regular_rows": "saved in normalized tensor; diagnostic only"
+  },
+  "fixed_denominator": {
+    "source_cases": 1,
+    "arms": 3,
+    "source_mp4": 3,
+    "derived_mp4": 15,
+    "normalized": 60,
+    "phase_path_searches": 120,
+    "phase_payload_reads": 120,
+    "primary_searches": 30,
+    "posthoc": 60,
+    "catalog_slots": 357480,
+    "valid_costs": 92016,
+    "structural_exclusions": 265464,
+    "pilot_positives": 5,
+    "pilot_negatives": 25
+  },
+  "planned_calls": {
+    "transformer_conditional": 150,
+    "transformer_unconditional": 150,
+    "native_step": 150,
+    "local_control": 50,
+    "payload_gradient": 50,
+    "pilot_gradient": 25,
+    "vae_decode": 3,
+    "vae_encode": 60,
+    "source_mp4_save": 3,
+    "derived_mp4_save": 15,
+    "source_mp4_read": 3,
+    "primary_mp4_read": 15,
+    "phase_path_search": 120,
+    "phase_payload_read": 120,
+    "primary_search": 30,
+    "quality_mp4_read": 15
+  },
+  "diagnostic_calls": {
+    "terminal_path_search": 6,
+    "terminal_payload_read": 6,
+    "oracle_saved_reference": 30
+  },
+  "reserved_C2": {
+    "status": "NOT_IN_THIS_CANDIDATE_NOT_EXECUTED"
+  },
+  "source_sha": null,
+  "evidence_ceiling": "Single-source fixed comparison with dependent crops and controls; all finite phase/path fits remain uncalibrated/unaccepted. No automatic scientific, FPR, confidence, real-edit, time-dependent-payload or quality PASS. Actual execution is recorded separately.",
+  "method_version": "video-overlap-zero-mean-v1",
+  "writer_diagnostics": {
+    "expected_slots": 75,
+    "arms": [
+      "OFF",
+      "PAYLOAD_MULTI",
+      "OVERLAP_MULTI"
+    ],
+    "indices": [
+      25,
+      26,
+      27,
+      28,
+      29,
+      30,
+      31,
+      32,
+      33,
+      34,
+      35,
+      36,
+      37,
+      38,
+      39,
+      40,
+      41,
+      42,
+      43,
+      44,
+      45,
+      46,
+      47,
+      48,
+      49
+    ],
+    "dtype": "float32",
+    "shape": [
+      45,
+      4,
+      4,
+      2
+    ],
+    "arrays": [
+      "conditional_clean",
+      "pilot_delta",
+      "z_pre",
+      "z_post",
+      "cfg_clean"
+    ],
+    "uncompressed_numeric_bytes": 2160000,
+    "source": "actual existing tensors, detached; no additional model/VAE calls",
+    "boundary": "48 boundary dimensions retained per array",
+    "cfg_clean": "z_pre-sigma_pre*actual updated CFG velocity; not actual next native state",
+    "key": "registered writer key only; sidecars never in blind tables",
+    "failure": "retain every slot; report execution and writer_diagnostic completeness separately"
+  }
+}

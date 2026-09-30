@@ -1,0 +1,1814 @@
+diff --git a/diagnostics/video_overlap_zero_mean_v1/implementation_report.md b/diagnostics/video_overlap_zero_mean_v1/implementation_report.md
+new file mode 100644
+index 0000000..f3989a2
+--- /dev/null
++++ b/diagnostics/video_overlap_zero_mean_v1/implementation_report.md
+@@ -0,0 +1,13 @@
++# Spatial zero mean candidate: local implementation
++
++Candidate base7167d443038927ef4395b33f52cc9dc0a2512bbb, dedicated dev/video-trajectory-blind-validation-v1. All files are new; old production method/runtime/notebook and evidence stay byte-identical.
++
++The sole encoding change is the adopted keyed DC-slot replacement. Writer and reader share the new versioned basis. State templates, finite-family mean SSE/ties, pilot active1392/eta174/cap1 and all C1 media/call denominators are unchanged. Full real generation is NOT_EXECUTED. Old all-cap logs are not inherited.
++
++New writer sidecars retain75 full projections independently of blind reads; failures do not erase completed native trajectories. The terminal projection/fingerprint is separately guarded following main review. All model/VAE call counts stay inherited. The existing C1 engineering loop is versioned with explicit imports and no runtime global monkeypatch.
++
++Validation: initial12 passed/1 failed32.91s; only failure was an exact-zero test for FP64 energy subtraction (1.11e-16). Test-only tolerance correction, targeted1 passed/12 deselected1.13s; all13 tests covered across those runs. No broad rerun, B grid, saved-run reranking or real model/media execution. Exact commands and boundary details are in local_validation.json. Callback on/off equality is specifically OVERLAP_MULTI; each synthetic run checks torch CPU RNG, not all possible RNG systems. An execution-neutral evidence_ceiling wording delta subsequently passed load_config static validation without a suite rerun.
++
++Motivation only: prior terminal-formation snapshot c13f244bbc101ab7a2dd8e0d69eed580d27737c6a90da400c24d801c5403e139, tree4474280aae0ea4d8d04dff8ca431579039d82fc9b186823ef9fd61e791ad655e. The current candidate neither reconstructs nor reinterprets old observations under new U.
++
++Notebook is an unpublished draft, SOURCE_SHA=None, independent output directory, no Colab link. No commit/push/merge/GPU/model/VAE/codec/C2 execution. Same-version numerical/runtime review and milestone review remain pending at freeze.
+diff --git a/diagnostics/video_overlap_zero_mean_v1/local_validation.json b/diagnostics/video_overlap_zero_mean_v1/local_validation.json
+new file mode 100644
+index 0000000..f8ebf2c
+--- /dev/null
++++ b/diagnostics/video_overlap_zero_mean_v1/local_validation.json
+@@ -0,0 +1,48 @@
++{
++  "status": "CPU_STATIC_ENGINEERING_CHECKS_COMPLETE",
++  "real_model": false,
++  "real_vae": false,
++  "real_codec": false,
++  "gpu": false,
++  "environment": {
++    "python": "/home/richar/projects/CEG-WM/alive/CEG-WM/.venv/bin/python",
++    "CUDA_VISIBLE_DEVICES": "",
++    "PYTHONDONTWRITEBYTECODE": "1",
++    "OPENBLAS_NUM_THREADS": "1"
++  },
++  "runs": [
++    {
++      "command": "python -m pytest tests/test_video_overlap_zero_mean.py -q -p no:cacheprovider",
++      "passed": 12,
++      "failed": 1,
++      "skipped": 0,
++      "seconds": 32.91,
++      "failure": "Test demanded exact outside-ROI energy zero; actual FP64 total-minus-patch reduction residual 1.1102230246251565e-16. Gradient/projection assertions passed.",
++      "correction": "Test-only abs(outside_ROI_energy)<1e-12; no runtime/control change. Parseval residual 1.0492958835151e-8 within existing 2e-7 tolerance."
++    },
++    {
++      "command": "python -m pytest tests/test_video_overlap_zero_mean.py -q -p no:cacheprovider -k gradient_actual",
++      "passed": 1,
++      "deselected": 12,
++      "skipped": 0,
++      "seconds": 1.13
++    }
++  ],
++  "final_coverage": "All13 necessary tests covered across initial12 passes plus corrected one targeted pass, not a single13-pass run.",
++  "precision_checks": {
++    "actual_delta_closed_form_atol": 2e-08,
++    "actual_delta_closed_form_rtol": 2e-06,
++    "fp32_projection_vs_fp64_atol": 2e-08,
++    "fp32_projection_vs_fp64_rtol": 2e-06,
++    "FP64_outside_ROI_subtraction_atol": 1e-12,
++    "native_diagnostics_noninvasive": "OVERLAP_MULTI callback on/off: velocity fingerprints, terminal bytes, final history and calls exact; every fixture run checks torch CPU RNG before/after. No claim all RNG systems or all three arms dual-run."
++  },
++  "runtime_notes": "Synthetic Transformer only; real native UniPC CPU scheduler. MP4/VAE tests use explicit fixtures, no real codec or VAE.",
++  "full_B_or_saved_real_ranking_executed": false,
++  "post_test_static_delta": {
++    "field": "C1 config evidence_ceiling",
++    "change": "Stable execution-neutral boundary; live result uses actual_model_calls/model_loaded.",
++    "check": "Import load_config, assert source_sha None and no unexecuted in evidence_ceiling: PASS. No suite rerun; config text only.",
++    "git_tracked_diff_check": "PASS; existing tracked files unchanged"
++  }
++}
+diff --git a/docs/video_overlap_zero_mean_c1_v1.md b/docs/video_overlap_zero_mean_c1_v1.md
+new file mode 100644
+index 0000000..e845e77
+--- /dev/null
++++ b/docs/video_overlap_zero_mean_c1_v1.md
+@@ -0,0 +1,58 @@
++# Video Overlap Spatial Zero Mean C1 V1
++
++本候选只改变公开空间 basis：原选择包含 Hadamard 常量列时，原位替换该列；其余编码、写入损失、更新预算和盲评分保持原定义。动机来自已保存 C1 run20260930T062340205444Z 的终点诊断。这是已见结果后的新编码假设，不是已定位的实现 bug 修复，也不是独立确认。
++
++旧 video_overlap_tube 源码、已发布 notebook、原运行与诊断文件均不改。新 namespace 为 video_overlap_zero_mean，method_version=video-overlap-zero-mean-v1。新 C1 config 绑定新机制 config，后者精确绑定旧机制 config 作为不变部分的定义依据。为避免修改冻结模块或 monkeypatch 全局，有限状态、catalog、exact equivalence 和 SSE 代码在新 pure 模块中保持同式，仅公开版本与 basis 派生不同。runtime 不导入 experiments，receiver 不接 writer diagnostics。
++
++## 唯一方法变化
++
++对每个公开 key 和空间 block i：
++
++1. 按原 SHA256(VTOS1/basis/order NUL key NUL decimal_i NUL decimal_c) 和 numeric c tie break 对 c=0..15 排序，无尾 NUL。保留完整原顺序、原先前8列和每个原 slot q 的 VTOS1/basis/sign 符号。
++2. 原 selected8 不含 c=0 时，整个 basis 逐元素不变。
++3. 若含 c=0，只在其原 slot 用完整原顺序中第一个 c!=0 且不在原 selected8 的列替换，沿用该 slot 的原 sign。其它7个 slot 的列、位置和 sign 均不变。
++4. writer 和 blind reader 使用完全相同规则；wrong key 自己独立派生。每个4×4 block 仍是8个正交单位向量，且各列空间和为零。basis_layout 收据保存完整顺序、原/新列、slot、sign、key 指纹；公开返回对象不能改写 basis cache。
++
++没有时间去均值，没有新的评分、edit 惩罚、阈值或力度扫描。空间零均值不等于各 slot 的时间零均值。
++
++## 保留的模型与实验
++
++S_t 仍是 keyed 六位时钟与两位非恒定校验形成的8维码；4个 block 各取两维，tube stride1、age0..3 在同一物理 latent 张量中正交叠加。物理时刻 u 是增强状态 [s_u,s_(u−1),s_(u−2),s_(u−3)]，早期越界为零，晚端不补写。时间单位为 Wan VAE regular latent 窗口，nominal stride4，不是单 RGB 帧或完整感受野。
++
++写入 active 系数仍为8*(45+44+43+42)=1392，全源 alpha=1/sqrt(1392)、target L2=1；没有按 crop 长度或覆盖数重归一。pilot 在 conditional clean 的新 U 投影上做 active mean MSE，eta174，实际 full-tensor update 只缩不放大到 cap L2=1。payload 继续 ch0..3 原 FFT-real32bit、eta5520。合并真实两个 delta 后以 v_cond -= delta/sigma 更新，再用 FP32 CFG5，完整 native scheduler history 连续执行。
++
++Wan model/revision、copper-kettle prompt、seed2026092501、181×320×512、8fps、50steps 均继承。OFF / PAYLOAD_MULTI / OVERLAP_MULTI 三条独立完整轨迹，两个 marked arm index25..49 fresh gradient，每次实际 delta 重算；step25前 z/history/c/u identity 必须相同。新 basis 会改变 rawNorm、cap 触发及后续模型/载荷反馈，不能继承旧运行的25步全 cap，也不声称新旧 payload 轨迹逐元素相等。只保持算法和预算规则，不称跨臂总预算匹配。
++
++固定3 source MP4、15 matched second-codec FULL_RESAVED181 与 CROP4/5/6/7_129、60实际四相位 whole-frame VAE normalized tensors、120 phase/key path+payload read、30 global searches、60 posthoc。完整 catalog357480、有效 cost92016、结构排除265464。FULL共同 R44，crop R31；extra rows 仅保存诊断，terminal R45（1440投影维，含48边界零模板），FULL R44为1408维。盲 path 仍 mean SSE、同 available 分母、全部 zero/one repeat/skip family、全部结构等价与1e-12 numeric ties；一律 uncalibrated/unaccepted。重复 payload 不能证明对齐必要性，正常有限模型 argmin 不等于真实同步成功。
++
++媒体仍采用真实保存→readback→完整帧 VAE posterior mode + Wan normalization；crop context reset 不等于 latent slice。质量同格式相对 OFF 与 OVERLAP/PAYLOAD 的 RMSE/PSNR 单列、无阈值。5 pilot-positive 与25相关 controls 不是独立 FPR 样本。C2、真实编辑及位置相关 payload 均不在本候选执行范围。
++
++## 75个独立 writer 诊断槽
++
++生成前预填3 arms×index25..49共75槽，每槽原子保存 npz，5个 FP32 [45,4,4,2] 数组，总未压缩数字字节2,160,000（约2.06MiB）。所有值由本步已有实际张量 detach/no_grad 后使用同一新 writer U 投影，保留所有 time/block/age/component 和48边界维，不保存 full state，不增加 forward/VAE 调用，不消费 RNG。
++
++| 数组 | 定义 |
++|---|---|
++| conditional_clean | 控制前 z_pre − sigma_pre*c_FP32 |
++| pilot_delta | 实际已 cap、将被合并的 full pilot delta 的投影；OFF/PAYLOAD 未施加的 pilot component 确切为零 |
++| z_pre | native step 前实际 latent |
++| z_post | native step 后实际 latent |
++| cfg_clean | z_pre − sigma_pre*v_actual，v 为真正交给 native step 的更新后 FP32 CFG velocity |
++
++cfg_clean 含 unconditional CFG，既不等于 conditional_clean+5*delta，也不是 solver history 修正后的下一真实 state。若后评使用 conditional_clean+pilot_delta 或 cfg_clean−5*pilot_delta，它们仅是有 FP32 舍入的代数投影派生，后者意为“移除本步 pilot 增量的更新后 CFG clean 投影”，不是另存的观测。
++
++metadata 保存 method version、arm、index、sigma_pre/post（末步后0）、pilot_enabled、shape/dtype。实际 full pilot tensor 计算 spatial L2/patch能量，再记录 projected L2、active/boundary energy、空间 U-complement residual、outside-ROI energy 和 Parseval residual；总能量减 patch 能量保留有符号 FP64 归约舍入，不把投影看不见误称无泄漏。空间 U-complement、投影内模板正交残差、时间 DC/变化量是三个不同空间，均不自动叫纯宿主。
++
++末步 z_post 只与 terminal 在相同新 U/regular范围的投影闭合，不等于保存完整 native state。末端投影/CPU转换/hash 异常独立记 FAILED，不能将已完成的50步 trajectory 改为生成失败。sidecar/投影失败保对应槽；generation 真失败时剩余槽 NOT_COMPLETED。execution_status、writer_diagnostic_status、science_status 分开；诊断缺失不能报全套 COMPLETE，却保留已成功的生成/媒体/盲读结果。
++
++writer table 不进入 blind_readouts.json，不进 path ranking/truth join。所有 primary raw 在后评前 canonical-first 保存，parent 在 child 结束/失败后重读最新 canonical，保留已完成 sidecar/hash。75槽独立于120 reader slots，不能混算。
++
++## 必要本地验证和证据上限
++
++固定代表 keys 检查确定性、完整原排序与精确 slot 替换、其它列/sign 不变、Gram I/列和0、公开缓存隔离。实际 full tensor scatter-add→提取核1392/alpha/norm，新旧理想坐标模板与同式 SSE 一致。仅少量 noedit/repeat/skip、缺失歧义与 exact-copy insert=repeat 的反例，不跑旧 B 矩阵或92016真实成本、不用旧 real tensor 当新编码成功。
++
++模型零调用的 synthetic Transformer + 实际 native UniPC fixture 核三臂前25同态、25次 fresh控制、完整history；具体在 OVERLAP_MULTI 单独双跑启用/关闭诊断，velocity/terminal/history/calls 逐项一致；每条 fixture 运行前后 torch CPU RNG 状态一致（未声称所有 RNG 系统或三臂各自双跑）。独立 FP64 提取与 FP32 投影使用显式容差。检查实际梯度闭式、norm/support、末端诊断失败不丢 terminal、callback/export故障、75槽保留、盲读重命名、partialphase、canonical两窗口和 parent spawn失败。没有加载真实模型/VAE或调用 codec。
++
++新 notebook 是未发布草稿，SOURCE_SHA=None；首格保持精确两行 Drive mount，current sys.executable、成功的 Torch-pair probe +原 grow dependencies、fresh generation/media children、真实保存视频预览。它只固定执行上述 C1，无额外模式。发布 source 并验证 immutable SHA 后方可由主会话绑定；当前没有可交付 Run-all 链接。
++
++已见媒体中去掉旧 DC slots 后错误路径仍可能优于真路径。新列可能受不同空间频率的媒体衰减；本候选不能保证改善终点/媒体同步或质量。旧诊断只提供单假设动机，真实生存与机制因果仍待用户运行。
+diff --git a/experiments/wan_state_clock/configs/video_overlap_zero_mean_c1_v1.json b/experiments/wan_state_clock/configs/video_overlap_zero_mean_c1_v1.json
+new file mode 100644
+index 0000000..db88a76
+--- /dev/null
++++ b/experiments/wan_state_clock/configs/video_overlap_zero_mean_c1_v1.json
+@@ -0,0 +1,218 @@
++{
++  "model": {
++    "id": "Wan-AI/Wan2.1-T2V-1.3B-Diffusers",
++    "revision": "0fad780a534b6463e45facd96134c9f345acfa5b"
++  },
++  "generation": {
++    "height": 320,
++    "width": 512,
++    "frames": 181,
++    "fps": 8,
++    "steps": 50,
++    "guidance_scale": 5.0,
++    "max_sequence_length": 512,
++    "negative_prompt": "text, watermark, logo, camera motion, cuts, multiple objects, flicker",
++    "prompt": "locked camera, a copper kettle resting on a plain wooden table, steady soft indoor light, no people, no cuts",
++    "seed": 2026092501
++  },
++  "case_id": "eval_copperkettle_s2501",
++  "key": "watermark",
++  "wrong_key": "watermark-wrong",
++  "message": "OKOK",
++  "wrong_message": "NOPE",
++  "media": {
++    "fps": 8,
++    "crf": 18,
++    "codec": "libx264",
++    "pixel_format": "yuv420p"
++  },
++  "precision": {
++    "cuda_transformer": "bfloat16 if is_bf16_supported else float16",
++    "cpu_transformer": "float32",
++    "state_control_cfg_vae": "float32"
++  },
++  "views": {
++    "FULL_RESAVED181": {
++      "start": 0,
++      "length": 181
++    },
++    "CROP4_129": {
++      "start": 4,
++      "length": 129
++    },
++    "CROP5_129": {
++      "start": 5,
++      "length": 129
++    },
++    "CROP6_129": {
++      "start": 6,
++      "length": 129
++    },
++    "CROP7_129": {
++      "start": 7,
++      "length": 129
++    }
++  },
++  "name": "video_overlap_zero_mean_c1_v1",
++  "arms": [
++    "OFF",
++    "PAYLOAD_MULTI",
++    "OVERLAP_MULTI"
++  ],
++  "mechanism_config_sha256": "6b8d8da7e8cedacc383530618bc7f50d806de4d0c4f14e35583bb8fb7e7c6c78",
++  "control": {
++    "steps": [
++      25,
++      26,
++      27,
++      28,
++      29,
++      30,
++      31,
++      32,
++      33,
++      34,
++      35,
++      36,
++      37,
++      38,
++      39,
++      40,
++      41,
++      42,
++      43,
++      44,
++      45,
++      46,
++      47,
++      48,
++      49
++    ],
++    "initial_identity_index": 25,
++    "payload_mask_count": 44160,
++    "payload_eta": 5520,
++    "pilot_active_coefficients": 1392,
++    "pilot_eta": 174,
++    "pilot_delta_cap": 1.0,
++    "target_l2": 1.0,
++    "total_budget_matched": false
++  },
++  "receiver": {
++    "phases": [
++      0,
++      1,
++      2,
++      3
++    ],
++    "common_R": {
++      "181": 44,
++      "129": 31
++    },
++    "cost": "frozen mean SSE, each phase same common R; global minimum, all ties",
++    "tie_atol": 1e-12,
++    "threshold": null,
++    "accepted_payload": false,
++    "state_path_accepted": false,
++    "extra_regular_rows": "saved in normalized tensor; diagnostic only"
++  },
++  "fixed_denominator": {
++    "source_cases": 1,
++    "arms": 3,
++    "source_mp4": 3,
++    "derived_mp4": 15,
++    "normalized": 60,
++    "phase_path_searches": 120,
++    "phase_payload_reads": 120,
++    "primary_searches": 30,
++    "posthoc": 60,
++    "catalog_slots": 357480,
++    "valid_costs": 92016,
++    "structural_exclusions": 265464,
++    "pilot_positives": 5,
++    "pilot_negatives": 25
++  },
++  "planned_calls": {
++    "transformer_conditional": 150,
++    "transformer_unconditional": 150,
++    "native_step": 150,
++    "local_control": 50,
++    "payload_gradient": 50,
++    "pilot_gradient": 25,
++    "vae_decode": 3,
++    "vae_encode": 60,
++    "source_mp4_save": 3,
++    "derived_mp4_save": 15,
++    "source_mp4_read": 3,
++    "primary_mp4_read": 15,
++    "phase_path_search": 120,
++    "phase_payload_read": 120,
++    "primary_search": 30,
++    "quality_mp4_read": 15
++  },
++  "diagnostic_calls": {
++    "terminal_path_search": 6,
++    "terminal_payload_read": 6,
++    "oracle_saved_reference": 30
++  },
++  "reserved_C2": {
++    "status": "NOT_IN_THIS_CANDIDATE_NOT_EXECUTED"
++  },
++  "source_sha": null,
++  "evidence_ceiling": "Single-source fixed comparison with dependent crops and controls; all finite phase/path fits remain uncalibrated/unaccepted. No automatic scientific, FPR, confidence, real-edit, time-dependent-payload or quality PASS. Actual execution is recorded separately.",
++  "method_version": "video-overlap-zero-mean-v1",
++  "writer_diagnostics": {
++    "expected_slots": 75,
++    "arms": [
++      "OFF",
++      "PAYLOAD_MULTI",
++      "OVERLAP_MULTI"
++    ],
++    "indices": [
++      25,
++      26,
++      27,
++      28,
++      29,
++      30,
++      31,
++      32,
++      33,
++      34,
++      35,
++      36,
++      37,
++      38,
++      39,
++      40,
++      41,
++      42,
++      43,
++      44,
++      45,
++      46,
++      47,
++      48,
++      49
++    ],
++    "dtype": "float32",
++    "shape": [
++      45,
++      4,
++      4,
++      2
++    ],
++    "arrays": [
++      "conditional_clean",
++      "pilot_delta",
++      "z_pre",
++      "z_post",
++      "cfg_clean"
++    ],
++    "uncompressed_numeric_bytes": 2160000,
++    "source": "actual existing tensors, detached; no additional model/VAE calls",
++    "boundary": "48 boundary dimensions retained per array",
++    "cfg_clean": "z_pre-sigma_pre*actual updated CFG velocity; not actual next native state",
++    "key": "registered writer key only; sidecars never in blind tables",
++    "failure": "retain every slot; report execution and writer_diagnostic completeness separately"
++  }
++}
+diff --git a/experiments/wan_state_clock/configs/video_overlap_zero_mean_v1.json b/experiments/wan_state_clock/configs/video_overlap_zero_mean_v1.json
+new file mode 100644
+index 0000000..4499fce
+--- /dev/null
++++ b/experiments/wan_state_clock/configs/video_overlap_zero_mean_v1.json
+@@ -0,0 +1,29 @@
++{
++  "schema": "video-overlap-zero-mean-v1",
++  "method_version": "video-overlap-zero-mean-v1",
++  "inherited_mechanism": {
++    "path": "experiments/wan_state_clock/configs/video_overlap_tube_state_v1.json",
++    "sha256": "4c45eec080679a8e8c9324a3ea8d2cd37fafbd2c3aad1e8dd250eed8fc444462",
++    "sections_unchanged": [
++      "public geometry",
++      "state",
++      "tubes",
++      "synthesis alpha/1392",
++      "observation mask",
++      "pilot meanMSE eta174 cap1",
++      "scoring family/SSE/all ties"
++    ]
++  },
++  "basis": {
++    "original_domain": "VTOS1/basis/order",
++    "sign_domain": "VTOS1/basis/sign",
++    "rule": "For each key/block keep complete original 16-column keyed order and original 8 slot signs. If original selected8 contains column0, replace only its slot with first c in full original order where c!=0 and c not in original selected8. Preserve its original slot sign. Otherwise basis unchanged.",
++    "columns": 8,
++    "spatial_column_sum": 0,
++    "per_key_rule": true,
++    "temporal_centering": false,
++    "position_dependent_payload": "RESERVED_DISABLED; old reserved-q wording does not allocate replacement columns"
++  },
++  "scope": "New encoding and matched blind reader, not an implementation bugfix or retrospective reinterpretation of old evidence.",
++  "source_sha": null
++}
+diff --git a/experiments/wan_state_clock/video_overlap_zero_mean_c1_run.py b/experiments/wan_state_clock/video_overlap_zero_mean_c1_run.py
+new file mode 100644
+index 0000000..144157a
+--- /dev/null
++++ b/experiments/wan_state_clock/video_overlap_zero_mean_c1_run.py
+@@ -0,0 +1,380 @@
++"""C1 user-run three-arm Wan overlap-state candidate; no automatic model execution."""
++from __future__ import annotations
++import argparse,copy,gzip,hashlib,importlib.metadata,json,math,os,subprocess,sys,time
++from pathlib import Path
++import numpy as np
++from main.tube_state import video_overlap_zero_mean_control as method
++from main.tube_state import video_overlap_zero_mean_state as state
++from runtime.wan import video_overlap_zero_mean as backend
++ROOT=Path(__file__).resolve().parents[2]
++CONFIG=ROOT/'experiments/wan_state_clock/configs/video_overlap_zero_mean_c1_v1.json'
++MODULE='experiments.wan_state_clock.video_overlap_zero_mean_c1_run'
++KEY_IDS=('CORRECT','WRONG');TARGET_IDS=('REGISTERED','WRONG_MESSAGE')
++TABLE_SIZES=dict(generation=3,sources=3,views=15,normalized=60,phase_reads=120,searches=30,evaluations=60)
++DENOMINATOR=dict(source_cases=1,arms=3,source_mp4=3,derived_mp4=15,normalized=60,phase_path_searches=120,phase_payload_reads=120,
++ primary_searches=30,posthoc=60,catalog_slots=357480,valid_costs=92016,structural_exclusions=265464,pilot_positives=5,pilot_negatives=25)
++
++def dump(path,value):
++    path=Path(path);temp=path.with_suffix(path.suffix+'.tmp')
++    with temp.open('w') as f:json.dump(value,f,indent=2,allow_nan=False);f.write('\n');f.flush();os.fsync(f.fileno())
++    os.replace(temp,path)
++
++
++def environment():
++    packages={}
++    for name in ('torch','torchvision','diffusers','transformers','accelerate','numpy','imageio','imageio-ffmpeg'):
++        try:packages[name]=importlib.metadata.version(name)
++        except importlib.metadata.PackageNotFoundError:packages[name]=None
++    return dict(python=sys.version,executable=sys.executable,packages=packages)
++
++
++def load_config():
++    cfg=json.loads(CONFIG.read_text())
++    mechanism=ROOT/'experiments/wan_state_clock/configs/video_overlap_zero_mean_v1.json'
++    if backend.file_sha256(mechanism)!=cfg['mechanism_config_sha256']:raise ValueError('frozen new mechanism identity mismatch')
++    inherited=json.loads(mechanism.read_text())['inherited_mechanism']
++    if backend.file_sha256(ROOT/inherited['path'])!=inherited['sha256']:raise ValueError('inherited mechanism identity mismatch')
++    if cfg['method_version']!=state.PUBLIC.method_version:raise ValueError('method version mismatch')
++    if cfg['writer_diagnostics']['expected_slots']!=75 or cfg['writer_diagnostics']['arrays']!=list(backend.DIAGNOSTIC_ARRAYS):raise ValueError('diagnostic roster mismatch')
++    if cfg['fixed_denominator']!=DENOMINATOR or cfg['arms']!=list(method.ARMS):raise ValueError('fixed roster mismatch')
++    if cfg['control']['steps']!=list(range(25,50)) or cfg['control']['pilot_eta']!=174 or cfg['control']['pilot_delta_cap']!=1.:raise ValueError('fixed control mismatch')
++    if cfg['views']!={'FULL_RESAVED181':dict(start=0,length=181),**{f'CROP{i}_129':dict(start=i,length=129) for i in range(4,8)}}:raise ValueError('fixed C1 views required')
++    method.payload.layout_receipt(cfg['key'],cfg['wrong_key'])
++    return cfg
++
++
++def dump_gzip(path,value):
++    temp=path.with_suffix(path.suffix+'.tmp');temp.write_bytes(gzip.compress(json.dumps(value,allow_nan=False,separators=(',',':')).encode(),mtime=0));os.replace(temp,path)
++
++
++def initial_result(output):
++    cfg=load_config();tables={name:{} for name in TABLE_SIZES};shared={}
++    for R in (44,31):
++        path=output/f'catalog_R{R}.json.gz';rows=state.catalog(R);dump_gzip(path,dict(rows=rows))
++        for key_id,key in (('CORRECT',cfg['key']),('WRONG',cfg['wrong_key'])):
++            fp=output/f'family_R{R}_{key_id}.json.gz';family=state.family_receipt(key,R,np.ones((R,4),bool));dump_gzip(fp,family)
++            shared[f'{R}/{key_id}']=dict(catalog_path=str(path),catalog_sha256=backend.file_sha256(path),family_path=str(fp),family_sha256=backend.file_sha256(fp),
++                catalog_count=len(rows),valid_count=len(family['valid_catalog_indices']),class_count=len(family['classes']))
++    for arm in method.ARMS:
++        tables['generation'][arm]=dict(status='PENDING',steps=[],terminal_path=str(output/arm/'terminal.pt'))
++        tables['sources'][arm]=dict(status='PENDING',path=str(output/arm/'source.mp4'))
++        for view,spec in cfg['views'].items():
++            av=f'{arm}/{view}';R=method.phase_spec(spec['length'],0)['R'];tables['views'][av]=dict(status='PENDING',path=str(output/arm/(view+'.mp4')))
++            for g in range(4):
++                tables['normalized'][f'{av}/{g}']=dict(status='PENDING',g=g,path=str(output/arm/(view+f'.phase{g}.pt')))
++                for k in KEY_IDS:
++                    tables['phase_reads'][f'{av}/{g}/{k}']=dict(status='PENDING',g=g,R=R,payload=None,
++                        path=str(output/arm/(view+f'.phase{g}.{k}.raw.json.gz')),shared=shared[f'{R}/{k}'])
++            for k in KEY_IDS:
++                sid=f'{av}/{k}';tables['searches'][sid]=dict(status='PENDING',accepted_payload=False,state_path_accepted=False,canonical=None)
++                for target in TARGET_IDS:tables['evaluations'][f'{sid}/{target}']=dict(status='PENDING',bit_errors=None,accepted_payload=False)
++    paths=['main/tube_state/video_overlap_zero_mean_state.py','main/tube_state/video_overlap_zero_mean_control.py','main/tube_state/grow_video_reference.py',
++      'runtime/wan/video_overlap_zero_mean.py','runtime/wan/video_temporal_sync_bridge.py','main/tube_state/video_temporal_sync_bridge.py','runtime/wan/generation.py','runtime/wan/trajectory.py','runtime/wan/vae.py','runtime/wan/io.py',
++      'experiments/wan_state_clock/video_overlap_zero_mean_c1_run.py','experiments/wan_state_clock/configs/video_overlap_zero_mean_c1_v1.json',
++      'experiments/wan_state_clock/configs/video_overlap_zero_mean_v1.json','experiments/wan_state_clock/configs/video_overlap_tube_state_v1.json','experiments/wan_state_clock/requirements-grow-video-reference.txt']
++    return dict(status='RUNNING',stage='INITIALIZE',fixed_denominator=DENOMINATOR,**tables,shared=shared,
++      method_version=state.PUBLIC.method_version,basis_layout={k:state.basis_layout(v) for k,v in [('CORRECT',cfg['key']),('WRONG',cfg['wrong_key'])]},
++      writer_diagnostics={f'{a}/{i}':dict(status='PENDING',index=i,arm=a,path=str(output/a/f'writer_step{i}.npz'),method_version=state.PUBLIC.method_version)
++                          for a in method.ARMS for i in range(25,50)},
++      calls={},workers={},failures=[],quality={},terminal_diagnostics={f'{a}/{k}':dict(status='PENDING') for a in method.ARMS for k in KEY_IDS},
++      model_loaded={'generation':False,'media':False},actual_model_calls=False,source_sha=subprocess.check_output(['git','rev-parse','HEAD'],cwd=ROOT,text=True).strip(),
++      source_files={p:backend.file_sha256(ROOT/p) for p in paths},config_sha256=backend.file_sha256(CONFIG),environment=environment(),
++      evidence_ceiling=cfg['evidence_ceiling'])
++
++
++class Store:
++    def __init__(self,output,*,create=False):
++        self.output=Path(output);self.path=self.output/'result.json'
++        if create:self.output.mkdir(parents=True,exist_ok=False);self.data=initial_result(self.output)
++        else:self.data=json.loads(self.path.read_text())
++        self.save()
++    def save(self):
++        d=self.data
++        if any(len(d[k])!=n for k,n in TABLE_SIZES.items()):raise ValueError('fixed roster changed')
++        if len(d['writer_diagnostics'])!=75:raise ValueError('fixed diagnostic roster changed')
++        ds=list(d['writer_diagnostics'].values())
++        d['writer_diagnostic_counts']=dict(expected=75,saved=sum(r['status']=='SAVED' for r in ds),
++            failed=sum(r['status']=='FAILED' for r in ds),not_completed=sum(r['status']=='NOT_COMPLETED' for r in ds),
++            pending=sum(r['status']=='PENDING' for r in ds))
++        phase=list(d['phase_reads'].values())
++        d['counts']=dict(generated=sum(r['status']=='COMPLETE' for r in d['generation'].values()),source_mp4=sum(r['status']=='SAVED' for r in d['sources'].values()),
++          derived_mp4=sum(r['status']=='SAVED' for r in d['views'].values()),normalized=sum(r['status']=='SAVED' for r in d['normalized'].values()),
++          phase_searches=sum(r['status'] in ('COMPLETE','NO_ENERGY') for r in phase),
++          phase_payload=sum((r.get('payload') or {}).get('status')=='READ' for r in phase),
++          path_costs=sum(r.get('scored',0) for r in phase),searches=sum(r['status'] in ('COMPLETE','NO_ENERGY') for r in d['searches'].values()),
++          evaluated=sum(r['status']=='EVALUATED' for r in d['evaluations'].values()))
++        dump(self.path,d)
++    def count(self,kind,completed):
++        row=self.data['calls'].setdefault(self.data['stage'],{}).setdefault(kind,dict(attempted=0,completed=0))
++        row['completed' if completed else 'attempted']+=1
++        if kind.startswith(('transformer_','vae_')) and not completed:self.data['actual_model_calls']=True
++        self.save()
++    def failure(self,stage,error):
++        self.data['failures'].append(dict(stage=stage,error=f'{type(error).__name__}: {error}'));self.save()
++    def blind(self):
++        dump(self.output/'blind_readouts.json',dict(normalized=self.data['normalized'],phase_reads=self.data['phase_reads'],searches=self.data['searches'],
++            shared=self.data['shared'],fixed_denominator=DENOMINATOR,truth_inputs=False))
++    def event(self,av,kind,slot,row):
++        if kind=='normalized':
++            import torch
++            target=self.data['normalized'][f'{av}/{slot}'];path=Path(target['path']);path.parent.mkdir(parents=True,exist_ok=True)
++            tmp=path.with_suffix('.tmp');torch.save(row,tmp);os.replace(tmp,path)
++            target.update(status='SAVED',sha256=backend.file_sha256(path),shape=list(row.shape))
++        elif kind=='phase':
++            target=self.data['phase_reads'][f'{av}/{slot[0]}/{slot[1]}'];path=Path(target['path']);path.parent.mkdir(parents=True,exist_ok=True)
++            dump_gzip(path,row);inf=row.get('inference');scored=0
++            if inf is not None and inf['summary']['status'] in ('COMPLETE','NO_ENERGY'):
++                if len(inf['path_costs'])!=target['shared']['valid_count'] or not np.isfinite(inf['path_costs']).all():raise ValueError('incomplete path costs')
++                if len(inf['class_costs'])!=target['shared']['class_count'] or not np.isfinite(inf['class_costs']).all():raise ValueError('incomplete class costs')
++                scored=inf['counts']['scored']
++                if scored!=target['shared']['valid_count']:raise ValueError('score count mismatch')
++            target.update(status=row['status'],sha256=backend.file_sha256(path),scored=scored,payload=row.get('payload'),summary=inf['summary'] if inf else None,error=row.get('error'))
++        elif kind=='search':self.data['searches'][f'{av}/{slot}'].update(row)
++        else:raise ValueError(kind)
++        self.save();self.blind()  # Canonical-first persistence; blind is recoverable.
++
++
++    def writer_event(self,arm,index,arrays,metadata):
++        """Separate canonical writer table. Never projected into blind_readouts."""
++        row=self.data['writer_diagnostics'][f'{arm}/{index}']
++        try:
++            row.update(metadata)
++            if metadata['status']!='COMPLETE':raise RuntimeError(metadata.get('error','projection failed'))
++            if set(arrays)!=set(backend.DIAGNOSTIC_ARRAYS):raise ValueError('missing diagnostic array')
++            if not all(v.dtype==np.float32 and v.shape==(45,4,4,2) and np.isfinite(v).all() for v in arrays.values()):raise ValueError('diagnostic geometry/dtype/finiteness')
++            path=Path(row['path']);path.parent.mkdir(parents=True,exist_ok=True);temp=path.with_suffix('.tmp')
++            with temp.open('wb') as f:
++                np.savez_compressed(f,**arrays);f.flush();os.fsync(f.fileno())
++            os.replace(temp,path)
++            row.update(status='SAVED',sha256=backend.file_sha256(path),array_hashes={k:backend.file_array_sha256(v) for k,v in arrays.items()})
++            self.save()
++        except Exception as exc:
++            row.update(status='FAILED',error=f'{type(exc).__name__}: {exc}');self.save()
++            raise
++
++
++def recover_unfinished(store,phase,error):
++    groups=('generation','terminal_diagnostics','writer_diagnostics') if phase=='generation' else ('sources','views','normalized','phase_reads','searches')
++    for group in groups:
++        for row in store.data[group].values():
++            if row['status'] in ('PENDING','RUNNING','SAVING'):row.update(status='SEARCH_INCOMPLETE' if group=='searches' else 'NOT_COMPLETED',error=error)
++    store.save();store.blind()
++
++def generation_worker(store,cfg):
++    import torch
++    from runtime.wan.generation import prepare_generation
++    from runtime.wan import trajectory
++    device,dtype=backend.execution_device_dtype();store.data['stage']='GENERATION_LOAD';store.save()
++    pipe,initial,prompt,negative,input_dtype=prepare_generation(cfg,load_vae=False,device=device,model_dtype=dtype)
++    store.data['model_loaded']['generation']=True;pristine=copy.deepcopy(pipe.scheduler)
++    initial_hash=trajectory.fingerprint(initial);history_hash=trajectory.fingerprint(vars(pristine));reference=None
++    store.data['generation_setup']=dict(device=device,transformer_dtype=str(dtype),state_control_cfg='float32',initial_sha256=initial_hash,
++        pristine_history_sha256=history_hash,model=cfg['model'],seed=cfg['generation']['seed']);store.save()
++    for arm in method.ARMS:
++        store.data['stage']='GENERATE_'+arm;row=store.data['generation'][arm];row['status']='RUNNING';store.save()
++        try:
++            def record(value):row['steps'].append(value);store.save()
++            terminal,receipt=backend.run_trajectory(pipe,initial,copy.deepcopy(pristine),prompt,negative,input_dtype,arm,
++                cfg['key'],method.message_bits(cfg['message']),store.count,record,
++                diagnostic=lambda index,arrays,metadata:store.writer_event(arm,index,arrays,metadata))
++            if reference is None:reference=receipt['before_step25']
++            if receipt['before_step25']!=reference:raise RuntimeError('step25 z/history/conditional/unconditional mismatch')
++            if trajectory.fingerprint(initial)!=initial_hash or trajectory.fingerprint(vars(pristine))!=history_hash:raise RuntimeError('shared initial state changed')
++            path=Path(row['terminal_path']);path.parent.mkdir(parents=True,exist_ok=True);torch.save(terminal,path)
++            receipt['control_norm_statistics']={k:dict(sum=sum(s.get(k,0.) for s in row['steps']),sum_squares=sum(s.get(k,0.)**2 for s in row['steps']),maximum=max(s.get(k,0.) for s in row['steps'])) for k in ('payload_delta_l2','pilot_delta_l2','merged_delta_l2')}
++            row.update(status='COMPLETE',sha256=backend.file_sha256(path),receipt=receipt);store.save()
++            terminal_diagnostics(store,arm,terminal,cfg);del terminal
++        except Exception as exc:row.update(status='FAILED',error=f'{type(exc).__name__}: {exc}');store.failure(store.data['stage'],exc)
++        store.save()
++    complete=[r for r in store.data['generation'].values() if r['status']=='COMPLETE']
++    store.data['before_step25_identity']=dict(status='MATCH' if len(complete)==3 else 'INCOMPLETE',checked_arms=len(complete))
++    store.save()
++
++
++def terminal_diagnostics(store,arm,terminal,cfg):
++    store.data['stage']='TERMINAL_DIAGNOSTIC_'+arm;store.save()
++    received=terminal[0,:,1:].float().numpy().transpose(1,0,2,3)
++    for k,key in (('CORRECT',cfg['key']),('WRONG',cfg['wrong_key'])):
++        row=store.data['terminal_diagnostics'][f'{arm}/{k}']
++        try:
++            result=backend.counted(store.count,'terminal_path_search',lambda:state.infer(received,key,np.ones((45,4),bool)))
++            payload=backend.counted(store.count,'terminal_payload_read',lambda:method.payload_read(terminal,key,45))
++            path=store.output/arm/(k+'.terminal_diagnostic.json.gz');dump_gzip(path,dict(inference=result,payload=payload))
++            row.update(status='READ',path=str(path),sha256=backend.file_sha256(path),summary=result['summary'],payload=payload,source='terminal diagnostic only; never MP4 input')
++        except Exception as exc:row.update(status='FAILED',error=str(exc))
++        store.save()
++
++def media_worker(store,cfg):
++    import torch
++    from runtime.wan.generation import load_frozen_vae
++    from runtime.wan import io,vae as vae_adapter
++    keys=dict(CORRECT=cfg['key'],WRONG=cfg['wrong_key'])
++    if not any(r['status']=='COMPLETE' for r in store.data['generation'].values()):
++        recover_unfinished(store,'media','no completed generation');return
++    store.data['stage']='MEDIA_LOAD';store.save();device,_=backend.execution_device_dtype()
++    frozen=load_frozen_vae(cfg,device=device);store.data['model_loaded']['media']=True;store.save()
++    for arm in method.ARMS:
++        generated=store.data['generation'][arm];source=store.data['sources'][arm]
++        store.data['stage']='SOURCE_'+arm;store.save()
++        if generated['status']=='COMPLETE':
++            try:
++                if backend.file_sha256(generated['terminal_path'])!=generated['sha256']:raise RuntimeError('terminal identity mismatch')
++                terminal=torch.load(generated['terminal_path'],map_location='cpu',weights_only=True)
++                rgb=backend.counted(store.count,'vae_decode',lambda:vae_adapter.decode_normalized_latent(frozen,terminal.to(next(frozen.parameters()).device)))
++                path=Path(source['path']);path.parent.mkdir(parents=True,exist_ok=True);source['status']='SAVING';store.save()
++                backend.counted(store.count,'source_mp4_save',lambda:io.encode_rgb(rgb,path,8,18))
++                source.update(status='SAVED',sha256=backend.file_sha256(path));del rgb,terminal
++            except Exception as exc:source.update(status='FAILED',error=str(exc));store.failure(store.data['stage'],exc)
++            store.save()
++        if source['status']!='SAVED':continue
++        try:
++            if backend.file_sha256(source['path'])!=source['sha256']:raise RuntimeError('source MP4 identity mismatch')
++            received=backend.counted(store.count,'source_mp4_read',lambda:io.read_mp4(Path(source['path'])))
++            if tuple(received.shape)!=(181,320,512,3):raise ValueError('source MP4 geometry mismatch')
++        except Exception as exc:store.failure('SOURCE_READ_'+arm,exc);continue
++        for view in method.VIEWS:
++            av=f'{arm}/{view}';row=store.data['views'][av];store.data['stage']='DERIVE_'+av
++            spec=cfg['views'][view];path=Path(row['path'])
++            try:
++                row['status']='SAVING';store.save()
++                clip=received[spec['start']:spec['start']+spec['length']]
++                backend.counted(store.count,'derived_mp4_save',lambda:io.encode_rgb(clip,path,8,18))
++                row.update(status='SAVED',sha256=backend.file_sha256(path),frames=spec['length'],second_codec=True)
++            except Exception as exc:row.update(status='FAILED',error=str(exc));store.failure(store.data['stage'],exc)
++            store.save()
++        del received
++        for view in method.VIEWS:
++            av=f'{arm}/{view}';row=store.data['views'][av]
++            if row['status']!='SAVED':continue
++            store.data['stage']='PRIMARY_'+av;store.save()
++            try:
++                if backend.file_sha256(row['path'])!=row['sha256']:raise RuntimeError('derived MP4 identity mismatch')
++                backend.read_mp4_search(row['path'],keys,method.PUBLIC,frozen,count=store.count,
++                    persist=lambda kind,slot,value:store.event(av,kind,slot,value))
++            except Exception as exc:store.failure(store.data['stage'],exc)
++    recover_unfinished(store,'media','unavailable input or incomplete media/search')
++
++
++def evaluate_saved_reads(store,cfg):
++    path=store.output/'blind_readouts.json';before=backend.file_sha256(path);raw=json.loads(path.read_text())
++    store.data['stage']='POSTHOC_EVALUATION';store.save()
++    for sid,search in raw['searches'].items():
++        arm,view,key=sid.split('/');b=cfg['views'][view]['start'];g=(-b)%4;R=method.phase_spec(cfg['views'][view]['length'],0)['R']
++        truth_tau=list(range((b+g)//4+1,(b+g)//4+1+R));rows=state.catalog(R)
++        true_ids={i for i,row in enumerate(rows) if row['taus']==truth_tau and row['structurally_valid']}
++        top=search.get('top',[]);canonical=search.get('canonical');feature=raw['phase_reads'][f'{arm}/{view}/{g}/{key}']
++        store.count('oracle_saved_reference',False)
++        oracle=(feature.get('payload') or {}).get('decoded_bits')
++        if feature['status'] in ('COMPLETE','NO_ENERGY'):store.count('oracle_saved_reference',True)
++        bits=search.get('canonical_phase_payload_diagnostic')
++        for target,message in (('REGISTERED',cfg['message']),('WRONG_MESSAGE',cfg['wrong_message'])):
++            truth=method.message_bits(message);row=store.data['evaluations'][f'{sid}/{target}']
++            row.update(status='EVALUATED' if search['status'] in ('COMPLETE','NO_ENERGY') else 'MISSING_SEARCH',accepted_payload=False,state_path_accepted=False,
++              bit_errors=None,exact_bits=None,registered_g=g,registered_tau=truth_tau,
++              truth_in_top=any(t['g']==g and t['catalog_index'] in true_ids for t in top),
++              canonical_phase_matches=canonical['g']==g if canonical else None,
++              canonical_path_matches=canonical['path']['taus']==truth_tau and canonical['g']==g if canonical else None,
++              canonical_event=canonical['path']['event_type'] if canonical else None,
++              all_top_require_event=search.get('all_top_require_event'),
++              diagnostic_bit_errors=sum(a!=b for a,b in zip(bits,truth)) if bits is not None else None,
++              diagnostic_exact=bits==truth if bits is not None else None,oracle_payload=oracle,
++              oracle_bit_errors=sum(a!=b for a,b in zip(oracle,truth)) if oracle is not None else None,
++              expected_pilot_present=arm=='OVERLAP_MULTI' and key=='CORRECT',
++              control_category='PILOT_PRESENT' if arm=='OVERLAP_MULTI' and key=='CORRECT' else 'OFF_UNWATERMARKED' if arm=='OFF' else 'PAYLOAD_ONLY' if arm=='PAYLOAD_MULTI' else 'PILOT_WRONG_KEY',
++              claim='posthoc development diagnostic only; canonical fit is not physical edit detection')
++        store.save()
++    if backend.file_sha256(path)!=before:raise RuntimeError('posthoc modified blind evidence')
++    store.data['blind_sha256']=before;store.save()
++
++def quality_diagnostics(store):
++    from runtime.wan import io
++    store.data['stage']='QUALITY';store.save()
++    for view in method.VIEWS:
++        observed={}
++        for arm in method.ARMS:
++            row=store.data['views'][f'{arm}/{view}']
++            if row['status']!='SAVED':continue
++            try:
++                if backend.file_sha256(row['path'])!=row['sha256']:raise RuntimeError('quality MP4 identity mismatch')
++                observed[arm]=backend.counted(store.count,'quality_mp4_read',lambda:io.read_mp4(Path(row['path'])))
++            except Exception as exc:store.data['quality'][f'{view}/read/{arm}']=dict(status='FAILED',error=str(exc))
++        for arm,reference in (('PAYLOAD_MULTI','OFF'),('OVERLAP_MULTI','OFF'),('OVERLAP_MULTI','PAYLOAD_MULTI')):
++            key=f'{view}/{arm}_vs_{reference}';row=dict(status='MISSING_MP4',threshold=None,diagnostic_only=True)
++            if arm in observed and reference in observed:
++                try:
++                    x,y=observed[arm],observed[reference]
++                    if x.shape!=y.shape:raise ValueError('quality geometry mismatch')
++                    squared=sum(float((x[i].double()-y[i].double()).square().sum()) for i in range(len(x)))
++                    mse=squared/x.numel();row.update(status='MEASURED',rgb_rmse=math.sqrt(mse),psnr_db=-10*math.log10(mse) if mse else None,identical_pixels=mse==0)
++                except Exception as exc:row.update(status='FAILED',error=str(exc))
++            store.data['quality'][key]=row;store.save()
++        del observed
++
++
++def _stop_worker(child):
++    if child.poll() is None:
++        try:child.terminate()
++        except ProcessLookupError:pass
++    try:return child.wait(timeout=10)
++    except subprocess.TimeoutExpired:child.kill();return child.wait(timeout=10)
++
++
++def run_worker_phase(output,phase):
++    command=[sys.executable,'-u','-m',MODULE,'--output',str(output),'--worker',phase]
++    start=time.perf_counter();child=None;code=None;error=None;cleanup_error=None;halt=None
++    try:
++        with (output/(phase+'.log')).open('w') as log:
++            child=subprocess.Popen(command,cwd=ROOT,stdout=subprocess.PIPE,stderr=subprocess.STDOUT,text=True,bufsize=1)
++            for line in child.stdout:print(line,end='',flush=True);log.write(line);log.flush()
++            code=child.wait()
++    except BaseException as exc:
++        error=f'{type(exc).__name__}: {exc}'
++        if not isinstance(exc,Exception):halt='INTERRUPTED'
++        if child is not None:
++            try:code=_stop_worker(child)
++            except BaseException as cleanup:cleanup_error=str(cleanup);halt=halt or 'CLEANUP_FAILED'
++    finally:
++        if child is not None and child.stdout is not None:
++            try:child.stdout.close()
++            except Exception:pass
++    store=Store(output)
++    status=('START_FAILED' if child is None else 'MONITOR_FAILED') if error else ('COMPLETE' if code==0 else 'NONZERO_EXIT')
++    store.data['workers'][phase]=dict(command=command,status=status,returncode=code,elapsed_seconds=time.perf_counter()-start,
++        child_started=child is not None,error=error,cleanup_error=cleanup_error,last_child_stage=store.data['stage'])
++    if status!='COMPLETE':
++        reason=error or f'worker exited {code}';store.failure('WORKER_'+phase.upper(),RuntimeError(reason));recover_unfinished(store,phase,reason)
++    store.save();return store,halt
++
++
++def main():
++    p=argparse.ArgumentParser(description=__doc__);p.add_argument('--output',type=Path,required=True);p.add_argument('--worker',choices=('generation','media'))
++    args=p.parse_args();cfg=load_config()
++    if args.worker:
++        store=Store(args.output)
++        try:(generation_worker if args.worker=='generation' else media_worker)(store,cfg)
++        except Exception as exc:store.failure(store.data['stage'],exc);recover_unfinished(store,args.worker,str(exc));raise
++        return
++    store=Store(args.output,create=True);halt=None
++    for phase in ('generation','media'):
++        store,halt=run_worker_phase(args.output,phase)
++        if halt:
++            if phase=='generation':store.data['workers']['media']=dict(status='NOT_STARTED_'+halt)
++            recover_unfinished(store,'media',halt);break
++    recover_unfinished(store,'generation','generation incomplete');recover_unfinished(store,'media','media incomplete')
++    evaluate_saved_reads(store,cfg)
++    expected=dict(generated=3,source_mp4=3,derived_mp4=15,normalized=60,phase_searches=120,phase_payload=120,path_costs=92016,searches=30,evaluated=60)
++    done=store.data['counts']==expected and all(r['status']=='COMPLETE' for r in store.data['workers'].values())
++    diagnostic_done=store.data['writer_diagnostic_counts']['saved']==75 and all(
++        r.get('receipt',{}).get('writer_diagnostics',{}).get('last_z_post_matches_terminal') is True for r in store.data['generation'].values())
++    store.data['execution_status']='EXECUTION_COMPLETE' if done else 'INCOMPLETE'
++    store.data['writer_diagnostic_status']='COMPLETE' if diagnostic_done else 'INCOMPLETE'
++    store.data['science_status']='UNCALIBRATED_DIAGNOSTIC_NO_AUTOMATIC_SCIENTIFIC_PASS'
++    store.data['status']=halt or ('EXECUTION_COMPLETE' if done and diagnostic_done else 'INCOMPLETE');store.save()
++    if not halt:quality_diagnostics(store)
++    if backend.file_sha256(store.output/'blind_readouts.json')!=store.data['blind_sha256']:raise RuntimeError('quality modified blind evidence')
++    store.data['stage']='FINISHED';store.save();print(json.dumps(dict(status=store.data['status'],counts=store.data['counts'])))
++    if halt=='INTERRUPTED':raise SystemExit(130)
++    if not (done and diagnostic_done):raise SystemExit(1)
++
++
++if __name__=='__main__':main()
+diff --git a/main/tube_state/video_overlap_zero_mean_control.py b/main/tube_state/video_overlap_zero_mean_control.py
+new file mode 100644
+index 0000000..f97947d
+--- /dev/null
++++ b/main/tube_state/video_overlap_zero_mean_control.py
+@@ -0,0 +1,149 @@
++"""Spatial-zero-mean Wan control; unchanged state code, loss, cap and payload."""
++from __future__ import annotations
++import math
++import numpy as np
++from main.tube_state import video_overlap_zero_mean_state as state
++from main.tube_state import grow_video_reference as payload
++PUBLIC=state.PUBLIC
++ARMS=('OFF','PAYLOAD_MULTI','OVERLAP_MULTI')
++VIEWS=('FULL_RESAVED181','CROP4_129','CROP5_129','CROP6_129','CROP7_129')
++message_bits=payload.message_bits
++
++
++def phase_spec(length,g):
++    if length not in (181,129,125,133) or g not in range(4):raise ValueError('unsupported public frame geometry')
++    k=(length-g-1)//4;R=(length-4)//4
++    if R not in PUBLIC.observed_lengths:raise ValueError('common regular support outside frozen family')
++    return dict(g=g,left=g,right=g+1+4*k,regular_count=k,R=R,first_latent_excluded=True,
++        nominal_grid='newly supplied RGB frames only; not VAE receptive field')
++
++
++def control_enabled(arm,index):
++    if arm not in ARMS or not 0<=index<50:raise ValueError('fixed arm/index required')
++    return arm!='OFF' and index>=25
++
++
++def build_targets(latent,key,bits):
++    import torch
++    target,mask=payload.build_target(latent,key,bits)
++    basis=torch.tensor(state.bases(key),device=latent.device,dtype=torch.float32)
++    signs=torch.tensor(state.composite_signs(key),device=latent.device,dtype=torch.float32)
++    active=signs!=0
++    if int(active.sum())!=1392:raise ValueError('frozen active pilot coefficient count')
++    return dict(payload_target=target,payload_mask=mask,basis=basis,pilot_target=signs*PUBLIC.alpha,pilot_active=active)
++
++
++def pilot_delta(clean,targets):
++    import torch
++    with torch.enable_grad():
++        leaf=clean.detach().float().clone().requires_grad_(True);features=[]
++        for i,(h0,h1,w0,w1) in enumerate(PUBLIC.blocks):
++            patch=leaf[0,4,1:,h0:h1,w0:w1].reshape(45,16)
++            features.append((patch@targets['basis'][i]).reshape(45,4,2))
++        features=torch.stack(features,dim=1)
++        residual=features[targets['pilot_active']]-targets['pilot_target'][targets['pilot_active']]
++        loss=residual.square().mean();grad=torch.autograd.grad(loss,leaf)[0]
++        raw=(-174.*grad).detach();norm=raw.double().square().sum().sqrt()
++        if not bool(torch.isfinite(norm)) or not bool(torch.isfinite(loss)):raise FloatingPointError('nonfinite overlap pilot update')
++        scale=min(1.,1./float(norm)) if float(norm)>0 else 1.
++        delta=raw*scale
++    return delta,dict(loss=float(loss.detach()),active_coefficients=1392,eta=174.,target_l2=1.,
++      raw_delta_l2=float(norm),cap=1.,cap_scale=scale,actual_delta_l2=float(delta.double().square().sum().sqrt()))
++
++
++def guided_velocity(z,conditional,unconditional,sigma,targets,arm,index,count=None,*,diagnostics=None):
++    import torch
++    if not math.isfinite(float(sigma)) or sigma<=0:raise ValueError('positive native sigma required')
++    z,c,u=z.float(),conditional.float(),unconditional.float();enabled=control_enabled(arm,index)
++    detail=dict(enabled=enabled,state_control_cfg='float32',arm=arm)
++    if enabled:
++        clean=z-float(sigma)*c
++        if count:count('payload_gradient',False)
++        dp,pinfo=payload.local_delta(clean,targets['payload_target'],targets['payload_mask'])
++        if count:count('payload_gradient',True)
++        ds=torch.zeros_like(dp);sinfo=None
++        if arm=='OVERLAP_MULTI':
++            if count:count('pilot_gradient',False)
++            ds,sinfo=pilot_delta(clean,targets)
++            if count:count('pilot_gradient',True)
++        delta=dp+ds
++        p2=float(dp.double().square().sum());s2=float(ds.double().square().sum())
++        cross=float((dp.double()*ds.double()).sum());d2=float(delta.double().square().sum())
++        detail.update(payload=pinfo,pilot=sinfo,payload_delta_l2=math.sqrt(p2),pilot_delta_l2=math.sqrt(s2),
++          merged_delta_l2=math.sqrt(d2),merged_delta_rms=math.sqrt(d2/delta.numel()),cross_inner_product=cross,
++          norm_decomposition_error=d2-(p2+s2+2*cross),cfg_clean_delta_l2=5*math.sqrt(d2),cross_arm_total_budget_matched=False)
++        c=c-delta/float(sigma)
++    if diagnostics is not None:
++        # Side channel only. Actual applied delta, never an analytic surrogate.
++        try:
++            ds_applied=ds if enabled and arm=='OVERLAP_MULTI' else torch.zeros_like(z)
++            projected=project_tensor(ds_applied,targets['basis'])
++            diagnostics.update(pilot_delta=projected.detach(),closure=delta_closure(ds_applied,projected,targets))
++        except Exception as exc:
++            diagnostics.update(error=f'{type(exc).__name__}: {exc}')
++    v=u+5.*(c-u)
++    if not bool(torch.isfinite(v).all()):raise FloatingPointError('nonfinite CFG velocity')
++    return v.detach(),detail
++
++
++
++def project_tensor(value,basis):
++    """Full 45 x 4 x 4 x 2, including inactive boundary slots; no temporal centering."""
++    import torch
++    if tuple(value.shape)!=(1,16,46,40,64):raise ValueError('full writer latent geometry required')
++    with torch.no_grad():
++        return torch.stack([(value.detach().float()[0,4,1:,h0:h1,w0:w1].reshape(45,16)@basis[i]).reshape(45,4,2)
++                            for i,(h0,h1,w0,w1) in enumerate(PUBLIC.blocks)],dim=1)
++
++
++def delta_closure(delta,projected,targets):
++    """Actual tensor energy audit; U-complement is not called host or score residual."""
++    import torch
++    with torch.no_grad():
++        total=float(delta.double().square().sum())
++        patches=0.;complement=0.
++        for i,(h0,h1,w0,w1) in enumerate(PUBLIC.blocks):
++            patch=delta[0,4,1:,h0:h1,w0:w1].double().reshape(45,16)
++            reconstructed=projected[:,i].double().reshape(45,8)@targets['basis'][i].double().T
++            patches+=float(patch.square().sum());complement+=float((patch-reconstructed).square().sum())
++        active=targets['pilot_active'];active2=float(projected[active].double().square().sum())
++        boundary2=float(projected[~active].double().square().sum())
++    return dict(actual_spatial_l2=math.sqrt(total),projection_l2=math.sqrt(active2+boundary2),
++                active_projection_energy=active2,boundary_projection_energy=boundary2,
++                spatial_U_complement_l2=math.sqrt(complement),outside_ROI_energy=total-patches,
++                parseval_error=total-(active2+boundary2+complement),
++                active_coefficients=1392,boundary_coefficients=48,
++                note='FP32 projection closure; signed rounding residuals retained')
++
++def payload_read(normalized,key,R):
++    """Repeated payload diagnostic only; never used to rank state paths."""
++    import torch
++    from collections import Counter
++    if normalized.ndim!=5 or tuple(normalized.shape[:2])!=(1,16) or tuple(normalized.shape[-2:])!=(40,64) or normalized.shape[2]<R+1:raise ValueError('received geometry mismatch')
++    values=torch.fft.fft2(normalized.float(),dim=(-2,-1),norm='ortho').real
++    coords=payload.coordinates(key);h=[a for a,b in coords];w=[b for a,b in coords];bits=[];votes=[]
++    for ch in range(4):
++        raw=(values[0,ch,1:R+1,h,w]>0).to(torch.int64).cpu().numpy()
++        for bit in range(8):
++            row=raw[:,bit::8].reshape(-1).tolist();bits.append(Counter(row).most_common(1)[0][0])
++            votes.append(dict(ones=sum(row),zeros=len(row)-sum(row),count=len(row)))
++    return dict(status='READ',decoded_bits=bits,votes=votes,truth_used=False,R=R,role='repeated payload diagnostic; not a path selector')
++
++
++def combine_phases(phases):
++    """Global uncalibrated minimum over four independently re-encoded phases."""
++    result=dict(status='SEARCH_INCOMPLETE',score_status='UNCALIBRATED_DIAGNOSTIC',state_path_accepted=False,
++       accepted_payload=False,canonical=None,top=[],unique_model_hypothesis=False)
++    if set(phases)!=set(range(4)) or any(p['summary']['status'] not in ('COMPLETE','NO_ENERGY') for p in phases.values()):return result
++    minimum=min(p['summary']['min_cost'] for p in phases.values());top=[]
++    for g,p in phases.items():
++        for index,cost in zip(p['valid_catalog_indices'],p['path_costs']):
++            if cost-minimum<=PUBLIC.tie_atol:top.append(dict(g=g,catalog_index=index,cost=cost))
++    R=phases[0]['received_length'];rows=state.catalog(R)
++    canonical=min(top,key=lambda v:(tuple(rows[v['catalog_index']]['taus']),v['g'],rows[v['catalog_index']]['event_type'],rows[v['catalog_index']]['event_i'] or 0))
++    energy=phases[canonical['g']]['summary']['observed_projection_energy']
++    result.update(status='NO_ENERGY' if energy==0 else 'COMPLETE',min_cost=minimum,top=top,
++        canonical=None if energy==0 else {**canonical,'path':rows[canonical['catalog_index']]},unique_model_hypothesis=energy>0 and len(top)==1,
++        all_top_require_event=all(rows[t['catalog_index']]['event_type']!='ZERO_EDIT' for t in top),
++        interpretation='finite phase/path model only; no real synchronization acceptance or calibrated threshold')
++    return result
+diff --git a/main/tube_state/video_overlap_zero_mean_state.py b/main/tube_state/video_overlap_zero_mean_state.py
+new file mode 100644
+index 0000000..7ebfd03
+--- /dev/null
++++ b/main/tube_state/video_overlap_zero_mean_state.py
+@@ -0,0 +1,227 @@
++"""Spatial-zero-mean overlap states; inherited finite-family SSE is unchanged."""
++from __future__ import annotations
++from dataclasses import dataclass
++from functools import lru_cache
++import hashlib
++from copy import deepcopy
++import numpy as np
++
++
++@dataclass(frozen=True)
++class Protocol:
++    method_version: str = "video-overlap-zero-mean-v1"
++    source_length: int = 45
++    channels: int = 16
++    height: int = 40
++    width: int = 64
++    pilot_channel: int = 4
++    blocks: tuple = ((8,12,12,16),(8,12,44,48),(28,32,12,16),(28,32,44,48))
++    alpha: float = 1/np.sqrt(1392)
++    tie_atol: float = 1e-12
++    observed_lengths: tuple = (30,31,32,44,45,46)
++
++
++PUBLIC=Protocol()
++
++
++def keyed(domain,key,*indices):
++    if not isinstance(key,str) or '\0' in key:raise ValueError('public key must be NUL-free text')
++    return hashlib.sha256('\0'.join([domain,key,*map(str,indices)]).encode()).digest()
++
++
++@lru_cache(maxsize=8)
++def state_code(key):
++    order=sorted(range(8),key=lambda j:(keyed('VTOS1/state/order',key,j),j))
++    signs=np.asarray([2*(keyed('VTOS1/state/sign',key,j)[0]&1)-1 for j in range(8)],dtype=np.int8)
++    states=[]
++    for t in range(1,46):
++        b=[((t-1)>>(5-j))&1 for j in range(6)]
++        c=b+[sum(b)%2,(b[0]+b[2]+b[4])%2]
++        states.append(signs*np.asarray([2*c[j]-1 for j in order],dtype=np.int8))
++    a=np.asarray(states,dtype=np.int8);a.flags.writeable=False;return a
++
++
++def basis_layout(key):
++    """Detached public receipt. Preserve every non-DC slot and its original sign."""
++    rows=[]
++    for i in range(4):
++        order=sorted(range(16),key=lambda c:(keyed('VTOS1/basis/order',key,i,c),c))
++        original=order[:8];selected=list(original)
++        signs=[2*(keyed('VTOS1/basis/sign',key,i,q)[0]&1)-1 for q in range(8)]
++        slot=original.index(0) if 0 in original else None
++        replacement=None
++        if slot is not None:
++            replacement=next(c for c in order if c!=0 and c not in original)
++            selected[slot]=replacement
++        rows.append(dict(block=i,full_original_order=order,original_selected=original,selected=selected,
++                         signs=signs,replaced_slot=slot,replacement_column=replacement))
++    return dict(method_version=PUBLIC.method_version,key_sha256=hashlib.sha256(key.encode()).hexdigest(),blocks=rows)
++
++
++@lru_cache(maxsize=8)
++def _bases(key):
++    H=np.asarray([[(-1)**((r&c).bit_count())/4 for c in range(16)] for r in range(16)],dtype=np.float64)
++    a=np.asarray([H[:,r['selected']]*np.asarray(r['signs'])[None,:] for r in basis_layout(key)['blocks']])
++    a.flags.writeable=False
++    return a
++
++
++def bases(key):
++    # Public arrays cannot mutate the cached basis used by writer/reader.
++    return _bases(key).copy()
++
++
++def synthesize(key,public=PUBLIC,dtype=np.float64):
++    """Scatter every overlapping tube into one full physical latent tensor."""
++    if public!=PUBLIC:raise ValueError('frozen public protocol required')
++    target=np.zeros((1,16,46,40,64),dtype=dtype)
++    S=state_code(key);U=bases(key).astype(dtype);alpha=dtype(public.alpha)
++    for start in range(1,46):
++        for age in range(4):
++            u=start+age
++            if u>45:continue
++            for i,(h0,h1,w0,w1) in enumerate(public.blocks):
++                contribution=U[i,:,2*age:2*age+2]@S[start-1,2*i:2*i+2].astype(dtype)
++                target[0,4,u,h0:h1,w0:w1]+=alpha*contribution.reshape(4,4)
++    return target
++
++
++@lru_cache(maxsize=8)
++def composite_signs(key):
++    S=state_code(key);c=np.zeros((45,4,4,2),dtype=np.int8)
++    for u in range(1,46):
++        for age in range(4):
++            if u-age>=1:c[u-1,:,age,:]=S[u-age-1].reshape(4,2)
++    c.flags.writeable=False;return c
++
++
++def extract(received_tensor,key,availability,public=PUBLIC):
++    if public!=PUBLIC:raise ValueError('frozen public protocol required')
++    Y=np.asarray(received_tensor)
++    if Y.ndim!=4 or Y.shape[1:]!=(16,40,64) or Y.shape[0] not in public.observed_lengths:
++        raise ValueError('received tensor must use frozen length and whole-frame latent geometry')
++    mask=np.asarray(availability)
++    if mask.dtype!=np.bool_ or mask.shape!=(len(Y),4):raise ValueError('boolean received-coordinate mask required')
++    values=np.zeros((len(Y),4,4,2),dtype=np.float64)
++    for i,(h0,h1,w0,w1) in enumerate(public.blocks):
++        selected=Y[mask[:,i],4,h0:h1,w0:w1].reshape(-1,16)
++        if not np.isfinite(selected).all():raise ValueError('nonfinite available physical ROI')
++        projected=selected.astype(np.float64)@bases(key)[i]
++        if not np.isfinite(projected).all():raise ValueError('nonfinite projection')
++        values[mask[:,i],i]=projected.reshape(-1,4,2)
++    return values
++
++
++@lru_cache(maxsize=6)
++def _catalog(length):
++    if length not in PUBLIC.observed_lengths:raise ValueError('length outside frozen structural family')
++    rows=[]
++    for start in range(1,46):
++        events=[('ZERO_EDIT',None,0)]+[(kind,i,d) for kind,d in [('REPEAT',-1),('SKIP',1)] for i in range(2,length+1)]
++        for kind,edge,shift in events:
++            ts=[start+j+(shift if edge is not None and j+1>=edge else 0) for j in range(length)]
++            valid=min(ts)>=1 and max(ts)<=45
++            rows.append(dict(id=f't{start:02d}:{kind}:{edge or 0:02d}',tau1=start,event_type=kind,event_i=edge,
++                taus=ts,structurally_valid=valid,status='VALID' if valid else 'STRUCTURALLY_EXCLUDED',
++                exclusion=None if valid else 'FINITE_SOURCE_SUPPORT'))
++    return tuple(rows)
++
++
++@lru_cache(maxsize=48)
++def _family(key,length,mask_bytes):
++    mask=np.frombuffer(mask_bytes,dtype=np.bool_).reshape(length,4)
++    mask4=np.broadcast_to(mask[:,:,None,None],(length,4,4,2))
++    rows=_catalog(length);valid_indices=[i for i,r in enumerate(rows) if r['structurally_valid']]
++    paths=np.asarray([rows[i]['taus'] for i in valid_indices],dtype=np.int64)-1
++    templates=composite_signs(key)[paths]
++    signatures=templates[:,mask4]
++    groups={}
++    for j,values in enumerate(signatures):groups.setdefault(values.tobytes(),[]).append(j)
++    classes=[];class_signs=[];membership=np.empty(len(valid_indices),dtype=np.int64)
++    for ci,(signature,members) in enumerate(groups.items()):
++        indices=[valid_indices[j] for j in members]
++        ts=[rows[j]['taus'] for j in indices]
++        possible=[sorted({t[i] for t in ts}) for i in range(length)]
++        canonical=min(indices,key=lambda j:(tuple(rows[j]['taus']),rows[j]['event_type'],rows[j]['event_i'] or 0))
++        classes.append(dict(index=ci,signature_sha256=hashlib.sha256(signature).hexdigest(),member_catalog_indices=indices,
++            canonical_catalog_index=canonical,tau_feasible_sets=possible,
++            contains_zero_edit=any(rows[j]['event_type']=='ZERO_EDIT' for j in indices)))
++        class_signs.append(signatures[members[0]])
++        membership[members]=ci
++    signs=np.asarray(class_signs,dtype=np.int8).reshape(len(classes),int(mask4.sum()))
++    means=signs.astype(np.float64)*PUBLIC.alpha
++    return dict(classes=classes,valid_indices=valid_indices,membership=membership,means=means,mask4=mask4,
++                available_dimensions=int(mask4.sum()),length=length,key_sha256=hashlib.sha256(key.encode()).hexdigest())
++
++
++def _get_family(key,length,availability):
++    mask=np.asarray(availability)
++    if mask.dtype!=np.bool_ or mask.shape!=(length,4):raise ValueError('boolean public availability mask required')
++    return _family(key,length,mask.tobytes())
++
++
++def family_receipt(key,length,availability):
++    f=_get_family(key,length,availability)
++    return dict(length=length,key_sha256=f['key_sha256'],availability=np.asarray(availability).tolist(),
++                available_dimensions=f['available_dimensions'],valid_catalog_indices=list(f['valid_indices']),classes=deepcopy(f['classes']),
++                grouping='exact masked integer composite templates; unavailable indices remain in paths')
++
++
++def _empty_summary(reason):
++    return dict(status='INCOMPLETE',reason=reason,score_status='UNCALIBRATED_DIAGNOSTIC',accepted_payload=False,
++        state_path_accepted=False,canonical_catalog_index=None,top_class_indices=[],top_catalog_indices=[],
++        min_cost=None,zero_edit_min_cost=None,zero_edit_minus_best=None,unique_model_hypothesis=False,
++        unique_is_not_confidence=True)
++
++
++def infer(received_tensor,key,availability,public=PUBLIC):
++    """Only actual received tensor, key and received mask enter; no writer/attack truth."""
++    if public!=PUBLIC:raise ValueError('frozen public protocol required')
++    length=len(received_tensor);f=_get_family(key,length,availability);rows=_catalog(length)
++    summary=_empty_summary('NOT_EVALUATED')
++    base=dict(summary=summary,available_dimensions=f['available_dimensions'],received_length=length,
++              valid_catalog_indices=list(f['valid_indices']),class_costs=[None]*len(f['classes']),
++              path_costs=[None]*len(f['valid_indices']),projection=None,
++              counts=dict(catalog=len(rows),scorable=len(f['valid_indices']),structurally_excluded=len(rows)-len(f['valid_indices']),
++                          equivalence_classes=len(f['classes']),scored=0))
++    try:
++        r=extract(received_tensor,key,availability,public)
++        if f['available_dimensions']==0:
++            summary['reason']='NO_OBSERVATIONS';return base
++        obs=r[f['mask4']]
++        # Class means share M. Direct residual avoids cancellation at exact zero error.
++        with np.errstate(over='raise',invalid='raise'):
++            residual=f['means']-obs[None,:]
++            costs=np.sum(residual*residual,axis=1,dtype=np.float64)/f['available_dimensions']
++            energy=float(np.sum(obs*obs,dtype=np.float64))
++        if not np.isfinite(costs).all() or not np.isfinite(energy):raise ValueError('nonfinite score reduction')
++        minimum=float(costs.min());top_classes=np.flatnonzero(costs-minimum<=public.tie_atol).tolist()
++        top=sorted(i for ci in top_classes for i in f['classes'][ci]['member_catalog_indices'])
++        zero_indices=[j for j,i in enumerate(f['valid_indices']) if rows[i]['event_type']=='ZERO_EDIT']
++        path_cost=costs[f['membership']]
++        zero_min=float(path_cost[zero_indices].min()) if zero_indices else None
++        canonical=min(top,key=lambda i:(tuple(rows[i]['taus']),rows[i]['event_type'],rows[i]['event_i'] or 0))
++        structural=any(len(f['classes'][i]['member_catalog_indices'])>1 for i in top_classes)
++        reason='NO_ENERGY' if energy==0 else ('STRUCTURAL_AMBIGUITY' if structural else 'NUMERICAL_CLASS_TIE' if len(top_classes)>1 else 'UNIQUE_FINITE_MODEL_ONLY')
++        summary.update(status='NO_ENERGY' if energy==0 else 'COMPLETE',reason=reason,canonical_catalog_index=None if energy==0 else canonical,
++          top_class_indices=top_classes,top_catalog_indices=top,min_cost=minimum,zero_edit_min_cost=zero_min,
++          zero_edit_minus_best=None if zero_min is None else zero_min-minimum,
++          unique_model_hypothesis=energy>0 and len(top)==1,structural_ambiguity=structural,
++          any_top_contains_zero_edit=any(rows[i]['event_type']=='ZERO_EDIT' for i in top),
++          all_top_require_event=all(rows[i]['event_type']!='ZERO_EDIT' for i in top),observed_projection_energy=energy,
++          top_distinct_class_gap=float(np.partition(costs,1)[1]-minimum) if len(costs)>1 else None)
++        base.update(class_costs=costs.tolist(),path_costs=path_cost.tolist(),projection=r.tolist())
++        base['counts']['scored']=len(path_cost)
++    except (ValueError,TypeError,FloatingPointError,OverflowError) as exc:
++        summary.update(reason='INVALID_OBSERVATION',error=f'{type(exc).__name__}: {exc}')
++    return base
++
++
++def catalog(length):
++    """Public metadata is detached from the private inference cache."""
++    return deepcopy(_catalog(length))
++
++
++def family(key,length,availability):
++    """Inspection copy; production inference uses its private cached arrays."""
++    return deepcopy(_get_family(key,length,availability))
+diff --git a/notebooks/video_overlap_zero_mean_c1_v1_colab.ipynb b/notebooks/video_overlap_zero_mean_c1_v1_colab.ipynb
+new file mode 100644
+index 0000000..02f5622
+--- /dev/null
++++ b/notebooks/video_overlap_zero_mean_c1_v1_colab.ipynb
+@@ -0,0 +1,188 @@
++{
++ "nbformat": 4,
++ "nbformat_minor": 5,
++ "cells": [
++  {
++   "cell_type": "code",
++   "id": "overlap-zero-mean-c1-0",
++   "metadata": {},
++   "source": [
++    "from google.colab import drive\n",
++    "drive.mount('/content/drive')\n"
++   ],
++   "outputs": [],
++   "execution_count": null
++  },
++  {
++   "cell_type": "markdown",
++   "id": "overlap-zero-mean-c1-1",
++   "metadata": {},
++   "source": [
++    "# Video-Overlap-Spatial-Zero-Mean C1 candidate\n",
++    "\n",
++    "Run all executes one copper-kettle source, OFF / PAYLOAD_MULTI / OVERLAP_MULTI, each with a complete independent 50-step native Wan trajectory. Both marked arms use fresh conditional updates at25..49. Existing four-channel repeated32-bit payload stays unchanged. The matched writer/reader replace only an originally selected Hadamard DC slot with the first unused non-DC column in the same keyed full order; non-DC slots and signs are unchanged. The overlap pilot uses real spatial channel4, four4x4 blocks and four orthogonal age subspaces; actual summed pilot update has an L2 cap1 per step. Target norm1, actual update norm and25-step accumulated norms are distinct. Total arm budgets are not matched.\n",
++    "\n",
++    "Three source MP4s each yield FULL_RESAVED181 and CROP4/5/6/7_129 through the same second codec. Every view is independently decoded from saved MP4 and re-encoded in four RGB phases. Full common support is44 regular latents (new namespace); crop support31. Extra normalized rows are saved but do not enter primary scores. This does not reuse old45-row full scoring.\n",
++    "\n",
++    "Fixed outputs:3 source,15 derived videos;60 normalized tensors;120 phase/key path files and repeated-payload reads;30 searches;60 truth joins. Each phase retains the complete finite zero/one-event catalog, structural exclusions, exact equivalences and numeric ties:357480 catalog slots,92016 valid costs. Payload never selects a path. All paths are uncalibrated and unaccepted; wrong-key/OFF fits are not FPR evidence. Raw evidence is committed before truth joins and quality reads.\n",
++    "\n",
++    "This user-run candidate will test survival and false edit fitting in actual full/crop media; no new real result exists yet. It also retains75 independent writer diagnostic sidecars (five full45x4x4x2 FP32 projections per step) without adding model/VAE calls. These are excluded from blind tables; missing diagnostics prevent full diagnostic completion. The CPU ideal additive mechanism is not a real-video result. Position-dependent payload is reserved. C2 and position-dependent payload are outside this candidate and unexecuted. A crop resets VAE context; nominal stride4 is not the full receptive field.\n",
++    "\n",
++    "Current Python, compatible working Torch pair and serial fresh children are reused; no venv, Python-version or GPU-model hard gate. No agent model/GPU/Colab execution. UNPUBLISHED DRAFT: source must be published and its immutable SHA verified before binding.\n"
++   ]
++  },
++  {
++   "cell_type": "code",
++   "id": "overlap-zero-mean-c1-2",
++   "metadata": {},
++   "source": [
++    "SOURCE_SHA = None\n",
++    "from pathlib import Path\n",
++    "import datetime,hashlib,json,os,subprocess,sys,traceback\n",
++    "STAMP=datetime.datetime.now(datetime.timezone.utc).strftime('%Y%m%dT%H%M%S%fZ')\n",
++    "OUTPUT=Path('/content/drive/MyDrive/Video-WM/Video-Overlap-Zero-Mean-C1-V1')/STAMP\n",
++    "OUTPUT.mkdir(parents=True,exist_ok=False)\n",
++    "REPO=Path('/content/SC-SSTW-OVERLAP-ZERO-MEAN-'+STAMP)\n",
++    "RUN_OUTPUT=OUTPUT/'fixed_reference'\n",
++    "PYTHON=sys.executable\n",
++    "ARMS=('OFF','PAYLOAD_MULTI','OVERLAP_MULTI');KEYS=('CORRECT','WRONG')\n",
++    "VIEW_LENGTHS={'FULL_RESAVED181':181,**{f'CROP{i}_129':129 for i in range(4,8)}}\n",
++    "VIEWS=tuple(VIEW_LENGTHS)\n",
++    "FIXED=dict(source_cases=1,arms=3,source_mp4=3,derived_mp4=15,normalized=60,phase_path_searches=120,phase_payload_reads=120,\n",
++    " primary_searches=30,posthoc=60,catalog_slots=357480,valid_costs=92016,structural_exclusions=265464,pilot_positives=5,pilot_negatives=25)\n",
++    "setup=dict(status='SETUP_STARTED',source_sha=SOURCE_SHA,fixed_denominator=FIXED,\n",
++    " writer_diagnostics={a+'/'+str(i):{'status':'NOT_RUN_SETUP'} for a in ARMS for i in range(25,50)},\n",
++    " terminal_diagnostics={a+'/'+k:{'status':'NOT_RUN_SETUP'} for a in ARMS for k in KEYS},\n",
++    " generation={a:{'status':'NOT_RUN_SETUP'} for a in ARMS},sources={a:{'status':'NOT_RUN_SETUP'} for a in ARMS},\n",
++    " views={a+'/'+v:{'status':'NOT_RUN_SETUP'} for a in ARMS for v in VIEWS},\n",
++    " normalized={a+'/'+v+'/'+str(g):{'status':'NOT_RUN_SETUP'} for a in ARMS for v in VIEWS for g in range(4)},\n",
++    " phase_reads={a+'/'+v+'/'+str(g)+'/'+k:{'status':'NOT_RUN_SETUP','expected_catalog_slots':45*(2*((VIEW_LENGTHS[v]-4)//4)-1)} for a in ARMS for v in VIEWS for g in range(4) for k in KEYS},\n",
++    " searches={a+'/'+v+'/'+k:{'status':'NOT_RUN_SETUP','accepted_payload':False} for a in ARMS for v in VIEWS for k in KEYS},\n",
++    " evaluations={a+'/'+v+'/'+k+'/'+t:{'status':'NOT_RUN_SETUP'} for a in ARMS for v in VIEWS for k in KEYS for t in ('REGISTERED','WRONG_MESSAGE')})\n",
++    "def write_json(path,value):\n",
++    "    temp=path.with_suffix(path.suffix+'.tmp');temp.write_text(json.dumps(value,indent=2)+'\\n');os.replace(temp,path)\n",
++    "def failed(stage,exc):\n",
++    "    setup.update(status='SETUP_FAILED',stage=stage,error=f'{type(exc).__name__}: {exc}')\n",
++    "    write_json(OUTPUT/'setup_receipt.json',setup)\n",
++    "    write_json(OUTPUT/'setup_failure.json',dict(stage=stage,error=str(exc),traceback=traceback.format_exc()))\n",
++    "def logged(command,stage,cwd=None,check=True):\n",
++    "    try:\n",
++    "        with (OUTPUT/'execution.log').open('a') as log:\n",
++    "            log.write('COMMAND '+repr(command)+'\\n');log.flush()\n",
++    "            child=subprocess.Popen(command,cwd=cwd,stdout=subprocess.PIPE,stderr=subprocess.STDOUT,text=True,bufsize=1)\n",
++    "            for line in child.stdout:print(line,end='',flush=True);log.write(line);log.flush()\n",
++    "            code=child.wait();log.write('EXIT '+str(code)+'\\n')\n",
++    "        if check and code:raise subprocess.CalledProcessError(code,command)\n",
++    "        return code\n",
++    "    except Exception as exc:failed(stage,exc);raise\n",
++    "write_json(OUTPUT/'setup_receipt.json',setup)\n",
++    "print('Fixed output:',OUTPUT)\n",
++    "if SOURCE_SHA is None:\n",
++    "    error=RuntimeError('Unpublished draft: bind verified published source SHA before Run all')\n",
++    "    failed('SOURCE_BINDING',error);raise error\n"
++   ],
++   "outputs": [],
++   "execution_count": null
++  },
++  {
++   "cell_type": "code",
++   "id": "overlap-zero-mean-c1-3",
++   "metadata": {},
++   "source": [
++    "try:\n",
++    "    logged(['git','clone','--filter=blob:none','https://github.com/RICHAAARC/SC-SSTW.git',str(REPO)],'SOURCE_CLONE')\n",
++    "    logged(['git','-C',str(REPO),'fetch','origin',SOURCE_SHA],'SOURCE_FETCH')\n",
++    "    logged(['git','-C',str(REPO),'checkout','--detach',SOURCE_SHA],'SOURCE_CHECKOUT')\n",
++    "    actual=subprocess.check_output(['git','-C',str(REPO),'rev-parse','HEAD'],text=True).strip()\n",
++    "    dirty=subprocess.check_output(['git','-C',str(REPO),'status','--porcelain'],text=True)\n",
++    "    if actual!=SOURCE_SHA or dirty:raise RuntimeError('source SHA/clean checkout mismatch')\n",
++    "    write_json(OUTPUT/'source_receipt.json',dict(source_sha=actual,clean=True))\n",
++    "    torch_ok=logged([PYTHON,'-c','import torch,torchvision; print(torch.__version__,torchvision.__version__)'],'TORCH_PROBE',check=False)==0\n",
++    "    if not torch_ok:\n",
++    "        logged([PYTHON,'-m','pip','install','--upgrade','torch','torchvision'],'TORCH_REPAIR')\n",
++    "    logged([PYTHON,'-m','pip','install','-r',str(REPO/'experiments/wan_state_clock/requirements-grow-video-reference.txt')],'DEPENDENCIES')\n",
++    "    dependency_code=logged([PYTHON,'-m','pip','check'],'DEPENDENCY_REPORT',check=False)\n",
++    "    setup['dependency_check_returncode']=dependency_code\n",
++    "    if dependency_code:print('Metadata conflicts retained; actual imports determine availability.')\n",
++    "    (OUTPUT/'environment_freeze.txt').write_text(subprocess.check_output([PYTHON,'-m','pip','freeze'],text=True))\n",
++    "    import_code='import json,torch; from diffusers import WanPipeline,AutoencoderKLWan,UniPCMultistepScheduler; from experiments.wan_state_clock.video_overlap_zero_mean_c1_run import environment; r=environment(); r.update(cuda_available=torch.cuda.is_available()); print(json.dumps(r))'\n",
++    "    env=json.loads(subprocess.check_output([PYTHON,'-c',import_code],cwd=REPO,text=True))\n",
++    "    write_json(OUTPUT/'environment_receipt.json',env)\n",
++    "    if not env['cuda_available']:print('CUDA unavailable: CPU path selected; much slower.')\n",
++    "    logged(['ffmpeg','-version'],'FFMPEG_PROBE');logged(['ffprobe','-version'],'FFPROBE_PROBE')\n",
++    "    setup.update(status='SETUP_COMPLETE',python_executable=PYTHON,environment_strategy='current_python_fresh_children')\n",
++    "    write_json(OUTPUT/'setup_receipt.json',setup)\n",
++    "except Exception as exc:failed('SOURCE_OR_ENVIRONMENT',exc);raise\n"
++   ],
++   "outputs": [],
++   "execution_count": null
++  },
++  {
++   "cell_type": "code",
++   "id": "overlap-zero-mean-c1-4",
++   "metadata": {},
++   "source": [
++    "try:\n",
++    "    from google.colab import userdata\n",
++    "    token=userdata.get('HF_TOKEN')\n",
++    "    if token:os.environ['HF_TOKEN']=token\n",
++    "except Exception:\n",
++    "    pass\n",
++    "finally:\n",
++    "    token=None\n",
++    "command=[PYTHON,'-u','-m','experiments.wan_state_clock.video_overlap_zero_mean_c1_run','--output',str(RUN_OUTPUT)]\n",
++    "try:\n",
++    "    returncode=logged(command,'FIXED_RUN',cwd=REPO,check=False)\n",
++    "    RESULT_PATH=RUN_OUTPUT/'result.json'\n",
++    "    write_json(OUTPUT/'execution_receipt.json',dict(command=command,returncode=returncode,result_path=str(RESULT_PATH),result_exists=RESULT_PATH.is_file()))\n",
++    "    if not RESULT_PATH.is_file():raise RuntimeError('No runner result; full setup denominator is retained')\n",
++    "    setup.update(status='SUPERSEDED_BY_RESULT',result_path=str(RESULT_PATH));write_json(OUTPUT/'setup_receipt.json',setup)\n",
++    "except Exception as exc:failed('RUNNER',exc);raise\n"
++   ],
++   "outputs": [],
++   "execution_count": null
++  },
++  {
++   "cell_type": "code",
++   "id": "overlap-zero-mean-c1-5",
++   "metadata": {},
++   "source": [
++    "result=json.loads(RESULT_PATH.read_text())\n",
++    "if result['source_sha']!=SOURCE_SHA or result['fixed_denominator']!=FIXED:raise RuntimeError('result identity/denominator mismatch')\n",
++    "print(result['status'],result['counts'])\n",
++    "print('Writer diagnostic completeness:',result.get('writer_diagnostic_counts'),result.get('writer_diagnostic_status'))\n",
++    "for name,row in result['searches'].items():\n",
++    "    print(name,row['status'],'canonical diagnostic=',row.get('canonical'),'top hypotheses=',len(row.get('top',[])))\n",
++    "for name,row in result['evaluations'].items():\n",
++    "    print(name,row['status'],'truth in top=',row.get('truth_in_top'),'canonical event=',row.get('canonical_event'),'diagnostic payload errors=',row.get('diagnostic_bit_errors'))\n",
++    "print('All state paths remain UNCALIBRATED_DIAGNOSTIC and unaccepted; unique finite-model argmin is not confidence.')\n",
++    "print('Quality diagnostics:',result.get('quality'))\n",
++    "print('Evidence ceiling:',result['evidence_ceiling'])\n",
++    "from IPython.display import Video,display\n",
++    "for name,row in list(result['sources'].items())+list(result['views'].items()):\n",
++    "    print(name,row['status'])\n",
++    "    if row['status']=='SAVED' and Path(row['path']).is_file():\n",
++    "        try:display(Video(str(row['path']),embed=True))\n",
++    "        except Exception as exc:print('Preview unavailable; saved MP4 remains at',row['path'],type(exc).__name__,str(exc))\n",
++    "print('Inspect visible quality separately; recovery results do not imply quality PASS.')\n"
++   ],
++   "outputs": [],
++   "execution_count": null
++  }
++ ],
++ "metadata": {
++  "kernelspec": {
++   "display_name": "Python3",
++   "language": "python",
++   "name": "python3"
++  },
++  "language_info": {
++   "name": "python"
++  },
++  "candidate_binding": {
++   "source_sha": null,
++   "status": "UNPUBLISHED_DRAFT",
++   "execution": "User-run only; no agent GPU/Colab execution"
++  }
++ }
++}
+diff --git a/runtime/wan/video_overlap_zero_mean.py b/runtime/wan/video_overlap_zero_mean.py
+new file mode 100644
+index 0000000..137cbbb
+--- /dev/null
++++ b/runtime/wan/video_overlap_zero_mean.py
+@@ -0,0 +1,119 @@
++"""Native Wan frontend and four-phase blind overlap-state MP4 adapter."""
++from __future__ import annotations
++from pathlib import Path
++import numpy as np
++from main.tube_state import video_overlap_zero_mean_control as method
++from main.tube_state import video_overlap_zero_mean_state as state
++from runtime.wan import trajectory,io,vae as vae_adapter
++from runtime.wan.video_temporal_sync_bridge import file_sha256,counted,execution_device_dtype,predict_branches
++
++
++DIAGNOSTIC_ARRAYS=('conditional_clean','pilot_delta','z_pre','z_post','cfg_clean')
++
++
++def run_trajectory(pipe,initial,scheduler,prompt,negative,dtype,arm,key,bits,count,record,*,diagnostic=None):
++    trajectory.validate_scheduler(scheduler)
++    if scheduler.step_index is not None:raise ValueError('fresh full native history required')
++    z=initial.detach().float().clone();targets=method.build_targets(z,key,bits);before=None
++    last_projection=None;diagnostic_status=[]
++    for index in range(50):
++        c,u=predict_branches(pipe,z,scheduler,prompt,negative,dtype,index,count)
++        if index==25:before=dict(z=trajectory.fingerprint(z),history=trajectory.fingerprint(vars(scheduler)),conditional=trajectory.fingerprint(c),unconditional=trajectory.fingerprint(u))
++        sigma=float(scheduler.sigmas[index]);sigma_post=float(scheduler.sigmas[index+1])
++        enabled=method.control_enabled(arm,index)
++        capture={} if diagnostic is not None and index>=25 else None
++        if enabled:count('local_control',False)
++        velocity,row=method.guided_velocity(z,c,u,sigma,targets,arm,index,count,diagnostics=capture)
++        if enabled:count('local_control',True)
++        if capture is not None and 'error' not in capture:
++            try:
++                capture.update(conditional_clean=method.project_tensor(z-sigma*c.float(),targets['basis']),
++                    z_pre=method.project_tensor(z,targets['basis']),
++                    cfg_clean=method.project_tensor(z-sigma*velocity,targets['basis']))
++            except Exception as exc:capture['error']=f'{type(exc).__name__}: {exc}'
++        z=trajectory.native_step(scheduler,z,velocity,index,count,kind='native_step')
++        if capture is not None:
++            metadata=dict(index=index,sigma_pre=sigma,sigma_post=sigma_post,arm=arm,
++                pilot_enabled=arm=='OVERLAP_MULTI',method_version=state.PUBLIC.method_version,
++                dtype='float32',shape=[45,4,4,2],role='writer diagnostic only; never blind input',
++                cfg_clean_semantics='z_pre - sigma_pre * actual updated CFG velocity; clean estimate, not next state',
++                derived_only='conditional_clean+pilot_delta: conditional projection after pilot; cfg_clean-5*pilot_delta: updated CFG projection without this pilot increment. Algebraic only, FP32 rounding; neither is a separately observed state')
++            arrays=None
++            try:
++                if 'error' in capture:raise RuntimeError(capture['error'])
++                capture['z_post']=method.project_tensor(z,targets['basis'])
++                arrays={name:capture[name].detach().float().cpu().numpy() for name in DIAGNOSTIC_ARRAYS}
++                if not all(np.isfinite(v).all() for v in arrays.values()):raise ValueError('nonfinite writer projection')
++                metadata.update(status='COMPLETE',closure=capture['closure'])
++                if index==49:last_projection=arrays['z_post'].copy()
++            except Exception as exc:metadata.update(status='FAILED',error=f'{type(exc).__name__}: {exc}')
++            # A save failure must not erase a successfully executed native step.
++            try:diagnostic(index,arrays,metadata)
++            except Exception as exc:metadata.update(status='FAILED',error=f'diagnostic persistence: {type(exc).__name__}: {exc}')
++            diagnostic_status.append(metadata['status'])
++            row['writer_diagnostic']=dict(status=metadata['status'],index=index,error=metadata.get('error'))
++        record(dict(index=index,sigma=sigma,cursor_after=scheduler.step_index,**row))
++    if scheduler.step_index!=50:raise RuntimeError('native trajectory incomplete')
++    terminal_info=dict(status='NOT_REQUESTED',last_z_post_matches_terminal=None,terminal_projection_sha256=None)
++    if diagnostic is not None:
++        try:
++            projection=method.project_tensor(z,targets['basis']).detach().float().cpu().numpy()
++            if not np.isfinite(projection).all():raise ValueError('nonfinite terminal diagnostic projection')
++            terminal_info.update(status='COMPLETE',last_z_post_matches_terminal=bool(np.array_equal(last_projection,projection)) if last_projection is not None else None,
++                                 terminal_projection_sha256=file_array_sha256(projection))
++        except Exception as exc:
++            terminal_info.update(status='FAILED',error=f'{type(exc).__name__}: {exc}')
++    return z.detach().cpu(),dict(before_step25=before,final_history_sha256=trajectory.fingerprint(vars(scheduler)),
++        terminal_sha256=trajectory.fingerprint(z),transformer_dtype=str(dtype),state_control_cfg='float32',
++        method_version=state.PUBLIC.method_version,writer_diagnostics=dict(expected=25,completed=diagnostic_status.count('COMPLETE'),**terminal_info))
++
++
++def file_array_sha256(array):
++    import hashlib
++    return hashlib.sha256(np.ascontiguousarray(array).tobytes()).hexdigest()
++
++
++def read_mp4_search(path,keys,public,frozen_vae,*,count=None,persist=None):
++    """File transport only: names, source origins, writer truth and attack labels unused."""
++    if public!=state.PUBLIC:raise ValueError('frozen public overlap protocol required')
++    before=file_sha256(path);rgb=counted(count,'primary_mp4_read',lambda:io.read_mp4(Path(path)))
++    if rgb.ndim!=4 or tuple(rgb.shape[1:])!=(320,512,3):raise ValueError('received RGB geometry mismatch')
++    length=len(rgb);specs=[method.phase_spec(length,g) for g in range(4)];features={};results={}
++    def emit(kind,slot,row):
++        if persist:persist(kind,slot,row)
++    for spec in specs:
++        g=spec['g'];R=spec['R']
++        try:
++            normalized=counted(count,'vae_encode',lambda:vae_adapter.reencode_rgb24_readback(frozen_vae,rgb[spec['left']:spec['right']]))
++            if tuple(normalized.shape)!=(1,16,spec['regular_count']+1,40,64):raise ValueError('phase VAE shape mismatch')
++            if not bool(normalized.isfinite().all()):raise ValueError('nonfinite normalized phase')
++            emit('normalized',g,normalized.detach().cpu())
++            received=normalized[0,:,1:R+1].detach().float().cpu().numpy().transpose(1,0,2,3)
++        except Exception as exc:
++            for name in keys:
++                row=dict(status='FAILED',g=g,error=f'{type(exc).__name__}: {exc}',inference=None,payload=None)
++                features[g,name]=row;emit('phase',(g,name),row)
++            continue
++        for name,key in keys.items():
++            try:
++                inference=counted(count,'phase_path_search',lambda:state.infer(received,key,np.ones((R,4),bool)))
++                row=dict(status=inference['summary']['status'],g=g,received_frames=length,phase=spec,
++                    feature_sha256=trajectory.fingerprint(normalized),mp4_sha256=before,inference=inference,payload=None)
++                try:row['payload']=counted(count,'phase_payload_read',lambda:method.payload_read(normalized,key,R))
++                except Exception as exc:row['payload']=dict(status='FAILED',decoded_bits=None,error=str(exc))
++            except Exception as exc:row=dict(status='FAILED',g=g,error=f'{type(exc).__name__}: {exc}',inference=None,payload=None)
++            features[g,name]=row;emit('phase',(g,name),row)
++        del normalized,received
++    del rgb
++    identity_ok=file_sha256(path)==before
++    for name in keys:
++        phases={g:features[g,name]['inference'] for g in range(4) if features[g,name]['inference'] is not None}
++        if not identity_ok:phases={}
++        decision=counted(count,'primary_search',lambda:method.combine_phases(phases))
++        decision.update(method_version=state.PUBLIC.method_version,mp4_sha256=before,received_frames=length,canonical_phase_payload_diagnostic=None)
++        if decision['canonical'] is not None:
++            payload=features[decision['canonical']['g'],name]['payload']
++            decision['canonical_phase_payload_diagnostic']=payload.get('decoded_bits') if payload else None
++        results[name]=decision;emit('search',name,decision)
++    return dict(searches=results,features=features)
++
+diff --git a/scripts/build_video_overlap_zero_mean_c1_notebook.py b/scripts/build_video_overlap_zero_mean_c1_notebook.py
+new file mode 100644
+index 0000000..784ed81
+--- /dev/null
++++ b/scripts/build_video_overlap_zero_mean_c1_notebook.py
+@@ -0,0 +1,28 @@
++"""Build the fixed C1 user-run notebook; no model or media execution."""
++from pathlib import Path
++import argparse,ast,json,re
++ROOT=Path(__file__).resolve().parents[1]
++OUTPUT=ROOT/'notebooks/video_overlap_zero_mean_c1_v1_colab.ipynb'
++MARKDOWN='# Video-Overlap-Spatial-Zero-Mean C1 candidate\n\nRun all executes one copper-kettle source, OFF / PAYLOAD_MULTI / OVERLAP_MULTI, each with a complete independent 50-step native Wan trajectory. Both marked arms use fresh conditional updates at25..49. Existing four-channel repeated32-bit payload stays unchanged. The matched writer/reader replace only an originally selected Hadamard DC slot with the first unused non-DC column in the same keyed full order; non-DC slots and signs are unchanged. The overlap pilot uses real spatial channel4, four4x4 blocks and four orthogonal age subspaces; actual summed pilot update has an L2 cap1 per step. Target norm1, actual update norm and25-step accumulated norms are distinct. Total arm budgets are not matched.\n\nThree source MP4s each yield FULL_RESAVED181 and CROP4/5/6/7_129 through the same second codec. Every view is independently decoded from saved MP4 and re-encoded in four RGB phases. Full common support is44 regular latents (new namespace); crop support31. Extra normalized rows are saved but do not enter primary scores. This does not reuse old45-row full scoring.\n\nFixed outputs:3 source,15 derived videos;60 normalized tensors;120 phase/key path files and repeated-payload reads;30 searches;60 truth joins. Each phase retains the complete finite zero/one-event catalog, structural exclusions, exact equivalences and numeric ties:357480 catalog slots,92016 valid costs. Payload never selects a path. All paths are uncalibrated and unaccepted; wrong-key/OFF fits are not FPR evidence. Raw evidence is committed before truth joins and quality reads.\n\nThis user-run candidate will test survival and false edit fitting in actual full/crop media; no new real result exists yet. It also retains75 independent writer diagnostic sidecars (five full45x4x4x2 FP32 projections per step) without adding model/VAE calls. These are excluded from blind tables; missing diagnostics prevent full diagnostic completion. The CPU ideal additive mechanism is not a real-video result. Position-dependent payload is reserved. C2 and position-dependent payload are outside this candidate and unexecuted. A crop resets VAE context; nominal stride4 is not the full receptive field.\n\nCurrent Python, compatible working Torch pair and serial fresh children are reused; no venv, Python-version or GPU-model hard gate. No agent model/GPU/Colab execution. Source is an unpublished draft until the main session publishes and binds its immutable SHA.\n'
++SETUP="from pathlib import Path\nimport datetime,hashlib,json,os,subprocess,sys,traceback\nSTAMP=datetime.datetime.now(datetime.timezone.utc).strftime('%Y%m%dT%H%M%S%fZ')\nOUTPUT=Path('/content/drive/MyDrive/Video-WM/Video-Overlap-Zero-Mean-C1-V1')/STAMP\nOUTPUT.mkdir(parents=True,exist_ok=False)\nREPO=Path('/content/SC-SSTW-OVERLAP-ZERO-MEAN-'+STAMP)\nRUN_OUTPUT=OUTPUT/'fixed_reference'\nPYTHON=sys.executable\nARMS=('OFF','PAYLOAD_MULTI','OVERLAP_MULTI');KEYS=('CORRECT','WRONG')\nVIEW_LENGTHS={'FULL_RESAVED181':181,**{f'CROP{i}_129':129 for i in range(4,8)}}\nVIEWS=tuple(VIEW_LENGTHS)\nFIXED=dict(source_cases=1,arms=3,source_mp4=3,derived_mp4=15,normalized=60,phase_path_searches=120,phase_payload_reads=120,\n primary_searches=30,posthoc=60,catalog_slots=357480,valid_costs=92016,structural_exclusions=265464,pilot_positives=5,pilot_negatives=25)\nsetup=dict(status='SETUP_STARTED',source_sha=SOURCE_SHA,fixed_denominator=FIXED,\n writer_diagnostics={a+'/'+str(i):{'status':'NOT_RUN_SETUP'} for a in ARMS for i in range(25,50)},\n terminal_diagnostics={a+'/'+k:{'status':'NOT_RUN_SETUP'} for a in ARMS for k in KEYS},\n generation={a:{'status':'NOT_RUN_SETUP'} for a in ARMS},sources={a:{'status':'NOT_RUN_SETUP'} for a in ARMS},\n views={a+'/'+v:{'status':'NOT_RUN_SETUP'} for a in ARMS for v in VIEWS},\n normalized={a+'/'+v+'/'+str(g):{'status':'NOT_RUN_SETUP'} for a in ARMS for v in VIEWS for g in range(4)},\n phase_reads={a+'/'+v+'/'+str(g)+'/'+k:{'status':'NOT_RUN_SETUP','expected_catalog_slots':45*(2*((VIEW_LENGTHS[v]-4)//4)-1)} for a in ARMS for v in VIEWS for g in range(4) for k in KEYS},\n searches={a+'/'+v+'/'+k:{'status':'NOT_RUN_SETUP','accepted_payload':False} for a in ARMS for v in VIEWS for k in KEYS},\n evaluations={a+'/'+v+'/'+k+'/'+t:{'status':'NOT_RUN_SETUP'} for a in ARMS for v in VIEWS for k in KEYS for t in ('REGISTERED','WRONG_MESSAGE')})\ndef write_json(path,value):\n    temp=path.with_suffix(path.suffix+'.tmp');temp.write_text(json.dumps(value,indent=2)+'\\n');os.replace(temp,path)\ndef failed(stage,exc):\n    setup.update(status='SETUP_FAILED',stage=stage,error=f'{type(exc).__name__}: {exc}')\n    write_json(OUTPUT/'setup_receipt.json',setup)\n    write_json(OUTPUT/'setup_failure.json',dict(stage=stage,error=str(exc),traceback=traceback.format_exc()))\ndef logged(command,stage,cwd=None,check=True):\n    try:\n        with (OUTPUT/'execution.log').open('a') as log:\n            log.write('COMMAND '+repr(command)+'\\n');log.flush()\n            child=subprocess.Popen(command,cwd=cwd,stdout=subprocess.PIPE,stderr=subprocess.STDOUT,text=True,bufsize=1)\n            for line in child.stdout:print(line,end='',flush=True);log.write(line);log.flush()\n            code=child.wait();log.write('EXIT '+str(code)+'\\n')\n        if check and code:raise subprocess.CalledProcessError(code,command)\n        return code\n    except Exception as exc:failed(stage,exc);raise\nwrite_json(OUTPUT/'setup_receipt.json',setup)\nprint('Fixed output:',OUTPUT)\nif SOURCE_SHA is None:\n    error=RuntimeError('Unpublished draft: bind verified published source SHA before Run all')\n    failed('SOURCE_BINDING',error);raise error\n"
++ENVIRONMENT="try:\n    logged(['git','clone','--filter=blob:none','https://github.com/RICHAAARC/SC-SSTW.git',str(REPO)],'SOURCE_CLONE')\n    logged(['git','-C',str(REPO),'fetch','origin',SOURCE_SHA],'SOURCE_FETCH')\n    logged(['git','-C',str(REPO),'checkout','--detach',SOURCE_SHA],'SOURCE_CHECKOUT')\n    actual=subprocess.check_output(['git','-C',str(REPO),'rev-parse','HEAD'],text=True).strip()\n    dirty=subprocess.check_output(['git','-C',str(REPO),'status','--porcelain'],text=True)\n    if actual!=SOURCE_SHA or dirty:raise RuntimeError('source SHA/clean checkout mismatch')\n    write_json(OUTPUT/'source_receipt.json',dict(source_sha=actual,clean=True))\n    torch_ok=logged([PYTHON,'-c','import torch,torchvision; print(torch.__version__,torchvision.__version__)'],'TORCH_PROBE',check=False)==0\n    if not torch_ok:\n        logged([PYTHON,'-m','pip','install','--upgrade','torch','torchvision'],'TORCH_REPAIR')\n    logged([PYTHON,'-m','pip','install','-r',str(REPO/'experiments/wan_state_clock/requirements-grow-video-reference.txt')],'DEPENDENCIES')\n    dependency_code=logged([PYTHON,'-m','pip','check'],'DEPENDENCY_REPORT',check=False)\n    setup['dependency_check_returncode']=dependency_code\n    if dependency_code:print('Metadata conflicts retained; actual imports determine availability.')\n    (OUTPUT/'environment_freeze.txt').write_text(subprocess.check_output([PYTHON,'-m','pip','freeze'],text=True))\n    import_code='import json,torch; from diffusers import WanPipeline,AutoencoderKLWan,UniPCMultistepScheduler; from experiments.wan_state_clock.video_overlap_zero_mean_c1_run import environment; r=environment(); r.update(cuda_available=torch.cuda.is_available()); print(json.dumps(r))'\n    env=json.loads(subprocess.check_output([PYTHON,'-c',import_code],cwd=REPO,text=True))\n    write_json(OUTPUT/'environment_receipt.json',env)\n    if not env['cuda_available']:print('CUDA unavailable: CPU path selected; much slower.')\n    logged(['ffmpeg','-version'],'FFMPEG_PROBE');logged(['ffprobe','-version'],'FFPROBE_PROBE')\n    setup.update(status='SETUP_COMPLETE',python_executable=PYTHON,environment_strategy='current_python_fresh_children')\n    write_json(OUTPUT/'setup_receipt.json',setup)\nexcept Exception as exc:failed('SOURCE_OR_ENVIRONMENT',exc);raise\n"
++RUN="try:\n    from google.colab import userdata\n    token=userdata.get('HF_TOKEN')\n    if token:os.environ['HF_TOKEN']=token\nexcept Exception:\n    pass\nfinally:\n    token=None\ncommand=[PYTHON,'-u','-m','experiments.wan_state_clock.video_overlap_zero_mean_c1_run','--output',str(RUN_OUTPUT)]\ntry:\n    returncode=logged(command,'FIXED_RUN',cwd=REPO,check=False)\n    RESULT_PATH=RUN_OUTPUT/'result.json'\n    write_json(OUTPUT/'execution_receipt.json',dict(command=command,returncode=returncode,result_path=str(RESULT_PATH),result_exists=RESULT_PATH.is_file()))\n    if not RESULT_PATH.is_file():raise RuntimeError('No runner result; full setup denominator is retained')\n    setup.update(status='SUPERSEDED_BY_RESULT',result_path=str(RESULT_PATH));write_json(OUTPUT/'setup_receipt.json',setup)\nexcept Exception as exc:failed('RUNNER',exc);raise\n"
++DISPLAY="result=json.loads(RESULT_PATH.read_text())\nif result['source_sha']!=SOURCE_SHA or result['fixed_denominator']!=FIXED:raise RuntimeError('result identity/denominator mismatch')\nprint(result['status'],result['counts'])\nprint('Writer diagnostic completeness:',result.get('writer_diagnostic_counts'),result.get('writer_diagnostic_status'))\nfor name,row in result['searches'].items():\n    print(name,row['status'],'canonical diagnostic=',row.get('canonical'),'top hypotheses=',len(row.get('top',[])))\nfor name,row in result['evaluations'].items():\n    print(name,row['status'],'truth in top=',row.get('truth_in_top'),'canonical event=',row.get('canonical_event'),'diagnostic payload errors=',row.get('diagnostic_bit_errors'))\nprint('All state paths remain UNCALIBRATED_DIAGNOSTIC and unaccepted; unique finite-model argmin is not confidence.')\nprint('Quality diagnostics:',result.get('quality'))\nprint('Evidence ceiling:',result['evidence_ceiling'])\nfrom IPython.display import Video,display\nfor name,row in list(result['sources'].items())+list(result['views'].items()):\n    print(name,row['status'])\n    if row['status']=='SAVED' and Path(row['path']).is_file():\n        try:display(Video(str(row['path']),embed=True))\n        except Exception as exc:print('Preview unavailable; saved MP4 remains at',row['path'],type(exc).__name__,str(exc))\nprint('Inspect visible quality separately; recovery results do not imply quality PASS.')\n"
++
++
++def build(source_sha=None,output=OUTPUT):
++    if source_sha is not None and not re.fullmatch('[0-9a-f]{40}',source_sha):raise ValueError('published immutable source SHA required')
++    sources=[('code',"from google.colab import drive\ndrive.mount('/content/drive')\n"),('markdown',MARKDOWN.replace('Source is an unpublished draft until the main session publishes and binds its immutable SHA.', ('Published source: `'+source_sha+'`. This notebook checks out that immutable source commit.' if source_sha else 'UNPUBLISHED DRAFT: source must be published and its immutable SHA verified before binding.'))),
++      ('code',f'SOURCE_SHA = {source_sha!r}\n'+SETUP),('code',ENVIRONMENT),('code',RUN),('code',DISPLAY)]
++    cells=[]
++    for i,(kind,text) in enumerate(sources):
++        cell=dict(cell_type=kind,id=f'overlap-zero-mean-c1-{i}',metadata={},source=text.splitlines(keepends=True))
++        if kind=='code':ast.parse(text);cell.update(outputs=[],execution_count=None)
++        cells.append(cell)
++    value=dict(nbformat=4,nbformat_minor=5,cells=cells,metadata=dict(kernelspec=dict(display_name='Python3',language='python',name='python3'),
++      language_info=dict(name='python'),candidate_binding=dict(source_sha=source_sha,status='PUBLISHED_SHA_BOUND' if source_sha else 'UNPUBLISHED_DRAFT',execution='User-run only; no agent GPU/Colab execution')))
++    Path(output).write_text(json.dumps(value,indent=1)+'\n');return Path(output)
++
++if __name__=='__main__':
++    parser=argparse.ArgumentParser();parser.add_argument('--source-sha');parser.add_argument('--output',type=Path,default=OUTPUT)
++    args=parser.parse_args();print(build(args.source_sha,args.output))
+diff --git a/tests/test_video_overlap_zero_mean.py b/tests/test_video_overlap_zero_mean.py
+new file mode 100644
+index 0000000..7ce51a2
+--- /dev/null
++++ b/tests/test_video_overlap_zero_mean.py
+@@ -0,0 +1,285 @@
++"""Necessary CPU synthetic/static checks; no real model, VAE, codec or saved-run ranking."""
++import ast,copy,hashlib,json,re,sys
++from pathlib import Path
++from types import SimpleNamespace
++import numpy as np
++import pytest
++import torch
++from main.tube_state import video_overlap_zero_mean_state as s,video_overlap_zero_mean_control as m
++from main.tube_state import video_overlap_tube_state as old
++from runtime.wan import video_overlap_zero_mean as b,trajectory,io,vae
++from experiments.wan_state_clock import video_overlap_zero_mean_c1_run as run
++pytestmark=pytest.mark.unit
++
++@pytest.fixture(autouse=True)
++def threads():
++    n=torch.get_num_threads();torch.set_num_threads(1)
++    yield
++    torch.set_num_threads(n)
++
++def latent(T=46):return torch.zeros(1,16,T,40,64)
++
++def scheduler():
++    from diffusers import UniPCMultistepScheduler
++    value=UniPCMultistepScheduler(prediction_type='flow_prediction',thresholding=False,predict_x0=True,
++        lower_order_final=True,use_flow_sigmas=True,flow_shift=3.,final_sigmas_type='zero')
++    value.set_timesteps(50,device='cpu');value.set_begin_index(0)
++    return value
++
++class Transformer:
++    def __call__(self,hidden_states,encoder_hidden_states,**kw):return (hidden_states*.01+encoder_hidden_states.mean(),)
++
++def fixture_trajectory(arm,callback=None):
++    hist=scheduler();ledger={};rows=[];initial=latent()
++    before=trajectory.fingerprint(vars(hist));rng=torch.random.get_rng_state().clone()
++    def count(kind,done):ledger.setdefault(kind,[0,0])[int(done)]+=1
++    terminal,receipt=b.run_trajectory(SimpleNamespace(transformer=Transformer()),initial,hist,
++        torch.tensor([.03]),torch.tensor([-.02]),torch.bfloat16,arm,'watermark',m.message_bits('OKOK'),
++        count,rows.append,diagnostic=callback)
++    assert torch.equal(rng,torch.random.get_rng_state()) and torch.count_nonzero(initial)==0
++    assert hist.step_index==50 and before!=trajectory.fingerprint(vars(hist))
++    return terminal,receipt,rows,ledger
++
++def test_exact_replacement_fixed_keys_and_no_cache_alias():
++    changed=unchanged=0
++    for key in ('watermark','watermark-wrong','', 'representative-2','representative-17'):
++        layout=s.basis_layout(key);U=s.bases(key);previous=old.bases(key)
++        assert layout==s.basis_layout(key)
++        np.testing.assert_array_equal(U,s.bases(key))
++        np.testing.assert_array_equal(U.sum(axis=1),np.zeros((4,8)))
++        for i,row in enumerate(layout['blocks']):
++            order=sorted(range(16),key=lambda c:(hashlib.sha256(f'VTOS1/basis/order\0{key}\0{i}\0{c}'.encode()).digest(),c))
++            signs=[2*(hashlib.sha256(f'VTOS1/basis/sign\0{key}\0{i}\0{q}'.encode()).digest()[0]&1)-1 for q in range(8)]
++            assert row['full_original_order']==order and row['signs']==signs
++            np.testing.assert_array_equal(U[i].T@U[i],np.eye(8))
++            if 0 not in order[:8]:
++                unchanged+=1;np.testing.assert_array_equal(U[i],previous[i]);continue
++            changed+=1;q=order[:8].index(0);replacement=next(c for c in order if c and c not in order[:8])
++            assert row['replaced_slot']==q and row['selected'][q]==replacement
++            for slot in range(8):
++                if slot!=q:np.testing.assert_array_equal(U[i,:,slot],previous[i,:,slot])
++                else:np.testing.assert_array_equal(U[i,:,slot],[signs[slot]*(-1)**((r&replacement).bit_count())/4 for r in range(16)])
++        U[:]=999;layout['blocks'].reverse()
++        assert np.max(np.abs(s.bases(key)))==.25
++    assert changed and unchanged
++    assert s.PUBLIC!=old.PUBLIC and s.PUBLIC.method_version=='video-overlap-zero-mean-v1'
++
++def test_actual_full_tensor_write_read_budget_and_inherited_sse():
++    for key in ('watermark','watermark-wrong'):
++        tensor=s.synthesize(key,dtype=np.float32)
++        received=tensor[0,:,1:].transpose(1,0,2,3)
++        projection=s.extract(received,key,np.ones((45,4),bool))
++        expected=s.composite_signs(key)*s.PUBLIC.alpha
++        np.testing.assert_allclose(projection,expected,atol=5e-9,rtol=0)
++        assert np.count_nonzero(expected)==1392 and expected.size==1440
++        assert np.linalg.norm(tensor.astype(np.float64))==pytest.approx(1,abs=1e-7)
++        assert np.count_nonzero(tensor[:,:,0])==0 and np.count_nonzero(tensor[:,[i for i in range(16) if i!=4]])==0
++        result=s.infer(received,key,np.ones((45,4),bool))
++        reference=old.infer(old.synthesize(key)[0,:,1:].transpose(1,0,2,3),key,np.ones((45,4),bool))
++        assert result['summary']['top_catalog_indices']==reference['summary']['top_catalog_indices']
++        np.testing.assert_allclose(result['path_costs'],reference['path_costs'],atol=1e-10,rtol=0)
++        assert s.catalog(45)==old.catalog(45)
++        assert s.family_receipt(key,45,np.ones((45,4),bool))==old.family_receipt(key,45,np.ones((45,4),bool))
++
++def test_small_path_cases_equivalence_and_unsupported_label_counterexample():
++    clean=s.synthesize('watermark')[0,:,1:].transpose(1,0,2,3)
++    for taus in (list(range(1,32)),list(range(7,38)),list(range(1,17))+list(range(16,31)),list(range(1,17))+list(range(18,33))):
++        value=clean[np.asarray(taus)-1]
++        out=s.infer(value,'watermark',np.ones((31,4),bool))
++        assert out['summary']['unique_model_hypothesis']
++        assert s.catalog(31)[out['summary']['canonical_catalog_index']]['taus']==taus
++        assert not out['summary']['state_path_accepted']
++    mask=np.ones((31,4),bool);mask[15]=False
++    family=s.family_receipt('watermark',31,mask)
++    group=next(c for c in family['classes'] if len(c['member_catalog_indices'])>1)
++    rows=s.catalog(31);path=rows[group['member_catalog_indices'][0]]['taus']
++    out=s.infer(clean[np.asarray(path)-1],'watermark',mask)
++    assert set(group['member_catalog_indices'])<=set(out['summary']['top_catalog_indices'])
++    assert not out['summary']['unique_model_hypothesis'] and out['summary']['structural_ambiguity']
++    # An inserted exact copy and a repeat are the same physical observation: no label recovery claim.
++    base=clean[:30];repeat=np.concatenate([base[:15],base[14:15],base[15:]])
++    copy_insert=np.insert(base,15,base[14],axis=0)
++    np.testing.assert_array_equal(repeat,copy_insert)
++    assert s.infer(repeat,'watermark',np.ones((31,4),bool))==s.infer(copy_insert,'watermark',np.ones((31,4),bool))
++    assert s.infer(np.zeros_like(repeat),'watermark',np.ones((31,4),bool))['summary']['status']=='NO_ENERGY'
++    assert s.infer(repeat,'watermark',np.zeros((31,4),bool))['summary']['reason']=='NO_OBSERVATIONS'
++    repeat[0,4,8,12]=np.nan
++    assert s.infer(repeat,'watermark',np.ones((31,4),bool))['summary']['status']=='INCOMPLETE'
++
++def test_gradient_actual_tensor_closure_and_fp64_projection():
++    z=torch.randn((1,16,46,40,64),generator=torch.Generator().manual_seed(17))*10
++    targets=m.build_targets(z,'watermark',m.message_bits('OKOK'));ds,detail=m.pilot_delta(z,targets)
++    assert detail['raw_delta_l2']>1
++    expected=torch.zeros_like(z)
++    for i,(h0,h1,w0,w1) in enumerate(s.PUBLIC.blocks):
++        patch=z[0,4,1:,h0:h1,w0:w1].reshape(45,16)
++        residual=(patch@targets['basis'][i]).reshape(45,4,2)-targets['pilot_target'][:,i]
++        residual=torch.where(targets['pilot_active'][:,i],residual,0.)
++        expected[0,4,1:,h0:h1,w0:w1]=(-.25*(residual.reshape(45,8)@targets['basis'][i].T)).reshape(45,4,4)
++    expected*=min(1.,1./float(expected.double().norm()))
++    torch.testing.assert_close(ds,expected,atol=2e-8,rtol=2e-6)
++    projected=m.project_tensor(ds,targets['basis'])
++    oracle=s.extract(ds[0,:,1:].numpy().transpose(1,0,2,3),'watermark',np.ones((45,4),bool))
++    np.testing.assert_allclose(projected.numpy(),oracle,atol=2e-8,rtol=2e-6)
++    closure=m.delta_closure(ds,projected,targets)
++    assert closure['actual_spatial_l2']==pytest.approx(1,abs=1e-7)
++    assert abs(closure['parseval_error'])<2e-7 and abs(closure['outside_ROI_energy'])<1e-12
++    assert closure['boundary_projection_energy']<1e-15 and closure['spatial_U_complement_l2']<1e-7
++    leaky=ds.clone();leaky[0,7,0,0,0]=.25
++    assert m.delta_closure(leaky,projected,targets)['outside_ROI_energy']==pytest.approx(.0625)
++    capture={};v,row=m.guided_velocity(z,torch.zeros_like(z),torch.zeros_like(z),.2,targets,'OVERLAP_MULTI',25,diagnostics=capture)
++    dp,_=m.payload.local_delta(z,targets['payload_target'],targets['payload_mask'])
++    torch.testing.assert_close(v,-5*(dp+ds)/.2,atol=2e-5,rtol=2e-6)
++    assert row['cross_inner_product']==0 and row['payload']['eta']==5520 and row['pilot']['eta']==174
++
++def test_native_diagnostics_noninvasive_all_arms(tmp_path,monkeypatch):
++    all_results=[];velocities=[];real_step=trajectory.native_step
++    def step(scheduler,z,velocity,index,*a,**kw):
++        velocities.append(trajectory.fingerprint(velocity))
++        return real_step(scheduler,z,velocity,index,*a,**kw)
++    monkeypatch.setattr(trajectory,'native_step',step)
++    for arm in m.ARMS:
++        captured={}
++        def callback(i,arrays,metadata):captured[i]=(copy.deepcopy(arrays),copy.deepcopy(metadata))
++        outcome=fixture_trajectory(arm,callback);all_results.append(outcome)
++        terminal,receipt,rows,ledger=outcome
++        assert [r['index'] for r in rows if r['enabled']]==([] if arm=='OFF' else list(range(25,50)))
++        assert len(captured)==25 and receipt['writer_diagnostics']['last_z_post_matches_terminal'] is True
++        assert receipt['writer_diagnostics']['completed']==25
++        np.testing.assert_array_equal(captured[49][0]['z_post'],m.project_tensor(terminal,torch.tensor(s.bases('watermark'),dtype=torch.float32)).numpy())
++        assert captured[49][1]['sigma_post']==0
++        assert ledger['native_step']==[50,50] and ledger['transformer_conditional']==ledger['transformer_unconditional']==[50,50]
++        if arm!='OVERLAP_MULTI':assert all(np.count_nonzero(v[0]['pilot_delta'])==0 for v in captured.values())
++    assert all_results[0][1]['before_step25']==all_results[1][1]['before_step25']==all_results[2][1]['before_step25']
++    assert not torch.equal(all_results[1][0],all_results[2][0])
++    captured_velocity=velocities[-50:];velocities.clear()
++    without=fixture_trajectory('OVERLAP_MULTI')
++    with_=all_results[-1]
++    torch.testing.assert_close(without[0],with_[0],atol=0,rtol=0)
++    assert without[1]['final_history_sha256']==with_[1]['final_history_sha256']
++    assert without[3]==with_[3] and velocities==captured_velocity
++    assert with_[3]['payload_gradient']==with_[3]['pilot_gradient']==[25,25]
++
++def test_terminal_diagnostic_failure_preserves_native_terminal(monkeypatch):
++    original=m.project_tensor;n=0
++    def project(*args):
++        nonlocal n
++        n+=1
++        if n==126:raise RuntimeError('terminal projection fixture')
++        return original(*args)
++    monkeypatch.setattr(m,'project_tensor',project)
++    terminal,receipt,rows,ledger=fixture_trajectory('OFF',lambda *a:None)
++    assert n==126 and len(rows)==50 and ledger['native_step']==[50,50]
++    assert torch.isfinite(terminal).all()
++    assert receipt['writer_diagnostics']['status']=='FAILED' and receipt['writer_diagnostics']['last_z_post_matches_terminal'] is None
++
++def test_callback_failure_does_not_abort_trajectory():
++    observed=[]
++    def callback(i,*rest):
++        observed.append(i)
++        if i==31:raise OSError('sidecar fixture')
++    _,receipt,rows,_=fixture_trajectory('OFF',callback)
++    assert observed==list(range(25,50)) and len(rows)==50
++    assert receipt['writer_diagnostics']['completed']==24 and rows[31]['writer_diagnostic']['status']=='FAILED'
++
++def test_receiver_uses_new_basis_rename_and_partialphase(tmp_path,monkeypatch):
++    a=tmp_path/'OVERLAP_CROP5.mp4';z=tmp_path/'OFF_FULL.mp4';a.write_bytes(b'129');z.write_bytes(a.read_bytes())
++    monkeypatch.setattr(io,'read_mp4',lambda p:torch.zeros(1,1,1,3).expand(int(p.read_bytes()),320,512,3))
++    full=torch.from_numpy(s.synthesize('watermark',dtype=np.float32))
++    lengths=[]
++    def encode(_,rgb):lengths.append(len(rgb));return full[:,:,:((len(rgb)-1)//4+1)].clone()
++    monkeypatch.setattr(vae,'reencode_rgb24_readback',encode)
++    keys=dict(CORRECT='watermark',WRONG='watermark-wrong')
++    one=b.read_mp4_search(a,keys,m.PUBLIC,object());two=b.read_mp4_search(z,keys,m.PUBLIC,object())
++    assert one==two and lengths==[129,125,125,125]*2
++    for name,key in keys.items():
++        expected=s.extract(full[0,:,1:32].numpy().transpose(1,0,2,3),key,np.ones((31,4),bool))
++        np.testing.assert_allclose(one['features'][0,name]['inference']['projection'],expected,atol=0,rtol=0)
++    calls=[]
++    def fail(_,rgb):
++        calls.append(0)
++        if len(calls)==3:raise RuntimeError('phase fixture failure')
++        return full[:,:,:((len(rgb)-1)//4+1)].clone()
++    monkeypatch.setattr(vae,'reencode_rgb24_readback',fail)
++    partial=b.read_mp4_search(a,keys,m.PUBLIC,object())
++    assert len(partial['features'])==8 and sum(r['status']=='FAILED' for r in partial['features'].values())==2
++    assert all(r['status']=='SEARCH_INCOMPLETE' for r in partial['searches'].values())
++    with pytest.raises(ValueError):b.read_mp4_search(a,keys,old.PUBLIC,object())
++
++def test_writer_sidecar_fixed_slots_blind_separation_and_recovery(tmp_path,monkeypatch):
++    store=run.Store(tmp_path/'run',create=True);cfg=run.load_config()
++    assert len(store.data['writer_diagnostics'])==75
++    arrays={k:np.zeros((45,4,4,2),np.float32) for k in b.DIAGNOSTIC_ARRAYS}
++    store.blind();before=(store.output/'blind_readouts.json').read_bytes()
++    store.writer_event('OFF',25,arrays,dict(status='COMPLETE',index=25))
++    row=store.data['writer_diagnostics']['OFF/25']
++    with np.load(row['path']) as saved:assert set(saved.files)==set(b.DIAGNOSTIC_ARRAYS)
++    assert row['status']=='SAVED' and row['sha256']==b.file_sha256(row['path'])
++    monkeypatch.setattr(run.np,'savez_compressed',lambda *a,**kw:(_ for _ in ()).throw(OSError('export fixture')))
++    with pytest.raises(OSError):store.writer_event('OFF',26,arrays,dict(status='COMPLETE',index=26))
++    reopened=run.Store(store.output);run.recover_unfinished(reopened,'generation','fixture')
++    assert reopened.data['writer_diagnostics']['OFF/25']['status']=='SAVED'
++    assert reopened.data['writer_diagnostics']['OFF/26']['status']=='FAILED'
++    assert reopened.data['writer_diagnostic_counts']==dict(expected=75,saved=1,failed=1,not_completed=73,pending=0)
++    # Only writer/generation state changed: blind tables unchanged.
++    assert (store.output/'blind_readouts.json').read_bytes()==before
++    assert 'writer_diagnostics' not in json.loads(before)
++    run.recover_unfinished(reopened,'media','fixture');raw=(store.output/'blind_readouts.json').read_bytes()
++    run.evaluate_saved_reads(reopened,cfg)
++    assert (store.output/'blind_readouts.json').read_bytes()==raw
++    assert len(reopened.data['evaluations'])==60 and all(not v['accepted_payload'] for v in reopened.data['evaluations'].values())
++
++
++@pytest.mark.parametrize('boundary',['before','after'])
++def test_canonical_exit_boundary(tmp_path,monkeypatch,boundary):
++    store=run.Store(tmp_path/'run',create=True);slot='OFF/FULL_RESAVED181/0/CORRECT'
++    infer=s.infer(np.zeros((44,16,40,64)),'watermark',np.ones((44,4),bool))
++    row=dict(status='NO_ENERGY',inference=infer,payload=dict(status='READ',decoded_bits=[0]*32))
++    save,blind=store.save,store.blind
++    def interrupted_save():
++        if boundary=='before' and store.data['phase_reads'][slot]['status']=='NO_ENERGY':raise SystemExit('before canonical')
++        save()
++    def interrupted_blind():
++        if boundary=='after' and store.data['phase_reads'][slot]['status']=='NO_ENERGY':raise SystemExit('after canonical')
++        blind()
++    monkeypatch.setattr(store,'save',interrupted_save);monkeypatch.setattr(store,'blind',interrupted_blind)
++    with pytest.raises(SystemExit):store.event('OFF/FULL_RESAVED181','phase',(0,'CORRECT'),row)
++    reopened=run.Store(store.output);run.recover_unfinished(reopened,'media','interrupted')
++    actual=reopened.data['phase_reads'][slot]
++    assert actual['status']==('NO_ENERGY' if boundary=='after' else 'NOT_COMPLETED')
++    if boundary=='after':assert actual['payload']['decoded_bits']==[0]*32
++
++
++def test_parent_spawn_failure_finishes_all_slots(tmp_path,monkeypatch):
++    output=tmp_path/'run';monkeypatch.setattr(sys,'argv',['test','--output',str(output)])
++    monkeypatch.setattr(run.subprocess,'check_output',lambda *a,**kw:'47405e5b45e9065103dbb1dac447617ddaed4f2e\n')
++    monkeypatch.setattr(run.subprocess,'Popen',lambda *a,**kw:(_ for _ in ()).throw(OSError('spawn fixture')))
++    with pytest.raises(SystemExit) as error:run.main()
++    assert error.value.code==1
++    saved=json.loads((output/'result.json').read_text())
++    assert saved['status']=='INCOMPLETE' and saved['stage']=='FINISHED'
++    assert len(saved['failures'])==2 and len(saved['workers'])==2
++    assert all(r['status']!='PENDING' for name in run.TABLE_SIZES for r in saved[name].values())
++    assert (output/'blind_readouts.json').is_file()
++
++
++
++def test_notebook_static_source_none_and_builder(tmp_path):
++    from scripts import build_video_overlap_zero_mean_c1_notebook as builder
++    official=run.ROOT/'notebooks/video_overlap_zero_mean_c1_v1_colab.ipynb'
++    path=builder.build(output=tmp_path/'candidate.ipynb')
++    assert path.read_bytes()==official.read_bytes()
++    value=json.loads(path.read_text());cells=value['cells']
++    assert value['metadata']['candidate_binding']['source_sha'] is None
++    assert ''.join(cells[0]['source'])=="from google.colab import drive\ndrive.mount('/content/drive')\n"
++    code='\n'.join(''.join(c['source']) for c in cells if c['cell_type']=='code')
++    for c in cells:
++        if c['cell_type']=='code':
++            ast.parse(''.join(c['source']));assert c['outputs']==[] and c['execution_count'] is None
++    assert 'SOURCE_SHA = None' in code and 'PYTHON=sys.executable' in code
++    assert 'Video(str(row[' in code and 'venv' not in code and 'ensurepip' not in code
++    required=re.findall(r"REPO/'([^']+requirements[^']+)'",code)
++    assert required and all((run.ROOT/p).is_file() for p in required)
++    assert 'prepare_reserved_edit' not in code and 'writer_diagnostics=' in code
++    assert 'Video-Overlap-Zero-Mean-C1-V1' in code and 'video_overlap_zero_mean_c1_run' in code
++    assert run.TABLE_SIZES==dict(generation=3,sources=3,views=15,normalized=60,phase_reads=120,searches=30,evaluations=60)

@@ -1,0 +1,48 @@
+{
+  "status": "CPU_STATIC_ENGINEERING_CHECKS_COMPLETE",
+  "real_model": false,
+  "real_vae": false,
+  "real_codec": false,
+  "gpu": false,
+  "environment": {
+    "python": "/home/richar/projects/CEG-WM/alive/CEG-WM/.venv/bin/python",
+    "CUDA_VISIBLE_DEVICES": "",
+    "PYTHONDONTWRITEBYTECODE": "1",
+    "OPENBLAS_NUM_THREADS": "1"
+  },
+  "runs": [
+    {
+      "command": "python -m pytest tests/test_video_overlap_zero_mean.py -q -p no:cacheprovider",
+      "passed": 12,
+      "failed": 1,
+      "skipped": 0,
+      "seconds": 32.91,
+      "failure": "Test demanded exact outside-ROI energy zero; actual FP64 total-minus-patch reduction residual 1.1102230246251565e-16. Gradient/projection assertions passed.",
+      "correction": "Test-only abs(outside_ROI_energy)<1e-12; no runtime/control change. Parseval residual 1.0492958835151e-8 within existing 2e-7 tolerance."
+    },
+    {
+      "command": "python -m pytest tests/test_video_overlap_zero_mean.py -q -p no:cacheprovider -k gradient_actual",
+      "passed": 1,
+      "deselected": 12,
+      "skipped": 0,
+      "seconds": 1.13
+    }
+  ],
+  "final_coverage": "All13 necessary tests covered across initial12 passes plus corrected one targeted pass, not a single13-pass run.",
+  "precision_checks": {
+    "actual_delta_closed_form_atol": 2e-08,
+    "actual_delta_closed_form_rtol": 2e-06,
+    "fp32_projection_vs_fp64_atol": 2e-08,
+    "fp32_projection_vs_fp64_rtol": 2e-06,
+    "FP64_outside_ROI_subtraction_atol": 1e-12,
+    "native_diagnostics_noninvasive": "OVERLAP_MULTI callback on/off: velocity fingerprints, terminal bytes, final history and calls exact; every fixture run checks torch CPU RNG before/after. No claim all RNG systems or all three arms dual-run."
+  },
+  "runtime_notes": "Synthetic Transformer only; real native UniPC CPU scheduler. MP4/VAE tests use explicit fixtures, no real codec or VAE.",
+  "full_B_or_saved_real_ranking_executed": false,
+  "post_test_static_delta": {
+    "field": "C1 config evidence_ceiling",
+    "change": "Stable execution-neutral boundary; live result uses actual_model_calls/model_loaded.",
+    "check": "Import load_config, assert source_sha None and no unexecuted in evidence_ceiling: PASS. No suite rerun; config text only.",
+    "git_tracked_diff_check": "PASS; existing tracked files unchanged"
+  }
+}

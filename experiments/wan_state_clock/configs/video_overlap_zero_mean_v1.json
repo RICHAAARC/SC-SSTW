@@ -1,0 +1,29 @@
+{
+  "schema": "video-overlap-zero-mean-v1",
+  "method_version": "video-overlap-zero-mean-v1",
+  "inherited_mechanism": {
+    "path": "experiments/wan_state_clock/configs/video_overlap_tube_state_v1.json",
+    "sha256": "4c45eec080679a8e8c9324a3ea8d2cd37fafbd2c3aad1e8dd250eed8fc444462",
+    "sections_unchanged": [
+      "public geometry",
+      "state",
+      "tubes",
+      "synthesis alpha/1392",
+      "observation mask",
+      "pilot meanMSE eta174 cap1",
+      "scoring family/SSE/all ties"
+    ]
+  },
+  "basis": {
+    "original_domain": "VTOS1/basis/order",
+    "sign_domain": "VTOS1/basis/sign",
+    "rule": "For each key/block keep complete original 16-column keyed order and original 8 slot signs. If original selected8 contains column0, replace only its slot with first c in full original order where c!=0 and c not in original selected8. Preserve its original slot sign. Otherwise basis unchanged.",
+    "columns": 8,
+    "spatial_column_sum": 0,
+    "per_key_rule": true,
+    "temporal_centering": false,
+    "position_dependent_payload": "RESERVED_DISABLED; old reserved-q wording does not allocate replacement columns"
+  },
+  "scope": "New encoding and matched blind reader, not an implementation bugfix or retrospective reinterpretation of old evidence.",
+  "source_sha": null
+}

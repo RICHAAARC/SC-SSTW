@@ -1,0 +1,75 @@
+{
+  "schema": "overlap-zero-mean-C1-freeze-v1",
+  "base_sha": "7167d443038927ef4395b33f52cc9dc0a2512bbb",
+  "branch": "dev/video-trajectory-blind-validation-v1",
+  "files": [
+    {
+      "path": "diagnostics/video_overlap_zero_mean_v1/implementation_report.md",
+      "sha256": "16e3915c874e48cc4e0be2eafd1ec585f582b1624d5765b1304ebaff05bb040c",
+      "bytes": 2063
+    },
+    {
+      "path": "diagnostics/video_overlap_zero_mean_v1/local_validation.json",
+      "sha256": "a214986eff9a242b52d15eaf63812ff542bbce215420e2e507cb5f8f37356044",
+      "bytes": 2316
+    },
+    {
+      "path": "docs/video_overlap_zero_mean_c1_v1.md",
+      "sha256": "f3e37addd996618cd0dafeffded5faa50f9af8459ffb9352ae430e83492cf3ce",
+      "bytes": 8484
+    },
+    {
+      "path": "experiments/wan_state_clock/configs/video_overlap_zero_mean_c1_v1.json",
+      "sha256": "8966f1784c06d8df07263f29fea12fd0d02c6356dfbc9e7c9897d3bff55bbe95",
+      "bytes": 4909
+    },
+    {
+      "path": "experiments/wan_state_clock/configs/video_overlap_zero_mean_v1.json",
+      "sha256": "6b8d8da7e8cedacc383530618bc7f50d806de4d0c4f14e35583bb8fb7e7c6c78",
+      "bytes": 1295
+    },
+    {
+      "path": "experiments/wan_state_clock/video_overlap_zero_mean_c1_run.py",
+      "sha256": "40c5d30552f440ca75e91547608135195a14bb018f518a0f6b421e6953d3bfcf",
+      "bytes": 27978
+    },
+    {
+      "path": "main/tube_state/video_overlap_zero_mean_control.py",
+      "sha256": "1aaecaf3cb5c9d27068989a2a3be71dee40c83168fe32d0afaa27724868714ce",
+      "bytes": 8871
+    },
+    {
+      "path": "main/tube_state/video_overlap_zero_mean_state.py",
+      "sha256": "77b82a4da4d45904093d1d41abd53309eeb808d92a85a2752757b058dd35a4e3",
+      "bytes": 11892
+    },
+    {
+      "path": "notebooks/video_overlap_zero_mean_c1_v1_colab.ipynb",
+      "sha256": "cec68ccdeadd1ba1c8e8c304044933d32c3d84e512a7eda0ee4f8dca1d67be07",
+      "bytes": 12461
+    },
+    {
+      "path": "runtime/wan/video_overlap_zero_mean.py",
+      "sha256": "1d84fbe3481febfe0ad907087e2cde2600d052018786e656a80d375c41918351",
+      "bytes": 8451
+    },
+    {
+      "path": "scripts/build_video_overlap_zero_mean_c1_notebook.py",
+      "sha256": "77c30c3a8289e75b4db4c12b55558202f898cfecb263e96f8db85129ccd37da4",
+      "bytes": 12169
+    },
+    {
+      "path": "tests/test_video_overlap_zero_mean.py",
+      "sha256": "f6802906124ac84cea399f7cccdac76b0ecf988a9ce482f0dfde00be62fe86b5",
+      "bytes": 18283
+    }
+  ],
+  "file_count": 12,
+  "tree_sha256": "f235de24c0f7468fed830c64932114ff272445dc0cea2b0a3870105d81292b9e",
+  "tree_recipe": "sha256 UTF-8 concatenation of sorted path + NUL + file_sha256 + LF",
+  "patch_sha256": "ac5b8c2a6f97c65091b0c9a9a176cec0272259f6d3868f71c2dd017e50d130fd",
+  "source_binding": null,
+  "old_tracked_files_unchanged": true,
+  "real_execution": "NOT_EXECUTED",
+  "reviews": "PENDING"
+}
