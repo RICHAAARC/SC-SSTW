@@ -1,0 +1,54 @@
+{
+  "schema": "overlap-state-C1-publication-v1",
+  "recorded_utc": "2026-09-30T06:15:39.111494+00:00",
+  "source_sha": "988b13116a010df93d78a788b44b267cd4b657cd",
+  "source_publish_verified_before_binding": true,
+  "source_remote_ref_verified": "988b13116a010df93d78a788b44b267cd4b657cd",
+  "branch": "dev/video-trajectory-blind-validation-v1",
+  "fetch_remote": "https://github.com/RICHAAARC/SC-SSTW.git",
+  "push_remote": "git@github.com:RICHAAARC/SC-SSTW.git",
+  "source_push": "normal non-force push; remote branch verified at source SHA before notebook binding",
+  "notebook_delivery_commit": "the commit containing this receipt; full SHA reported after commit and remote verification",
+  "changed_files": {
+    "scripts/build_video_overlap_tube_state_c1_notebook.py": {
+      "sha256": "4f304d17ee6a180bf6448eda33684cdee76e8138f74fc7de1f5e099f1d65c26e",
+      "bytes": 11471
+    },
+    "notebooks/video_overlap_tube_state_c1_v1_colab.ipynb": {
+      "sha256": "c3416817babadf096d8ef4e5fddc93c453af70c2a67d608f8fc6f9820308f16a",
+      "bytes": 11825
+    },
+    "tests/test_video_overlap_tube_state_c1.py": {
+      "sha256": "61a80e01efffc8389574c14dc5911f0ace33983a74924905378ad999e7b6fb09",
+      "bytes": 10924
+    }
+  },
+  "source_snapshot_scope": "B12 and C1 method/runtime/config remain unchanged. Builder/notebook/static test are authorized publication-only differences from historical C1 snapshot; old snapshots/closure are preserved.",
+  "unchanged_frozen_files": 19,
+  "validation": {
+    "command": "CUDA_VISIBLE_DEVICES='' PYTHONDONTWRITEBYTECODE=1 /home/richar/projects/CEG-WM/alive/CEG-WM/.venv/bin/python -m pytest tests/test_video_overlap_tube_state_c1.py -k notebook_static_and_builder -q -p no:cacheprovider",
+    "passed": 1,
+    "deselected": 8,
+    "seconds": 0.88,
+    "checks": [
+      "bound notebook matches builder output",
+      "immutable 40-hex source binding",
+      "draft builder remains supported",
+      "code cell AST",
+      "Drive first cell",
+      "current Python and no venv",
+      "repository requirements path exists",
+      "Video path conversion",
+      "C2 is not invoked"
+    ]
+  },
+  "execution": {
+    "model": false,
+    "GPU": false,
+    "VAE": false,
+    "real_media": false,
+    "Colab": false,
+    "B_matrix_rerun": false
+  },
+  "merge_main": false
+}

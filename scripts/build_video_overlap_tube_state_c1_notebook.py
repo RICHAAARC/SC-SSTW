@@ -12,7 +12,7 @@ DISPLAY="result=json.loads(RESULT_PATH.read_text())\nif result['source_sha']!=SO
 
 def build(source_sha=None,output=OUTPUT):
     if source_sha is not None and not re.fullmatch('[0-9a-f]{40}',source_sha):raise ValueError('published immutable source SHA required')
-    sources=[('code',"from google.colab import drive\ndrive.mount('/content/drive')\n"),('markdown',MARKDOWN),
+    sources=[('code',"from google.colab import drive\ndrive.mount('/content/drive')\n"),('markdown',MARKDOWN.replace('Source is an unpublished draft until the main session publishes and binds its immutable SHA.', ('Published source: `'+source_sha+'`. This notebook checks out that immutable source commit.' if source_sha else 'UNPUBLISHED DRAFT: source must be published and its immutable SHA verified before binding.'))),
       ('code',f'SOURCE_SHA = {source_sha!r}\n'+SETUP),('code',ENVIRONMENT),('code',RUN),('code',DISPLAY)]
     cells=[]
     for i,(kind,text) in enumerate(sources):
