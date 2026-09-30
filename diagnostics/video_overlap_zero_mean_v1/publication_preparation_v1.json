@@ -1,0 +1,85 @@
+{
+  "schema": "overlap-zero-mean-publication-preparation-v1",
+  "receipt_stage": "PRE_NOTEBOOK_COMMIT_REVIEW_SNAPSHOT",
+  "source_sha": "05beeaa423fa4f2cf95d69cff23e4c5eda4c5841",
+  "source_parent": "7167d443038927ef4395b33f52cc9dc0a2512bbb",
+  "branch": "dev/video-trajectory-blind-validation-v1",
+  "remote": {
+    "fetch": "https://github.com/RICHAAARC/SC-SSTW.git",
+    "push": "git@github.com:RICHAAARC/SC-SSTW.git",
+    "ref": "refs/heads/dev/video-trajectory-blind-validation-v1",
+    "verified_source_sha": "05beeaa423fa4f2cf95d69cff23e4c5eda4c5841",
+    "verification": "git ls-remote through SSH after normal non-force source push"
+  },
+  "source_commit": {
+    "files": 14,
+    "all_status_A": true,
+    "freeze_file_hashes_and_git_blobs_match": "12/12",
+    "old_tracked_source_unchanged": true
+  },
+  "freeze": {
+    "snapshot_sha256": "0f91d509346dc60824889b65d2a12f135392db6dc6af1da58880f1f5b9293e30",
+    "tree_sha256": "f235de24c0f7468fed830c64932114ff272445dc0cea2b0a3870105d81292b9e",
+    "patch_sha256": "ac5b8c2a6f97c65091b0c9a9a176cec0272259f6d3868f71c2dd017e50d130fd",
+    "history_unchanged": true,
+    "current_working_files": "10/12 still identical; notebook and static test are explicitly authorized publication-only differences"
+  },
+  "notebook": {
+    "path": "notebooks/video_overlap_zero_mean_c1_v1_colab.ipynb",
+    "source_sha": "05beeaa423fa4f2cf95d69cff23e4c5eda4c5841",
+    "execution_count": null,
+    "outputs_empty": true,
+    "builder": {
+      "path": "scripts/build_video_overlap_zero_mean_c1_notebook.py",
+      "unchanged": true,
+      "sha256": "77c30c3a8289e75b4db4c12b55558202f898cfecb263e96f8db85129ccd37da4"
+    },
+    "method_runtime_control_config_unchanged": true,
+    "source_binding_after_remote_verification": true
+  },
+  "changed_files": [
+    {
+      "path": "notebooks/video_overlap_zero_mean_c1_v1_colab.ipynb",
+      "source_sha256": "cec68ccdeadd1ba1c8e8c304044933d32c3d84e512a7eda0ee4f8dca1d67be07",
+      "sha256": "bc1c09aa5e9f8740286fc9297f7fefddbc0e3e477dde41c23794ad11240423c4",
+      "bytes": 12565
+    },
+    {
+      "path": "tests/test_video_overlap_zero_mean.py",
+      "source_sha256": "f6802906124ac84cea399f7cccdac76b0ecf988a9ce482f0dfde00be62fe86b5",
+      "sha256": "a9e7bef7ba26cf3b13e093d669b253f8cb019a709944a4273fb765c62fd3dcff",
+      "bytes": 18706
+    }
+  ],
+  "validation": {
+    "command": "CUDA_VISIBLE_DEVICES='' PYTHONDONTWRITEBYTECODE=1 OPENBLAS_NUM_THREADS=1 /home/richar/projects/CEG-WM/alive/CEG-WM/.venv/bin/python -m pytest tests/test_video_overlap_zero_mean.py -q -p no:cacheprovider -k notebook_static",
+    "passed": 1,
+    "deselected": 12,
+    "seconds": 0.82,
+    "stdout": "tool execution record; not a separately saved log",
+    "checks": [
+      "builder reproduction exact",
+      "legal full40hex immutable SHA or draft supported",
+      "separate draft remains None",
+      "AST every code cell",
+      "exact first Drive cell",
+      "empty outputs",
+      "sys.executable/fresh-child route",
+      "Video(str(path))",
+      "actual requirements file exists",
+      "fixed roster retained"
+    ],
+    "git_diff_check": "PASS for prepared publication delta",
+    "source_staging_format_note": "Frozen runtime file has an existing extra EOF blank line. Preserved byte-for-byte; all other source whitespace checks passed using per-command core.whitespace=-blank-at-eof and excluding archived patch text. Initial commit check stopped there, initial push was up-to-date, then guarded commit/push succeeded. No repository git setting changed."
+  },
+  "unexecuted": [
+    "GPU",
+    "real model",
+    "VAE",
+    "media/codec",
+    "Colab",
+    "C2",
+    "method CPU matrix"
+  ],
+  "completion_boundary": "Source is published. This receipt records the prepared binding/static-test delta for same-version review before a separate notebook delivery commit/push; its completion is confirmed by the subsequent Git commit and remote verification, not retroactively by this preparation record."
+}

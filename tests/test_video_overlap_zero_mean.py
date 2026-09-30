@@ -264,19 +264,24 @@ def test_parent_spawn_failure_finishes_all_slots(tmp_path,monkeypatch):
 
 
 
-def test_notebook_static_source_none_and_builder(tmp_path):
+def test_notebook_static_source_binding_and_builder(tmp_path):
     from scripts import build_video_overlap_zero_mean_c1_notebook as builder
     official=run.ROOT/'notebooks/video_overlap_zero_mean_c1_v1_colab.ipynb'
-    path=builder.build(output=tmp_path/'candidate.ipynb')
+    bound=json.loads(official.read_text())['metadata']['candidate_binding']['source_sha']
+    assert bound is None or re.fullmatch('[0-9a-f]{40}',bound)
+    path=builder.build(source_sha=bound,output=tmp_path/'candidate.ipynb')
     assert path.read_bytes()==official.read_bytes()
     value=json.loads(path.read_text());cells=value['cells']
-    assert value['metadata']['candidate_binding']['source_sha'] is None
+    assert value['metadata']['candidate_binding']['source_sha']==bound
     assert ''.join(cells[0]['source'])=="from google.colab import drive\ndrive.mount('/content/drive')\n"
     code='\n'.join(''.join(c['source']) for c in cells if c['cell_type']=='code')
     for c in cells:
         if c['cell_type']=='code':
             ast.parse(''.join(c['source']));assert c['outputs']==[] and c['execution_count'] is None
-    assert 'SOURCE_SHA = None' in code and 'PYTHON=sys.executable' in code
+    assert f'SOURCE_SHA = {bound!r}' in code and 'PYTHON=sys.executable' in code
+    draft=builder.build(output=tmp_path/'draft.ipynb')
+    assert json.loads(draft.read_text())['metadata']['candidate_binding']['source_sha'] is None
+    if bound:assert 'Published source: '+chr(96)+bound+chr(96) in ''.join(cells[1]['source'])
     assert 'Video(str(row[' in code and 'venv' not in code and 'ensurepip' not in code
     required=re.findall(r"REPO/'([^']+requirements[^']+)'",code)
     assert required and all((run.ROOT/p).is_file() for p in required)
