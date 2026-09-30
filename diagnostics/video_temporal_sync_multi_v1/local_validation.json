@@ -1,0 +1,62 @@
+{
+  "status": "CPU_ENGINEERING_PASS",
+  "base_sha": "b255029ec508631f38a124ac49712a5b9299d2a1",
+  "branch": "dev/video-trajectory-blind-validation-v1",
+  "cwd": "/home/richar/projects/Video-WM/worktrees/Video-Trajectory-Blind-Validation-V1",
+  "command": "CUDA_VISIBLE_DEVICES='' PYTHONDONTWRITEBYTECODE=1 VTSM_GOLDEN_FIXTURE=/home/richar/projects/Video-WM/diagnostics/temporal-sync-multi-main-review-20260930/independent_window_fixture.json /home/richar/projects/CEG-WM/alive/CEG-WM/.venv/bin/python -m pytest tests/test_video_temporal_sync_multi.py -q",
+  "environment": {
+    "executable": "/home/richar/projects/CEG-WM/alive/CEG-WM/.venv/bin/python",
+    "python": "3.12.3 (main, Aug 31 2026, 10:18:26) [GCC 13.3.0]",
+    "packages": {
+      "torch": "2.5.1+cpu",
+      "numpy": "2.5.2",
+      "pytest": "9.1.1",
+      "diffusers": "0.39.0",
+      "transformers": "4.57.6"
+    },
+    "CUDA_VISIBLE_DEVICES": "",
+    "PYTHONDONTWRITEBYTECODE": "1",
+    "environment_modified": false
+  },
+  "pytest": {
+    "passed": 15,
+    "failed": 0,
+    "skipped": 0,
+    "duration_seconds": 20.86,
+    "log": "diagnostics/video_temporal_sync_multi_v1/pytest_v1.txt",
+    "log_kind": "Exact captured pytest summary; recorded without rerunning"
+  },
+  "coverage": [
+    "Actual 25..49 fresh local updates; pre25 z/history/conditional/unconditional identity; later legal divergence; 300/150/50 calls",
+    "3 arms / 5 views / 51 normalized / 102 primary reads / 30 searches / 1278 candidates / 60 evaluations / 102 window artifacts / 3270 rows",
+    "Four posthoc truth maps; no truth supplied to receiver",
+    "Independent NumPy FP64 sums/sumsq/counts; ordered/repeated/skipped aggregation and first-coefficient tie/zero behavior",
+    "Primary observations equal unchanged bridge; extra crop g0 j32 excluded from primary; public-only window metadata",
+    "Renamed same MP4 bytes preserve blind observations/search",
+    "Combined missing view, phase and window export; valid primary retained after export failure; all fixed slots kept",
+    "Before/after canonical commit interruption for both phase and window events; persisted artifacts and observations retained",
+    "Normal NO_PILOT completion requires full window interface; notebook static setup/requirements/source binding"
+  ],
+  "adopted_scope": {
+    "path": "/home/richar/projects/Video-WM/diagnostics/temporal-sync-multi-main-review-20260930/adopted_scope.json",
+    "sha256": "e41eaf033f99eb0d57a0614b4740b7fb2777396bd6e68e0910466f17e3c5ee38"
+  },
+  "independent_golden": {
+    "path": "/home/richar/projects/Video-WM/diagnostics/temporal-sync-multi-main-review-20260930/independent_window_fixture.json",
+    "sha256": "b4c1d23dffcb757f0269cd24eda2914d274267ad0c6655b3192a553937b81298",
+    "source_path": "/home/richar/projects/Video-WM/diagnostics/temporal-sync-bridge-real-run-audit-20260930/saved_run/fixed_reference/PILOT_LAST/CROP5_129.phase3.pt",
+    "source_sha256": "f23d753ed888d0a1ae2b236e55973976ec264d323ac224915a6622c562458559",
+    "test_ran": true,
+    "skipped": false,
+    "status": "CPU_SAVED_OBSERVATION_ARITHMETIC_PASS",
+    "meaning": "Read-only reuse of an already saved LAST normalized tensor; no new VAE encode, model call or real-video execution",
+    "comparison": "Hard bits/counts and ordered/repeated/skipped golden aggregations exact; NumPy FP64 soft sums/sumsq within test tolerances"
+  },
+  "new_model_loaded": false,
+  "new_gpu_executed": false,
+  "new_vae_executed": false,
+  "colab_executed": false,
+  "source_published": false,
+  "SOURCE_SHA": null,
+  "evidence_ceiling": "Local CPU/synthetic/fixture and old saved-tensor arithmetic only. No new real-video, synchronization, FPR, quality, generalization or scientific PASS."
+}

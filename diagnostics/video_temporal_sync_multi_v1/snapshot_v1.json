@@ -1,0 +1,95 @@
+{
+  "schema": "video-temporal-sync-multi-freeze-v1",
+  "base_sha": "b255029ec508631f38a124ac49712a5b9299d2a1",
+  "branch": "dev/video-trajectory-blind-validation-v1",
+  "file_count": 11,
+  "files": [
+    {
+      "path": "diagnostics/video_temporal_sync_multi_v1/implementation_report.md",
+      "sha256": "0cf8362b3d3e3a685d00d6a7a13b89e04ee659657f24f170e1a1daf847b27f8a",
+      "bytes": 3693
+    },
+    {
+      "path": "diagnostics/video_temporal_sync_multi_v1/local_validation.json",
+      "sha256": "eef8ed0830b9ce5f0d1a8a897fd605504eadb8c3217618882bc7eb77205b9ffc",
+      "bytes": 3720
+    },
+    {
+      "path": "diagnostics/video_temporal_sync_multi_v1/pytest_v1.txt",
+      "sha256": "93e33893a484f7ffb15bd3fbfd6c243e2be1ff931a15aa41466e79b6f6d58f5e",
+      "bytes": 100
+    },
+    {
+      "path": "docs/video_temporal_sync_multi_v1.md",
+      "sha256": "347840f443c98fafa801fbbf25f1a4a4098eabbde596a073dbf264f33db30a7a",
+      "bytes": 11176
+    },
+    {
+      "path": "experiments/wan_state_clock/configs/video_temporal_sync_multi_v1.json",
+      "sha256": "768d82493797b2054c904334fc7882a0350ee876a2ac847a657154e6de80a53a",
+      "bytes": 4957
+    },
+    {
+      "path": "experiments/wan_state_clock/video_temporal_sync_multi_run.py",
+      "sha256": "62ba4f2315ccf7426a41478d7b9356f9d9b533ccab2dad926deabcfa6b7ecacc",
+      "bytes": 24692
+    },
+    {
+      "path": "main/tube_state/video_temporal_sync_multi.py",
+      "sha256": "4af5e5a317f5ced7396380e7e638a4d10b81f32d2027e8582a859277787e7208",
+      "bytes": 6087
+    },
+    {
+      "path": "notebooks/video_temporal_sync_multi_v1_colab.ipynb",
+      "sha256": "87eb7f1a1092a516c301f217f0f0caa96f7286bc9da048741edadd2f08f55753",
+      "bytes": 12282
+    },
+    {
+      "path": "runtime/wan/video_temporal_sync_multi.py",
+      "sha256": "0c9f836ccf052ed9eb555d0650b16db915c7694b9dc904dbe6c0b290991bf41d",
+      "bytes": 6278
+    },
+    {
+      "path": "scripts/build_video_temporal_sync_multi_notebook.py",
+      "sha256": "5775e7a0c573e44c17e8e212b89f88b8e9e226303b1c16beaca6e6a8208c401b",
+      "bytes": 11417
+    },
+    {
+      "path": "tests/test_video_temporal_sync_multi.py",
+      "sha256": "ecad6db4302941023747c4c5d8aa2fb051d85829eb82cc12abb3c354ca7fe960",
+      "bytes": 18488
+    }
+  ],
+  "tree_sha256": "d9e2c80f4da6ff6029b2d9031bbff2b4ef9302c927a4cd87442cdf22eef4890f",
+  "tree_definition": "SHA256 of UTF-8 concatenation of sorted path + NUL + SHA256 hex + LF",
+  "patch": {
+    "path": "diagnostics/video_temporal_sync_multi_v1/candidate_v1.patch",
+    "sha256": "31271c65181d69ea118814ea3dea4709178b023928ed0ebb0283348b963365ec",
+    "bytes": 107490,
+    "reverse_apply_check": "PASS"
+  },
+  "validation": {
+    "path": "diagnostics/video_temporal_sync_multi_v1/local_validation.json",
+    "sha256": "eef8ed0830b9ce5f0d1a8a897fd605504eadb8c3217618882bc7eb77205b9ffc",
+    "passed": 15,
+    "skipped": 0,
+    "duration_seconds": 20.86
+  },
+  "mechanical_checks": {
+    "new_files_only": true,
+    "old_tracked_changes": false,
+    "staged_changes": false,
+    "python_ast_files": 5,
+    "notebook_code_cells": 5,
+    "code_cell_ast": "PASS",
+    "outputs_empty": true,
+    "lf_only": true,
+    "trailing_whitespace": false
+  },
+  "new_model_executed": false,
+  "new_gpu_executed": false,
+  "colab_executed": false,
+  "SOURCE_SHA": null,
+  "review_status": "PENDING_A2_A3_A4_A5",
+  "write_lock": "FROZEN_WAITING_INDEPENDENT_REVIEW"
+}

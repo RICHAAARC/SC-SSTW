@@ -1,0 +1,154 @@
+{
+  "schema": "video-temporal-sync-multi-review-closure-v1",
+  "status": "LOCAL_ENGINEERING_REVIEW_CLOSED",
+  "branch": "dev/video-trajectory-blind-validation-v1",
+  "parent_sha": "b255029ec508631f38a124ac49712a5b9299d2a1",
+  "snapshot_sha256": "741497593dd5cc7fc6fc25486f3cee8fa8f5ea616cbc1c06fab20aac58ab7bb7",
+  "tree_sha256": "d9e2c80f4da6ff6029b2d9031bbff2b4ef9302c927a4cd87442cdf22eef4890f",
+  "patch_sha256": "31271c65181d69ea118814ea3dea4709178b023928ed0ebb0283348b963365ec",
+  "frozen_files": 11,
+  "frozen_files_modified": false,
+  "source_revision": "v1 only; no review-driven code changes",
+  "review_provenance": "A2/A3/A4/A5 results supplied by coordinator after their independent same-version reviews; main receipts read directly and hashed",
+  "reviews": {
+    "A1": {
+      "status": "PASS",
+      "tests": "15 passed in 20.86s; 0 skipped"
+    },
+    "A2": {
+      "status": "PASS",
+      "native_fixture": {
+        "local_gradients_by_arm": [
+          0,
+          25,
+          25
+        ],
+        "native_steps": 150,
+        "pre25_identity": true,
+        "later_trajectory_divergence": true
+      },
+      "fft_adjoint_oracle_max_abs_errors": [
+        2.11e-08,
+        2.39e-08
+      ],
+      "window_soft_stats_max_abs_errors": [
+        3.96e-07,
+        1.74e-07
+      ],
+      "hard_statistics": "EXACT",
+      "blockers": []
+    },
+    "A3": {
+      "status": "PASS",
+      "tests": "6 targeted passed in 2.32s",
+      "four_phase_adapter": "PASS",
+      "single_export_failure_preserves_primary": true,
+      "incomplete_main": {
+        "window_files": 101,
+        "window_rows": 3239,
+        "status": "INCOMPLETE",
+        "exit_code": 1
+      },
+      "candidate_batch_hard_exit_preserved": {
+        "window_artifacts": 8,
+        "window_rows": 250,
+        "phase_reads": 8
+      },
+      "notebook_builder_byte_identity": true,
+      "blockers": []
+    },
+    "A4": {
+      "status": "PASS",
+      "source_review": "PASS",
+      "frozen_hashes_verified": 11,
+      "patch_verified": true,
+      "synthesis": "PASS"
+    },
+    "main": {
+      "status": "PASS",
+      "receipts": [
+        {
+          "path": "/home/richar/projects/Video-WM/diagnostics/temporal-sync-multi-main-review-20260930/main_candidate_v1_review.json",
+          "sha256": "fe78a1bee00100c2570bf603f85fb0b79d32e899ec3d674448448243dd4f0103"
+        },
+        {
+          "path": "/home/richar/projects/Video-WM/diagnostics/temporal-sync-multi-main-review-20260930/main_window_interface_v1.json",
+          "sha256": "6995db851ffbb54e4cb7300b79b1e1cd9c08d7b679dc299eeed09116e2a65d51"
+        }
+      ],
+      "full_target": "14 passed, 1 skipped in 24.04s; optional golden environment initially absent",
+      "resolved_optional_golden": "1 passed, 14 deselected in 0.79s",
+      "test_attribution": "All 15 cases exercised across two commands; not a single 15-case run",
+      "saved_LAST_interface": {
+        "payload_statistics": 992,
+        "sum_max_abs_error": 6.764228528410854e-07,
+        "sumsq_max_abs_error": 3.6721551688323473e-07,
+        "hard_statistics": "EXACT",
+        "three_aggregate_orders": "EXACT",
+        "new_model_calls": 0,
+        "new_vae_calls": 0
+      }
+    },
+    "A5": {
+      "status": "PASS",
+      "environment": "Torch 2.5.1 CPU; synthetic media/VAE fixtures; no actual codec/model/GPU",
+      "injected_faults": [
+        "PAYLOAD_MULTI/CROP4_129 partial MP4 save failure, once",
+        "PILOT_MULTI/CROP7_129/g2/WRONG window export failure, once"
+      ],
+      "completed": {
+        "generation": 3,
+        "source_mp4": 3,
+        "derived_mp4": 14,
+        "normalized": 47,
+        "phase_reads": 94,
+        "candidates": 1172,
+        "searches": 28,
+        "evaluations": 56,
+        "window_files": 93,
+        "window_rows": 2989
+      },
+      "all_fixed_slots_preserved": true,
+      "pending_slots": 0,
+      "search_outcomes": {
+        "NO_PILOT": 28,
+        "SEARCH_INCOMPLETE": 2
+      },
+      "export_failure_preserved_primary": true,
+      "actual_main": {
+        "status": "INCOMPLETE",
+        "stage": "FINISHED",
+        "exit_code": 1
+      },
+      "disk_reopen_verified": {
+        "normalized_artifacts": 47,
+        "window_artifacts": 93
+      },
+      "oracle": {
+        "saved_references": 28,
+        "expected_references": 30,
+        "additional_fft": 0,
+        "additional_vae": 0,
+        "additional_search": 0,
+        "missing_primary_not_filled": true
+      },
+      "quality": {
+        "slots": 15,
+        "measured": 13,
+        "missing": 2,
+        "extra_reads": 14,
+        "threshold": null
+      },
+      "blind_sha256_before_and_after": "76b93ad8f31981c3ea286099f86fac870e918efb30eea7572328bca72f0d7bc9",
+      "blockers": []
+    }
+  },
+  "evidence_ceiling": "Engineering implementation and failure-persistence PASS only. No real MULTI video/model/VAE/GPU/Colab execution, synchronization/FPR/quality/generalization/scientific PASS.",
+  "handoff": {
+    "local_source_commit_authorized": true,
+    "push_performed": false,
+    "SOURCE_SHA": null,
+    "next_owner": "Main session: publish this source commit, verify published SHA, then bind the notebook",
+    "further_execution_authorized_here": false
+  }
+}
