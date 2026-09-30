@@ -1,0 +1,64 @@
+{
+  "schema": "overlap-state-B-local-validation-v1",
+  "tests": {
+    "command": "CUDA_VISIBLE_DEVICES='' PYTHONDONTWRITEBYTECODE=1 /home/richar/projects/CEG-WM/alive/CEG-WM/.venv/bin/python -m pytest tests/test_video_overlap_tube_state.py -q -p no:cacheprovider",
+    "passed": 15,
+    "skipped": 0,
+    "seconds": 1.05,
+    "initial_test_issue": "Independent naive serial SSE sum differed from NumPy by 1.3e-17; reference now uses math.fsum, production scores unchanged."
+  },
+  "grid": {
+    "conditions": 1704,
+    "primary": 1680,
+    "counterexamples": 24,
+    "physical_tensors": 292,
+    "seconds": 18.398557738983072,
+    "run_count": 1,
+    "real_model": false,
+    "real_media": false
+  },
+  "integrity_audit": {
+    "path": "/home/richar/projects/Video-WM/diagnostics/overlap-state-a1-development-20260930/b_v1_cost_integrity.json",
+    "sha256": "35723ce4704769e178c983a1293f1585944b26ff5420226a427dc0b1ed41d634",
+    "actual": {
+      "catalog_slots": 5216400,
+      "counterexample_path_costs": 16146,
+      "primary_path_costs": 1195500,
+      "structural_exclusions": 4004754
+    },
+    "expected": {
+      "catalog_slots": 5216400,
+      "counterexample_path_costs": 16146,
+      "primary_path_costs": 1195500,
+      "structural_exclusions": 4004754
+    },
+    "failures": [],
+    "final_runner_sha256": "24dc4c919a42629374a71ae8efb87f83764df7e18c120d8d3c3e4f90d32fd57e",
+    "new_extractions": 0,
+    "new_scores": 0,
+    "original_result_sha256": "7dcdba379d2f2234aae83d5efd29689b0aa82d29ba0673c2f85866db634320d3",
+    "original_runner_sha256": "9ea161f9fdcfee5792e43b044e3bc83ab90cdfd773d9183b032dce55659f7a9e",
+    "source_before_not_recorded_at_execution": true,
+    "source_identity_note": "Grid executed before receipt-only delta: final runner adds start/end source hashes and cost completeness gate. No scoring rerun; original results untouched.",
+    "status": "PASS",
+    "wall_seconds": 1.459747104003327
+  },
+  "independent_receipts": {
+    "cache_status_delta_review.json": {
+      "path": "/home/richar/projects/Video-WM/diagnostics/overlap-state-main-review-20260930/cache_status_delta_review.json",
+      "sha256": "8ebca35bdb7090ca7d02e5b8a6870f16317edef6bc8ed01d030bc6b6f87f3438"
+    },
+    "ideal_roster_oracle.json": {
+      "path": "/home/richar/projects/Video-WM/diagnostics/overlap-state-main-review-20260930/ideal_roster_oracle.json",
+      "sha256": "a7df8756d28f601809fe651ae2ef0e414d9f922c379ec664c58a3ddcc8e08ccc"
+    },
+    "independent_structure.json": {
+      "path": "/home/richar/projects/Video-WM/diagnostics/overlap-state-main-review-20260930/independent_structure.json",
+      "sha256": "addff6518d92831c9c517df7860a8a4c2ec2b6843bf1071599be710cc41b674b"
+    },
+    "pure_ideal_review.json": {
+      "path": "/home/richar/projects/Video-WM/diagnostics/overlap-state-main-review-20260930/pure_ideal_review.json",
+      "sha256": "734e60fb0189065543e339426d74fbbd9d3b0b2677f4e8d46c1a2e967be9bec7"
+    }
+  }
+}

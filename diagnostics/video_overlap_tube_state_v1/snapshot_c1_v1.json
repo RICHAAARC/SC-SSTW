@@ -1,0 +1,62 @@
+{
+  "schema": "overlap-state-C1-freeze-v1",
+  "branch": "dev/video-trajectory-blind-validation-v1",
+  "base_sha": "47405e5b45e9065103dbb1dac447617ddaed4f2e",
+  "files": [
+    {
+      "path": "diagnostics/video_overlap_tube_state_v1/local_validation_c1_v1.json",
+      "sha256": "c50e37d52256e887fa26d10b57e0ff395d68785e386b86e3bb2ce14846387ade",
+      "bytes": 863
+    },
+    {
+      "path": "diagnostics/video_overlap_tube_state_v1/pytest_c1_v1.txt",
+      "sha256": "e50c1f4150d9999948157d010669efe83411dbb1a66dd30e96fe974f6b326977",
+      "bytes": 99
+    },
+    {
+      "path": "docs/video_overlap_tube_state_c1_v1.md",
+      "sha256": "87c92e74d7cc821854b8aaa3a6b70063f0f4db4a336e671288af5cc5dc22bec9",
+      "bytes": 6268
+    },
+    {
+      "path": "experiments/wan_state_clock/configs/video_overlap_tube_state_c1_v1.json",
+      "sha256": "068aa3b911dce0174e1f25a7ceb09e7b9233baf707bdb9a421ccbb36c3140805",
+      "bytes": 4024
+    },
+    {
+      "path": "experiments/wan_state_clock/video_overlap_tube_state_c1_run.py",
+      "sha256": "4be4c011f44224e3bad42b121b6c64db520e61eb626f2a6e1b037e873787a53c",
+      "bytes": 24742
+    },
+    {
+      "path": "main/tube_state/video_overlap_tube_control.py",
+      "sha256": "eb9d0e750ad74d760a040eadbe2b5ac52adaa711c6ffb8f8bd15dbf7d762acc5",
+      "bytes": 6646
+    },
+    {
+      "path": "notebooks/video_overlap_tube_state_c1_v1_colab.ipynb",
+      "sha256": "2933a37c21d16eb67ee521d0ce8c39cd4da3fcf754c9a9d7bdc57529f51ecf4e",
+      "bytes": 11723
+    },
+    {
+      "path": "runtime/wan/video_overlap_tube_state.py",
+      "sha256": "1dc49c892f674815e35504ee9515d2e8c8ca284339026d4eeab1b390161d8574",
+      "bytes": 6566
+    },
+    {
+      "path": "scripts/build_video_overlap_tube_state_c1_notebook.py",
+      "sha256": "a76b5eb330993b83126c6abe490f4f6cb685ca180c27588bb6fc2d6e8cee6171",
+      "bytes": 11159
+    },
+    {
+      "path": "tests/test_video_overlap_tube_state_c1.py",
+      "sha256": "c6981ae2f8164d8d4ed8c9b0a5c98f6f6cc829f5b632918c835c7dc5c2c72c3e",
+      "bytes": 10510
+    }
+  ],
+  "file_count": 10,
+  "tree_sha256": "cf841f7450f6d6e6f25cabe32488baecdce8da1e7c5f12cd138cb7ef4a5eb5fe",
+  "patch_sha256": "20f74412a8183d3cc1da4448a582aa120ed26ff0dc074796c7600fdb8b0ad83d",
+  "B_snapshot_sha256": "07228109c05a26c2e7462a892431248169d18c7fa956b553de4d42ed37a88fbf",
+  "source_binding": null
+}

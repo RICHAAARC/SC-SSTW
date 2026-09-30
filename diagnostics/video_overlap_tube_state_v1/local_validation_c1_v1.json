@@ -1,0 +1,17 @@
+{
+  "schema": "overlap-state-C1-local-validation-v1",
+  "command": "CUDA_VISIBLE_DEVICES='' PYTHONDONTWRITEBYTECODE=1 /home/richar/projects/CEG-WM/alive/CEG-WM/.venv/bin/python -m pytest tests/test_video_overlap_tube_state_c1.py -q -p no:cacheprovider",
+  "passed": 9,
+  "skipped": 0,
+  "seconds": 18.12,
+  "model_weights_loaded": false,
+  "VAE_weights_loaded": false,
+  "real_codec_or_media": false,
+  "GPU_executed": false,
+  "SOURCE_SHA": null,
+  "independent_pilot_receipt": {
+    "path": "/home/richar/projects/Video-WM/diagnostics/overlap-state-main-review-20260930/pilot_control_review.json",
+    "sha256": "43715fe7a24646d4631023a8fdd94dfd1f13efbf274b21abe3b5ef6d056a441d"
+  },
+  "last_receipt_only_delta": "Source receipt additionally lists transitive imported main/tube_state/video_temporal_sync_bridge.py; no execution behavior changed after tests."
+}

@@ -1,0 +1,21 @@
+# Overlap tube state — fixed CPU development result
+
+B supports the frozen ideal same-tensor mechanism within its stated finite family. All 1,680 primary conditions and 24 counterexamples completed in one 18.40 s run. No model, VAE, FFT, codec, GPU or notebook ran. The old writer and all historical evidence remain unchanged.
+
+The 420 marked/correct-key conditions retain their true path in the optimal set: 390 have one optimal finite-model hypothesis and 30 retain the two-path ambiguity caused by missing received row 16. At zero noise the split is 78 unique / 6 ambiguous out of 84. All 60 marked/correct no-edit conditions retain zero edit, with no canonical or compulsory false edit. This is ideal additive tensor noise (sigma/alpha 0,.25,.5), not a VAE survival result or an independent real-data confirmation. Each writer/key control shares its actual physical tensor; these are related controls.
+
+Four spatial blocks carry component partitions plus parity constraints. They are not four independent full-state replicas. Delayed components occupy orthogonal age subspaces in the same actual scatter-added tensor. Full target L2 is 1 with fixed alpha=1/sqrt(1392); crops never rescale. Missing-row ambiguity is preserved, including hidden state positions, rather than filling a path from truth.
+
+The 24 counterexamples remain outside the primary generative family. Exact-copy insertion is byte-identical to repetition and its label cannot be identified from the observations. For correct keys, zero-row and midpoint insertions each fit two repeat paths with nonzero residuals. Their canonical repeat is a model fit, not evidence that the physical operator was repeat. Arbitrary insertion, dynamic phase and individual-RGB edits are unverified.
+
+All results are UNCALIBRATED_DIAGNOSTIC, accepted_payload=False and state_path_accepted=False. OFF and wrong-key argmin fits are retained. A fixed False acceptance flag is not an FPR measurement. The 168 exact-zero OFF observations have status NO_ENERGY, finite audit costs and no canonical path.
+
+Full catalogs/equivalences and failures are shared by reference, never dropped: 20,250 public catalog rows / 3,049 valid / 17,201 structural exclusions. Across conditions the complete costs are 1,195,500 primary + 16,146 counterexample = 1,211,646 valid paths, with 5,216,400 catalog slots and 4,004,754 exclusions. The external package has 1,750 manifest-listed files (~30 MB). Raw results are all committed before truth joining; their hashes are unchanged afterward. Full member sets, feasible tau sets, zero-edit baselines and numeric ties remain available.
+
+Implementation tests: 15 passed, 0 skipped, 1.05 s. The publicly returned catalog/family/receipt and inference indices cannot mutate private cached inference state. This closes A2's cache-alias finding; NO_ENERGY status matches the frozen definition. Independent main structure and ideal-roster receipts are hashed in local_validation_b_v1.json; they are not represented as repeated A1 scans.
+
+The original one grid execution used runner SHA 9ea161f9fdcfee5792e43b044e3bc83ab90cdfd773d9183b032dce55659f7a9e. A later receipt-only delta adds start/end source identity capture and a persisted-cost completeness gate. The original run did not record its starting hashes; this is stated, not retroactively fabricated. The final helper checked every persisted original cost without new projections or scores. Original outputs and their manifest were not modified. Pure inference code did not change across this delta.
+
+Archive clarification: the generic archived codebook defines payload-sign times sync-sign combined codes, but the real sync_rescue_fusion branch calls embedding with enable_sync=False (method.py:191–202). Its old PASS remains evidence of its own protocol, not the new blind mechanism.
+
+C may now prepare a separate MULTI25–49 adapter and user-run notebook candidate. It must measure actual per-step pilot cap / merged delta norms independently of CPU target norm, re-encode actual saved media, use new four-phase/common-R support, and retain real failures. Actual latent host interference, VAE/MP4 survival, position-dependent payload and real edits remain unverified. No source publication or binding is authorized here.

@@ -1,0 +1,51 @@
+{
+  "schema": "video-overlap-tube-state-stage-A-freeze",
+  "base_sha": "47405e5b45e9065103dbb1dac447617ddaed4f2e",
+  "branch": "dev/video-trajectory-blind-validation-v1",
+  "status": "A_FROZEN_UNSCORED_PENDING_MAIN_SCORE_DEFINITION_REVIEW",
+  "files": [
+    {
+      "path": "diagnostics/video_overlap_tube_state_v1/algebra_sanity.json",
+      "sha256": "b1100ee0156d10bd165b978b870c46f9124be24de5bdcc3e9bfe9e77e4894a31",
+      "bytes": 3881
+    },
+    {
+      "path": "diagnostics/video_overlap_tube_state_v1/algebra_sanity.py",
+      "sha256": "5332ca10cb8987e05187a7a02ce30f389571dc10fc19f2f86838edea20e505d9",
+      "bytes": 5220
+    },
+    {
+      "path": "diagnostics/video_overlap_tube_state_v1/archive_review.json",
+      "sha256": "ab0c1ef42e7ad2437fe1d34e289890907cebf6b4fc9cca9b9e029e6c1239de93",
+      "bytes": 4249
+    },
+    {
+      "path": "docs/video_overlap_tube_state_v1.md",
+      "sha256": "833485448f6418f4db4ae3d2f3461f95906604ff428dafc7b0359c6977c182e7",
+      "bytes": 10762
+    },
+    {
+      "path": "experiments/wan_state_clock/configs/video_overlap_tube_state_v1.json",
+      "sha256": "4c45eec080679a8e8c9324a3ea8d2cd37fafbd2c3aad1e8dd250eed8fc444462",
+      "bytes": 14446
+    }
+  ],
+  "tree_sha256": "2e1bc7e610c222b62f2fccd8fd69173be3a55c5b9a9f5e81fc2a1e140cf442b7",
+  "previous_pre_score_draft": {
+    "config_sha256": "021a85f03c5ad43be328fbfab14c5a54648dce90820a18e7346e7be03d97dfd6",
+    "doc_sha256": "789c0ad361ee37b388384fa262fea090442496b21315cefd37b52356fa7cb2b5",
+    "change": "Completed exact score/tie/mask/empty/nonfinite/output semantics before any candidate score; no code or budget adjustment"
+  },
+  "own_validation": "Same actual scatter-added tensor, FP64/FP32 synthesis/projection identity only; see algebra_sanity.json",
+  "candidate_scores": 0,
+  "path_searches": 0,
+  "new_model_gpu_vae_fft_media_calls": 0,
+  "old_tracked_files_changed": false,
+  "independent_main_structure_receipt": {
+    "path": "/home/richar/projects/Video-WM/diagnostics/overlap-state-main-review-20260930/independent_structure.json",
+    "sha256": "addff6518d92831c9c517df7860a8a4c2ec2b6843bf1071599be710cc41b674b"
+  },
+  "next_step": "Await main review of completed scoring definition; no B scoring executed",
+  "source_committed": false,
+  "source_pushed": false
+}

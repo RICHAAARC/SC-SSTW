@@ -1,0 +1,97 @@
+{
+  "status": "ARCHIVE_READ_ONLY_REVIEW",
+  "extracted_files": false,
+  "new_candidate_scoring": false,
+  "archives": [
+    {
+      "path": "/home/richar/projects/Video-WM/archive/视频显式时间对齐/SyncTube.zip",
+      "sha256": "c5d1010d4437310480ab1868dfeb5188a1ff10e7df0226e62a5928c4dceaf343"
+    },
+    {
+      "path": "/home/richar/projects/Video-WM/archive/视频显式时间对齐/SyncTube_results.zip",
+      "sha256": "45d44329c84bd2cd84fc6fa2ec83c5a09b4d595a927f05b46a1aa510bf6a4ade"
+    }
+  ],
+  "entries": [
+    {
+      "archive": "SyncTube.zip",
+      "entry": "SyncTube/configs/method/real_video_tubelet_sync_candidate_runtime.json",
+      "sha256": "c888e3b088227c42eab5accfc73e5179fb96dcc318047bc471e9521666d62e22",
+      "bytes": 1186
+    },
+    {
+      "archive": "SyncTube.zip",
+      "entry": "SyncTube/configs/method/tubelet_sync.json",
+      "sha256": "84bbb2e3bb2c2938899faeddad912e98468f5069cc18e9e0cf7e70760a9db442",
+      "bytes": 1030
+    },
+    {
+      "archive": "SyncTube.zip",
+      "entry": "SyncTube/main/methods/temporal_tubelet_watermark/codebook.py",
+      "sha256": "cb56a0b76c01839adb3eef53835e604cd2709988578e84c1be4a2a4d4bf188bf",
+      "bytes": 6523
+    },
+    {
+      "archive": "SyncTube.zip",
+      "entry": "SyncTube/main/methods/temporal_tubelet_watermark/embedding.py",
+      "sha256": "449e63c6d6778620fb77f4739ce7c5d1ab513f35b20efc75dc8cf3725e708407",
+      "bytes": 9251
+    },
+    {
+      "archive": "SyncTube.zip",
+      "entry": "SyncTube/main/methods/temporal_tubelet_watermark/tubelet_partition.py",
+      "sha256": "868610a71c52d1fce267b2bb0c029dbb51580a5b9552be9c6a6b1448d8847c15",
+      "bytes": 12395
+    },
+    {
+      "archive": "SyncTube.zip",
+      "entry": "SyncTube/main/methods/temporal_tubelet_watermark/synchronization.py",
+      "sha256": "cd4c324eccbbcba3539897180a3ca8ec58283900c170be0d77cd28d0421107a9",
+      "bytes": 8269
+    },
+    {
+      "archive": "SyncTube.zip",
+      "entry": "SyncTube/main/methods/temporal_tubelet_watermark/evidence.py",
+      "sha256": "ba73187aaf3bf824b8c1b476d4a1c64efae850b6250b32f10ac73d6badba00ab",
+      "bytes": 58788
+    },
+    {
+      "archive": "SyncTube.zip",
+      "entry": "SyncTube/main/methods/temporal_tubelet_watermark/method.py",
+      "sha256": "c4c9eae9f898b9e7ff72cfdb7e251bb488b84b5f8c41763c9c05bd34666032f3",
+      "bytes": 14167
+    },
+    {
+      "archive": "SyncTube_results.zip",
+      "entry": "SyncTube_results/numeric_conclusion_data/source_evidence/real_video_vae_latent_probe/zip_extracted_light/artifacts/runtime_config.json",
+      "sha256": "7f2a8e7d38547c30d9fb8b73014445ab728058f6a67f3886c5bfdce1b1e3ae4b",
+      "bytes": 3803
+    },
+    {
+      "archive": "SyncTube_results.zip",
+      "entry": "SyncTube_results/numeric_conclusion_data/source_evidence/real_video_vae_latent_probe/zip_extracted_light/artifacts/stage2_mechanism_decision.json",
+      "sha256": "d330db32211b5107b1e05a69f5e2268363dc1dc1fc9d564f3ae568f7ae20cb45",
+      "bytes": 1665
+    },
+    {
+      "archive": "SyncTube_results.zip",
+      "entry": "SyncTube_results/numeric_conclusion_data/source_evidence/real_video_vae_latent_probe/zip_extracted_light/reports/stage2_mechanism_audit_report.md",
+      "sha256": "e0ad3f119ead297deb2cd8566b2a52612e1c961fdded63e72085a0c3afcea82b",
+      "bytes": 1908
+    },
+    {
+      "archive": "SyncTube_results.zip",
+      "entry": "SyncTube_results/numeric_conclusion_data/final_synctube_artifacts/claim_audit/synctube_claim_audit.csv",
+      "sha256": "7cec4c0c8eb7249d59793bd7b35bbbe371c3022da539f0021385dd27cb047fec",
+      "bytes": 505
+    }
+  ],
+  "findings": [
+    "Real configured length4 defaults to temporal stride4; new stride1 is a distinct construction",
+    "sample_id and tubelet index participate in directions/payload/sync codebook",
+    "Embedding updates one actual tensor but does not establish new overlap budget",
+    "Receiver scoring uses writer before/after support, reference shape and attack metadata; not the new strict blind input boundary",
+    "Ground-truth offset itself is reporting-only in ranking helper; do not overstate that particular field as direct selection",
+    "Archived PASS is retained for its old protocol, not transferred to this new method"
+  ]
+}

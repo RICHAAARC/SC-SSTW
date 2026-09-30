@@ -1,0 +1,72 @@
+{
+  "schema": "overlap-state-B-freeze-v1",
+  "branch": "dev/video-trajectory-blind-validation-v1",
+  "base_sha": "47405e5b45e9065103dbb1dac447617ddaed4f2e",
+  "files": [
+    {
+      "path": "diagnostics/video_overlap_tube_state_v1/algebra_sanity.json",
+      "sha256": "b1100ee0156d10bd165b978b870c46f9124be24de5bdcc3e9bfe9e77e4894a31",
+      "bytes": 3881
+    },
+    {
+      "path": "diagnostics/video_overlap_tube_state_v1/algebra_sanity.py",
+      "sha256": "5332ca10cb8987e05187a7a02ce30f389571dc10fc19f2f86838edea20e505d9",
+      "bytes": 5220
+    },
+    {
+      "path": "diagnostics/video_overlap_tube_state_v1/archive_review.json",
+      "sha256": "ab0c1ef42e7ad2437fe1d34e289890907cebf6b4fc9cca9b9e029e6c1239de93",
+      "bytes": 4249
+    },
+    {
+      "path": "diagnostics/video_overlap_tube_state_v1/implementation_report_b_v1.md",
+      "sha256": "27be01a2a4d28262c9d45bf4c7d85fa9ec77073c1850e5546950d1adf923b897",
+      "bytes": 4254
+    },
+    {
+      "path": "diagnostics/video_overlap_tube_state_v1/local_validation_b_v1.json",
+      "sha256": "0bb4dd331ca4bb4e7a486ff636e5896726cebe803e5debb1dcec7e90a7ea07b7",
+      "bytes": 2960
+    },
+    {
+      "path": "diagnostics/video_overlap_tube_state_v1/mechanism_freeze.json",
+      "sha256": "70b16171a39464ec1dce3cebc4ef03129e17805c8c0600bf871e6311b6ad5e19",
+      "bytes": 2296
+    },
+    {
+      "path": "diagnostics/video_overlap_tube_state_v1/offline_result_manifest_b_v1.json",
+      "sha256": "a9a14d79fb09ebc248039c5c40015ba9d7895a3cd3c03d0d1ff651f7a0c3f700",
+      "bytes": 242748
+    },
+    {
+      "path": "docs/video_overlap_tube_state_v1.md",
+      "sha256": "833485448f6418f4db4ae3d2f3461f95906604ff428dafc7b0359c6977c182e7",
+      "bytes": 10762
+    },
+    {
+      "path": "experiments/wan_state_clock/configs/video_overlap_tube_state_v1.json",
+      "sha256": "4c45eec080679a8e8c9324a3ea8d2cd37fafbd2c3aad1e8dd250eed8fc444462",
+      "bytes": 14446
+    },
+    {
+      "path": "experiments/wan_state_clock/video_overlap_tube_state_run.py",
+      "sha256": "24dc4c919a42629374a71ae8efb87f83764df7e18c120d8d3c3e4f90d32fd57e",
+      "bytes": 16044
+    },
+    {
+      "path": "main/tube_state/video_overlap_tube_state.py",
+      "sha256": "a9019174cfa5b57b1cedd207bda7bfc7de574b14e059eecd5bc478dcd73465b4",
+      "bytes": 10992
+    },
+    {
+      "path": "tests/test_video_overlap_tube_state.py",
+      "sha256": "2ff2d4238adf10e6292fef2a2bd4c6b44fc7d3ad912a63b18688e600666696f6",
+      "bytes": 8584
+    }
+  ],
+  "file_count": 12,
+  "tree_sha256": "63c880dffa4ec3bedb6b998e890ba44e7f3d192243d802a9cca04a7908b8fb40",
+  "tree_algorithm": "SHA256(sorted relative path + two spaces + file SHA256 + newline)",
+  "patch_sha256": "d9ef89162990071424236cb500563601dda1c5fea6a9562a7c6ff86b5f049f71",
+  "external_result_tree": "ef6996774715a6ea7ea36e6a2cabe8a397cb155c16a7163f8e9bcbb1d9780d1a"
+}
