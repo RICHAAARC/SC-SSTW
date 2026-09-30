@@ -1,0 +1,75 @@
+{
+  "schema": "zero-mean-layered-transport-publication-preparation-v1",
+  "created_at": "2026-09-30T16:44:16.160873+00:00",
+  "status": "SOURCE_PUBLISHED_NOTEBOOK_BOUND_LOCALLY",
+  "source_sha": "d4f5d73c506c20f4dfa5e1f74065836c23432064",
+  "source_publication": {
+    "stage": "SOURCE_PUBLISHED_AND_VERIFIED",
+    "verified_at": "2026-09-30T16:42:53.981266+00:00",
+    "base_sha": "53d03ede78cbf0765cbdace02e3417fc98a01c2d",
+    "source_sha": "d4f5d73c506c20f4dfa5e1f74065836c23432064",
+    "source_parent": "53d03ede78cbf0765cbdace02e3417fc98a01c2d",
+    "branch": "dev/video-trajectory-blind-validation-v1",
+    "remote_heads": {
+      "refs/heads/dev/video-trajectory-blind-validation-v1": "d4f5d73c506c20f4dfa5e1f74065836c23432064",
+      "refs/heads/main": "58776e57905b2b50de232b76a89101ae7229713a"
+    },
+    "remote_commit_fetched": "d4f5d73c506c20f4dfa5e1f74065836c23432064",
+    "frozen_snapshot_sha256": "f81eb110eac40f6bd0b1e27a6125ee32eaf5d75099f5676694ec17ce60916353",
+    "frozen_payload_tree_sha256": "0e1879adc2d24a62a359ebb52db63b3fa14a9f999bef7b9c7716e4122e0aec68",
+    "frozen_files_verified": 13,
+    "patch_sha256": "c6d9ccd2fed73a548f4531a636ed4f83f335e84426207b8b72be0640c45431f7",
+    "push_returncode": 0,
+    "real_execution": false
+  },
+  "frozen_snapshot_interpretation": "Historical unbound candidate, exactly preserved. Its payload hashes describe source commit S; notebook and binding test are deliberately changed only in the later delivery commit.",
+  "delivery_commit": "Assigned after this receipt is committed; final remote verification is recorded outside the repository to avoid a self-referencing commit.",
+  "allowed_delivery_paths": [
+    "notebooks/zero_mean_c1_layered_transport_v1_colab.ipynb",
+    "tests/test_zero_mean_c1_layered_transport.py",
+    "diagnostics/zero_mean_c1_layered_transport_v1/publication_preparation_v1.json"
+  ],
+  "notebook": {
+    "path": "notebooks/zero_mean_c1_layered_transport_v1_colab.ipynb",
+    "sha256": "80c8684043f83f4880d156f81a319c399534491ef44d17e4b33ad7d106b31c06",
+    "bytes": 12488,
+    "source_sha": "d4f5d73c506c20f4dfa5e1f74065836c23432064",
+    "cells": 6,
+    "code_cells": 5,
+    "exact_binding_only_diff": true,
+    "empty_outputs": true,
+    "ast": "PASS",
+    "drive_first_cell": "PASS",
+    "display_unchanged": true,
+    "builder_unchanged": true
+  },
+  "binding_test": {
+    "path": "tests/test_zero_mean_c1_layered_transport.py",
+    "sha256": "159d250d177aea74a6f0f5395be2b0ec8ae5d83d2e73ee6e3d930b9c3df48ea0",
+    "draft_builder_validation_preserved": true,
+    "command": [
+      "/home/richar/projects/CEG-WM/alive/CEG-WM/.venv/bin/python",
+      "-m",
+      "pytest",
+      "-q",
+      "tests/test_zero_mean_c1_layered_transport.py",
+      "-k",
+      "notebook_binding",
+      "--disable-warnings"
+    ],
+    "returncode": 0,
+    "stdout": ".                                                                        [100%]\n1 passed, 10 deselected in 0.95s\n",
+    "stderr": "",
+    "stdout_path": "/home/richar/projects/Video-WM/diagnostics/zero-mean-layered-transport-publication-20261001/pytest_notebook_binding.txt",
+    "stdout_sha256": "26a4dd742fba3532aecc7f2dd5438eb78d333ddd9638b4f4ce651cf199e5888b",
+    "scope": "Only affected notebook binding test; no method matrix rerun"
+  },
+  "old_validation": "Initial 11 passed; receipt delta 2 passed / 9 deselected. Historical local_validation.json is unchanged.",
+  "boundaries": {
+    "branch": "dev/video-trajectory-blind-validation-v1",
+    "no_main_merge": true,
+    "real_gpu_vae_codec_colab_execution": false,
+    "method_changes": false,
+    "scientific_pass": false
+  }
+}

@@ -205,18 +205,26 @@ def test_output_guard_prevents_writes_inside_fixed_input(tmp_path):
         with pytest.raises(ValueError,match='read-only'):run.Store(output,create=True,cfg=cfg,input_root=source)
     assert list(source.iterdir())==[]
 
-def test_notebook_draft_fixed_input_dependencies_and_fresh_child(tmp_path):
+def test_notebook_binding_fixed_input_dependencies_and_fresh_child(tmp_path):
     builder_path=run.ROOT/'scripts/build_zero_mean_c1_layered_transport_notebook.py'
     spec=importlib.util.spec_from_file_location('layered_builder',builder_path);builder=importlib.util.module_from_spec(spec);spec.loader.exec_module(builder)
-    candidate=builder.build(output=tmp_path/'n.ipynb')
-    assert candidate.read_bytes()==(run.ROOT/'notebooks/zero_mean_c1_layered_transport_v1_colab.ipynb').read_bytes()
+    draft=json.loads(builder.build(output=tmp_path/'draft.ipynb').read_text())
+    assert draft['metadata']['candidate_binding']['source_sha'] is None
+    assert draft['metadata']['candidate_binding']['status']=='UNPUBLISHED_DRAFT'
+    assert 'SOURCE_SHA = None' in ''.join(draft['cells'][2]['source'])
+    current=run.ROOT/'notebooks/zero_mean_c1_layered_transport_v1_colab.ipynb'
+    binding=json.loads(current.read_text())['metadata']['candidate_binding'];source_sha=binding['source_sha']
+    assert source_sha is None or re.fullmatch('[0-9a-f]{40}',source_sha)
+    assert binding['status']==('PUBLISHED_SHA_BOUND' if source_sha else 'UNPUBLISHED_DRAFT')
+    candidate=builder.build(source_sha,output=tmp_path/'n.ipynb')
+    assert candidate.read_bytes()==current.read_bytes()
     nb=json.loads(candidate.read_text());codes=[''.join(c['source']) for c in nb['cells'] if c['cell_type']=='code']
     assert codes[0]=="from google.colab import drive\ndrive.mount('/content/drive')\n"
     for cell in nb['cells']:
         if cell['cell_type']=='code':
             ast.parse(''.join(cell['source']));assert cell['outputs']==[] and cell['execution_count'] is None
     text='\n'.join(codes)
-    assert 'SOURCE_SHA = None' in text and '20260930T113335113338Z/fixed_reference' in text
+    assert f'SOURCE_SHA = {source_sha!r}' in text and '20260930T113335113338Z/fixed_reference' in text
     assert 'PYTHON=sys.executable' in text and 'torch,torchvision' in text
     for path in re.findall(r"REPO/'([^']+)'",text):
         if 'requirements' in path:assert (run.ROOT/path).is_file()
