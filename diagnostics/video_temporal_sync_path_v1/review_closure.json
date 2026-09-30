@@ -1,0 +1,236 @@
+{
+  "schema": "video-temporal-sync-path-review-closure-v1",
+  "status": "LOCAL_ENGINEERING_REVIEW_CLOSED",
+  "branch": "dev/video-trajectory-blind-validation-v1",
+  "parent_sha": "9d37f9d250f1afc25b9f4ae06ad104b9fb8ee7f6",
+  "snapshot_sha256": "9adeeacce1454344c91cf2c08467984d860fd577e28aa1b012297da4c4be9dde",
+  "source_tree_sha256": "5893eb180a55e5313410aa63ac63275260506dc9cfc8510681ef9cd51bdb0de3",
+  "patch_sha256": "8b9944787ef32587559ca8927c7bfe1ab0d955adfc95d5c22b70b2dca830db1a",
+  "external_results": {
+    "file_count": 33,
+    "root": "/home/richar/projects/Video-WM/diagnostics/temporal-state-path-a1-development-20260930/offline_v1",
+    "artifact_tree_sha256": "6697f458a332dfbc9c32a8aaf47018f07b2833227d4e4dd315371ae715c3c25e",
+    "manifest_path": "diagnostics/video_temporal_sync_path_v1/offline_result_manifest.json",
+    "manifest_sha256": "0dbb0c388b6c80e7fea64d04374ec4d6691afda00aa764c6344fc2cd862d65ab",
+    "unchanged": true
+  },
+  "frozen_files": 9,
+  "frozen_bytes_unchanged": true,
+  "review_revision": "v1; no review-driven source changes",
+  "provenance": "Agent review results supplied by coordinator; main receipts read directly and hashed; no additional tests run for closure",
+  "reviews": {
+    "A1": {
+      "status": "PASS",
+      "tests": "15 passed in18.87s,0 skipped",
+      "offline_seconds": 8.49,
+      "counts": {
+        "inputs_verified": 102,
+        "conditions_complete": 30,
+        "evaluations_complete": 60,
+        "catalog_paths": 78126,
+        "scored_paths": 77862,
+        "scorable_paths": 77862,
+        "zero_edit_paths": 1278,
+        "structurally_excluded": 264,
+        "equivalence_classes": 12024
+      }
+    },
+    "A2": {
+      "status": "PASS",
+      "recommendations": "NO_CODE_CHANGES_REQUIRED",
+      "near_tie_independent_DFS": {
+        "local_traces": 45,
+        "final_paths": 6,
+        "final_classes": 2,
+        "max_score_error": 1.23e-17
+      },
+      "class_members_and_tau_sets": "EXACT",
+      "perfect_noedit_full": "zero-edit/repeat44/repeat45 equivalent; canonical repeat44 still refuses unique synchronization",
+      "zero_energy_crop": {
+        "tied_paths": 3233,
+        "tied_classes": 499
+      },
+      "missing_nonfinite": "catalog preserved; INCOMPLETE; no canonical"
+    },
+    "A3": {
+      "status": "PASS",
+      "recommendations": "NO_CODE_CHANGES_REQUIRED",
+      "tests": "2 targeted passed in6.02s",
+      "independently_verified": [
+        "Legal payload-statistic changes and directory labels do not change supplied pilot arrays",
+        "Extra source_b metadata and hash mismatch rejected; original input hashes unchanged",
+        "All raw files commit before truth joins; fixed completion counters correct"
+      ],
+      "main_matrix_rerun": false
+    },
+    "A4": {
+      "status": "PASS",
+      "source_review": "PASS",
+      "frozen_hashes": 9,
+      "external_output_hashes": 33,
+      "patch_verified": true,
+      "public_structure": {
+        "full_classes": 8,
+        "crop_classes": 499,
+        "all_classes_have_multiple_paths": true
+      }
+    },
+    "main": {
+      "status": "PASS",
+      "receipts": [
+        {
+          "path": "/home/richar/projects/Video-WM/diagnostics/temporal-state-path-main-review-20260930/pure_receiver_review.json",
+          "sha256": "f55f44ebc1e3b8594cc42abfa8abf2ff15170a21bf268817d90e413b36fb5a10"
+        },
+        {
+          "path": "/home/richar/projects/Video-WM/diagnostics/temporal-state-path-main-review-20260930/saved_run_review.json",
+          "sha256": "08aa11bc51843fa669f4c96c9082e52e3139150f36371a0c3bc02c0259701109"
+        }
+      ],
+      "valid_paths_compared": 77862,
+      "equivalence_classes_compared": 12024,
+      "input_hashes": 102,
+      "raw_files": 30,
+      "posthoc_rows": 60,
+      "max_score_error": 3.3306690738754696e-16,
+      "dp_and_top_sets": "MATCH",
+      "raw_before_after_truth_hashes": "IDENTICAL",
+      "source_result_posthoc_identity": "MATCH"
+    },
+    "A5": {
+      "status": "PASS",
+      "recommendations": "NO_CODE_CHANGES_REQUIRED",
+      "reused_evidence": "A1 15 tests, main full independent comparison, A2/A3 independent review",
+      "verified": [
+        "base and9 frozen files",
+        "patch and source tree",
+        "33 outputs and artifact tree",
+        "main receipt identities",
+        "claim ceiling"
+      ],
+      "additional_tests_or_faults": 0
+    }
+  },
+  "bounded_posthoc": {
+    "scope": "Five PILOT_MULTI/correct-key conditions, already-observed unedited full/crop development data",
+    "full": {
+      "canonical_g": 0,
+      "canonical_b": 0,
+      "top_paths": [
+        "ZERO_EDIT",
+        "REPEAT edge44",
+        "REPEAT edge45"
+      ],
+      "ambiguous_observed_i": [
+        44,
+        45
+      ],
+      "class_conditional_singleton_tau": "43/45"
+    },
+    "crops": {
+      "order": [
+        "CROP4_129",
+        "CROP5_129",
+        "CROP6_129",
+        "CROP7_129"
+      ],
+      "top_class_paths_each": 9,
+      "all_top_paths_require_skip": true,
+      "true_zero_edit_top": [
+        false,
+        false,
+        false,
+        false
+      ],
+      "top_phase_g": [
+        0,
+        0,
+        2,
+        1
+      ],
+      "registered_phase_g": [
+        0,
+        3,
+        2,
+        1
+      ],
+      "phase_matches": "3/4",
+      "canonical_b": [
+        0,
+        0,
+        2,
+        3
+      ],
+      "true_b": [
+        4,
+        5,
+        6,
+        7
+      ],
+      "start_matches": "0/4",
+      "event_edges_inclusive": [
+        [
+          13,
+          21
+        ],
+        [
+          13,
+          21
+        ],
+        [
+          12,
+          20
+        ],
+        [
+          12,
+          20
+        ]
+      ],
+      "ambiguous_observed_i_inclusive": [
+        [
+          13,
+          20
+        ],
+        [
+          13,
+          20
+        ],
+        [
+          12,
+          19
+        ],
+        [
+          12,
+          19
+        ]
+      ],
+      "class_conditional_singleton_tau": "23/31 each"
+    },
+    "interpretation": [
+      "Class-conditional singleton tau counts are internal certainty within a selected nonunique/wrong hypothesis, not correct recovered counts or confidence intervals",
+      "CROP5 has the wrong phase; its nominal tau is not truth alignment",
+      "Four unedited crops fitting SKIP expose model fitting bias, not physical edit-detection success",
+      "Partial phase agreement is distinct from start/full-path correctness"
+    ]
+  },
+  "claim_ceiling": {
+    "score_status": "UNCALIBRATED_DIAGNOSTIC",
+    "accepted_payload": false,
+    "model": "Fixed phase, nominal stride4 regular-window zero/one-edit family only",
+    "evidence": "Already-seen saved-window CPU development diagnostic, not independent confirmation",
+    "unique_synchronization": false,
+    "calibrated_FPR": false,
+    "real_edit_validation": false,
+    "dp_parameters_tuned": false,
+    "writer_or_historical_evidence_changed": false,
+    "zero_edit_baseline_retained": true,
+    "new_GPU_model_VAE_FFT_media_Colab_calls": 0,
+    "future_real_edit_and_position_dependent_payload": "UNVERIFIED"
+  },
+  "handoff": {
+    "local_source_commit_authorized": true,
+    "push_performed": false,
+    "merge_performed": false,
+    "next_owner": "Main session decides further research/publication; stop writes after local commit"
+  }
+}

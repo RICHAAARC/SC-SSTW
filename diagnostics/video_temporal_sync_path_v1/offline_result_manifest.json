@@ -1,0 +1,200 @@
+{
+  "schema": "video-temporal-sync-path-offline-artifacts-v1",
+  "root": "/home/richar/projects/Video-WM/diagnostics/temporal-state-path-a1-development-20260930/offline_v1",
+  "file_count": 33,
+  "files": [
+    {
+      "path": "posthoc.json",
+      "sha256": "cde7b5548fc92ed3aafabbb8a5cb2bfe703716d5147129d88549ed3873083c78",
+      "bytes": 96478
+    },
+    {
+      "path": "raw/condition_000.json.gz",
+      "sha256": "4cf38000317dc0966187381082ebfa8f7492f3db24e6ed335de9c605d3233512",
+      "bytes": 6884
+    },
+    {
+      "path": "raw/condition_001.json.gz",
+      "sha256": "41b64cfec07041dd9bbf518806377c2a847a8a214b32a0b05c33f933577ac261",
+      "bytes": 6842
+    },
+    {
+      "path": "raw/condition_002.json.gz",
+      "sha256": "a335403686262d95f2aec35beff52c75ed8aed9cc70af550db0bbc1c959b3d43",
+      "bytes": 176661
+    },
+    {
+      "path": "raw/condition_003.json.gz",
+      "sha256": "b784e74f0183f53fc0946afeea9b1c5a2d45f86d43f3564e0f6dda46b4b94f9a",
+      "bytes": 175820
+    },
+    {
+      "path": "raw/condition_004.json.gz",
+      "sha256": "40409dd3c2f9b017d439bd0210f916d55031a500bfefeb4f411f496afd650cb0",
+      "bytes": 174992
+    },
+    {
+      "path": "raw/condition_005.json.gz",
+      "sha256": "7ae535b7e76d3986349e7830ecba5f32ca31937806c4e92de739f52f4a22f94a",
+      "bytes": 175716
+    },
+    {
+      "path": "raw/condition_006.json.gz",
+      "sha256": "b1297f220ab2537f784c910acad31f13056cfdc168e40c4407990d70992da98a",
+      "bytes": 175429
+    },
+    {
+      "path": "raw/condition_007.json.gz",
+      "sha256": "230add77854edddafbf2fdb1b63c154e6b785e1ca50f43f3a1b03b42c77abb9c",
+      "bytes": 174725
+    },
+    {
+      "path": "raw/condition_008.json.gz",
+      "sha256": "518238649424089cce92cfd2a0ffa529db60568a790aecdbf3bdc32e15447ee3",
+      "bytes": 176294
+    },
+    {
+      "path": "raw/condition_009.json.gz",
+      "sha256": "df41429f4065b1baf953751c23583848d7699d9616ef02f825290da03d73b470",
+      "bytes": 175462
+    },
+    {
+      "path": "raw/condition_010.json.gz",
+      "sha256": "f8a367991f6747de61aa181dc607e0ee261d17c9e227052f1cb849611658e359",
+      "bytes": 6788
+    },
+    {
+      "path": "raw/condition_011.json.gz",
+      "sha256": "6edfa4d9e308e6a5ba73521801ebe9b5bc7bd3aeb6cb660d8615ee816aeba9db",
+      "bytes": 6841
+    },
+    {
+      "path": "raw/condition_012.json.gz",
+      "sha256": "f6a1e4369d18174af3a53ae51f7e6c5f5af4a5c598a5da110203914a15772680",
+      "bytes": 175774
+    },
+    {
+      "path": "raw/condition_013.json.gz",
+      "sha256": "41422f2b8aadd2506da4bcb27f3bee75e6ca5adfd9f004714478872a53293adb",
+      "bytes": 176407
+    },
+    {
+      "path": "raw/condition_014.json.gz",
+      "sha256": "4c7066720d7dd31fdd2325e423a2f3ef59a06ccd5cbda7d76b5ddff849ca59a1",
+      "bytes": 176091
+    },
+    {
+      "path": "raw/condition_015.json.gz",
+      "sha256": "0563af84f6ec678ec443f8b2856137a0db02d51fa765a567a6ea677bc78219b0",
+      "bytes": 175762
+    },
+    {
+      "path": "raw/condition_016.json.gz",
+      "sha256": "ab1ae88b9637fea11b0c030dcc7dd6616d143e1a342b566247e89f8db8ee4458",
+      "bytes": 174667
+    },
+    {
+      "path": "raw/condition_017.json.gz",
+      "sha256": "778e0fdac46d697b87cbb62c8d195ee0c184035de5e941a7487e39849c5493a6",
+      "bytes": 175891
+    },
+    {
+      "path": "raw/condition_018.json.gz",
+      "sha256": "3d6c0816ec7c965fc36da1f954e46948c4e31417f34197ab3199bebf80fdb692",
+      "bytes": 175767
+    },
+    {
+      "path": "raw/condition_019.json.gz",
+      "sha256": "635ff622125e9780b736109cb215ecc653333c15d89494e5ffe8a4535803f140",
+      "bytes": 176308
+    },
+    {
+      "path": "raw/condition_020.json.gz",
+      "sha256": "172a3e8f30e6b2ebe871112397d10b54f14327a39e777e9c4e9ab98dfa605360",
+      "bytes": 6706
+    },
+    {
+      "path": "raw/condition_021.json.gz",
+      "sha256": "572beaaa9ed1747d597548d3fcd43c45b4c95822612e3806d0100b4d20c9a195",
+      "bytes": 6862
+    },
+    {
+      "path": "raw/condition_022.json.gz",
+      "sha256": "02e97845127487f6ba4a9ef1ac5e21813fad65ae49ead7536ae68da5c48b4e34",
+      "bytes": 174179
+    },
+    {
+      "path": "raw/condition_023.json.gz",
+      "sha256": "7af79c62c87625d1d2088f72135193684efc218b1e9fdda4bcdeb8399252ecba",
+      "bytes": 176123
+    },
+    {
+      "path": "raw/condition_024.json.gz",
+      "sha256": "50926f414c622c9ad2c8838f1cc2a7c0c6dad75d4577dba5530bc9dc37236f01",
+      "bytes": 174194
+    },
+    {
+      "path": "raw/condition_025.json.gz",
+      "sha256": "06f255fa0d1701aa5e30562f94fb8c497cc2e1861927edfdb9ef11cf1bcd994e",
+      "bytes": 176103
+    },
+    {
+      "path": "raw/condition_026.json.gz",
+      "sha256": "c585c18810478009b33b690291ebe9d52ea6f858f0f95f680d6ef1a0ee64559a",
+      "bytes": 174099
+    },
+    {
+      "path": "raw/condition_027.json.gz",
+      "sha256": "bcfb60864a36eaa71a03ffbd6882177778dc4282cd3e5368bceaccd487636f42",
+      "bytes": 175910
+    },
+    {
+      "path": "raw/condition_028.json.gz",
+      "sha256": "9edd7e17e4589eb59bbc2938e6b9c83e51c83b5a076366736bac2995ccabced2",
+      "bytes": 173839
+    },
+    {
+      "path": "raw/condition_029.json.gz",
+      "sha256": "1b26231596535af575c6e5a5f83c8bb4737f0f09426f3d348b9165b2ae02e05e",
+      "bytes": 175648
+    },
+    {
+      "path": "result.json",
+      "sha256": "a7e8c25f4e7206909e69b0f84865213bedc1de17c29965d30f72f32a6489e7bb",
+      "bytes": 93991
+    },
+    {
+      "path": "source_receipt.json",
+      "sha256": "99d07a44c6b180df3051a6b246f0a418e9bf823500b68905396ea926e26d8b5f",
+      "bytes": 916
+    }
+  ],
+  "artifact_tree_sha256": "6697f458a332dfbc9c32a8aaf47018f07b2833227d4e4dd315371ae715c3c25e",
+  "tree_definition": "SHA256(sorted relative path + NUL + file SHA256 hex + LF)",
+  "raw_storage": "30 gzip JSON files; complete catalogs/equivalence classes/optimal-predecessor graphs, no truncation",
+  "source_input_files": 102,
+  "source_result_sha256": "9e1accbe812e9864b8c4581cfbedfa2e262e40bd7533926294d783ba223b033f",
+  "inputs_hash_schema_verified": 102,
+  "source_input_hash_inventory": "result.json inputs table; all102 slots preserved",
+  "fixed_counts": {
+    "inputs_verified": 102,
+    "conditions_complete": 30,
+    "evaluations_complete": 60,
+    "catalog_paths": 78126,
+    "scored_paths": 77862,
+    "scorable_paths": 77862,
+    "zero_edit_paths": 1278,
+    "structurally_excluded": 264,
+    "equivalence_classes": 12024
+  },
+  "raw_unchanged_during_posthoc": true,
+  "new_model_or_vae_or_media_calls": {
+    "model": 0,
+    "gpu": 0,
+    "vae": 0,
+    "fft": 0,
+    "media_read": 0,
+    "media_write": 0
+  },
+  "evidence_ceiling": "Already observed real-run windows, CPU development analysis only; no new media/edit/model experiment"
+}

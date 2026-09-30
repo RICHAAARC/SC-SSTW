@@ -1,0 +1,79 @@
+{
+  "status": "CPU_ENGINEERING_AND_DEVELOPMENT_EXECUTION_COMPLETE",
+  "base_sha": "9d37f9d250f1afc25b9f4ae06ad104b9fb8ee7f6",
+  "branch": "dev/video-trajectory-blind-validation-v1",
+  "environment": {
+    "executable": "/home/richar/projects/CEG-WM/alive/CEG-WM/.venv/bin/python",
+    "python": "3.12.3 (main, Aug 31 2026, 10:18:26) [GCC 13.3.0]",
+    "packages": {
+      "numpy": "2.5.2",
+      "pytest": "9.1.1"
+    },
+    "CUDA_VISIBLE_DEVICES": "",
+    "PYTHONDONTWRITEBYTECODE": "1",
+    "borrowed_environment_modified": false
+  },
+  "pre_score_mechanism": {
+    "config_path": "experiments/wan_state_clock/configs/video_temporal_sync_path_v1.json",
+    "config_sha256": "38a39b2f96f63a807dd0d8e48cf550912aad33f3dc888a66480bb513176793e1",
+    "doc_path": "docs/video_temporal_sync_path_v1.md",
+    "doc_sha256": "0bd9687b8cd264a81ee08010cd6b6e6889900fc03d9c79c6fa1ad35362c8aa3c",
+    "meaning": "Fixed before this path scoring; the source run had already been observed, so this is not unseen-data preregistration or independent confirmation",
+    "unchanged_after_scoring": true
+  },
+  "tests": {
+    "command": "CUDA_VISIBLE_DEVICES='' PYTHONDONTWRITEBYTECODE=1 /home/richar/projects/CEG-WM/alive/CEG-WM/.venv/bin/python -m pytest tests/test_video_temporal_sync_path.py -q",
+    "passed": 15,
+    "failed": 0,
+    "skipped": 0,
+    "duration_seconds": 18.87,
+    "earlier_attempts": [
+      "Initial13 tests deselected by repository marker filter; unit marker added before any tests ran",
+      "Initial13 selected tests passed in13.43s; source-unavailable and DP mismatch tests then added; final15 run is authoritative"
+    ]
+  },
+  "offline": {
+    "command": "CUDA_VISIBLE_DEVICES='' PYTHONDONTWRITEBYTECODE=1 /home/richar/projects/CEG-WM/alive/CEG-WM/.venv/bin/python -m experiments.wan_state_clock.video_temporal_sync_path_run --output /home/richar/projects/Video-WM/diagnostics/temporal-state-path-a1-development-20260930/offline_v1",
+    "exit_code": 0,
+    "wall_seconds": 8.49,
+    "status": "EXECUTION_COMPLETE",
+    "counts": {
+      "inputs_verified": 102,
+      "conditions_complete": 30,
+      "evaluations_complete": 60,
+      "catalog_paths": 78126,
+      "scored_paths": 77862,
+      "scorable_paths": 77862,
+      "zero_edit_paths": 1278,
+      "structurally_excluded": 264,
+      "equivalence_classes": 12024
+    },
+    "artifact_manifest": "diagnostics/video_temporal_sync_path_v1/offline_result_manifest.json",
+    "artifact_tree_sha256": "6697f458a332dfbc9c32a8aaf47018f07b2833227d4e4dd315371ae715c3c25e",
+    "raw_gzip_bytes": 4252784,
+    "max_dp_vs_enumeration_score_error": 1.1102230246251565e-16,
+    "max_zero_edit_vs_old_global_score_error": 2.220446049250313e-16,
+    "all_dp_top_path_sets_match": true,
+    "raw_before_after_equal": true
+  },
+  "observations": {
+    "structurally_ambiguous_conditions": 30,
+    "distinct_top_classes_each": 1,
+    "canonical_paths_with_event": 30,
+    "top_classes_containing_zero_edit": 4,
+    "all_top_paths_require_event": 26,
+    "accepted_payload_count": 0,
+    "score_status": "UNCALIBRATED_DIAGNOSTIC"
+  },
+  "independent_main_pure_receipt": {
+    "path": "/home/richar/projects/Video-WM/diagnostics/temporal-state-path-main-review-20260930/pure_receiver_review.json",
+    "sha256": "f55f44ebc1e3b8594cc42abfa8abf2ff15170a21bf268817d90e413b36fb5a10"
+  },
+  "formal_full_snapshot_reviews": "PENDING_A2_A3_A4_A5",
+  "new_model_loaded": false,
+  "new_gpu_executed": false,
+  "new_vae_executed": false,
+  "new_mp4_read_or_encoded": false,
+  "source_pushed": false,
+  "evidence_ceiling": "CPU tests and fixed post-observation saved-window development diagnostic; no unique physical synchronization, actual edit detection, calibrated FPR, quality or science PASS"
+}

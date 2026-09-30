@@ -1,0 +1,79 @@
+{
+  "schema": "video-temporal-sync-path-freeze-v1",
+  "branch": "dev/video-trajectory-blind-validation-v1",
+  "base_sha": "9d37f9d250f1afc25b9f4ae06ad104b9fb8ee7f6",
+  "file_count": 9,
+  "files": [
+    {
+      "path": "diagnostics/video_temporal_sync_path_v1/implementation_report.md",
+      "sha256": "6a0760abef57f4ec5d3fca5d13eb7645f2bcd65a3befa39a2aee0e8c502697c6",
+      "bytes": 5104
+    },
+    {
+      "path": "diagnostics/video_temporal_sync_path_v1/local_validation.json",
+      "sha256": "040a3765a06a25ac52c1885399e6dff1b50e4836e27f42e59f15caf984068da8",
+      "bytes": 3738
+    },
+    {
+      "path": "diagnostics/video_temporal_sync_path_v1/offline_result_manifest.json",
+      "sha256": "0dbb0c388b6c80e7fea64d04374ec4d6691afda00aa764c6344fc2cd862d65ab",
+      "bytes": 6656
+    },
+    {
+      "path": "diagnostics/video_temporal_sync_path_v1/pytest_v1.txt",
+      "sha256": "0aee415c5842dad7c4cd50e836d617579b0640ca02bec9fefdf12394a52210ff",
+      "bytes": 100
+    },
+    {
+      "path": "docs/video_temporal_sync_path_v1.md",
+      "sha256": "0bd9687b8cd264a81ee08010cd6b6e6889900fc03d9c79c6fa1ad35362c8aa3c",
+      "bytes": 3373
+    },
+    {
+      "path": "experiments/wan_state_clock/configs/video_temporal_sync_path_v1.json",
+      "sha256": "38a39b2f96f63a807dd0d8e48cf550912aad33f3dc888a66480bb513176793e1",
+      "bytes": 4226
+    },
+    {
+      "path": "experiments/wan_state_clock/video_temporal_sync_path_run.py",
+      "sha256": "e2597f2d0b38a28b323ca7cb11de16a4f457e2aba079a65249c40d661caa9d82",
+      "bytes": 17202
+    },
+    {
+      "path": "main/tube_state/video_temporal_sync_path.py",
+      "sha256": "cfb4d3cb44ee82d5d4c000fca05d87bca6564e56244b745b5fad05ad1251ba5e",
+      "bytes": 12585
+    },
+    {
+      "path": "tests/test_video_temporal_sync_path.py",
+      "sha256": "8b7accbf86355f23051e9619b01aeca92949661411101748dd96b5dfc0cf837e",
+      "bytes": 12653
+    }
+  ],
+  "tree_sha256": "5893eb180a55e5313410aa63ac63275260506dc9cfc8510681ef9cd51bdb0de3",
+  "tree_definition": "SHA256(sorted path + NUL + file SHA256 hex + LF)",
+  "patch": {
+    "path": "diagnostics/video_temporal_sync_path_v1/candidate_v1.patch",
+    "sha256": "8b9944787ef32587559ca8927c7bfe1ab0d955adfc95d5c22b70b2dca830db1a",
+    "bytes": 69288,
+    "reverse_apply_check": "PASS"
+  },
+  "external_complete_results": {
+    "root": "/home/richar/projects/Video-WM/diagnostics/temporal-state-path-a1-development-20260930/offline_v1",
+    "file_count": 33,
+    "artifact_tree_sha256": "6697f458a332dfbc9c32a8aaf47018f07b2833227d4e4dd315371ae715c3c25e",
+    "manifest": "diagnostics/video_temporal_sync_path_v1/offline_result_manifest.json",
+    "manifest_sha256": "0dbb0c388b6c80e7fea64d04374ec4d6691afda00aa764c6344fc2cd862d65ab"
+  },
+  "tests": {
+    "passed": 15,
+    "skipped": 0,
+    "duration_seconds": 18.87
+  },
+  "source_scope": "Only new files; old tracked files unchanged; no staged changes",
+  "pre_score_config_doc_unchanged": true,
+  "new_model_or_vae_or_media_executed": false,
+  "source_committed": false,
+  "source_pushed": false,
+  "status": "FROZEN_WAITING_A2_A3_A4_A5_REVIEW"
+}
