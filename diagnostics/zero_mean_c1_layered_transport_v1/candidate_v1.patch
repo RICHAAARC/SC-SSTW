@@ -1,0 +1,1735 @@
+diff --git a/diagnostics/zero_mean_c1_layered_transport_v1/design_freeze_v1.json b/diagnostics/zero_mean_c1_layered_transport_v1/design_freeze_v1.json
+new file mode 100644
+index 0000000..db1e9a9
+--- /dev/null
++++ b/diagnostics/zero_mean_c1_layered_transport_v1/design_freeze_v1.json
+@@ -0,0 +1,35 @@
++{
++  "schema": "zero-mean-layered-transport-design-freeze-v1",
++  "base_sha": "53d03ede78cbf0765cbdace02e3417fc98a01c2d",
++  "files": [
++    {
++      "path": "diagnostics/zero_mean_c1_layered_transport_v1/input_inventory.json",
++      "sha256": "0a6cff92c59592e6c938071cc700848a8a483df7661bcad589d77b2ddfb4baf5",
++      "bytes": 6711
++    },
++    {
++      "path": "docs/zero_mean_c1_layered_transport_v1.md",
++      "sha256": "57f38f1a11b6e5eb4ef1820c172d02d1d4c79472bbfa9aec92392eacfb6c86c6",
++      "bytes": 5146
++    },
++    {
++      "path": "experiments/wan_state_clock/configs/zero_mean_c1_layered_transport_v1.json",
++      "sha256": "771019d83ca18e7edde3a0dd130441e9179e65ae1d2dc30c4f113612c78d0062",
++      "bytes": 12442
++    }
++  ],
++  "tree_sha256": "19fcefce639809a632372ce652e08a26d737cf299a189f7f0a4d3ad4531ed75d",
++  "tree_recipe": "sorted path+NUL+sha256+LF, UTF8 SHA256",
++  "design_stage": "No runner implementation or numerical scoring at this freeze; proceed to authorized local implementation afterward.",
++  "source_binding": null,
++  "allowed_new_files": [
++    "experiments/wan_state_clock/configs/zero_mean_c1_layered_transport_v1.json",
++    "docs/zero_mean_c1_layered_transport_v1.md",
++    "runtime/wan/zero_mean_c1_layered_transport.py",
++    "experiments/wan_state_clock/zero_mean_c1_layered_transport_run.py",
++    "scripts/build_zero_mean_c1_layered_transport_notebook.py",
++    "notebooks/zero_mean_c1_layered_transport_v1_colab.ipynb",
++    "tests/test_zero_mean_c1_layered_transport.py",
++    "diagnostics/zero_mean_c1_layered_transport_v1/*"
++  ]
++}
+diff --git a/diagnostics/zero_mean_c1_layered_transport_v1/implementation_report.md b/diagnostics/zero_mean_c1_layered_transport_v1/implementation_report.md
+new file mode 100644
+index 0000000..9ebe056
+--- /dev/null
++++ b/diagnostics/zero_mean_c1_layered_transport_v1/implementation_report.md
+@@ -0,0 +1,15 @@
++# Matched five-layer replay: local candidate
++
++The fixed candidate reuses the three saved run20260930T113335113338Z terminals. It changes neither writer nor receiver. A user-run FP32 VAE child will decode each terminal once and retain the full clamped float and Q8 raster, then form matched first and second MP4s from that same chain. All four re-encodes consume181 complete frames; the unchanged reader uses common regular1..44 at fixed g0. The earlier terminal R45 result is not merged into these ranks.
++
++Fixed primary output is15normalized,30path/payload raw,5220valid costs plus all117450catalog/112230excluded slots,30path posthoc and60message evaluations. The call plan is0Transformer/3decode/12encode/6MP4save/6MP4read. Preclamp statistics, all46latent steps and raw local projections are retained. The original FULL.phase0 tensor/raw and original source/FULL hashes are separate historical references. Their absence does not fail the primary chain; whole-package/reference status stays explicit.
++
++Canonical result commits precede the recoverable blind projection. Model load failure preserves independently scored terminals; float encode failure does not prevent Q8 or matched media. Fresh-child monitoring terminates/waits before loading the latest canonical result. The output directory is refused if it resolves into the read-only input run. Raw commits precede truth joins. Posthoc records original-tolerance true rank/ties, unique top/path-start/false-edit facts and each layer's own winner, plus the same hash-bound original FULL.phase0 opponent across layers. Neither fixed opponents nor truth select a new path.
++
++Validation: first run11passed,0skip in12.57s. Its pytest stdout is preserved; only the surrounding shell's trailing exit-variable quoting failed after pytest completed. After a receipt-only runtime addition and a stronger extra-row test, the two affected tests passed in6.23s (9deselected). The full suite was not rerun. Both actual stdout files and execution receipts are included. All VAE/codec calls in these tests are mocks or lightweight fake classes using full geometry; original infer/family and quantizer are exercised. No real VAE/model/codec, GPU, Colab or saved-run ranking was executed by A1.
++
++Main independently produced the separate saved-terminal R44 baseline at /home/richar/projects/Video-WM/diagnostics/zero-mean-transfer-main-review-20260930/terminal_r44_baseline.json (SHA8144a1f5101c1bd1404b4bac4d624d5319f0a766e25f757d32d27d1b61d863d4). It reports6conditions/1044cost and OVERLAP/CORRECT true uniquely top among174, cost0.00023118449798124893, gap1.7460808162387176e-6. This is independent existing-input CPU evidence, not the new matched transfer experiment and not a rerun by A1.
++
++The new notebook is notebooks/zero_mean_c1_layered_transport_v1_colab.ipynb, with SOURCE_SHA=None. Its6cells/AST/Drive-first-cell/empty outputs/currentPython/Torch-pair probe/fresh child/dependency paths and builder identity were checked. It is an unpublished candidate, not a usable published Colab link. New source must be reviewed, published and immutably bound before the user executes it.
++
++No old tracked files or frozen design bytes changed. No source commit or push was made. Primary history and package completeness are separate from scientific conclusions. All scores remain uncalibrated and unaccepted; g0 is fixed, not recovered. The float layer is decode+mapping+clamp+encode, and the new decode need not reproduce the unavailable historical float buffer bitwise. No crop/four-phase matrix, C2, new watermark, threshold, ranking rule or quality gate was added.
+diff --git a/diagnostics/zero_mean_c1_layered_transport_v1/input_inventory.json b/diagnostics/zero_mean_c1_layered_transport_v1/input_inventory.json
+new file mode 100644
+index 0000000..fc828aa
+--- /dev/null
++++ b/diagnostics/zero_mean_c1_layered_transport_v1/input_inventory.json
+@@ -0,0 +1,199 @@
++{
++  "schema": "zero-mean-layered-transport-input-inventory-v1",
++  "inventory_mode": "JSON metadata and directory inspection only; no tensor scoring/hash sweep or media execution",
++  "fixed_input_run": "20260930T113335113338Z",
++  "input_source_sha": "05beeaa423fa4f2cf95d69cff23e4c5eda4c5841",
++  "result_sha256": "5ccd4138fdd0b3bf368a9c7fb76b8f77108e935d73ad68ccfed600d9aa39cbdd",
++  "local_root": "/home/richar/projects/Video-WM/diagnostics/zero-mean-c1-real-run-audit-20260930/saved/fixed_reference",
++  "drive_root": "G:\\我的云端硬盘\\Video-WM\\Video-Overlap-Zero-Mean-C1-V1\\20260930T113335113338Z\\fixed_reference",
++  "colab_root": "/content/drive/MyDrive/Video-WM/Video-Overlap-Zero-Mean-C1-V1/20260930T113335113338Z/fixed_reference",
++  "local_counts": {
++    ".log": 2,
++    ".gz": 132,
++    ".json": 2,
++    ".pt": 6,
++    ".npz": 75
++  },
++  "drive_counts_from_parent_readonly_listing": {
++    "gz": 132,
++    "json": 2,
++    "log": 2,
++    "mp4": 18,
++    "npz": 75,
++    "pt": 63
++  },
++  "missing_original_buffers": [
++    "clamped float",
++    "RGB8 raster",
++    "source-MP4 reencoded normalized latent"
++  ],
++  "required_primary": [
++    {
++      "arm": "OFF",
++      "kind": "terminal",
++      "relative_path": "OFF/terminal.pt",
++      "sha256": "5bcd4c4fdd3c47d2a847b64cd3b6aa2817bbd37a0398c2ea9facd5b9d75117f0",
++      "local_exists": true
++    },
++    {
++      "arm": "PAYLOAD_MULTI",
++      "kind": "terminal",
++      "relative_path": "PAYLOAD_MULTI/terminal.pt",
++      "sha256": "88686856f8a73a3fb8abd1b9a8454f512906a4455c0333532ea2b706982a80af",
++      "local_exists": true
++    },
++    {
++      "arm": "OVERLAP_MULTI",
++      "kind": "terminal",
++      "relative_path": "OVERLAP_MULTI/terminal.pt",
++      "sha256": "5c96d514454cd1b23e700f0072b4a40c073e8a038269962743904fb6189c5164",
++      "local_exists": true
++    }
++  ],
++  "optional_historical": [
++    {
++      "arm": "OFF",
++      "kind": "FULL_phase0_tensor",
++      "relative_path": "OFF/FULL_RESAVED181.phase0.pt",
++      "sha256": "6536b7d634a8b8ac9ebd0e44cb7120dfa7efe3669d044c499774cb7b66dc1dae",
++      "local_exists": true
++    },
++    {
++      "arm": "OFF",
++      "kind": "historical_source_mp4",
++      "relative_path": "OFF/source.mp4",
++      "sha256": "9a48c66ef0c052b23f80623d4323da7c26310bd3746ab773e594192e74df8b88",
++      "local_exists": false
++    },
++    {
++      "arm": "OFF",
++      "kind": "historical_FULL_mp4",
++      "relative_path": "OFF/FULL_RESAVED181.mp4",
++      "sha256": "cb42a4351d5ff75da61191d12c2922ac838aa02b0f7ff562570cccd9b20dd7ee",
++      "local_exists": false
++    },
++    {
++      "arm": "OFF",
++      "kind": "FULL_phase0_raw",
++      "key_id": "CORRECT",
++      "relative_path": "OFF/FULL_RESAVED181.phase0.CORRECT.raw.json.gz",
++      "sha256": "14623dc770941a262197778e5b02e657caaec2710b203c5349959dcd8e727758",
++      "local_exists": true,
++      "R": 44,
++      "scored": 174
++    },
++    {
++      "arm": "OFF",
++      "kind": "FULL_phase0_raw",
++      "key_id": "WRONG",
++      "relative_path": "OFF/FULL_RESAVED181.phase0.WRONG.raw.json.gz",
++      "sha256": "4434e585905a3a6ba40075ba826e278eb827e4b924eaf49a6756afe9de79011a",
++      "local_exists": true,
++      "R": 44,
++      "scored": 174
++    },
++    {
++      "arm": "PAYLOAD_MULTI",
++      "kind": "FULL_phase0_tensor",
++      "relative_path": "PAYLOAD_MULTI/FULL_RESAVED181.phase0.pt",
++      "sha256": "ad6f5301088e61740a8f00b9e0c2d6ae6ed60c6b5d0fc4fe5da45abfecc3a928",
++      "local_exists": true
++    },
++    {
++      "arm": "PAYLOAD_MULTI",
++      "kind": "historical_source_mp4",
++      "relative_path": "PAYLOAD_MULTI/source.mp4",
++      "sha256": "c858ec7339a95f33b787141c687c49cb13c2003dc67ef767ec307282a3ec53e8",
++      "local_exists": false
++    },
++    {
++      "arm": "PAYLOAD_MULTI",
++      "kind": "historical_FULL_mp4",
++      "relative_path": "PAYLOAD_MULTI/FULL_RESAVED181.mp4",
++      "sha256": "baa90e56d3eed79c646c25b06aa4b09b5d6fc4f00447679375aa6c5666ba8e77",
++      "local_exists": false
++    },
++    {
++      "arm": "PAYLOAD_MULTI",
++      "kind": "FULL_phase0_raw",
++      "key_id": "CORRECT",
++      "relative_path": "PAYLOAD_MULTI/FULL_RESAVED181.phase0.CORRECT.raw.json.gz",
++      "sha256": "8d29c373fb9d9e1ff7dc7526c8fc9cda308e1b0cc8d6a06d4ff201ddf6231874",
++      "local_exists": true,
++      "R": 44,
++      "scored": 174
++    },
++    {
++      "arm": "PAYLOAD_MULTI",
++      "kind": "FULL_phase0_raw",
++      "key_id": "WRONG",
++      "relative_path": "PAYLOAD_MULTI/FULL_RESAVED181.phase0.WRONG.raw.json.gz",
++      "sha256": "cf68a9dd058e7ce23f76b080f045625105c35f62804478c6c4e5919cc5e92a05",
++      "local_exists": true,
++      "R": 44,
++      "scored": 174
++    },
++    {
++      "arm": "OVERLAP_MULTI",
++      "kind": "FULL_phase0_tensor",
++      "relative_path": "OVERLAP_MULTI/FULL_RESAVED181.phase0.pt",
++      "sha256": "036d40c14a5ed8c6ba2913a6d22458f80ecca82701a1847407bd91f4818d887f",
++      "local_exists": true
++    },
++    {
++      "arm": "OVERLAP_MULTI",
++      "kind": "historical_source_mp4",
++      "relative_path": "OVERLAP_MULTI/source.mp4",
++      "sha256": "6cd119f77d14e10b84b100894ef3f14bff5b2d3820158872497478c1f9852bed",
++      "local_exists": false
++    },
++    {
++      "arm": "OVERLAP_MULTI",
++      "kind": "historical_FULL_mp4",
++      "relative_path": "OVERLAP_MULTI/FULL_RESAVED181.mp4",
++      "sha256": "2dc2db3b6eb7b6eb132611de14989ace1af4778eaed76733473f2c5867ac9d8d",
++      "local_exists": false
++    },
++    {
++      "arm": "OVERLAP_MULTI",
++      "kind": "FULL_phase0_raw",
++      "key_id": "CORRECT",
++      "relative_path": "OVERLAP_MULTI/FULL_RESAVED181.phase0.CORRECT.raw.json.gz",
++      "sha256": "514b98afc22be62139d658bfb3ed7a4381e1080abfe8a7f8be002488c16870e2",
++      "local_exists": true,
++      "R": 44,
++      "scored": 174
++    },
++    {
++      "arm": "OVERLAP_MULTI",
++      "kind": "FULL_phase0_raw",
++      "key_id": "WRONG",
++      "relative_path": "OVERLAP_MULTI/FULL_RESAVED181.phase0.WRONG.raw.json.gz",
++      "sha256": "6da69df3e12a8f6b604ddb704b276c7222e0edc81562bc21fd3f26196b6a1594",
++      "local_exists": true,
++      "R": 44,
++      "scored": 174
++    }
++  ],
++  "inherited_previous_verification": {
++    "path": "/home/richar/projects/Video-WM/diagnostics/zero-mean-c1-writer-analysis-20260930/validation.json",
++    "sha256": "b538e7149035ab1fe67c6ae5691209105c0340a46d4f003b645952a75d36221c",
++    "consumed_inputs": 94,
++    "source_files": 15,
++    "not_reexecuted": true
++  },
++  "original_environment": {
++    "python": "3.13.15 (main, Aug  6 2026, 11:06:22) [GCC 13.3.0]",
++    "executable": "/usr/bin/python3",
++    "packages": {
++      "torch": "2.11.0+cu128",
++      "torchvision": "0.26.0+cu128",
++      "diffusers": "0.39.0",
++      "transformers": "4.57.6",
++      "accelerate": "1.14.0",
++      "numpy": "2.1.3",
++      "imageio": "2.37.4",
++      "imageio-ffmpeg": "0.6.0"
++    }
++  }
++}
+diff --git a/diagnostics/zero_mean_c1_layered_transport_v1/local_validation.json b/diagnostics/zero_mean_c1_layered_transport_v1/local_validation.json
+new file mode 100644
+index 0000000..5746c95
+--- /dev/null
++++ b/diagnostics/zero_mean_c1_layered_transport_v1/local_validation.json
+@@ -0,0 +1,70 @@
++{
++  "status": "LOCAL_CPU_MOCK_AND_STATIC_PASS",
++  "real_vae_executed": false,
++  "real_codec_executed": false,
++  "model_executed": false,
++  "saved_run_scores_recomputed_by_A1": false,
++  "base_sha": "53d03ede78cbf0765cbdace02e3417fc98a01c2d",
++  "environment": {
++    "python": "/home/richar/projects/CEG-WM/alive/CEG-WM/.venv/bin/python",
++    "CUDA_VISIBLE_DEVICES": "",
++    "PYTHONDONTWRITEBYTECODE": "1",
++    "OPENBLAS_NUM_THREADS": "1"
++  },
++  "pytest_runs": [
++    {
++      "command": "python -m pytest -q tests/test_zero_mean_c1_layered_transport.py --disable-warnings",
++      "passed": 11,
++      "failed": 0,
++      "skipped": 0,
++      "seconds": 12.57,
++      "stdout": "/home/richar/projects/Video-WM/worktrees/Video-Trajectory-Blind-Validation-V1/diagnostics/zero_mean_c1_layered_transport_v1/pytest_initial.txt",
++      "stdout_sha256": "89033194e6bf8dd1a78ea431c5cc506d5225c92f433dfe468bef4579612038d5",
++      "wrapper_status": "PowerShell/bash trailing exit-variable escaping returned1 after pytest already printed11passed; test stdout retained; no false test failure or rerun"
++    },
++    {
++      "command": "python -m pytest -q tests/test_zero_mean_c1_layered_transport.py -k \"original_infer or matched_full_chain\" --disable-warnings",
++      "passed": 2,
++      "failed": 0,
++      "skipped": 0,
++      "deselected": 9,
++      "seconds": 6.23,
++      "process_returncode": 0,
++      "stdout": "/home/richar/projects/Video-WM/worktrees/Video-Trajectory-Blind-Validation-V1/diagnostics/zero_mean_c1_layered_transport_v1/pytest_receipt_delta.txt",
++      "stdout_sha256": "6613167d6fc8b1a799fffda84771787a95d0cf453ebc212277f00050ff0aa89c",
++      "purpose": "actual VAE normalization receipt + separate historical completeness fields; strengthen extra regular45 exclusion check using selected spatial direction"
++    }
++  ],
++  "final_suite_not_repeated": true,
++  "ast": {
++    "runtime/wan/zero_mean_c1_layered_transport.py": "AST_PASS",
++    "experiments/wan_state_clock/zero_mean_c1_layered_transport_run.py": "AST_PASS",
++    "scripts/build_zero_mean_c1_layered_transport_notebook.py": "AST_PASS",
++    "tests/test_zero_mean_c1_layered_transport.py": "AST_PASS"
++  },
++  "notebook": {
++    "cells": 6,
++    "empty_outputs": true,
++    "source_sha": null,
++    "builder_identical": true,
++    "dependencies_exist": true
++  },
++  "frozen_design_unchanged": true,
++  "inherited_method_hashes_verified": 6,
++  "old_tracked_changes": [],
++  "engineering_coverage": [
++    "original R44 infer174 valid/3915 slots, with shared full catalog and exclusions",
++    "full181 mock decode/encode scaling/cache/mode and preclamp; original quantizer256values and codecarguments",
++    "matched mock3decode12encode6save6read,15normalized30raw5220cost,30path60message",
++    "floatencode failure keeps Q8/source/full; corrupt terminal isolates arm; VAEloadfail keeps other terminal reads",
++    "canonical precommit/postcommit windows; monitor terminates/waits before latest disk reload",
++    "hash-bound old phase0 fixed opponent, rank/ties/start/falseedit posthoc; raw hash unchanged",
++    "input-root descendant output refusal; unbound notebook/currentPython/freshchild/static dependency path"
++  ],
++  "independent_main_baseline": {
++    "path": "/home/richar/projects/Video-WM/diagnostics/zero-mean-transfer-main-review-20260930/terminal_r44_baseline.json",
++    "sha256": "8144a1f5101c1bd1404b4bac4d624d5319f0a766e25f757d32d27d1b61d863d4",
++    "not_A1_rerun": true,
++    "summary": "6 real saved terminals/key conditions with unchanged R44 infer;1044cost. OVERLAP/CORRECT true uniquely top among174. Separate main evidence, not mock result."
++  }
++}
+diff --git a/diagnostics/zero_mean_c1_layered_transport_v1/pytest_initial.txt b/diagnostics/zero_mean_c1_layered_transport_v1/pytest_initial.txt
+new file mode 100644
+index 0000000..432681d
+--- /dev/null
++++ b/diagnostics/zero_mean_c1_layered_transport_v1/pytest_initial.txt
+@@ -0,0 +1,2 @@
++...........                                                              [100%]
++11 passed in 12.57s
+diff --git a/diagnostics/zero_mean_c1_layered_transport_v1/pytest_receipt_delta.txt b/diagnostics/zero_mean_c1_layered_transport_v1/pytest_receipt_delta.txt
+new file mode 100644
+index 0000000..65df4b3
+--- /dev/null
++++ b/diagnostics/zero_mean_c1_layered_transport_v1/pytest_receipt_delta.txt
+@@ -0,0 +1,2 @@
++..                                                                       [100%]
++2 passed, 9 deselected in 6.23s
+diff --git a/docs/zero_mean_c1_layered_transport_v1.md b/docs/zero_mean_c1_layered_transport_v1.md
+new file mode 100644
+index 0000000..fcd0d8f
+--- /dev/null
++++ b/docs/zero_mean_c1_layered_transport_v1.md
+@@ -0,0 +1,43 @@
++# 零均值 C1：匹配重放的五层传递诊断设计
++
++输入固定run20260930T113335113338Z/source05beeaa423fa4f2cf95d69cff23e4c5eda4c5841，生产HEAD53d03ede。writer、零均值reader、state code、loss、预算、旧结果均不改。本轮本地只开发/CPU fake/静态验证，真实VAE与codec仅留给后续发布绑定后的用户notebook，SOURCE_SHA=None。
++
++## 盘点与必要对照
++
++本地saved有132gz、75npz、6pt、2json、2log；6pt为3terminal和3历史FULL.phase0。Drive原运行另有18mp4和全部60phase tensor（合计63pt）。历史clamped float、量化RGB8、一次source-MP4重编码latent从未保存。继承上一轮94消费输入/15源文件验证，不重跑完整成本或张量核验；本设计只读JSON/目录。
++
++最终主链必须匹配重放：不能拿新decode的float/Q8与历史source/FULL直接当唯一五层，从而把跨执行数值漂移误叫codec因果。每臂由同一已保存terminal只decode一次，形成以下新链：
++
++| 主层 | 输入与保存物 |
++|---|---|
++| TERMINAL_PREFIX44 | 原terminal完整张量/hash引用；新R44评分 |
++| FLOAT_CLAMPED | FP32 decode(z*std+mean)，decoded/2+.5后clamp；保存float，重开后VAE mode encode/normalize |
++| RGB8_NO_CODEC | 同一float用原quantize_rgb8_no_codec，保存uint8；重开后float32/255再encode |
++| MATCHED_SOURCE_MP4 | 同Q8/255交原io.encode_rgb（其再次量化须逐像素等原Q8），保存新SOURCE；实际readback再encode |
++| MATCHED_FULL_RESAVED | 从上述同一次SOURCE readback用原codec二次保存新FULL；实际readback再encode |
++
++所有编码输入均为181×320×512完整帧；normalized均[1,16,46,40,64]。主支持仅regular1..44，共R44，1408投影维；regular45仍保留在完整张量中，不入主评分。固定g0不是phase恢复，不能先裁177帧改变VAE context。terminal原R45/89候选只作历史语境，不混入新R44/174比较。
++
++原FULL.phase0的3tensor/6raw仅历史参考，不作为新主链层。新/旧SOURCE与FULL的6个媒体hash对照单列，可不同；原始floatbuffer不存在，不能推断重解码与原buffer逐字节相同。环境、VAE revision、FP32/归一化与代码身份完整记录。
++
++## 分母、保存和执行
++
++3臂OFF/PAYLOAD_MULTI/OVERLAP_MULTI×5层×2key固定30path raw、30payload reads、30path posthoc和60message评估。每条件3915目录/174有效，全30条件117450目录、5220有效成本、112230结构排除，原infer/full family与全部ties不变。true clock/OKOK/NOPE只在raw保存后加入；重复payload不证明同步必要性。
++
++15个主normalized记录=3terminal引用+12新编码张量。计划3VAE decode、12encode、6新MP4保存、6新MP4读取、0Transformer、无crop矩阵、无四phase重编。payload读出调用原实现，不改FFT或票数。历史3normalized/6raw/6mediahash对照另外计数，不冒充主链成功。
++
++每臂保存float RGB约355,860,480原始字节及uint8约88,965,120字节，3臂合计约1.243GiB，另12个新normalized约86.25MiB（不含容器开销）。这是为避免后续重复decode；原媒体/hash只引用。preclamp只记录超界比例、幅度和平均clamp改变量，逐帧/小chunk归约，不另存原始大buffer。输出逐臂顺序执行并释放内存，所有新文件写独立目录。
++
++VAE薄adapter只复制原decode的mean/std、FP32、cache清理、decode/2+.5/clamp语义并增preclamp统计；共用vae/io和method不改。未clamp前域为映射到RGB的decoded/2+.5；该层仍是decode+映射+clamp+encode的复合边界，不能叫纯VAE编码损失。
++
++## 失败与比较
++
++初始化完整槽后先做可用terminal CPU评分/历史引用，再fresh VAE worker重放。VAE load/decode失败不抹去terminal与历史参考；FLOAT encode失败不阻塞由同float产生的Q8或媒体分支。源层失败只使依赖层缺失，独立臂继续，所有raw/candidate/评估分母保留。结果canonical-first，child终止后重开最新记录；primary、history reference、整体包完整性分开，history缺失不伪称主链failed。
++
++局部投影与每time/block/age保留；固定层内全排名按原infer做，truth只事后比较正确路径与已定赢家，层间同R44统计。主链匹配减少重放混淆，但不自动支持因果外推、一般编辑、FPR、phase恢复或质量PASS。旧完整四相位/crop结果只引用为语境。
++
++## 文件范围和验证
++
++仅新增：2层运行适配（runtime/wan/zero_mean_c1_layered_transport.py、experiments/wan_state_clock/zero_mean_c1_layered_transport_run.py），本config/doc，builder、未绑定notebook、tests及诊断收据。无新的main方法模块，无旧文件修改。复用原成功current-Python/Torch配对probe/依赖/fresh-child/notebook首两行Drive mount与独立输出目录。
++
++必要CPU只用完整布局mock VAE/IO，核preclamp和原语义、同Q8 raster、原infer完整R44 family、全分母及依赖失败不抹成功、blind raw后truth、source/hash匹配及notebook静态。没有真实VAE/codec调用，不重跑原方法矩阵。设计冻结后按主审已授权方向实现，发布和真正用户执行另行完成。
+diff --git a/experiments/wan_state_clock/configs/zero_mean_c1_layered_transport_v1.json b/experiments/wan_state_clock/configs/zero_mean_c1_layered_transport_v1.json
+new file mode 100644
+index 0000000..a993817
+--- /dev/null
++++ b/experiments/wan_state_clock/configs/zero_mean_c1_layered_transport_v1.json
+@@ -0,0 +1,362 @@
++{
++  "name": "zero_mean_c1_layered_transport_v1",
++  "status": "DESIGN_FIXED_BEFORE_IMPLEMENTATION_AND_EXECUTION",
++  "source_sha": null,
++  "fixed_input": {
++    "run": "20260930T113335113338Z",
++    "source_sha": "05beeaa423fa4f2cf95d69cff23e4c5eda4c5841",
++    "result_sha256": "5ccd4138fdd0b3bf368a9c7fb76b8f77108e935d73ad68ccfed600d9aa39cbdd",
++    "root": "/content/drive/MyDrive/Video-WM/Video-Overlap-Zero-Mean-C1-V1/20260930T113335113338Z/fixed_reference",
++    "required_terminal": [
++      {
++        "arm": "OFF",
++        "kind": "terminal",
++        "relative_path": "OFF/terminal.pt",
++        "sha256": "5bcd4c4fdd3c47d2a847b64cd3b6aa2817bbd37a0398c2ea9facd5b9d75117f0",
++        "local_exists": true
++      },
++      {
++        "arm": "PAYLOAD_MULTI",
++        "kind": "terminal",
++        "relative_path": "PAYLOAD_MULTI/terminal.pt",
++        "sha256": "88686856f8a73a3fb8abd1b9a8454f512906a4455c0333532ea2b706982a80af",
++        "local_exists": true
++      },
++      {
++        "arm": "OVERLAP_MULTI",
++        "kind": "terminal",
++        "relative_path": "OVERLAP_MULTI/terminal.pt",
++        "sha256": "5c96d514454cd1b23e700f0072b4a40c073e8a038269962743904fb6189c5164",
++        "local_exists": true
++      }
++    ],
++    "optional_historical": [
++      {
++        "arm": "OFF",
++        "kind": "FULL_phase0_tensor",
++        "relative_path": "OFF/FULL_RESAVED181.phase0.pt",
++        "sha256": "6536b7d634a8b8ac9ebd0e44cb7120dfa7efe3669d044c499774cb7b66dc1dae",
++        "local_exists": true
++      },
++      {
++        "arm": "OFF",
++        "kind": "historical_source_mp4",
++        "relative_path": "OFF/source.mp4",
++        "sha256": "9a48c66ef0c052b23f80623d4323da7c26310bd3746ab773e594192e74df8b88",
++        "local_exists": false
++      },
++      {
++        "arm": "OFF",
++        "kind": "historical_FULL_mp4",
++        "relative_path": "OFF/FULL_RESAVED181.mp4",
++        "sha256": "cb42a4351d5ff75da61191d12c2922ac838aa02b0f7ff562570cccd9b20dd7ee",
++        "local_exists": false
++      },
++      {
++        "arm": "OFF",
++        "kind": "FULL_phase0_raw",
++        "key_id": "CORRECT",
++        "relative_path": "OFF/FULL_RESAVED181.phase0.CORRECT.raw.json.gz",
++        "sha256": "14623dc770941a262197778e5b02e657caaec2710b203c5349959dcd8e727758",
++        "local_exists": true,
++        "R": 44,
++        "scored": 174
++      },
++      {
++        "arm": "OFF",
++        "kind": "FULL_phase0_raw",
++        "key_id": "WRONG",
++        "relative_path": "OFF/FULL_RESAVED181.phase0.WRONG.raw.json.gz",
++        "sha256": "4434e585905a3a6ba40075ba826e278eb827e4b924eaf49a6756afe9de79011a",
++        "local_exists": true,
++        "R": 44,
++        "scored": 174
++      },
++      {
++        "arm": "PAYLOAD_MULTI",
++        "kind": "FULL_phase0_tensor",
++        "relative_path": "PAYLOAD_MULTI/FULL_RESAVED181.phase0.pt",
++        "sha256": "ad6f5301088e61740a8f00b9e0c2d6ae6ed60c6b5d0fc4fe5da45abfecc3a928",
++        "local_exists": true
++      },
++      {
++        "arm": "PAYLOAD_MULTI",
++        "kind": "historical_source_mp4",
++        "relative_path": "PAYLOAD_MULTI/source.mp4",
++        "sha256": "c858ec7339a95f33b787141c687c49cb13c2003dc67ef767ec307282a3ec53e8",
++        "local_exists": false
++      },
++      {
++        "arm": "PAYLOAD_MULTI",
++        "kind": "historical_FULL_mp4",
++        "relative_path": "PAYLOAD_MULTI/FULL_RESAVED181.mp4",
++        "sha256": "baa90e56d3eed79c646c25b06aa4b09b5d6fc4f00447679375aa6c5666ba8e77",
++        "local_exists": false
++      },
++      {
++        "arm": "PAYLOAD_MULTI",
++        "kind": "FULL_phase0_raw",
++        "key_id": "CORRECT",
++        "relative_path": "PAYLOAD_MULTI/FULL_RESAVED181.phase0.CORRECT.raw.json.gz",
++        "sha256": "8d29c373fb9d9e1ff7dc7526c8fc9cda308e1b0cc8d6a06d4ff201ddf6231874",
++        "local_exists": true,
++        "R": 44,
++        "scored": 174
++      },
++      {
++        "arm": "PAYLOAD_MULTI",
++        "kind": "FULL_phase0_raw",
++        "key_id": "WRONG",
++        "relative_path": "PAYLOAD_MULTI/FULL_RESAVED181.phase0.WRONG.raw.json.gz",
++        "sha256": "cf68a9dd058e7ce23f76b080f045625105c35f62804478c6c4e5919cc5e92a05",
++        "local_exists": true,
++        "R": 44,
++        "scored": 174
++      },
++      {
++        "arm": "OVERLAP_MULTI",
++        "kind": "FULL_phase0_tensor",
++        "relative_path": "OVERLAP_MULTI/FULL_RESAVED181.phase0.pt",
++        "sha256": "036d40c14a5ed8c6ba2913a6d22458f80ecca82701a1847407bd91f4818d887f",
++        "local_exists": true
++      },
++      {
++        "arm": "OVERLAP_MULTI",
++        "kind": "historical_source_mp4",
++        "relative_path": "OVERLAP_MULTI/source.mp4",
++        "sha256": "6cd119f77d14e10b84b100894ef3f14bff5b2d3820158872497478c1f9852bed",
++        "local_exists": false
++      },
++      {
++        "arm": "OVERLAP_MULTI",
++        "kind": "historical_FULL_mp4",
++        "relative_path": "OVERLAP_MULTI/FULL_RESAVED181.mp4",
++        "sha256": "2dc2db3b6eb7b6eb132611de14989ace1af4778eaed76733473f2c5867ac9d8d",
++        "local_exists": false
++      },
++      {
++        "arm": "OVERLAP_MULTI",
++        "kind": "FULL_phase0_raw",
++        "key_id": "CORRECT",
++        "relative_path": "OVERLAP_MULTI/FULL_RESAVED181.phase0.CORRECT.raw.json.gz",
++        "sha256": "514b98afc22be62139d658bfb3ed7a4381e1080abfe8a7f8be002488c16870e2",
++        "local_exists": true,
++        "R": 44,
++        "scored": 174
++      },
++      {
++        "arm": "OVERLAP_MULTI",
++        "kind": "FULL_phase0_raw",
++        "key_id": "WRONG",
++        "relative_path": "OVERLAP_MULTI/FULL_RESAVED181.phase0.WRONG.raw.json.gz",
++        "sha256": "6da69df3e12a8f6b604ddb704b276c7222e0edc81562bc21fd3f26196b6a1594",
++        "local_exists": true,
++        "R": 44,
++        "scored": 174
++      }
++    ],
++    "inherited_method_files": {
++      "main/tube_state/video_overlap_zero_mean_state.py": "77b82a4da4d45904093d1d41abd53309eeb808d92a85a2752757b058dd35a4e3",
++      "main/tube_state/video_overlap_zero_mean_control.py": "1aaecaf3cb5c9d27068989a2a3be71dee40c83168fe32d0afaa27724868714ce",
++      "main/tube_state/grow_video_reference.py": "35b186833dee508552235df1bb3c2524db01848e507402f87c0b9655016c8ead",
++      "runtime/wan/generation.py": "3538921118a429339412eee4d72e57268c9cb232d6ebb6e8677e2e55f143bde3",
++      "runtime/wan/vae.py": "ff3aec5659a14238923cd943364c6eda62d4648343b3ac17910cfbecdfec3670",
++      "runtime/wan/io.py": "db9caa843d632d733aa670dbe87bd38cf6084490d5bef71b8a69e6839cc33ae7"
++    }
++  },
++  "model": {
++    "id": "Wan-AI/Wan2.1-T2V-1.3B-Diffusers",
++    "revision": "0fad780a534b6463e45facd96134c9f345acfa5b"
++  },
++  "arms": [
++    "OFF",
++    "PAYLOAD_MULTI",
++    "OVERLAP_MULTI"
++  ],
++  "keys": {
++    "CORRECT": "watermark",
++    "WRONG": "watermark-wrong"
++  },
++  "messages": {
++    "REGISTERED": "OKOK",
++    "WRONG_MESSAGE": "NOPE"
++  },
++  "geometry": {
++    "frames": 181,
++    "height": 320,
++    "width": 512,
++    "normalized_shape": [
++      1,
++      16,
++      46,
++      40,
++      64
++    ],
++    "fixed_phase": 0,
++    "regular_indices": [
++      1,
++      2,
++      3,
++      4,
++      5,
++      6,
++      7,
++      8,
++      9,
++      10,
++      11,
++      12,
++      13,
++      14,
++      15,
++      16,
++      17,
++      18,
++      19,
++      20,
++      21,
++      22,
++      23,
++      24,
++      25,
++      26,
++      27,
++      28,
++      29,
++      30,
++      31,
++      32,
++      33,
++      34,
++      35,
++      36,
++      37,
++      38,
++      39,
++      40,
++      41,
++      42,
++      43,
++      44
++    ],
++    "R": 44,
++    "extra_regular_index": 45,
++    "phase_is_not_estimated": true
++  },
++  "layers": [
++    "TERMINAL_PREFIX44",
++    "FLOAT_CLAMPED",
++    "RGB8_NO_CODEC",
++    "MATCHED_SOURCE_MP4",
++    "MATCHED_FULL_RESAVED"
++  ],
++  "precision": {
++    "VAE": "float32",
++    "normalization": "Wan latents mean/std",
++    "posterior": "mode",
++    "no_transformer": true
++  },
++  "chain": [
++    "existing terminal -> raw = terminal*std+mean -> one FP32 VAE decode -> rgb_before_clamp=decoded/2+.5 -> clamp[0,1]; save clamped float",
++    "reload same clamped float -> VAE encode -> mode -> (raw-mean)/std -> save normalized",
++    "same clamped float -> original quantize_rgb8_no_codec -> save uint8; reload q8 -> float32/255 -> VAE encode -> normalize",
++    "same q8/255 -> original io.encode_rgb -> new SOURCE MP4 -> independent original io.read_mp4; same readback -> VAE encode and original io.encode_rgb -> new FULL",
++    "new FULL MP4 -> independent original read_mp4 -> VAE encode -> normalize"
++  ],
++  "codec": {
++    "fps": 8,
++    "crf": 18,
++    "codec": "libx264",
++    "pixel_format": "yuv420p",
++    "reencode_Q8_identity": "original quantization of q8.float()/255 must reproduce saved q8; no custom codec/quantizer"
++  },
++  "persistence": {
++    "float_rgb_buffers": 3,
++    "uint8_rgb_buffers": 3,
++    "new_normalized_tensors": 12,
++    "existing_terminal_references": 3,
++    "float_shape": [
++      181,
++      320,
++      512,
++      3
++    ],
++    "float_dtype": "float32",
++    "uint8_dtype": "uint8",
++    "uncompressed_rgb_bytes_per_arm": 444825600,
++    "uncompressed_rgb_bytes_all_arms": 1334476800,
++    "preclamp": "statistics only, frame/chunk reductions; no extra full preclamp artifact",
++    "complete_normalized_tensor": "save all46 latent steps; only1..44 scored; never shorten encode input to177"
++  },
++  "preclamp_statistics": [
++    "finite",
++    "fraction_below0",
++    "fraction_above1",
++    "maximum_underflow",
++    "maximum_overflow",
++    "mean_absolute_clamp_change"
++  ],
++  "fixed_denominator": {
++    "arms": 3,
++    "layers": 5,
++    "normalized_records": 15,
++    "path_reads": 30,
++    "payload_reads": 30,
++    "path_posthoc": 30,
++    "message_evaluations": 60,
++    "catalog_slots": 117450,
++    "valid_costs": 5220,
++    "structural_exclusions": 112230,
++    "candidates_per_condition": 3915,
++    "valid_per_condition": 174,
++    "decode_diagnostics": 3,
++    "historical_normalized_references": 3,
++    "historical_raw_references": 6,
++    "historical_media_hash_comparisons": 6
++  },
++  "planned_calls": {
++    "transformer": 0,
++    "vae_decode": 3,
++    "vae_encode": 12,
++    "new_mp4_save": 6,
++    "new_mp4_read": 6,
++    "new_path_infer": 30,
++    "new_payload_read": 30,
++    "new_crop": 0,
++    "new_four_phase": 0
++  },
++  "reader": {
++    "module": "main.tube_state.video_overlap_zero_mean_state",
++    "entry": "infer",
++    "public_key_only": true,
++    "no_writer_or_truth_inputs": true,
++    "family": "same complete finite zero/one repeat/skip, no changed thresholds/ties/priors",
++    "R45_terminal_history": "89 valid candidates; historical only, excluded from newR44 primary scores",
++    "output": "UNCALIBRATED_DIAGNOSTIC; accepted_payload=False,state_path_accepted=False"
++  },
++  "failure": {
++    "primary": "preallocate every layer/key/candidate/evaluation; fail each independent input edge, retain successes",
++    "shared_decode": "failure affects float/Q8 and their derived media only; terminal/newR44 and historical refs remain available",
++    "VAE_load": "terminal/newR44 CPU inference and historical references still run; new encode layers marked unavailable",
++    "float_encode": "does not prevent Q8 conversion/encode or matched MP4 chain from same persisted raster",
++    "historical": "missing/identity failure recorded separately, not a primary-chain failure",
++    "final": "separate primary execution, history-reference and package completeness; no scientific PASS"
++  },
++  "comparisons": {
++    "primary": "matched newly replayed five-layer chain; truth joins only after all raw committed",
++    "outputs": "sameR44 local projections/time/block/age, full costs/ties/exclusions, posthoc true/winning competition; raw first",
++    "history": "original FULL phase0 latent/raw reference only; new vs oldSOURCE/FULL MP4 hash equality reported, not required",
++    "limitation": "new decode is not known bitwise equal to old floatbuffer; environment/model/dtype/source recorded. New matched chain is single-run observation, not general causal proof."
++  },
++  "allowed_new_files": [
++    "experiments/wan_state_clock/configs/zero_mean_c1_layered_transport_v1.json",
++    "docs/zero_mean_c1_layered_transport_v1.md",
++    "runtime/wan/zero_mean_c1_layered_transport.py",
++    "experiments/wan_state_clock/zero_mean_c1_layered_transport_run.py",
++    "scripts/build_zero_mean_c1_layered_transport_notebook.py",
++    "notebooks/zero_mean_c1_layered_transport_v1_colab.ipynb",
++    "tests/test_zero_mean_c1_layered_transport.py",
++    "diagnostics/zero_mean_c1_layered_transport_v1/*"
++  ],
++  "evidence_ceiling": "single saved source,3 correlated arms, fixed g0; layer diagnostic only; no phase recovery, FPR, true edit or quality PASS."
++}
+diff --git a/experiments/wan_state_clock/zero_mean_c1_layered_transport_run.py b/experiments/wan_state_clock/zero_mean_c1_layered_transport_run.py
+new file mode 100644
+index 0000000..50d2d8c
+--- /dev/null
++++ b/experiments/wan_state_clock/zero_mean_c1_layered_transport_run.py
+@@ -0,0 +1,425 @@
++"""Matched five-layer saved-terminal replay; user-run VAE/codec only, no writer."""
++from __future__ import annotations
++import argparse,gzip,hashlib,importlib.metadata,json,os,subprocess,sys,time
++from pathlib import Path
++import numpy as np
++from main.tube_state import video_overlap_zero_mean_state as state
++from main.tube_state import video_overlap_zero_mean_control as payload
++from runtime.wan import zero_mean_c1_layered_transport as adapter
++ROOT=Path(__file__).resolve().parents[2]
++CONFIG=ROOT/'experiments/wan_state_clock/configs/zero_mean_c1_layered_transport_v1.json'
++MODULE='experiments.wan_state_clock.zero_mean_c1_layered_transport_run'
++ARMS=('OFF','PAYLOAD_MULTI','OVERLAP_MULTI')
++LAYERS=('TERMINAL_PREFIX44','FLOAT_CLAMPED','RGB8_NO_CODEC','MATCHED_SOURCE_MP4','MATCHED_FULL_RESAVED')
++KEYS=('CORRECT','WRONG')
++GOOD=('COMPLETE','NO_ENERGY')
++
++def dump(path,value):
++    path=Path(path);path.parent.mkdir(parents=True,exist_ok=True);tmp=path.with_suffix(path.suffix+'.tmp')
++    with tmp.open('w') as f:json.dump(value,f,indent=2,allow_nan=False);f.write('\n');f.flush();os.fsync(f.fileno())
++    os.replace(tmp,path)
++
++def dump_gzip(path,value):
++    path=Path(path);path.parent.mkdir(parents=True,exist_ok=True);tmp=path.with_suffix(path.suffix+'.tmp')
++    with tmp.open('wb') as f:
++        f.write(gzip.compress(json.dumps(value,allow_nan=False,separators=(',',':')).encode(),mtime=0));f.flush();os.fsync(f.fileno())
++    os.replace(tmp,path)
++
++def load_gzip(path):
++    return json.loads(gzip.decompress(Path(path).read_bytes()))
++
++def environment():
++    versions={}
++    for name in ('torch','torchvision','diffusers','transformers','accelerate','numpy','imageio','imageio-ffmpeg'):
++        try:versions[name]=importlib.metadata.version(name)
++        except importlib.metadata.PackageNotFoundError:versions[name]=None
++    return dict(python=sys.version,executable=sys.executable,packages=versions)
++
++def load_config():
++    cfg=json.loads(CONFIG.read_text())
++    if cfg['arms']!=list(ARMS) or cfg['layers']!=list(LAYERS) or cfg['geometry']['R']!=44:raise ValueError('fixed roster mismatch')
++    for path,sha in cfg['fixed_input']['inherited_method_files'].items():
++        if adapter.file_sha256(ROOT/path)!=sha:raise ValueError('inherited source identity mismatch: '+path)
++    return cfg
++
++def initial_result(output,cfg,input_root):
++    normalized={};reads={};paths={};messages={};rasters={};media={};clamp={}
++    shared={};catalog=state.catalog(44);cp=output/'catalog_R44.json.gz';dump_gzip(cp,dict(rows=catalog))
++    for kid,key in cfg['keys'].items():
++        f=state.family_receipt(key,44,np.ones((44,4),bool));fp=output/f'family_R44_{kid}.json.gz';dump_gzip(fp,f)
++        if len(catalog)!=3915 or len(f['valid_catalog_indices'])!=174:raise ValueError('original family mismatch')
++        shared[kid]=dict(catalog_path=str(cp),catalog_sha256=adapter.file_sha256(cp),family_path=str(fp),
++            family_sha256=adapter.file_sha256(fp),catalog=3915,valid=174,excluded=3741,class_count=len(f['classes']))
++    for arm in ARMS:
++        clamp[arm]=dict(status='PENDING')
++        for kind in ('FLOAT_CLAMPED','RGB8_NO_CODEC'):
++            rasters[f'{arm}/{kind}']=dict(status='PENDING',path=str(output/arm/(kind+'.pt')))
++        for kind in LAYERS[3:]:
++            media[f'{arm}/{kind}']=dict(status='PENDING',read_status='PENDING',path=str(output/arm/(kind+'.mp4')))
++        for layer in LAYERS:
++            sid=f'{arm}/{layer}';normalized[sid]=dict(status='PENDING',path=str(output/arm/(layer+'.normalized.pt')),
++                R=44,full_latent_steps=46,extra_regular_index=45,fixed_phase=0)
++            for kid in KEYS:
++                rid=sid+'/'+kid
++                reads[rid]=dict(status='PENDING',payload_status='PENDING',path=str(output/arm/(layer+'.'+kid+'.raw.json.gz')),
++                    shared=shared[kid],scored=0,accepted_payload=False,state_path_accepted=False)
++                paths[rid]=dict(status='PENDING',accepted_payload=False,state_path_accepted=False)
++                for target in cfg['messages']:messages[rid+'/'+target]=dict(status='PENDING',bit_errors=None,accepted_payload=False)
++    source_paths=list(cfg['fixed_input']['inherited_method_files'])+[
++        'runtime/wan/zero_mean_c1_layered_transport.py',str(CONFIG.relative_to(ROOT)),
++        str(Path(__file__).relative_to(ROOT)),'experiments/wan_state_clock/requirements-grow-video-reference.txt']
++    return dict(status='RUNNING',stage='INITIALIZE',normalized=normalized,reads=reads,path_posthoc=paths,message_evaluations=messages,
++        rasters=rasters,media=media,decode_diagnostics=clamp,shared=shared,input_root=str(input_root),input_identity=dict(status='PENDING'),
++        inputs={r['arm']:dict(r,status='PENDING') for r in cfg['fixed_input']['required_terminal']},
++        historical={str(i):dict(r,status='PENDING') for i,r in enumerate(cfg['fixed_input']['optional_historical'])},
++        historical_comparisons={},calls={k:dict(attempted=0,completed=0) for k in cfg['planned_calls']},
++        model_loaded=False,actual_model_calls=False,workers={},failures=[],source_sha=subprocess.check_output(['git','rev-parse','HEAD'],cwd=ROOT,text=True).strip(),
++        source_files={p:adapter.file_sha256(ROOT/p) for p in source_paths},config_sha256=adapter.file_sha256(CONFIG),
++        environment=environment(),model=cfg['model'],method_version=state.PUBLIC.method_version,
++        fixed_denominator=cfg['fixed_denominator'],planned_calls=cfg['planned_calls'],basis_layout={k:state.basis_layout(v) for k,v in cfg['keys'].items()},
++        evidence_ceiling=cfg['evidence_ceiling'],score_status='UNCALIBRATED_DIAGNOSTIC',science_status='NO_AUTOMATIC_SCIENTIFIC_PASS')
++
++class Store:
++    def __init__(self,output,*,create=False,cfg=None,input_root=None):
++        self.output=Path(output);self.path=self.output/'result.json'
++        if create:
++            if self.output.resolve().is_relative_to(Path(input_root).resolve()):raise ValueError('output must be outside the read-only input run')
++            self.output.mkdir(parents=True,exist_ok=False);self.data=initial_result(self.output,cfg,input_root)
++        else:self.data=json.loads(self.path.read_text())
++        self.save()
++    def save(self):
++        d=self.data
++        sizes=dict(normalized=15,reads=30,path_posthoc=30,message_evaluations=60,rasters=6,media=6,decode_diagnostics=3,inputs=3,historical=15)
++        if any(len(d[k])!=v for k,v in sizes.items()):raise ValueError('fixed table size changed')
++        d['counts']=dict(normalized=sum(r['status']=='SAVED' for r in d['normalized'].values()),
++            path_reads=sum(r['status'] in GOOD for r in d['reads'].values()),
++            payload_reads=sum(r['payload_status']=='READ' for r in d['reads'].values()),
++            valid_costs=sum(r['scored'] for r in d['reads'].values()),
++            catalog_slots=sum(r['shared']['catalog'] for r in d['reads'].values()),
++            structural_exclusions=sum(r['shared']['excluded'] for r in d['reads'].values()),
++            path_posthoc=sum(r['status']=='EVALUATED' for r in d['path_posthoc'].values()),
++            message_evaluations=sum(r['status']=='EVALUATED' for r in d['message_evaluations'].values()),
++            rasters=sum(r['status']=='SAVED' for r in d['rasters'].values()),
++            mp4_saved=sum(r['status']=='SAVED' for r in d['media'].values()),
++            mp4_read=sum(r['read_status']=='READ' for r in d['media'].values()),
++            decode_diagnostics=sum(r['status']=='MEASURED' for r in d['decode_diagnostics'].values()))
++        dump(self.path,d)
++    def blind(self):
++        dump(self.output/'blind_readouts.json',{k:self.data[k] for k in ('normalized','reads','shared','fixed_denominator','method_version','basis_layout')})
++    def checkpoint(self):
++        self.save();self.blind() # result is canonical; blind can always be rebuilt.
++    def failure(self,stage,exc):
++        self.data['failures'].append(dict(stage=stage,error=f'{type(exc).__name__}: {exc}'));self.save()
++    def call(self,kind,fn):
++        row=self.data['calls'][kind];row['attempted']+=1
++        if kind.startswith('vae_'):self.data['actual_model_calls']=True
++        self.save();value=fn();row['completed']+=1;self.save();return value
++
++def validate_latent(z):
++    import torch
++    if tuple(z.shape)!=(1,16,46,40,64) or z.dtype!=torch.float32 or not bool(torch.isfinite(z).all()):raise ValueError('full normalized tensor geometry/dtype/finite mismatch')
++    return z
++
++def save_tensor(path,value):
++    import torch
++    path=Path(path);path.parent.mkdir(parents=True,exist_ok=True);tmp=path.with_suffix('.tmp')
++    with tmp.open('wb') as f:torch.save(value,f);f.flush();os.fsync(f.fileno())
++    os.replace(tmp,path)
++    return dict(path=str(path),sha256=adapter.file_sha256(path),shape=list(value.shape),dtype=str(value.dtype),status='SAVED')
++
++def reopen_tensor(row):
++    import torch
++    if adapter.file_sha256(row['path'])!=row['sha256']:raise ValueError('saved tensor identity mismatch')
++    return torch.load(row['path'],map_location='cpu',weights_only=True)
++
++def preflight(store,cfg):
++    root=Path(store.data['input_root']);identity=store.data['input_identity']
++    try:
++        rp=root/'result.json'
++        if adapter.file_sha256(rp)!=cfg['fixed_input']['result_sha256']:raise ValueError('fixed source result hash mismatch')
++        previous=json.loads(rp.read_text())
++        if previous['source_sha']!=cfg['fixed_input']['source_sha']:raise ValueError('fixed source SHA mismatch')
++        identity.update(status='VERIFIED',path=str(rp),sha256=adapter.file_sha256(rp),source_sha=previous['source_sha'],
++            historical_environment=previous.get('environment'),historical_model=previous.get('generation_setup',{}).get('model'))
++    except Exception as exc:
++        identity.update(status='FAILED',error=str(exc));store.failure('INPUT_IDENTITY',exc)
++    for row in store.data['inputs'].values():
++        try:
++            if identity['status']!='VERIFIED':raise ValueError('fixed source result not verified')
++            p=root/row['relative_path']
++            if adapter.file_sha256(p)!=row['sha256']:raise ValueError('terminal hash mismatch')
++            row.update(status='VERIFIED',path=str(p))
++        except Exception as exc:row.update(status='FAILED',error=str(exc))
++    # Optional evidence is checked independently and never changes primary availability.
++    for row in store.data['historical'].values():
++        p=root/row['relative_path']
++        try:
++            if adapter.file_sha256(p)!=row['sha256']:raise ValueError('historical identity mismatch')
++            row.update(status='VERIFIED',path=str(p))
++        except Exception as exc:row.update(status='MISSING_OR_INVALID',path=str(p),error=str(exc))
++    store.checkpoint()
++
++def read_normalized(z,key,call):
++    """Truth-free adapter; no layer, arm, filename, writer evidence or target argument."""
++    received=z[0,:,1:45].numpy().transpose(1,0,2,3)
++    inf=call('new_path_infer',lambda:state.infer(received,key,np.ones((44,4),bool)))
++    try:bits=call('new_payload_read',lambda:payload.payload_read(z,key,44))
++    except Exception as exc:bits=dict(status='FAILED',error=str(exc),decoded_bits=None)
++    # Complete saved tensor contains row45; an extra projection is diagnostic, not scored.
++    try:extra=dict(status='PROJECTED',values=state.extract(z[0,:,1:].numpy().transpose(1,0,2,3),key,np.ones((45,4),bool))[-1].tolist())
++    except Exception as exc:extra=dict(status='FAILED',error=str(exc))
++    return dict(inference=inf,payload=bits,extra_regular45_projection=extra,fixed_phase=0,truth_used=False,writer_inputs=False)
++
++def score_layer(store,arm,layer,cfg):
++    sid=f'{arm}/{layer}';normal=store.data['normalized'][sid]
++    try:z=validate_latent(reopen_tensor(normal))
++    except Exception as exc:
++        for kid in KEYS:store.data['reads'][sid+'/'+kid].update(status='NOT_COMPLETED',payload_status='NOT_COMPLETED',error=str(exc))
++        store.checkpoint();return
++    for kid,key in cfg['keys'].items():
++        row=store.data['reads'][sid+'/'+kid]
++        try:
++            raw=read_normalized(z,key,store.call);inf=raw['inference']
++            if inf['summary']['status'] in GOOD:
++                if inf['counts']['scored']!=174 or len(inf['path_costs'])!=174 or not np.isfinite(inf['path_costs']).all():raise ValueError('truncated/nonfinite path costs')
++                if len(inf['class_costs'])!=row['shared']['class_count'] or not np.isfinite(inf['class_costs']).all():raise ValueError('truncated/nonfinite class costs')
++            raw['normalized_sha256']=normal['sha256'];dump_gzip(Path(row['path']),raw)
++            row.update(status=inf['summary']['status'],payload_status=raw['payload']['status'],sha256=adapter.file_sha256(row['path']),
++                scored=inf['counts']['scored'],summary=inf['summary'],payload=raw['payload'])
++        except Exception as exc:row.update(status='FAILED',payload_status='FAILED',error=f'{type(exc).__name__}: {exc}')
++        store.checkpoint()
++
++def terminal_layers(store,cfg):
++    import torch
++    for arm in ARMS:
++        source=store.data['inputs'][arm];row=store.data['normalized'][arm+'/'+LAYERS[0]]
++        try:
++            if source['status']!='VERIFIED':raise ValueError('verified terminal unavailable')
++            validate_latent(reopen_tensor(source))
++            row.update(status='SAVED',path=source['path'],sha256=source['sha256'],reused=True,shape=[1,16,46,40,64],dtype='torch.float32')
++            store.checkpoint();score_layer(store,arm,LAYERS[0],cfg)
++        except Exception as exc:row.update(status='FAILED',error=str(exc));store.failure('TERMINAL_'+arm,exc)
++        store.checkpoint()
++
++def encoded_layer(store,arm,layer,rgb,frozen,cfg):
++    row=store.data['normalized'][arm+'/'+layer]
++    try:
++        z=store.call('vae_encode',lambda:adapter.encode_normalized(frozen,rgb))
++        row.update(save_tensor(row['path'],z));del z
++        store.checkpoint();score_layer(store,arm,layer,cfg)
++    except Exception as exc:row.update(status='FAILED',error=str(exc));store.failure('ENCODE_'+arm+'/'+layer,exc)
++    store.checkpoint()
++
++def media_edge(store,arm,layer,rgb_or_q8,*,q8=False):
++    row=store.data['media'][arm+'/'+layer]
++    try:
++        row['status']='SAVING';store.save()
++        if q8:store.call('new_mp4_save',lambda:adapter.encode_raster(rgb_or_q8,row['path']))
++        else:store.call('new_mp4_save',lambda:adapter.io.encode_rgb(rgb_or_q8,Path(row['path']),8,18))
++        row.update(status='SAVED',sha256=adapter.file_sha256(row['path']));store.save()
++        observed=store.call('new_mp4_read',lambda:adapter.read_full_mp4(row['path']))
++        row.update(read_status='READ',readback_shape=list(observed.shape));store.save();return observed
++    except Exception as exc:
++        if row['status']=='SAVED':row['read_status']='FAILED'
++        else:row.update(status='FAILED',read_status='NOT_COMPLETED')
++        row['error']=str(exc);store.failure('MEDIA_'+arm+'/'+layer,exc);return None
++
++def replay_worker(store,cfg):
++    import torch
++    from runtime.wan.generation import load_frozen_vae
++    store.data['stage']='VAE_LOAD';store.save()
++    frozen=load_frozen_vae(cfg,device='cuda' if torch.cuda.is_available() else 'cpu')
++    store.data.update(model_loaded=True,vae_runtime=dict(device=str(next(frozen.parameters()).device),dtype=str(next(frozen.parameters()).dtype),
++        latents_mean=list(frozen.config.latents_mean),latents_std=list(frozen.config.latents_std),posterior='mode',
++        full_frame_encode=True,frames=181,normalization='(raw-mean)/std'))
++    store.save()
++    for arm in ARMS:
++        store.data['stage']='REPLAY_'+arm;store.save();src=store.data['inputs'][arm]
++        try:
++            if src['status']!='VERIFIED':raise ValueError('verified terminal unavailable')
++            z=validate_latent(reopen_tensor(src))
++            rgb,stats=store.call('vae_decode',lambda:adapter.decode_with_clamp_receipt(frozen,z));del z
++            store.data['decode_diagnostics'][arm]=stats
++            rr=store.data['rasters'][arm+'/FLOAT_CLAMPED'];rr.update(save_tensor(rr['path'],rgb));del rgb;store.save()
++            rgb=reopen_tensor(rr);encoded_layer(store,arm,'FLOAT_CLAMPED',rgb,frozen,cfg)
++            q8=adapter.shared_vae.quantize_rgb8_no_codec(rgb);del rgb
++            qr=store.data['rasters'][arm+'/RGB8_NO_CODEC'];qr.update(save_tensor(qr['path'],q8));del q8;store.save()
++            q8=reopen_tensor(qr);encoded_layer(store,arm,'RGB8_NO_CODEC',q8.float()/255.,frozen,cfg)
++            received=media_edge(store,arm,'MATCHED_SOURCE_MP4',q8,q8=True);del q8
++            if received is not None:
++                encoded_layer(store,arm,'MATCHED_SOURCE_MP4',received,frozen,cfg)
++                full=media_edge(store,arm,'MATCHED_FULL_RESAVED',received);del received
++                if full is not None:encoded_layer(store,arm,'MATCHED_FULL_RESAVED',full,frozen,cfg);del full
++        except Exception as exc:
++            if store.data['decode_diagnostics'][arm]['status']=='PENDING':store.data['decode_diagnostics'][arm]=dict(status='FAILED',error=str(exc))
++            store.failure('REPLAY_'+arm,exc)
++        store.checkpoint()
++
++def recover_unfinished(store,reason):
++    for group in ('normalized','reads','rasters','media','decode_diagnostics'):
++        for row in store.data[group].values():
++            if row['status'] in ('PENDING','SAVING','RUNNING'):row.update(status='NOT_COMPLETED',error=reason)
++            if group=='reads' and row['payload_status']=='PENDING':row['payload_status']='NOT_COMPLETED'
++            if group=='media' and row['read_status']=='PENDING':row['read_status']='NOT_COMPLETED'
++    store.checkpoint()
++
++def candidate_terms(obs,template):
++    return dict(cost=float(np.mean((obs-template)**2)),observed_energy=float(np.sum(obs*obs)),
++        template_energy=float(np.sum(template*template)),dot=float(np.sum(obs*template)),
++        squared_error_by_time_block_age=np.sum((obs-template)**2,axis=-1).tolist())
++
++def historical_opponents(store):
++    """Hash-bound old FULL phase0 canonical; never a global phase winner."""
++    result={}
++    for row in store.data['historical'].values():
++        if row['kind']!='FULL_phase0_raw':continue
++        value=dict(status='MISSING_REFERENCE',role='original FULL phase0 fixed opponent only')
++        try:
++            if row['status']!='VERIFIED' or adapter.file_sha256(row['path'])!=row['sha256']:raise ValueError('historical raw unavailable or changed')
++            raw=load_gzip(row['path'])['inference']
++            if raw['received_length']!=44:raise ValueError('historical support mismatch')
++            i=raw['summary']['canonical_catalog_index']
++            if i is None or i not in raw['valid_catalog_indices']:raise ValueError('historical canonical unavailable')
++            value.update(status='AVAILABLE',raw_sha256=row['sha256'],catalog_index=i,path=state.catalog(44)[i],fixed_phase=0)
++        except Exception as exc:value['error']=str(exc)
++        result[row['arm']+'/'+row['key_id']]=value
++    return result
++
++def evaluate_saved(store,cfg):
++    """Only this stage receives registered path/message; reads only already committed raw."""
++    store.data['stage']='POSTHOC';store.checkpoint();blind=store.output/'blind_readouts.json';before=adapter.file_sha256(blind)
++    opponents=historical_opponents(store)
++    catalog=state.catalog(44);true_index=next(i for i,r in enumerate(catalog) if r['taus']==list(range(1,45)) and r['event_type']=='ZERO_EDIT')
++    for sid,row in store.data['reads'].items():
++        arm,layer,kid=sid.split('/');p=store.data['path_posthoc'][sid]
++        raw=None
++        try:
++            if row['status'] not in GOOD:raise ValueError('primary path read unavailable')
++            if adapter.file_sha256(row['path'])!=row['sha256']:raise ValueError('raw identity mismatch')
++            raw=load_gzip(row['path']);inf=raw['inference'];obs=np.asarray(inf['projection'],dtype=np.float64)
++            mu=state.composite_signs(cfg['keys'][kid]).astype(np.float64)*state.PUBLIC.alpha
++            canonical=inf['summary']['canonical_catalog_index'];true_terms=candidate_terms(obs,mu[:44]);winner=None
++            if canonical is not None:winner=candidate_terms(obs,mu[np.asarray(catalog[canonical]['taus'])-1])
++            costs=np.asarray(inf['path_costs'],dtype=np.float64)
++            fixed=dict(opponents[arm+'/'+kid])
++            if fixed['status']=='AVAILABLE':
++                terms=candidate_terms(obs,mu[np.asarray(fixed['path']['taus'])-1])
++                fixed.update(status='COMPARED',terms=terms,true_minus_fixed=true_terms['cost']-terms['cost'])
++            p.update(status='EVALUATED',fixed_phase=0,phase_is_not_recovered=True,registered_tau=list(range(1,45)),
++                truth_in_top=true_index in inf['summary']['top_catalog_indices'],
++                true_rank=1+int(np.sum(costs<true_terms['cost']-state.PUBLIC.tie_atol)),
++                true_cost_ties=[i for i,c in zip(inf['valid_catalog_indices'],costs) if abs(float(c)-true_terms['cost'])<=state.PUBLIC.tie_atol],
++                truth_unique_top=inf['summary']['top_catalog_indices']==[true_index],
++                unique_model_hypothesis=inf['summary']['unique_model_hypothesis'],
++                top_class_indices=inf['summary']['top_class_indices'],top_catalog_indices=inf['summary']['top_catalog_indices'],
++                canonical_catalog_index=canonical,
++                canonical_start_correct=canonical is not None and catalog[canonical]['tau1']==1,
++                invented_edit=None if canonical is None else catalog[canonical]['event_type']!='ZERO_EDIT',
++                fixed_historical_phase0_opponent=fixed,
++                canonical_path=catalog[canonical] if canonical is not None else None,
++                canonical_matches=canonical is not None and catalog[canonical]['taus']==list(range(1,45)),
++                true_terms=true_terms,winner_terms=winner,
++                true_minus_winner=None if winner is None else true_terms['cost']-winner['cost'],
++                expected_pilot_present=arm=='OVERLAP_MULTI' and kid=='CORRECT',accepted_payload=False,state_path_accepted=False)
++        except Exception as exc:p.update(status='MISSING_READ',error=str(exc))
++        for target,text in cfg['messages'].items():
++            m=store.data['message_evaluations'][sid+'/'+target]
++            bits=(row.get('payload') or {}).get('decoded_bits')
++            if bits is not None and row['payload_status']=='READ':
++                truth=payload.message_bits(text)
++                m.update(status='EVALUATED',diagnostic_bit_errors=sum(a!=b for a,b in zip(bits,truth)),diagnostic_exact=bits==truth,
++                    bit_errors=None,accepted_payload=False,note='repeated payload diagnostic; never path selection or accepted recovery')
++            else:m.update(status='MISSING_READ')
++        store.save()
++    # Historical references do not select new paths or replace any failed new observation.
++    for arm in ARMS:
++        for layer,kind in [('MATCHED_SOURCE_MP4','historical_source_mp4'),('MATCHED_FULL_RESAVED','historical_FULL_mp4')]:
++            old=next(r for r in store.data['historical'].values() if r['arm']==arm and r['kind']==kind)
++            new=store.data['media'][arm+'/'+layer]
++            store.data['historical_comparisons'][arm+'/'+kind]=dict(status='COMPARED' if old['status']=='VERIFIED' and new['status']=='SAVED' else 'MISSING_REFERENCE_OR_NEW',
++                old_sha256=old['sha256'],new_sha256=new.get('sha256'),bytes_equal=new.get('sha256')==old['sha256'] if new['status']=='SAVED' and old['status']=='VERIFIED' else None,
++                equality_required=False,not_pure_codec_causality=True)
++        for kid in KEYS:
++            old=next(r for r in store.data['historical'].values() if r['arm']==arm and r['kind']=='FULL_phase0_raw' and r['key_id']==kid)
++            now=store.data['reads'][arm+'/MATCHED_FULL_RESAVED/'+kid];report=dict(status='MISSING_REFERENCE_OR_NEW')
++            try:
++                if old['status']!='VERIFIED' or now['status'] not in GOOD:raise ValueError('historical or new raw unavailable')
++                if adapter.file_sha256(old['path'])!=old['sha256']:raise ValueError('historical raw changed')
++                historical=load_gzip(old['path']);previous=historical['inference']
++                fresh=load_gzip(now['path'])['inference']
++                report.update(status='COMPARED',historical_raw_sha256=old['sha256'],new_raw_sha256=now['sha256'],
++                    maximum_same_path_cost_difference=float(np.max(np.abs(np.asarray(previous['path_costs'])-np.asarray(fresh['path_costs'])))),
++                    previous_summary=previous['summary'],new_summary=fresh['summary'],new_searches=0,not_pure_codec_causality=True)
++            except Exception as exc:report['error']=str(exc)
++            store.data['historical_comparisons'][arm+'/FULL_raw/'+kid]=report
++    if adapter.file_sha256(blind)!=before:raise RuntimeError('posthoc modified blind evidence')
++    store.data['blind_sha256']=before;store.save()
++
++def finalize(store,cfg):
++    recover_unfinished(store,'upstream or worker incomplete');evaluate_saved(store,cfg)
++    c=store.data['counts']
++    required=dict(normalized=15,path_reads=30,payload_reads=30,valid_costs=5220,catalog_slots=117450,structural_exclusions=112230,
++        path_posthoc=30,message_evaluations=60,rasters=6,mp4_saved=6,mp4_read=6,decode_diagnostics=3)
++    calls=all(store.data['calls'][k]['completed']==n for k,n in cfg['planned_calls'].items())
++    done=c==required and calls and not store.data.get('interrupted',False)
++    store.data['primary_status']='EXECUTION_COMPLETE' if done else 'INCOMPLETE'
++    history=all(r['status']=='VERIFIED' for r in store.data['historical'].values())
++    store.data['historical_counts']={kind:dict(expected=sum(r['kind']==kind for r in store.data['historical'].values()),
++        verified=sum(r['kind']==kind and r['status']=='VERIFIED' for r in store.data['historical'].values()))
++        for kind in ('FULL_phase0_tensor','FULL_phase0_raw','historical_source_mp4','historical_FULL_mp4')}
++    compared=all(r['status']=='COMPARED' for r in store.data['historical_comparisons'].values()) and len(store.data['historical_comparisons'])==12
++    store.data['historical_comparison_status']='COMPLETE' if compared else 'INCOMPLETE'
++    store.data['historical_reference_status']='COMPLETE' if history else 'INCOMPLETE'
++    store.data['package_status']='COMPLETE' if done and history and compared else 'INCOMPLETE'
++    store.data['status']=store.data['primary_status'];store.data['stage']='FINISHED';store.save()
++    return done
++
++def stop_worker(child):
++    if child.poll() is None:
++        try:child.terminate()
++        except ProcessLookupError:pass
++    try:return child.wait(timeout=10)
++    except subprocess.TimeoutExpired:child.kill();return child.wait(timeout=10)
++
++def worker_phase(output):
++    command=[sys.executable,'-u','-m',MODULE,'--output',str(output),'--worker']
++    child=None;error=None;code=None;halt=False;cleanup=None;start=time.perf_counter()
++    try:
++        with (Path(output)/'replay.log').open('w') as log:
++            child=subprocess.Popen(command,cwd=ROOT,stdout=subprocess.PIPE,stderr=subprocess.STDOUT,text=True,bufsize=1)
++            for line in child.stdout:print(line,end='',flush=True);log.write(line);log.flush()
++            code=child.wait()
++    except BaseException as exc:
++        error=f'{type(exc).__name__}: {exc}';halt=not isinstance(exc,Exception)
++        if child is not None:
++            try:code=stop_worker(child)
++            except BaseException as err:cleanup=str(err);halt=True
++    finally:
++        if child is not None and child.stdout is not None:
++            try:child.stdout.close()
++            except Exception:pass
++    store=Store(output) # Reload only after child termination; preserve its latest canonical commits.
++    store.data['workers']['replay']=dict(command=command,returncode=code,error=error,cleanup_error=cleanup,
++        status='COMPLETE' if error is None and code==0 else 'FAILED',elapsed_seconds=time.perf_counter()-start)
++    if error or code!=0:store.failure('REPLAY_WORKER',RuntimeError(error or str(code)))
++    if halt:store.data['interrupted']=True
++    store.checkpoint();return store,halt
++
++def main():
++    parser=argparse.ArgumentParser(description=__doc__);parser.add_argument('--output',type=Path,required=True)
++    parser.add_argument('--input-root',type=Path);parser.add_argument('--worker',action='store_true');args=parser.parse_args()
++    cfg=load_config()
++    if args.worker:
++        store=Store(args.output)
++        try:replay_worker(store,cfg)
++        except Exception as exc:store.failure('VAE_REPLAY',exc);recover_unfinished(store,str(exc));raise
++        return
++    store=Store(args.output,create=True,cfg=cfg,input_root=args.input_root or cfg['fixed_input']['root'])
++    preflight(store,cfg);terminal_layers(store,cfg)
++    if any(r['status']=='VERIFIED' for r in store.data['inputs'].values()):store,halt=worker_phase(args.output)
++    else:halt=False;store.data['workers']['replay']=dict(status='NOT_STARTED_NO_VERIFIED_INPUT')
++    done=finalize(store,cfg);print(json.dumps(dict(status=store.data['status'],counts=store.data['counts'])))
++    if halt:raise SystemExit(130)
++    if not done:raise SystemExit(1)
++
++if __name__=='__main__':main()
+diff --git a/notebooks/zero_mean_c1_layered_transport_v1_colab.ipynb b/notebooks/zero_mean_c1_layered_transport_v1_colab.ipynb
+new file mode 100644
+index 0000000..b7cc406
+--- /dev/null
++++ b/notebooks/zero_mean_c1_layered_transport_v1_colab.ipynb
+@@ -0,0 +1,189 @@
++{
++ "nbformat": 4,
++ "nbformat_minor": 5,
++ "cells": [
++  {
++   "cell_type": "code",
++   "id": "layered-transport-0",
++   "metadata": {},
++   "source": [
++    "from google.colab import drive\n",
++    "drive.mount('/content/drive')\n"
++   ],
++   "outputs": [],
++   "execution_count": null
++  },
++  {
++   "cell_type": "markdown",
++   "id": "layered-transport-1",
++   "metadata": {},
++   "source": [
++    "# Zero-mean C1 matched five-layer transfer diagnostic\n",
++    "\n",
++    "Run all reuses the three saved terminals from run20260930T113335113338Z/source05beeaa. It performs no new generation or Transformer calls. Per arm, one FP32 VAE decode gives a saved clamped float buffer; its saved original uint8 raster supplies a matched first MP4, whose actual readback supplies a matched second MP4. The five primary layers are terminal, float re-encode, RGB8 re-encode, matched SOURCE MP4 re-encode, and matched FULL MP4 re-encode.\n",
++    "\n",
++    "All encodes receive the complete181 frames. All normalized tensors retain46 latent steps; the unchanged zero-mean receiver scores regular1..44 at fixed phase0 using all174 valid paths,3915 catalog slots per condition. Fixed phase is a diagnostic support choice, not synchronization recovery. Thirty raw path/payload conditions are persisted before30 path truth joins and60 message comparisons. Existing R45 terminal results and historical FULL tensors/raw are separate references.\n",
++    "\n",
++    "Planned calls:3 VAE decode,12 VAE encode,6 new MP4 saves,6 actual MP4 reads,0 Transformer. Save3 FP32 float and3 uint8 raster tensors (~1.24GiB raw total),12 new normalized tensors (~86MiB),6 new videos, complete costs/projections and preclamp statistics. The first float boundary combines decode, mapping, clamp and encode; it is not a pure encoder-loss measurement. New/old media hashes are compared but need not match across execution environments.\n",
++    "\n",
++    "Failures keep all fixed rows. Terminal and history remain independently usable if the VAE cannot load. Primary execution, historical reference and whole-package completeness are reported separately. All path scores remain uncalibrated and unaccepted; no automatic science, FPR, phase, editing or quality PASS. No new crop/four-phase matrix, no C2, no writer/reader changes. Local validation uses synthetic mock VAE/codec only, not real media.\n",
++    "\n",
++    "Current Python, a working Torch pair and fresh child processes are reused. No venv, exact-Python or GPU-model gate. UNPUBLISHED DRAFT: publish and verify source before binding.\n"
++   ]
++  },
++  {
++   "cell_type": "code",
++   "id": "layered-transport-2",
++   "metadata": {},
++   "source": [
++    "SOURCE_SHA = None\n",
++    "from pathlib import Path\n",
++    "import datetime,hashlib,json,os,subprocess,sys,traceback\n",
++    "STAMP=datetime.datetime.now(datetime.timezone.utc).strftime('%Y%m%dT%H%M%S%fZ')\n",
++    "OUTPUT=Path('/content/drive/MyDrive/Video-WM/Zero-Mean-C1-Layered-Transport-V1')/STAMP\n",
++    "OUTPUT.mkdir(parents=True,exist_ok=False)\n",
++    "REPO=Path('/content/SC-SSTW-LAYERED-TRANSPORT-'+STAMP)\n",
++    "RUN_OUTPUT=OUTPUT/'fixed_reference'\n",
++    "PYTHON=sys.executable\n",
++    "INPUT_ROOT=Path('/content/drive/MyDrive/Video-WM/Video-Overlap-Zero-Mean-C1-V1/20260930T113335113338Z/fixed_reference')\n",
++    "ARMS=('OFF','PAYLOAD_MULTI','OVERLAP_MULTI');KEYS=('CORRECT','WRONG')\n",
++    "LAYERS=('TERMINAL_PREFIX44','FLOAT_CLAMPED','RGB8_NO_CODEC','MATCHED_SOURCE_MP4','MATCHED_FULL_RESAVED')\n",
++    "FIXED={'arms': 3, 'layers': 5, 'normalized_records': 15, 'path_reads': 30, 'payload_reads': 30, 'path_posthoc': 30, 'message_evaluations': 60, 'catalog_slots': 117450, 'valid_costs': 5220, 'structural_exclusions': 112230, 'candidates_per_condition': 3915, 'valid_per_condition': 174, 'decode_diagnostics': 3, 'historical_normalized_references': 3, 'historical_raw_references': 6, 'historical_media_hash_comparisons': 6}\n",
++    "setup=dict(status='SETUP_STARTED',source_sha=SOURCE_SHA,fixed_denominator=FIXED,input_root=str(INPUT_ROOT),\n",
++    " normalized={a+'/'+l:{'status':'NOT_RUN_SETUP'} for a in ARMS for l in LAYERS},\n",
++    " reads={a+'/'+l+'/'+k:{'status':'NOT_RUN_SETUP','catalog_slots':3915,'valid_slots':174,'excluded_slots':3741} for a in ARMS for l in LAYERS for k in KEYS},\n",
++    " path_posthoc={a+'/'+l+'/'+k:{'status':'NOT_RUN_SETUP'} for a in ARMS for l in LAYERS for k in KEYS},\n",
++    " message_evaluations={a+'/'+l+'/'+k+'/'+t:{'status':'NOT_RUN_SETUP'} for a in ARMS for l in LAYERS for k in KEYS for t in ('REGISTERED','WRONG_MESSAGE')},\n",
++    " rasters={a+'/'+l:{'status':'NOT_RUN_SETUP'} for a in ARMS for l in LAYERS[1:3]},\n",
++    " media={a+'/'+l:{'status':'NOT_RUN_SETUP'} for a in ARMS for l in LAYERS[3:]},\n",
++    " decode_diagnostics={a:{'status':'NOT_RUN_SETUP'} for a in ARMS},\n",
++    " planned_calls=dict(transformer=0,vae_decode=3,vae_encode=12,new_mp4_save=6,new_mp4_read=6,new_path_infer=30,new_payload_read=30))\n",
++    "def write_json(path,value):\n",
++    "    temp=path.with_suffix(path.suffix+'.tmp');temp.write_text(json.dumps(value,indent=2)+'\\n');os.replace(temp,path)\n",
++    "def failed(stage,exc):\n",
++    "    setup.update(status='SETUP_FAILED',stage=stage,error=f'{type(exc).__name__}: {exc}')\n",
++    "    write_json(OUTPUT/'setup_receipt.json',setup)\n",
++    "    write_json(OUTPUT/'setup_failure.json',dict(stage=stage,error=str(exc),traceback=traceback.format_exc()))\n",
++    "def logged(command,stage,cwd=None,check=True):\n",
++    "    try:\n",
++    "        with (OUTPUT/'execution.log').open('a') as log:\n",
++    "            log.write('COMMAND '+repr(command)+'\\n');log.flush()\n",
++    "            child=subprocess.Popen(command,cwd=cwd,stdout=subprocess.PIPE,stderr=subprocess.STDOUT,text=True,bufsize=1)\n",
++    "            for line in child.stdout:print(line,end='',flush=True);log.write(line);log.flush()\n",
++    "            code=child.wait();log.write('EXIT '+str(code)+'\\n')\n",
++    "        if check and code:raise subprocess.CalledProcessError(code,command)\n",
++    "        return code\n",
++    "    except Exception as exc:failed(stage,exc);raise\n",
++    "write_json(OUTPUT/'setup_receipt.json',setup)\n",
++    "print('Fixed input:',INPUT_ROOT,'New output:',OUTPUT)\n",
++    "if SOURCE_SHA is None:\n",
++    "    error=RuntimeError('Unpublished draft: bind verified published source SHA before Run all')\n",
++    "    failed('SOURCE_BINDING',error);raise error\n"
++   ],
++   "outputs": [],
++   "execution_count": null
++  },
++  {
++   "cell_type": "code",
++   "id": "layered-transport-3",
++   "metadata": {},
++   "source": [
++    "try:\n",
++    "    logged(['git','clone','--filter=blob:none','https://github.com/RICHAAARC/SC-SSTW.git',str(REPO)],'SOURCE_CLONE')\n",
++    "    logged(['git','-C',str(REPO),'fetch','origin',SOURCE_SHA],'SOURCE_FETCH')\n",
++    "    logged(['git','-C',str(REPO),'checkout','--detach',SOURCE_SHA],'SOURCE_CHECKOUT')\n",
++    "    actual=subprocess.check_output(['git','-C',str(REPO),'rev-parse','HEAD'],text=True).strip()\n",
++    "    dirty=subprocess.check_output(['git','-C',str(REPO),'status','--porcelain'],text=True)\n",
++    "    if actual!=SOURCE_SHA or dirty:raise RuntimeError('source SHA/clean checkout mismatch')\n",
++    "    write_json(OUTPUT/'source_receipt.json',dict(source_sha=actual,clean=True))\n",
++    "    torch_ok=logged([PYTHON,'-c','import torch,torchvision; print(torch.__version__,torchvision.__version__)'],'TORCH_PROBE',check=False)==0\n",
++    "    if not torch_ok:\n",
++    "        logged([PYTHON,'-m','pip','install','--upgrade','torch','torchvision'],'TORCH_REPAIR')\n",
++    "    logged([PYTHON,'-m','pip','install','-r',str(REPO/'experiments/wan_state_clock/requirements-grow-video-reference.txt')],'DEPENDENCIES')\n",
++    "    dependency_code=logged([PYTHON,'-m','pip','check'],'DEPENDENCY_REPORT',check=False)\n",
++    "    setup['dependency_check_returncode']=dependency_code\n",
++    "    if dependency_code:print('Metadata conflicts retained; actual imports determine availability.')\n",
++    "    (OUTPUT/'environment_freeze.txt').write_text(subprocess.check_output([PYTHON,'-m','pip','freeze'],text=True))\n",
++    "    import_code='import json,torch; from diffusers import AutoencoderKLWan; from experiments.wan_state_clock.zero_mean_c1_layered_transport_run import environment; r=environment(); r.update(cuda_available=torch.cuda.is_available()); print(json.dumps(r))'\n",
++    "    env=json.loads(subprocess.check_output([PYTHON,'-c',import_code],cwd=REPO,text=True))\n",
++    "    write_json(OUTPUT/'environment_receipt.json',env)\n",
++    "    if not env['cuda_available']:print('CUDA unavailable: CPU path selected; much slower.')\n",
++    "    logged(['ffmpeg','-version'],'FFMPEG_PROBE');logged(['ffprobe','-version'],'FFPROBE_PROBE')\n",
++    "    setup.update(status='SETUP_COMPLETE',python_executable=PYTHON,environment_strategy='current_python_fresh_children')\n",
++    "    write_json(OUTPUT/'setup_receipt.json',setup)\n",
++    "except Exception as exc:failed('SOURCE_OR_ENVIRONMENT',exc);raise\n"
++   ],
++   "outputs": [],
++   "execution_count": null
++  },
++  {
++   "cell_type": "code",
++   "id": "layered-transport-4",
++   "metadata": {},
++   "source": [
++    "try:\n",
++    "    from google.colab import userdata\n",
++    "    token=userdata.get('HF_TOKEN')\n",
++    "    if token:os.environ['HF_TOKEN']=token\n",
++    "except Exception:\n",
++    "    pass\n",
++    "finally:\n",
++    "    token=None\n",
++    "command=[PYTHON,'-u','-m','experiments.wan_state_clock.zero_mean_c1_layered_transport_run','--output',str(RUN_OUTPUT),'--input-root',str(INPUT_ROOT)]\n",
++    "try:\n",
++    "    returncode=logged(command,'FIXED_RUN',cwd=REPO,check=False)\n",
++    "    RESULT_PATH=RUN_OUTPUT/'result.json'\n",
++    "    write_json(OUTPUT/'execution_receipt.json',dict(command=command,returncode=returncode,result_path=str(RESULT_PATH),result_exists=RESULT_PATH.is_file()))\n",
++    "    if not RESULT_PATH.is_file():raise RuntimeError('No runner result; full setup denominator is retained')\n",
++    "    setup.update(status='SUPERSEDED_BY_RESULT',result_path=str(RESULT_PATH));write_json(OUTPUT/'setup_receipt.json',setup)\n",
++    "except Exception as exc:failed('RUNNER',exc);raise\n"
++   ],
++   "outputs": [],
++   "execution_count": null
++  },
++  {
++   "cell_type": "code",
++   "id": "layered-transport-5",
++   "metadata": {},
++   "source": [
++    "result=json.loads(RESULT_PATH.read_text())\n",
++    "if result['source_sha']!=SOURCE_SHA or result['fixed_denominator']!=FIXED:raise RuntimeError('result identity/denominator mismatch')\n",
++    "print('Primary:',result['primary_status'],result['counts'])\n",
++    "print('Historical references:',result['historical_reference_status'],'Whole package:',result['package_status'])\n",
++    "print('Calls:',result['calls'],'VAE loaded:',result['model_loaded'])\n",
++    "print('Preclamp:',result['decode_diagnostics'])\n",
++    "for name,row in result['path_posthoc'].items():\n",
++    "    print(name,row['status'],'truth in top=',row.get('truth_in_top'),'canonical=',row.get('canonical_catalog_index'),'true-minus-winner=',row.get('true_minus_winner'))\n",
++    "for name,row in result['message_evaluations'].items():\n",
++    "    print(name,row['status'],'diagnostic bit errors=',row.get('diagnostic_bit_errors'))\n",
++    "print('All scores remain uncalibrated. Fixed g0 is not recovered phase; historical byte equality is not required.')\n",
++    "print('Historical comparisons:',result['historical_comparisons'])\n",
++    "print('Evidence ceiling:',result['evidence_ceiling'])\n",
++    "from IPython.display import Video,display\n",
++    "for name,row in result['media'].items():\n",
++    "    print(name,row['status'])\n",
++    "    if row['status']=='SAVED' and Path(row['path']).is_file():\n",
++    "        try:display(Video(str(row['path']),embed=True))\n",
++    "        except Exception as exc:print('Preview unavailable; saved MP4 remains at',row['path'],type(exc).__name__,str(exc))\n",
++    "print('Inspect visible quality separately; no quality threshold or quality PASS.')\n"
++   ],
++   "outputs": [],
++   "execution_count": null
++  }
++ ],
++ "metadata": {
++  "kernelspec": {
++   "display_name": "Python3",
++   "language": "python",
++   "name": "python3"
++  },
++  "language_info": {
++   "name": "python"
++  },
++  "candidate_binding": {
++   "source_sha": null,
++   "status": "UNPUBLISHED_DRAFT",
++   "execution": "User-run only; no local real VAE/codec/model execution"
++  }
++ }
++}
+diff --git a/runtime/wan/zero_mean_c1_layered_transport.py b/runtime/wan/zero_mean_c1_layered_transport.py
+new file mode 100644
+index 0000000..f3aad41
+--- /dev/null
++++ b/runtime/wan/zero_mean_c1_layered_transport.py
+@@ -0,0 +1,59 @@
++"""Thin replay adapter: unchanged Wan scaling/cache/codec, extra preclamp statistics only."""
++from __future__ import annotations
++import hashlib
++from pathlib import Path
++from runtime.wan import vae as shared_vae,io
++
++def file_sha256(path):
++    with Path(path).open('rb') as f:return hashlib.file_digest(f,'sha256').hexdigest()
++
++def decode_with_clamp_receipt(frozen_vae,normalized):
++    import torch
++    if tuple(normalized.shape)!=(1,16,46,40,64):raise ValueError('fixed full terminal required')
++    device=next(frozen_vae.parameters()).device
++    if next(frozen_vae.parameters()).dtype!=torch.float32:raise ValueError('fixed FP32 VAE required')
++    normalized=normalized.to(device=device,dtype=torch.float32)
++    mean,std=shared_vae._scale_tensors(frozen_vae,normalized)
++    shared_vae._clear_cache(frozen_vae)
++    try:
++        with torch.inference_mode():decoded=frozen_vae.decode(normalized*std+mean,return_dict=False)[0]
++    finally:shared_vae._clear_cache(frozen_vae)
++    if tuple(decoded.shape)!=(1,3,181,320,512):raise ValueError('decoded full RGB geometry mismatch')
++    # Exactly the shared adapter's FP32 mapping; reductions do not modify this tensor.
++    rgb=decoded[0].permute(1,2,3,0)/2.+.5
++    low=high=0;under=over=absolute=0.
++    for frame in rgb:
++        if not bool(torch.isfinite(frame).all()):raise ValueError('nonfinite preclamp RGB')
++        low+=int((frame<0).sum());high+=int((frame>1).sum())
++        under=max(under,max(0.,-float(frame.min())));over=max(over,max(0.,float(frame.max())-1.))
++        absolute+=float((frame-frame.clamp(0,1)).abs().double().sum())
++    receipt=dict(status='MEASURED',domain='decoded/2+.5 before clamp; not raw VAE [-1,1]',
++        dtype=str(rgb.dtype),shape=list(rgb.shape),finite=True,fraction_below0=low/rgb.numel(),
++        fraction_above1=high/rgb.numel(),maximum_underflow=under,maximum_overflow=over,
++        mean_absolute_clamp_change=absolute/rgb.numel(),scalar_elements=rgb.numel())
++    return rgb.clamp(0,1).detach().cpu().contiguous(),receipt
++
++def validate_rgb(rgb,dtype):
++    if tuple(rgb.shape)!=(181,320,512,3) or rgb.dtype!=dtype:raise ValueError('fixed RGB dtype/geometry required')
++    if not bool(rgb.isfinite().all()):raise ValueError('nonfinite RGB')
++
++def encode_raster(q8,path):
++    """Keep the old io.encode_rgb byte raster exactly; no custom codec invocation."""
++    import torch
++    validate_rgb(q8,torch.uint8)
++    restored=q8.float()/255.
++    if not torch.equal(shared_vae.quantize_rgb8_no_codec(restored),q8):raise ValueError('Q8/255 roundtrip changed codec raster')
++    io.encode_rgb(restored,Path(path),8,18)
++
++def read_full_mp4(path):
++    import torch
++    rgb=io.read_mp4(Path(path));validate_rgb(rgb,torch.float32)
++    return rgb
++
++def encode_normalized(frozen_vae,rgb):
++    import torch
++    validate_rgb(rgb,torch.float32)
++    z=shared_vae.reencode_rgb24_readback(frozen_vae,rgb)
++    if tuple(z.shape)!=(1,16,46,40,64) or z.dtype!=torch.float32 or not bool(z.isfinite().all()):
++        raise ValueError('fixed full normalized geometry/dtype required')
++    return z.detach().cpu()
+diff --git a/scripts/build_zero_mean_c1_layered_transport_notebook.py b/scripts/build_zero_mean_c1_layered_transport_notebook.py
+new file mode 100644
+index 0000000..ef5e349
+--- /dev/null
++++ b/scripts/build_zero_mean_c1_layered_transport_notebook.py
+@@ -0,0 +1,30 @@
++"""Build the fixed saved-terminal layered replay notebook; never execute it."""
++from pathlib import Path
++import argparse,ast,json,re
++ROOT=Path(__file__).resolve().parents[1]
++OUTPUT=ROOT/'notebooks/zero_mean_c1_layered_transport_v1_colab.ipynb'
++MARKDOWN='# Zero-mean C1 matched five-layer transfer diagnostic\n\nRun all reuses the three saved terminals from run20260930T113335113338Z/source05beeaa. It performs no new generation or Transformer calls. Per arm, one FP32 VAE decode gives a saved clamped float buffer; its saved original uint8 raster supplies a matched first MP4, whose actual readback supplies a matched second MP4. The five primary layers are terminal, float re-encode, RGB8 re-encode, matched SOURCE MP4 re-encode, and matched FULL MP4 re-encode.\n\nAll encodes receive the complete181 frames. All normalized tensors retain46 latent steps; the unchanged zero-mean receiver scores regular1..44 at fixed phase0 using all174 valid paths,3915 catalog slots per condition. Fixed phase is a diagnostic support choice, not synchronization recovery. Thirty raw path/payload conditions are persisted before30 path truth joins and60 message comparisons. Existing R45 terminal results and historical FULL tensors/raw are separate references.\n\nPlanned calls:3 VAE decode,12 VAE encode,6 new MP4 saves,6 actual MP4 reads,0 Transformer. Save3 FP32 float and3 uint8 raster tensors (~1.24GiB raw total),12 new normalized tensors (~86MiB),6 new videos, complete costs/projections and preclamp statistics. The first float boundary combines decode, mapping, clamp and encode; it is not a pure encoder-loss measurement. New/old media hashes are compared but need not match across execution environments.\n\nFailures keep all fixed rows. Terminal and history remain independently usable if the VAE cannot load. Primary execution, historical reference and whole-package completeness are reported separately. All path scores remain uncalibrated and unaccepted; no automatic science, FPR, phase, editing or quality PASS. No new crop/four-phase matrix, no C2, no writer/reader changes. Local validation uses synthetic mock VAE/codec only, not real media.\n\nCurrent Python, a working Torch pair and fresh child processes are reused. No venv, exact-Python or GPU-model gate. Source is an unpublished draft until the main session publishes and binds its immutable SHA.\n'
++SETUP="from pathlib import Path\nimport datetime,hashlib,json,os,subprocess,sys,traceback\nSTAMP=datetime.datetime.now(datetime.timezone.utc).strftime('%Y%m%dT%H%M%S%fZ')\nOUTPUT=Path('/content/drive/MyDrive/Video-WM/Zero-Mean-C1-Layered-Transport-V1')/STAMP\nOUTPUT.mkdir(parents=True,exist_ok=False)\nREPO=Path('/content/SC-SSTW-LAYERED-TRANSPORT-'+STAMP)\nRUN_OUTPUT=OUTPUT/'fixed_reference'\nPYTHON=sys.executable\nINPUT_ROOT=Path('/content/drive/MyDrive/Video-WM/Video-Overlap-Zero-Mean-C1-V1/20260930T113335113338Z/fixed_reference')\nARMS=('OFF','PAYLOAD_MULTI','OVERLAP_MULTI');KEYS=('CORRECT','WRONG')\nLAYERS=('TERMINAL_PREFIX44','FLOAT_CLAMPED','RGB8_NO_CODEC','MATCHED_SOURCE_MP4','MATCHED_FULL_RESAVED')\nFIXED={'arms': 3, 'layers': 5, 'normalized_records': 15, 'path_reads': 30, 'payload_reads': 30, 'path_posthoc': 30, 'message_evaluations': 60, 'catalog_slots': 117450, 'valid_costs': 5220, 'structural_exclusions': 112230, 'candidates_per_condition': 3915, 'valid_per_condition': 174, 'decode_diagnostics': 3, 'historical_normalized_references': 3, 'historical_raw_references': 6, 'historical_media_hash_comparisons': 6}\nsetup=dict(status='SETUP_STARTED',source_sha=SOURCE_SHA,fixed_denominator=FIXED,input_root=str(INPUT_ROOT),\n normalized={a+'/'+l:{'status':'NOT_RUN_SETUP'} for a in ARMS for l in LAYERS},\n reads={a+'/'+l+'/'+k:{'status':'NOT_RUN_SETUP','catalog_slots':3915,'valid_slots':174,'excluded_slots':3741} for a in ARMS for l in LAYERS for k in KEYS},\n path_posthoc={a+'/'+l+'/'+k:{'status':'NOT_RUN_SETUP'} for a in ARMS for l in LAYERS for k in KEYS},\n message_evaluations={a+'/'+l+'/'+k+'/'+t:{'status':'NOT_RUN_SETUP'} for a in ARMS for l in LAYERS for k in KEYS for t in ('REGISTERED','WRONG_MESSAGE')},\n rasters={a+'/'+l:{'status':'NOT_RUN_SETUP'} for a in ARMS for l in LAYERS[1:3]},\n media={a+'/'+l:{'status':'NOT_RUN_SETUP'} for a in ARMS for l in LAYERS[3:]},\n decode_diagnostics={a:{'status':'NOT_RUN_SETUP'} for a in ARMS},\n planned_calls=dict(transformer=0,vae_decode=3,vae_encode=12,new_mp4_save=6,new_mp4_read=6,new_path_infer=30,new_payload_read=30))\ndef write_json(path,value):\n    temp=path.with_suffix(path.suffix+'.tmp');temp.write_text(json.dumps(value,indent=2)+'\\n');os.replace(temp,path)\ndef failed(stage,exc):\n    setup.update(status='SETUP_FAILED',stage=stage,error=f'{type(exc).__name__}: {exc}')\n    write_json(OUTPUT/'setup_receipt.json',setup)\n    write_json(OUTPUT/'setup_failure.json',dict(stage=stage,error=str(exc),traceback=traceback.format_exc()))\ndef logged(command,stage,cwd=None,check=True):\n    try:\n        with (OUTPUT/'execution.log').open('a') as log:\n            log.write('COMMAND '+repr(command)+'\\n');log.flush()\n            child=subprocess.Popen(command,cwd=cwd,stdout=subprocess.PIPE,stderr=subprocess.STDOUT,text=True,bufsize=1)\n            for line in child.stdout:print(line,end='',flush=True);log.write(line);log.flush()\n            code=child.wait();log.write('EXIT '+str(code)+'\\n')\n        if check and code:raise subprocess.CalledProcessError(code,command)\n        return code\n    except Exception as exc:failed(stage,exc);raise\nwrite_json(OUTPUT/'setup_receipt.json',setup)\nprint('Fixed input:',INPUT_ROOT,'New output:',OUTPUT)\nif SOURCE_SHA is None:\n    error=RuntimeError('Unpublished draft: bind verified published source SHA before Run all')\n    failed('SOURCE_BINDING',error);raise error\n"
++ENVIRONMENT="try:\n    logged(['git','clone','--filter=blob:none','https://github.com/RICHAAARC/SC-SSTW.git',str(REPO)],'SOURCE_CLONE')\n    logged(['git','-C',str(REPO),'fetch','origin',SOURCE_SHA],'SOURCE_FETCH')\n    logged(['git','-C',str(REPO),'checkout','--detach',SOURCE_SHA],'SOURCE_CHECKOUT')\n    actual=subprocess.check_output(['git','-C',str(REPO),'rev-parse','HEAD'],text=True).strip()\n    dirty=subprocess.check_output(['git','-C',str(REPO),'status','--porcelain'],text=True)\n    if actual!=SOURCE_SHA or dirty:raise RuntimeError('source SHA/clean checkout mismatch')\n    write_json(OUTPUT/'source_receipt.json',dict(source_sha=actual,clean=True))\n    torch_ok=logged([PYTHON,'-c','import torch,torchvision; print(torch.__version__,torchvision.__version__)'],'TORCH_PROBE',check=False)==0\n    if not torch_ok:\n        logged([PYTHON,'-m','pip','install','--upgrade','torch','torchvision'],'TORCH_REPAIR')\n    logged([PYTHON,'-m','pip','install','-r',str(REPO/'experiments/wan_state_clock/requirements-grow-video-reference.txt')],'DEPENDENCIES')\n    dependency_code=logged([PYTHON,'-m','pip','check'],'DEPENDENCY_REPORT',check=False)\n    setup['dependency_check_returncode']=dependency_code\n    if dependency_code:print('Metadata conflicts retained; actual imports determine availability.')\n    (OUTPUT/'environment_freeze.txt').write_text(subprocess.check_output([PYTHON,'-m','pip','freeze'],text=True))\n    import_code='import json,torch; from diffusers import AutoencoderKLWan; from experiments.wan_state_clock.zero_mean_c1_layered_transport_run import environment; r=environment(); r.update(cuda_available=torch.cuda.is_available()); print(json.dumps(r))'\n    env=json.loads(subprocess.check_output([PYTHON,'-c',import_code],cwd=REPO,text=True))\n    write_json(OUTPUT/'environment_receipt.json',env)\n    if not env['cuda_available']:print('CUDA unavailable: CPU path selected; much slower.')\n    logged(['ffmpeg','-version'],'FFMPEG_PROBE');logged(['ffprobe','-version'],'FFPROBE_PROBE')\n    setup.update(status='SETUP_COMPLETE',python_executable=PYTHON,environment_strategy='current_python_fresh_children')\n    write_json(OUTPUT/'setup_receipt.json',setup)\nexcept Exception as exc:failed('SOURCE_OR_ENVIRONMENT',exc);raise\n"
++RUN="try:\n    from google.colab import userdata\n    token=userdata.get('HF_TOKEN')\n    if token:os.environ['HF_TOKEN']=token\nexcept Exception:\n    pass\nfinally:\n    token=None\ncommand=[PYTHON,'-u','-m','experiments.wan_state_clock.zero_mean_c1_layered_transport_run','--output',str(RUN_OUTPUT),'--input-root',str(INPUT_ROOT)]\ntry:\n    returncode=logged(command,'FIXED_RUN',cwd=REPO,check=False)\n    RESULT_PATH=RUN_OUTPUT/'result.json'\n    write_json(OUTPUT/'execution_receipt.json',dict(command=command,returncode=returncode,result_path=str(RESULT_PATH),result_exists=RESULT_PATH.is_file()))\n    if not RESULT_PATH.is_file():raise RuntimeError('No runner result; full setup denominator is retained')\n    setup.update(status='SUPERSEDED_BY_RESULT',result_path=str(RESULT_PATH));write_json(OUTPUT/'setup_receipt.json',setup)\nexcept Exception as exc:failed('RUNNER',exc);raise\n"
++DISPLAY="result=json.loads(RESULT_PATH.read_text())\nif result['source_sha']!=SOURCE_SHA or result['fixed_denominator']!=FIXED:raise RuntimeError('result identity/denominator mismatch')\nprint('Primary:',result['primary_status'],result['counts'])\nprint('Historical references:',result['historical_reference_status'],'Whole package:',result['package_status'])\nprint('Calls:',result['calls'],'VAE loaded:',result['model_loaded'])\nprint('Preclamp:',result['decode_diagnostics'])\nfor name,row in result['path_posthoc'].items():\n    print(name,row['status'],'truth in top=',row.get('truth_in_top'),'canonical=',row.get('canonical_catalog_index'),'true-minus-winner=',row.get('true_minus_winner'))\nfor name,row in result['message_evaluations'].items():\n    print(name,row['status'],'diagnostic bit errors=',row.get('diagnostic_bit_errors'))\nprint('All scores remain uncalibrated. Fixed g0 is not recovered phase; historical byte equality is not required.')\nprint('Historical comparisons:',result['historical_comparisons'])\nprint('Evidence ceiling:',result['evidence_ceiling'])\nfrom IPython.display import Video,display\nfor name,row in result['media'].items():\n    print(name,row['status'])\n    if row['status']=='SAVED' and Path(row['path']).is_file():\n        try:display(Video(str(row['path']),embed=True))\n        except Exception as exc:print('Preview unavailable; saved MP4 remains at',row['path'],type(exc).__name__,str(exc))\nprint('Inspect visible quality separately; no quality threshold or quality PASS.')\n"
++
++def build(source_sha=None,output=OUTPUT):
++    if source_sha is not None and not re.fullmatch('[0-9a-f]{40}',source_sha):raise ValueError('published immutable source SHA required')
++    wording=('Published source: '+source_sha+'. Checks out this immutable source.' if source_sha else 'UNPUBLISHED DRAFT: publish and verify source before binding.')
++    sources=[('code',"from google.colab import drive\ndrive.mount('/content/drive')\n"),
++      ('markdown',MARKDOWN.replace('Source is an unpublished draft until the main session publishes and binds its immutable SHA.',wording)),
++      ('code',f'SOURCE_SHA = {source_sha!r}\n'+SETUP),('code',ENVIRONMENT),('code',RUN),('code',DISPLAY)]
++    cells=[]
++    for i,(kind,text) in enumerate(sources):
++        cell=dict(cell_type=kind,id=f'layered-transport-{i}',metadata={},source=text.splitlines(keepends=True))
++        if kind=='code':ast.parse(text);cell.update(outputs=[],execution_count=None)
++        cells.append(cell)
++    result=dict(nbformat=4,nbformat_minor=5,cells=cells,metadata=dict(kernelspec=dict(display_name='Python3',language='python',name='python3'),
++      language_info=dict(name='python'),candidate_binding=dict(source_sha=source_sha,status='PUBLISHED_SHA_BOUND' if source_sha else 'UNPUBLISHED_DRAFT',
++      execution='User-run only; no local real VAE/codec/model execution')))
++    Path(output).write_text(json.dumps(result,indent=1)+'\n');return Path(output)
++
++if __name__=='__main__':
++    parser=argparse.ArgumentParser();parser.add_argument('--source-sha');parser.add_argument('--output',type=Path,default=OUTPUT)
++    args=parser.parse_args();print(build(args.source_sha,args.output))
+diff --git a/tests/test_zero_mean_c1_layered_transport.py b/tests/test_zero_mean_c1_layered_transport.py
+new file mode 100644
+index 0000000..540ea0d
+--- /dev/null
++++ b/tests/test_zero_mean_c1_layered_transport.py
+@@ -0,0 +1,226 @@
++"""CPU synthetic/mock replay only: never load a real VAE/model or invoke a codec."""
++import ast,copy,hashlib,importlib.util,json,re,sys
++from pathlib import Path
++from types import SimpleNamespace
++import numpy as np
++import pytest
++import torch
++from main.tube_state import video_overlap_zero_mean_state as state
++from runtime.wan import zero_mean_c1_layered_transport as b,generation
++from experiments.wan_state_clock import zero_mean_c1_layered_transport_run as run
++pytestmark=pytest.mark.unit
++
++@pytest.fixture(autouse=True)
++def threads():
++    n=torch.get_num_threads();torch.set_num_threads(1)
++    yield
++    torch.set_num_threads(n)
++
++def rgb(value=.5,dtype=torch.float32):
++    return torch.tensor(value,dtype=dtype).reshape(1,1,1,1).expand(181,320,512,3)
++
++def latent():
++    return torch.from_numpy(state.synthesize('watermark',dtype=np.float32))
++
++def fixture_store(tmp_path):
++    cfg=copy.deepcopy(run.load_config());source=tmp_path/'inputs';source.mkdir()
++    for entry in cfg['fixed_input']['required_terminal']:
++        p=source/entry['relative_path'];p.parent.mkdir(parents=True,exist_ok=True);torch.save(latent(),p)
++        entry['sha256']=b.file_sha256(p)
++    rp=source/'result.json';run.dump(rp,dict(source_sha=cfg['fixed_input']['source_sha'],environment=dict(mock=True)))
++    cfg['fixed_input']['result_sha256']=b.file_sha256(rp)
++    store=run.Store(tmp_path/'output',create=True,cfg=cfg,input_root=source)
++    run.preflight(store,cfg)
++    return store,cfg
++
++class FakeVAE:
++    def __init__(self):
++        self.p=torch.nn.Parameter(torch.tensor(0.,dtype=torch.float32),requires_grad=False)
++        self.config=SimpleNamespace(latents_mean=[1.]*16,latents_std=[2.]*16)
++        self.clears=0;self.decode_inputs=[];self.encode_inputs=[]
++    def parameters(self):return iter([self.p])
++    def clear_cache(self):self.clears+=1
++    def decode(self,z,return_dict):
++        self.decode_inputs.append((tuple(z.shape),float(z[0,0,0,0,0])))
++        return (torch.tensor([-2.,0.,2.]).reshape(1,3,1,1,1).expand(1,3,181,320,512),)
++    def encode(self,x):
++        self.encode_inputs.append((tuple(x.shape),x[0,:,0,0,0].tolist()))
++        return SimpleNamespace(latent_dist=SimpleNamespace(mode=lambda:torch.ones(1,16,46,40,64)*5.))
++
++def test_thin_adapter_original_mapping_cache_preclamp_and_mode():
++    vae=FakeVAE();z=torch.zeros(1,16,46,40,64)
++    image,receipt=b.decode_with_clamp_receipt(vae,z)
++    assert image.shape==(181,320,512,3) and image.dtype==torch.float32
++    assert image[0,0,0].tolist()==[0.,.5,1.]
++    assert receipt['fraction_below0']==pytest.approx(1/3)
++    assert receipt['fraction_above1']==pytest.approx(1/3)
++    assert receipt['maximum_underflow']==receipt['maximum_overflow']==.5
++    assert receipt['mean_absolute_clamp_change']==pytest.approx(1/3)
++    assert vae.decode_inputs==[((1,16,46,40,64),1.)]
++    encoded=b.encode_normalized(vae,image)
++    assert torch.equal(encoded,torch.full_like(encoded,2.))
++    assert vae.encode_inputs==[((1,3,181,320,512),[-1.,0.,1.])]
++    assert vae.clears==4
++
++def test_q8_original_quantizer_preserves_all_values_and_codec_settings(monkeypatch,tmp_path):
++    q=torch.arange(256,dtype=torch.uint8).repeat(2).reshape(1,1,512,1).expand(181,320,512,3)
++    seen={}
++    def fake_encode(value,path,fps,crf):
++        assert torch.equal(b.shared_vae.quantize_rgb8_no_codec(value),q)
++        seen.update(path=path,fps=fps,crf=crf)
++    monkeypatch.setattr(b.io,'encode_rgb',fake_encode)
++    b.encode_raster(q,tmp_path/'mock.mp4')
++    assert seen==dict(path=tmp_path/'mock.mp4',fps=8,crf=18)
++
++def test_original_infer_full_family_blind_and_extra_row_exclusion():
++    calls=[]
++    def call(k,fn):calls.append(k);return fn()
++    z=latent();before=run.read_normalized(z,'watermark',call)
++    h0,h1,w0,w1=state.PUBLIC.blocks[0]
++    z[0,4,45,h0:h1,w0:w1]+=torch.from_numpy(state.bases('watermark')[0,:,0].reshape(4,4)).float()*123.
++    after=run.read_normalized(z,'watermark',call)
++    assert before['inference']==after['inference']
++    assert before['payload']==after['payload']
++    assert before['extra_regular45_projection']!=after['extra_regular45_projection']
++    result=before['inference']
++    assert result['counts']['catalog']==3915 and result['counts']['scored']==174
++    assert result['counts']['structurally_excluded']==3741
++    assert result['summary']['top_catalog_indices']==[0]
++    assert all(v['count']==1320 for v in before['payload']['votes'])
++    assert calls==['new_path_infer','new_payload_read']*2
++    assert list(__import__('inspect').signature(run.read_normalized).parameters)==['z','key','call']
++
++def install_replay_fixture(monkeypatch,*,fail_float=False):
++    trace=[];fake=FakeVAE()
++    monkeypatch.setattr(generation,'load_frozen_vae',lambda *a,**k:fake)
++    monkeypatch.setattr(b,'decode_with_clamp_receipt',lambda *a:(rgb(),dict(status='MEASURED',mock=True)))
++    monkeypatch.setattr(b.shared_vae,'quantize_rgb8_no_codec',lambda value:rgb(128,torch.uint8))
++    def encode(vae,value):
++        assert tuple(value.shape)==(181,320,512,3)
++        first=float(value[0,0,0,0]);trace.append(('encode',first))
++        if fail_float and first==.5:raise RuntimeError('injected float encode failure')
++        return latent()
++    monkeypatch.setattr(b,'encode_normalized',encode)
++    def source(q,path):
++        assert q.dtype==torch.uint8 and int(q[0,0,0,0])==128
++        Path(path).write_bytes(b'mock source');trace.append(('source',128))
++    monkeypatch.setattr(b,'encode_raster',source)
++    def full(value,path,fps,crf):
++        assert float(value[0,0,0,0])==.25 and (fps,crf)==(8,18)
++        Path(path).write_bytes(b'mock full');trace.append(('full',.25))
++    monkeypatch.setattr(b.io,'encode_rgb',full)
++    monkeypatch.setattr(b,'read_full_mp4',lambda p:rgb(.25 if Path(p).name.startswith('MATCHED_SOURCE') else .3125))
++    return trace
++
++def test_matched_full_chain_original_reader_fixed_counts_and_posthoc_isolation(monkeypatch,tmp_path):
++    store,cfg=fixture_store(tmp_path)
++    trace=install_replay_fixture(monkeypatch)
++    run.terminal_layers(store,cfg);run.replay_worker(store,cfg)
++    # Supply one hash-bound historical phase0 winner. This is posthoc only.
++    rawrow=store.data['reads']['OFF/MATCHED_FULL_RESAVED/CORRECT']
++    old=next(r for r in store.data['historical'].values() if r['arm']=='OFF' and r.get('key_id')=='CORRECT')
++    old.update(status='VERIFIED',path=rawrow['path'],sha256=rawrow['sha256'])
++    store.checkpoint();before=b.file_sha256(store.output/'blind_readouts.json')
++    assert run.finalize(store,cfg)
++    assert store.data['primary_status']=='EXECUTION_COMPLETE'
++    assert store.data['historical_reference_status']==store.data['package_status']=='INCOMPLETE'
++    assert store.data['counts']==dict(normalized=15,path_reads=30,payload_reads=30,valid_costs=5220,
++        catalog_slots=117450,structural_exclusions=112230,path_posthoc=30,message_evaluations=60,
++        rasters=6,mp4_saved=6,mp4_read=6,decode_diagnostics=3)
++    for kind,n in cfg['planned_calls'].items():assert store.data['calls'][kind]['completed']==n
++    assert [v for k,v in trace if k=='encode']==pytest.approx([.5,128/255.,.25,.3125]*3)
++    assert b.file_sha256(store.output/'blind_readouts.json')==before
++    post=store.data['path_posthoc']['OFF/TERMINAL_PREFIX44/CORRECT']
++    assert post['true_rank']==1 and post['truth_unique_top']
++    assert post['canonical_start_correct'] and post['invented_edit'] is False
++    assert post['fixed_historical_phase0_opponent']['status']=='COMPARED'
++    assert post['fixed_historical_phase0_opponent']['catalog_index']==0
++    assert all(not r['accepted_payload'] for r in store.data['path_posthoc'].values())
++    text=(store.output/'blind_readouts.json').read_text()
++    assert all(x not in text for x in ('registered_tau','true_rank','REGISTERED','OKOK','NOPE','invented_edit'))
++    assert len(store.data['historical'])==15
++    assert not list(store.output.rglob('*.tmp'))
++
++def test_float_encode_failure_does_not_block_same_raster_media(monkeypatch,tmp_path):
++    store,cfg=fixture_store(tmp_path);install_replay_fixture(monkeypatch,fail_float=True)
++    run.replay_worker(store,cfg);run.recover_unfinished(store,'fixture end');run.evaluate_saved(store,cfg)
++    assert sum(r['status']=='FAILED' for r in store.data['normalized'].values())==3
++    assert all(store.data['normalized'][a+'/'+l]['status']=='SAVED' for a in run.ARMS for l in run.LAYERS[2:])
++    assert store.data['counts']['mp4_saved']==6 and store.data['counts']['mp4_read']==6
++    assert store.data['counts']['valid_costs']==18*174
++    assert store.data['counts']['path_reads']==18
++    assert all(r['status']!='PENDING' for group in ('reads','path_posthoc','message_evaluations') for r in store.data[group].values())
++
++def test_missing_input_or_hash_keeps_fixed_roster_and_terminal_independence(tmp_path,monkeypatch):
++    store,cfg=fixture_store(tmp_path)
++    source=Path(store.data['input_root'])/'OFF/terminal.pt';source.write_bytes(b'corrupt fixture')
++    run.preflight(store,cfg)
++    assert store.data['inputs']['OFF']['status']=='FAILED'
++    run.terminal_layers(store,cfg)
++    assert store.data['counts']['path_reads']==4
++    def no_vae(*a,**k):raise RuntimeError('fixture VAE load failed')
++    monkeypatch.setattr(generation,'load_frozen_vae',no_vae)
++    with pytest.raises(RuntimeError):run.replay_worker(store,cfg)
++    assert not run.finalize(store,cfg)
++    assert store.data['counts']['path_reads']==4 and store.data['counts']['catalog_slots']==117450
++    assert len(store.data['reads'])==30 and len(store.data['message_evaluations'])==60
++    assert store.data['calls']['vae_decode']['attempted']==0
++
++@pytest.mark.parametrize('after_canonical',[False,True])
++def test_canonical_window_recovery_retains_only_committed_rows(tmp_path,monkeypatch,after_canonical):
++    store,cfg=fixture_store(tmp_path);sid='OFF/FLOAT_CLAMPED'
++    store.data['normalized'][sid].update(status='SAVED',sha256='fixture-hash')
++    def stop():raise SystemExit('fixture hard exit')
++    monkeypatch.setattr(store,'blind' if after_canonical else 'save',stop)
++    with pytest.raises(SystemExit):store.checkpoint()
++    restored=run.Store(store.output);run.recover_unfinished(restored,'hard exit')
++    assert restored.data['normalized'][sid]['status']==('SAVED' if after_canonical else 'NOT_COMPLETED')
++    blind=json.loads((store.output/'blind_readouts.json').read_text())
++    assert blind['normalized'][sid]==restored.data['normalized'][sid]
++    assert len(restored.data['reads'])==30
++
++def test_worker_monitor_failure_terminates_before_reload(tmp_path,monkeypatch):
++    store,cfg=fixture_store(tmp_path);events=[]
++    class Child:
++        stdout=None
++        def poll(self):return None
++        def terminate(self):events.append('terminate')
++        def wait(self,timeout=None):events.append('wait');return -15
++    class BrokenStream:
++        def __iter__(self):
++            disk=run.Store(store.output)
++            disk.data['decode_diagnostics']['OFF'].update(status='MEASURED',mock=True);disk.save()
++            raise OSError('monitor fixture')
++        def close(self):events.append('close')
++    child=Child();child.stdout=BrokenStream()
++    monkeypatch.setattr(run.subprocess,'Popen',lambda *a,**k:child)
++    restored,halt=run.worker_phase(store.output)
++    assert not halt and events[:2]==['terminate','wait']
++    assert restored.data['decode_diagnostics']['OFF']['status']=='MEASURED'
++    assert restored.data['workers']['replay']['status']=='FAILED'
++
++def test_output_guard_prevents_writes_inside_fixed_input(tmp_path):
++    cfg=run.load_config();source=tmp_path/'input';source.mkdir()
++    for output in (source,source/'new'/'nested'):
++        with pytest.raises(ValueError,match='read-only'):run.Store(output,create=True,cfg=cfg,input_root=source)
++    assert list(source.iterdir())==[]
++
++def test_notebook_draft_fixed_input_dependencies_and_fresh_child(tmp_path):
++    builder_path=run.ROOT/'scripts/build_zero_mean_c1_layered_transport_notebook.py'
++    spec=importlib.util.spec_from_file_location('layered_builder',builder_path);builder=importlib.util.module_from_spec(spec);spec.loader.exec_module(builder)
++    candidate=builder.build(output=tmp_path/'n.ipynb')
++    assert candidate.read_bytes()==(run.ROOT/'notebooks/zero_mean_c1_layered_transport_v1_colab.ipynb').read_bytes()
++    nb=json.loads(candidate.read_text());codes=[''.join(c['source']) for c in nb['cells'] if c['cell_type']=='code']
++    assert codes[0]=="from google.colab import drive\ndrive.mount('/content/drive')\n"
++    for cell in nb['cells']:
++        if cell['cell_type']=='code':
++            ast.parse(''.join(cell['source']));assert cell['outputs']==[] and cell['execution_count'] is None
++    text='\n'.join(codes)
++    assert 'SOURCE_SHA = None' in text and '20260930T113335113338Z/fixed_reference' in text
++    assert 'PYTHON=sys.executable' in text and 'torch,torchvision' in text
++    for path in re.findall(r"REPO/'([^']+)'",text):
++        if 'requirements' in path:assert (run.ROOT/path).is_file()
++    assert 'Video(str(' in text and 'pip' in text and 'venv' not in text and 'ensurepip' not in text
++    assert "'--input-root',str(INPUT_ROOT)" in text
++    assert 'sys.executable' in __import__('inspect').getsource(run.worker_phase)
++    assert 'WanPipeline' not in text

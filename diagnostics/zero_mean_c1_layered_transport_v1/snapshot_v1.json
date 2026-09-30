@@ -1,0 +1,83 @@
+{
+  "schema": "zero-mean-c1-layered-transport-freeze-v1",
+  "base_sha": "53d03ede78cbf0765cbdace02e3417fc98a01c2d",
+  "branch": "dev/video-trajectory-blind-validation-v1",
+  "files": [
+    {
+      "path": "diagnostics/zero_mean_c1_layered_transport_v1/design_freeze_v1.json",
+      "sha256": "67d2a0b64259478c1b7f42b18f5f6f65f4c81d31c16503382d203a3335a3344b",
+      "bytes": 1552
+    },
+    {
+      "path": "diagnostics/zero_mean_c1_layered_transport_v1/implementation_report.md",
+      "sha256": "c36df70389cc668cc58530a1aa255f54ee72dfbb3a7a2e0412a456ed88d6f6ff",
+      "bytes": 3606
+    },
+    {
+      "path": "diagnostics/zero_mean_c1_layered_transport_v1/input_inventory.json",
+      "sha256": "0a6cff92c59592e6c938071cc700848a8a483df7661bcad589d77b2ddfb4baf5",
+      "bytes": 6711
+    },
+    {
+      "path": "diagnostics/zero_mean_c1_layered_transport_v1/local_validation.json",
+      "sha256": "d8b5fa81ccbb5ce6549b033034dc93e7b609e352e95350b52da0b429d7eb174d",
+      "bytes": 3607
+    },
+    {
+      "path": "diagnostics/zero_mean_c1_layered_transport_v1/pytest_initial.txt",
+      "sha256": "89033194e6bf8dd1a78ea431c5cc506d5225c92f433dfe468bef4579612038d5",
+      "bytes": 100
+    },
+    {
+      "path": "diagnostics/zero_mean_c1_layered_transport_v1/pytest_receipt_delta.txt",
+      "sha256": "6613167d6fc8b1a799fffda84771787a95d0cf453ebc212277f00050ff0aa89c",
+      "bytes": 112
+    },
+    {
+      "path": "docs/zero_mean_c1_layered_transport_v1.md",
+      "sha256": "57f38f1a11b6e5eb4ef1820c172d02d1d4c79472bbfa9aec92392eacfb6c86c6",
+      "bytes": 5146
+    },
+    {
+      "path": "experiments/wan_state_clock/configs/zero_mean_c1_layered_transport_v1.json",
+      "sha256": "771019d83ca18e7edde3a0dd130441e9179e65ae1d2dc30c4f113612c78d0062",
+      "bytes": 12442
+    },
+    {
+      "path": "experiments/wan_state_clock/zero_mean_c1_layered_transport_run.py",
+      "sha256": "3d1f27a800ffc151b0d682fe8d28f972bccbd18a3363c8f5ce5a8107d97523e3",
+      "bytes": 29164
+    },
+    {
+      "path": "notebooks/zero_mean_c1_layered_transport_v1_colab.ipynb",
+      "sha256": "7076067bb7b77e78496998bc096e9156dab29045b0f3a110747cc3e7bc349ee5",
+      "bytes": 12377
+    },
+    {
+      "path": "runtime/wan/zero_mean_c1_layered_transport.py",
+      "sha256": "5f419ec9fa61c402cc05f47fd8e4285986886b3de978cabede49f5f88a9b55dc",
+      "bytes": 3062
+    },
+    {
+      "path": "scripts/build_zero_mean_c1_layered_transport_notebook.py",
+      "sha256": "4a94778912bd235bb5d8785d1c536bce1c6f14a432d3525e76a71820a67b92a4",
+      "bytes": 12114
+    },
+    {
+      "path": "tests/test_zero_mean_c1_layered_transport.py",
+      "sha256": "78197bea1b9307d327d798e2717a11c7c81b4a6ab2d6126a94557106ea4a4e20",
+      "bytes": 13182
+    }
+  ],
+  "tree_sha256": "0e1879adc2d24a62a359ebb52db63b3fa14a9f999bef7b9c7716e4122e0aec68",
+  "tree_recipe": "SHA256(sorted path + NUL + sha256 + LF UTF8)",
+  "patch": {
+    "path": "diagnostics/zero_mean_c1_layered_transport_v1/candidate_v1.patch",
+    "sha256": "c6d9ccd2fed73a548f4531a636ed4f83f335e84426207b8b72be0640c45431f7",
+    "bytes": 108474
+  },
+  "validation": "diagnostics/zero_mean_c1_layered_transport_v1/local_validation.json",
+  "source_sha": null,
+  "status": "FROZEN_FOR_SAME_VERSION_REVIEW",
+  "real_vae_codec_execution": false
+}

@@ -1,0 +1,70 @@
+{
+  "status": "LOCAL_CPU_MOCK_AND_STATIC_PASS",
+  "real_vae_executed": false,
+  "real_codec_executed": false,
+  "model_executed": false,
+  "saved_run_scores_recomputed_by_A1": false,
+  "base_sha": "53d03ede78cbf0765cbdace02e3417fc98a01c2d",
+  "environment": {
+    "python": "/home/richar/projects/CEG-WM/alive/CEG-WM/.venv/bin/python",
+    "CUDA_VISIBLE_DEVICES": "",
+    "PYTHONDONTWRITEBYTECODE": "1",
+    "OPENBLAS_NUM_THREADS": "1"
+  },
+  "pytest_runs": [
+    {
+      "command": "python -m pytest -q tests/test_zero_mean_c1_layered_transport.py --disable-warnings",
+      "passed": 11,
+      "failed": 0,
+      "skipped": 0,
+      "seconds": 12.57,
+      "stdout": "/home/richar/projects/Video-WM/worktrees/Video-Trajectory-Blind-Validation-V1/diagnostics/zero_mean_c1_layered_transport_v1/pytest_initial.txt",
+      "stdout_sha256": "89033194e6bf8dd1a78ea431c5cc506d5225c92f433dfe468bef4579612038d5",
+      "wrapper_status": "PowerShell/bash trailing exit-variable escaping returned1 after pytest already printed11passed; test stdout retained; no false test failure or rerun"
+    },
+    {
+      "command": "python -m pytest -q tests/test_zero_mean_c1_layered_transport.py -k \"original_infer or matched_full_chain\" --disable-warnings",
+      "passed": 2,
+      "failed": 0,
+      "skipped": 0,
+      "deselected": 9,
+      "seconds": 6.23,
+      "process_returncode": 0,
+      "stdout": "/home/richar/projects/Video-WM/worktrees/Video-Trajectory-Blind-Validation-V1/diagnostics/zero_mean_c1_layered_transport_v1/pytest_receipt_delta.txt",
+      "stdout_sha256": "6613167d6fc8b1a799fffda84771787a95d0cf453ebc212277f00050ff0aa89c",
+      "purpose": "actual VAE normalization receipt + separate historical completeness fields; strengthen extra regular45 exclusion check using selected spatial direction"
+    }
+  ],
+  "final_suite_not_repeated": true,
+  "ast": {
+    "runtime/wan/zero_mean_c1_layered_transport.py": "AST_PASS",
+    "experiments/wan_state_clock/zero_mean_c1_layered_transport_run.py": "AST_PASS",
+    "scripts/build_zero_mean_c1_layered_transport_notebook.py": "AST_PASS",
+    "tests/test_zero_mean_c1_layered_transport.py": "AST_PASS"
+  },
+  "notebook": {
+    "cells": 6,
+    "empty_outputs": true,
+    "source_sha": null,
+    "builder_identical": true,
+    "dependencies_exist": true
+  },
+  "frozen_design_unchanged": true,
+  "inherited_method_hashes_verified": 6,
+  "old_tracked_changes": [],
+  "engineering_coverage": [
+    "original R44 infer174 valid/3915 slots, with shared full catalog and exclusions",
+    "full181 mock decode/encode scaling/cache/mode and preclamp; original quantizer256values and codecarguments",
+    "matched mock3decode12encode6save6read,15normalized30raw5220cost,30path60message",
+    "floatencode failure keeps Q8/source/full; corrupt terminal isolates arm; VAEloadfail keeps other terminal reads",
+    "canonical precommit/postcommit windows; monitor terminates/waits before latest disk reload",
+    "hash-bound old phase0 fixed opponent, rank/ties/start/falseedit posthoc; raw hash unchanged",
+    "input-root descendant output refusal; unbound notebook/currentPython/freshchild/static dependency path"
+  ],
+  "independent_main_baseline": {
+    "path": "/home/richar/projects/Video-WM/diagnostics/zero-mean-transfer-main-review-20260930/terminal_r44_baseline.json",
+    "sha256": "8144a1f5101c1bd1404b4bac4d624d5319f0a766e25f757d32d27d1b61d863d4",
+    "not_A1_rerun": true,
+    "summary": "6 real saved terminals/key conditions with unchanged R44 infer;1044cost. OVERLAP/CORRECT true uniquely top among174. Separate main evidence, not mock result."
+  }
+}

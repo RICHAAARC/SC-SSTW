@@ -1,0 +1,35 @@
+{
+  "schema": "zero-mean-layered-transport-design-freeze-v1",
+  "base_sha": "53d03ede78cbf0765cbdace02e3417fc98a01c2d",
+  "files": [
+    {
+      "path": "diagnostics/zero_mean_c1_layered_transport_v1/input_inventory.json",
+      "sha256": "0a6cff92c59592e6c938071cc700848a8a483df7661bcad589d77b2ddfb4baf5",
+      "bytes": 6711
+    },
+    {
+      "path": "docs/zero_mean_c1_layered_transport_v1.md",
+      "sha256": "57f38f1a11b6e5eb4ef1820c172d02d1d4c79472bbfa9aec92392eacfb6c86c6",
+      "bytes": 5146
+    },
+    {
+      "path": "experiments/wan_state_clock/configs/zero_mean_c1_layered_transport_v1.json",
+      "sha256": "771019d83ca18e7edde3a0dd130441e9179e65ae1d2dc30c4f113612c78d0062",
+      "bytes": 12442
+    }
+  ],
+  "tree_sha256": "19fcefce639809a632372ce652e08a26d737cf299a189f7f0a4d3ad4531ed75d",
+  "tree_recipe": "sorted path+NUL+sha256+LF, UTF8 SHA256",
+  "design_stage": "No runner implementation or numerical scoring at this freeze; proceed to authorized local implementation afterward.",
+  "source_binding": null,
+  "allowed_new_files": [
+    "experiments/wan_state_clock/configs/zero_mean_c1_layered_transport_v1.json",
+    "docs/zero_mean_c1_layered_transport_v1.md",
+    "runtime/wan/zero_mean_c1_layered_transport.py",
+    "experiments/wan_state_clock/zero_mean_c1_layered_transport_run.py",
+    "scripts/build_zero_mean_c1_layered_transport_notebook.py",
+    "notebooks/zero_mean_c1_layered_transport_v1_colab.ipynb",
+    "tests/test_zero_mean_c1_layered_transport.py",
+    "diagnostics/zero_mean_c1_layered_transport_v1/*"
+  ]
+}
