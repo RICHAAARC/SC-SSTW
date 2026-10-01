@@ -1,0 +1,34 @@
+{
+  "status": "PUBLISHED_SOURCE_BOUND_NOTEBOOK_READY",
+  "source_sha": "5d9fc24bc04c771f747573939dccdd72720d34cc",
+  "source_remote_readback": "9/9 exact SHA256 matches",
+  "source_remote_dev": "5d9fc24bc04c771f747573939dccdd72720d34cc",
+  "main_unchanged": "58776e57905b2b50de232b76a89101ae7229713a",
+  "notebook": {
+    "path": "notebooks/zero_mean_c1_yuv444_no_h264_v1_colab.ipynb",
+    "sha256": "d55260fbed1d129dc47ee67a7abee4855c28181eb099bacaaa3bfba62091c6ab",
+    "bytes": 13627,
+    "source_sha": "5d9fc24bc04c771f747573939dccdd72720d34cc"
+  },
+  "validation": {
+    "command": [
+      "/home/richar/projects/CEG-WM/alive/CEG-WM/.venv/bin/python",
+      "-m",
+      "pytest",
+      "-q",
+      "-p",
+      "no:cacheprovider",
+      "tests/test_zero_mean_c1_yuv444_no_h264.py",
+      "-k",
+      "notebook_and_source_scope_static"
+    ],
+    "returncode": 0,
+    "result": ".                                                                        [100%]\n1 passed, 4 deselected in 1.08s"
+  },
+  "candidate_history_preserved": [
+    "report.md",
+    "local_validation.json",
+    "pytest_local.txt"
+  ],
+  "real_codec_vae_gpu_colab_execution": false
+}
