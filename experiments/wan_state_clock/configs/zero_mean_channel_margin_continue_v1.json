@@ -1,0 +1,108 @@
+{
+  "candidate_status": "USER_AUTHORIZED_FIXED_CONTINUATION",
+  "model": {
+    "id": "Wan-AI/Wan2.1-T2V-1.3B-Diffusers",
+    "revision": "0fad780a534b6463e45facd96134c9f345acfa5b"
+  },
+  "key": "watermark",
+  "keys": {
+    "CORRECT": "watermark",
+    "WRONG": "watermark-wrong"
+  },
+  "messages": {
+    "REGISTERED": "OKOK",
+    "WRONG_MESSAGE": "NOPE"
+  },
+  "R": 44,
+  "phase": 0,
+  "update": {
+    "steps": 3,
+    "eta": 174.0,
+    "cap_l2": 1.0,
+    "support": "original1392",
+    "loss": "global_worst_hinge_plus_mean_pair_hinge",
+    "margin_rule": "half ideal public template separation; global uses minimum",
+    "channel_backward": "identity STE for RGB8/YUV444/RGB8; exact native VAE VJPs"
+  },
+  "input": {
+    "root": "/content/drive/MyDrive/Video-WM/Video-Overlap-Zero-Mean-C1-V1/20260930T113335113338Z/fixed_reference",
+    "result_sha256": "5ccd4138fdd0b3bf368a9c7fb76b8f77108e935d73ad68ccfed600d9aa39cbdd",
+    "terminal_relative_path": "OVERLAP_MULTI/terminal.pt",
+    "terminal_sha256": "5c96d514454cd1b23e700f0072b4a40c073e8a038269962743904fb6189c5164"
+  },
+  "reference": {
+    "root": "/content/drive/MyDrive/Video-WM/Zero-Mean-C1-YUV444-No-H264-V1/20261001T110124499275Z/fixed_reference",
+    "result_sha256": "5bea29ef9ae3563d53043188817b0827fd33f69eb000c236b9bc44864b506d78"
+  },
+  "fixed_denominator": {
+    "new_updates": 3,
+    "observations": 4,
+    "path_reads": 8,
+    "payload_reads": 8,
+    "message_evaluations": 16,
+    "valid_costs": 1392,
+    "catalog_slots": 31320,
+    "structural_exclusions": 29928,
+    "reference_normalized": 3,
+    "reference_raw": 6,
+    "parent_normalized": 1,
+    "parent_raw": 2
+  },
+  "planned_calls": {
+    "vae_decode_native": 4,
+    "vae_encode_native": 1,
+    "vae_encode_gradient": 3,
+    "vae_decode_gradient": 3,
+    "encoder_vjp": 3,
+    "decoder_vjp": 3,
+    "rgb_to_raw444": 4,
+    "raw444_to_rgb24": 4,
+    "path_read": 8,
+    "payload_read": 8,
+    "encoder_chunk_forward": 138,
+    "encoder_chunk_recompute": 138,
+    "decoder_chunk_forward": 138,
+    "decoder_chunk_recompute": 138,
+    "transformer": 0
+  },
+  "evidence_ceiling": "Three fixed fresh-gradient updates from audited total-step4; local POINT1 replays total-step4 and fixed POINT4 is total-step7. All intermediate outcomes retained. One-source development-only terminal controllability at g0/R44; not generation-time watermarking, MP4 robustness, blind phase synchronization or independent confirmation.",
+  "parent_run": {
+    "root": "/content/drive/MyDrive/Video-WM/Zero-Mean-Channel-Margin-Loop-V1/20261001T150038391655Z/fixed_reference",
+    "result_sha256": "d5e4f5440255a561cfe6aca007d1de32ce89baff354262f93745d088f5cbe46c",
+    "source_sha": "14589a13472f62ad83165d3f1e23efdd15e75d61",
+    "terminal_relative_path": "POINT4/terminal.pt",
+    "terminal_sha256": "d1ac45610a2fc20eaf84044785fa7c102b363344557e4bce8bacf26cec490e86",
+    "observation": "POINT4"
+  },
+  "observations": [
+    "POINT1",
+    "POINT2",
+    "POINT3",
+    "POINT4"
+  ],
+  "new_update_count": 3,
+  "total_update_count": 7,
+  "primary_endpoint": "POINT4",
+  "stop_on_positive_margin": false,
+  "iteration_selection": "fixed final point; retain all points and failures",
+  "cumulative_budget": {
+    "new_updates": 3,
+    "per_update_l2_cap": 1.0,
+    "sum_new_step_l2_upper_bound": 3.0,
+    "extra_cumulative_clipping": false,
+    "report_original_terminal_displacement": true,
+    "report_sum_l2_and_sum_squares": true,
+    "prior_total_updates": 4
+  },
+  "original_rgb_reference": {
+    "root": "/content/drive/MyDrive/Video-WM/Zero-Mean-Channel-Margin-V1/20261001T133512881485Z/fixed_reference",
+    "result_sha256": "236799579e960f9a34295129eb32a66e6a845efa2dcb4925e6ec59821fccf005"
+  },
+  "start_total_update_count": 4,
+  "total_update_indices": {
+    "POINT1": 4,
+    "POINT2": 5,
+    "POINT3": 6,
+    "POINT4": 7
+  }
+}
