@@ -1,0 +1,34 @@
+{
+  "status": "LOCAL_VALIDATED_USER_RUN_CANDIDATE",
+  "base_commit": "187e93695000ad675cf29dbfc29653157e67a3e3",
+  "additional_updates": 3,
+  "primary_endpoint": "POINT4",
+  "fixed_denominator": {
+    "new_updates": 3,
+    "observations": 4,
+    "path_reads": 8,
+    "payload_reads": 8,
+    "message_evaluations": 16,
+    "valid_costs": 1392,
+    "catalog_slots": 31320,
+    "structural_exclusions": 29928,
+    "reference_normalized": 3,
+    "reference_raw": 6,
+    "parent_normalized": 1,
+    "parent_raw": 2
+  },
+  "tests": {
+    "passed": 5,
+    "seconds": 7.71,
+    "scope": "fixed-loop fake-channel execution, fresh gradients, failure/no-op retention and notebook draft/binding; no pretrained model/codec"
+  },
+  "actual_saved_inputs_verified": true,
+  "model_or_codec_executed": false,
+  "files": {
+    "experiments/wan_state_clock/configs/zero_mean_channel_margin_loop_v1.json": "21bd665dd5829c04394d31e9a54a7d84b186cf5ccc1dd75a14abbca03bc6e749",
+    "experiments/wan_state_clock/zero_mean_channel_margin_loop_run.py": "159fb67f1f5e81df0340d4edf9438f39b4acc93613f806cf17e58c61440f2ef1",
+    "scripts/build_zero_mean_channel_margin_loop_notebook.py": "e75861811bb6e93ca6094a8e0802210bfc5463342cb5e45f9ccf95ee1d4c0ac7",
+    "tests/test_zero_mean_channel_margin_loop.py": "0fcf0efaf1981e023e7176e79dcd1ca74bfda372c9f0084eeed571632a12f82d",
+    "docs/zero_mean_channel_margin_loop_v1.md": "e921250d84ee8627d682ac8f82d454551bd175dc4f90db64822ad776e7b6f897"
+  }
+}
