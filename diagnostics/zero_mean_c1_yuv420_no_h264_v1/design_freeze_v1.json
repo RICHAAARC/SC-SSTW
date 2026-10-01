@@ -1,0 +1,93 @@
+{
+  "schema": "zero-mean-c1-yuv420-no-h264-design-freeze-v1",
+  "base_sha": "6864a9c9039af56b193b2612fab1f36658c8f47a",
+  "branch": "dev/video-trajectory-blind-validation-v1",
+  "files": [
+    {
+      "path": "diagnostics/zero_mean_c1_yuv420_no_h264_v1/input_inventory.json",
+      "sha256": "224d02f9ceb621127c4cf37dad3df6c246e412d77166785779045e2e65a7703a",
+      "bytes": 10005
+    },
+    {
+      "path": "diagnostics/zero_mean_c1_yuv420_no_h264_v1/parameter_evidence/OFF.ffprobe.json",
+      "sha256": "50d6c48c3fe14f96e3043f96e3e000feeb3281d01a762e6c0588fa3abe8ff682",
+      "bytes": 2125
+    },
+    {
+      "path": "diagnostics/zero_mean_c1_yuv420_no_h264_v1/parameter_evidence/OVERLAP_MULTI.ffprobe.json",
+      "sha256": "972e34fe92fb67b78a45284f47f399ee510a8ed198ffbadedc664ea17bf3202a",
+      "bytes": 2135
+    },
+    {
+      "path": "diagnostics/zero_mean_c1_yuv420_no_h264_v1/parameter_evidence/PAYLOAD_MULTI.ffprobe.json",
+      "sha256": "8523ba2bcbcdc3f4651b9912042a262702d7df139e8af7c21636c7cfdb906939",
+      "bytes": 2135
+    },
+    {
+      "path": "diagnostics/zero_mean_c1_yuv420_no_h264_v1/parameter_evidence/chroma_option_help_excerpt.txt",
+      "sha256": "b5e7683c42449ed7ef8d82728df1b5f1cc8159b3edde5a25eda8d6e5e6ab78dc",
+      "bytes": 741
+    },
+    {
+      "path": "diagnostics/zero_mean_c1_yuv420_no_h264_v1/parameter_evidence/local_ffmpeg_version.txt",
+      "sha256": "5b320c97f515e79171f10a2147d875ffb6b14bd2b25681047b73c46fe0a527ee",
+      "bytes": 1838
+    },
+    {
+      "path": "diagnostics/zero_mean_c1_yuv420_no_h264_v1/parameter_evidence/local_ffprobe_version.txt",
+      "sha256": "1b6410f756d8b5ef5308d712b51d2543bf8c8e6bc5796b7ede9570d099131e0b",
+      "bytes": 1839
+    },
+    {
+      "path": "diagnostics/zero_mean_c1_yuv420_no_h264_v1/parameter_evidence/original_drive_inventory.json",
+      "sha256": "9fe1bec7736b2df7ff4e30a056fafaa57d8a9272f1e169b38c84b4be3b08d8d5",
+      "bytes": 1256
+    },
+    {
+      "path": "diagnostics/zero_mean_c1_yuv420_no_h264_v1/parameter_evidence/original_environment_freeze.txt",
+      "sha256": "6e835c1fc07d2636f3c54df49256e4b4a15dc2085ce1b1103b2cff4beeb12da7",
+      "bytes": 14091
+    },
+    {
+      "path": "diagnostics/zero_mean_c1_yuv420_no_h264_v1/parameter_evidence/original_environment_receipt.json",
+      "sha256": "5fe575966abdc31d67af994eb4d13f74970c00f53be6691389edbf671e510bcd",
+      "bytes": 378
+    },
+    {
+      "path": "diagnostics/zero_mean_c1_yuv420_no_h264_v1/parameter_evidence/original_execution.log",
+      "sha256": "f89b94183529f3510832e726522f37f8636eed117d3efbad34f8a5a1119c63b2",
+      "bytes": 25576
+    },
+    {
+      "path": "diagnostics/zero_mean_c1_yuv420_no_h264_v1/parameter_evidence/original_source_receipt.json",
+      "sha256": "a3db1f90600efeb70e7390cbd97de88301e843fb3fb94736c4fd50d7b0674681",
+      "bytes": 80
+    },
+    {
+      "path": "diagnostics/zero_mean_c1_yuv420_no_h264_v1/parameter_evidence/source_mp4_probes.json",
+      "sha256": "2d73fa7eaed558187837704a38819989184d7c7956b11e1aa468745e5029ce9f",
+      "bytes": 7608
+    },
+    {
+      "path": "diagnostics/zero_mean_c1_yuv420_no_h264_v1/parameter_evidence.json",
+      "sha256": "474b930aae50f3025f139b205f06cab8e43de321472efcd4c6f28322fcb6caf3",
+      "bytes": 6403
+    },
+    {
+      "path": "docs/zero_mean_c1_yuv420_no_h264_v1.md",
+      "sha256": "cee1d11f8eb845375831debf8652229067642b7ab20f94ebf998d9610ae83faf",
+      "bytes": 6667
+    },
+    {
+      "path": "experiments/wan_state_clock/configs/zero_mean_c1_yuv420_no_h264_v1.json",
+      "sha256": "7f0080cdd95ff7bf1380c5ab45091d2e87f32aee3c381aecfe235db2ef601fd7",
+      "bytes": 19495
+    }
+  ],
+  "tree_sha256": "e67eaf47ab39be045add519dcd55108df6057923280abb1ed81998966b9d9608",
+  "tree_recipe": "SHA256(sorted path + NUL + sha256 + LF UTF8)",
+  "status": "DESIGN_ONLY_FROZEN_FOR_REVIEW",
+  "no_runner_or_notebook_implementation": true,
+  "no_conversion_decode_vae_or_score": true,
+  "source_sha": null
+}

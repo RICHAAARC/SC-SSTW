@@ -1,0 +1,11 @@
+     full            2            ED.V....... JPEG (2^n-1)
+  -chroma_sample_location <int>        ED.V....... chroma sample location (from 0 to INT_MAX) (default unknown)
+     unknown         0            ED.V....... Unspecified
+     left            1            ED.V....... Left
+     center          2            ED.V....... Center
+     topleft         3            ED.V....... Top-left
+     top             4            ED.V....... Top
+     bottomleft      5            ED.V....... Bottom-left
+     bottom          6            ED.V....... Bottom
+     unspecified     0            ED.V....... Unspecified
+  -slices            <int>        E..V....... set the number of slices, used in parallelized encoding (from 0 to INT_MAX) (default 0)

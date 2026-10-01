@@ -1,0 +1,3869 @@
+diff --git a/diagnostics/zero_mean_c1_yuv420_no_h264_v1/design_freeze_v1.json b/diagnostics/zero_mean_c1_yuv420_no_h264_v1/design_freeze_v1.json
+new file mode 100644
+index 0000000..6010c47
+--- /dev/null
++++ b/diagnostics/zero_mean_c1_yuv420_no_h264_v1/design_freeze_v1.json
+@@ -0,0 +1,93 @@
++{
++  "schema": "zero-mean-c1-yuv420-no-h264-design-freeze-v1",
++  "base_sha": "6864a9c9039af56b193b2612fab1f36658c8f47a",
++  "branch": "dev/video-trajectory-blind-validation-v1",
++  "files": [
++    {
++      "path": "diagnostics/zero_mean_c1_yuv420_no_h264_v1/input_inventory.json",
++      "sha256": "224d02f9ceb621127c4cf37dad3df6c246e412d77166785779045e2e65a7703a",
++      "bytes": 10005
++    },
++    {
++      "path": "diagnostics/zero_mean_c1_yuv420_no_h264_v1/parameter_evidence/OFF.ffprobe.json",
++      "sha256": "50d6c48c3fe14f96e3043f96e3e000feeb3281d01a762e6c0588fa3abe8ff682",
++      "bytes": 2125
++    },
++    {
++      "path": "diagnostics/zero_mean_c1_yuv420_no_h264_v1/parameter_evidence/OVERLAP_MULTI.ffprobe.json",
++      "sha256": "972e34fe92fb67b78a45284f47f399ee510a8ed198ffbadedc664ea17bf3202a",
++      "bytes": 2135
++    },
++    {
++      "path": "diagnostics/zero_mean_c1_yuv420_no_h264_v1/parameter_evidence/PAYLOAD_MULTI.ffprobe.json",
++      "sha256": "8523ba2bcbcdc3f4651b9912042a262702d7df139e8af7c21636c7cfdb906939",
++      "bytes": 2135
++    },
++    {
++      "path": "diagnostics/zero_mean_c1_yuv420_no_h264_v1/parameter_evidence/chroma_option_help_excerpt.txt",
++      "sha256": "b5e7683c42449ed7ef8d82728df1b5f1cc8159b3edde5a25eda8d6e5e6ab78dc",
++      "bytes": 741
++    },
++    {
++      "path": "diagnostics/zero_mean_c1_yuv420_no_h264_v1/parameter_evidence/local_ffmpeg_version.txt",
++      "sha256": "5b320c97f515e79171f10a2147d875ffb6b14bd2b25681047b73c46fe0a527ee",
++      "bytes": 1838
++    },
++    {
++      "path": "diagnostics/zero_mean_c1_yuv420_no_h264_v1/parameter_evidence/local_ffprobe_version.txt",
++      "sha256": "1b6410f756d8b5ef5308d712b51d2543bf8c8e6bc5796b7ede9570d099131e0b",
++      "bytes": 1839
++    },
++    {
++      "path": "diagnostics/zero_mean_c1_yuv420_no_h264_v1/parameter_evidence/original_drive_inventory.json",
++      "sha256": "9fe1bec7736b2df7ff4e30a056fafaa57d8a9272f1e169b38c84b4be3b08d8d5",
++      "bytes": 1256
++    },
++    {
++      "path": "diagnostics/zero_mean_c1_yuv420_no_h264_v1/parameter_evidence/original_environment_freeze.txt",
++      "sha256": "6e835c1fc07d2636f3c54df49256e4b4a15dc2085ce1b1103b2cff4beeb12da7",
++      "bytes": 14091
++    },
++    {
++      "path": "diagnostics/zero_mean_c1_yuv420_no_h264_v1/parameter_evidence/original_environment_receipt.json",
++      "sha256": "5fe575966abdc31d67af994eb4d13f74970c00f53be6691389edbf671e510bcd",
++      "bytes": 378
++    },
++    {
++      "path": "diagnostics/zero_mean_c1_yuv420_no_h264_v1/parameter_evidence/original_execution.log",
++      "sha256": "f89b94183529f3510832e726522f37f8636eed117d3efbad34f8a5a1119c63b2",
++      "bytes": 25576
++    },
++    {
++      "path": "diagnostics/zero_mean_c1_yuv420_no_h264_v1/parameter_evidence/original_source_receipt.json",
++      "sha256": "a3db1f90600efeb70e7390cbd97de88301e843fb3fb94736c4fd50d7b0674681",
++      "bytes": 80
++    },
++    {
++      "path": "diagnostics/zero_mean_c1_yuv420_no_h264_v1/parameter_evidence/source_mp4_probes.json",
++      "sha256": "2d73fa7eaed558187837704a38819989184d7c7956b11e1aa468745e5029ce9f",
++      "bytes": 7608
++    },
++    {
++      "path": "diagnostics/zero_mean_c1_yuv420_no_h264_v1/parameter_evidence.json",
++      "sha256": "474b930aae50f3025f139b205f06cab8e43de321472efcd4c6f28322fcb6caf3",
++      "bytes": 6403
++    },
++    {
++      "path": "docs/zero_mean_c1_yuv420_no_h264_v1.md",
++      "sha256": "cee1d11f8eb845375831debf8652229067642b7ab20f94ebf998d9610ae83faf",
++      "bytes": 6667
++    },
++    {
++      "path": "experiments/wan_state_clock/configs/zero_mean_c1_yuv420_no_h264_v1.json",
++      "sha256": "7f0080cdd95ff7bf1380c5ab45091d2e87f32aee3c381aecfe235db2ef601fd7",
++      "bytes": 19495
++    }
++  ],
++  "tree_sha256": "e67eaf47ab39be045add519dcd55108df6057923280abb1ed81998966b9d9608",
++  "tree_recipe": "SHA256(sorted path + NUL + sha256 + LF UTF8)",
++  "status": "DESIGN_ONLY_FROZEN_FOR_REVIEW",
++  "no_runner_or_notebook_implementation": true,
++  "no_conversion_decode_vae_or_score": true,
++  "source_sha": null
++}
+diff --git a/diagnostics/zero_mean_c1_yuv420_no_h264_v1/implementation_report.md b/diagnostics/zero_mean_c1_yuv420_no_h264_v1/implementation_report.md
+new file mode 100644
+index 0000000..b37ca0c
+--- /dev/null
++++ b/diagnostics/zero_mean_c1_yuv420_no_h264_v1/implementation_report.md
+@@ -0,0 +1,17 @@
++# 无H264 raw420控制：本地候选交付
++
++本轮已实现独立runtime、runner、builder、未绑定Notebook与必要tests。此前设计config.local_stage为冻结时的历史“未实现”记录，保持原字节；当前状态见本报告和local_validation，不把历史false字段当最终交付状态。旧writer/receiver、公共VAE/io和旧证据均未修改。
++
++固定链为已保存uint8 RGB24→真实raw yuv420p文件→重新打开raw→真实RGB24文件→完整181帧FP32 VAE mode编码；0Transformer、0VAEdecode、0H264/MP4decode。保3组两段转换及实际文件、3normalized、6新path/payload reads、1044有效成本/23490目录/22446排除、6path后评/12message评估。原两层6norm/12raw按SHA引用，0额外infer。primary/reference/package及固定对手可用性单列，失败全部留槽。
++
++第一段自动转换；第二段仅承接已观测SOURCE的left色度标签。矩阵/范围/传递/原色unknown保持auto。实际verbose命令日志、版本、退出码、字节和hash保存；left元数据、相同pix_fmt或相同版本不证明第一段与旧x264前缓冲的采样格点/滤波完全一致。这是无H264 raw420往返控制，不是保证纯H264单因素隔离；无第二控制矩阵或新scale/BT709/601/range/sws_flags开关。
++
++新raw提交后才读取父result携带的固定原FULL.phase0对手并做truth/参考后评。R44投影q、mu均1408维；mu=composite_signs(key)[:44]*alpha，alpha=1/sqrt1392，1360非零+48零边界，mu能量1360/1392。gain=dot(q,mu)/||mu||²；orthogonal residual为全1408维||q−gain*mu||；同号仅1360非零mu，q=0不算同号。全部是无阈值后评，不改变选路。true rank/unique/start/invented_edit和固定对手差同时保留。
++
++必要验证首轮9passed/0skip/10.06s；实际stdout保存在pytest_initial.txt。只在Notebook末格追加Retained result路径后，既有notebook定点1passed/8deselected/0.75s，stdout为pytest_display_delta.txt；未再跑全套。测试使用真实形状的合成张量、物化的mock raw字节、原infer/full family及fake VAE/FFmpeg进程；未执行真实颜色转换、编解码、VAE、GPU/模型，未重算任何真实旧成本。二段失败保首段、短文件拒绝、canonical两窗口、独立引用失败、worker组TERM/wait/KILL后重新读盘均通过。生成功能没有加入当前候选。
++
++参数取证只实际调用ffprobe show_streams/show_format、ffmpeg/ffprobe version及help；没有show_frames/read_intervals。三份小SOURCE复制后SHA核对，Q8仅Drive stat和继承期望SHA，不重读大float/raster。设计16文件SHA/bytes全部未变。设计tree_recipe的“sorted”文字不准确：记录的e67eaf47ab39be045add519dcd55108df6057923280abb1ed81998966b9d9608是files列序；真正完整path排序是3f8561ab9a461e828c0b7c830b9e03137f84be197689cf5115ade6ca79dbb6f4。保留原设计字节；本次candidate manifest明确按完整path排序后哈希。
++
++Notebook为notebooks/zero_mean_c1_yuv420_no_h264_v1_colab.ipynb，SOURCE_SHA=None，尚未发布/绑定，不提供假Colab链接。current Python、工作Torch配对probe、fresh child沿已成功流程；父worker使用独立进程组，监护失败时连同FFmpeg子孙清理后才加载最新canonical结果。此时没有commit/push/merge。工程mock通过不表示真实链可运行、科学成功、低FPR、质量通过或同步成立；真实执行需后续发布绑定后由用户完成。
++
++主审独立后评收据：/home/richar/projects/Video-WM/diagnostics/zero-mean-yuv420-main-review-20261001/reference_posthoc_check.json，SHA6947cb23b33166d012007d329edc9cb3478466298c8e87712484708e2c81f54c，核对的runner SHA287767088d4e12fbf5640bda56576985d65ecacdbf50d5ca4f84bfb0c90743a6与当前完全一致。12份同run已审raw的rank/unique/top/canonical/invented_edit/truecost/固定对手差12/12一致；只调用后评，不做infer/转换/VAE。正臂Q8 gain0.8271081983、orth2.5498871981、sign894/1360；SOURCE gain−0.2011725711、orth6.8873331015、sign695/1360。这是既有参考字段的独立一致性证据，不是新raw420结果；A1未重算。
+diff --git a/diagnostics/zero_mean_c1_yuv420_no_h264_v1/input_inventory.json b/diagnostics/zero_mean_c1_yuv420_no_h264_v1/input_inventory.json
+new file mode 100644
+index 0000000..3e2f94f
+--- /dev/null
++++ b/diagnostics/zero_mean_c1_yuv420_no_h264_v1/input_inventory.json
+@@ -0,0 +1,306 @@
++{
++  "schema": "zero-mean-c1-yuv420-no-h264-input-inventory-v1",
++  "input_run": "20260930T165530863126Z",
++  "source_sha": "d4f5d73c506c20f4dfa5e1f74065836c23432064",
++  "parent_result": {
++    "path": "/home/richar/projects/Video-WM/diagnostics/zero-mean-layered-real-run-audit-20261001/saved/result.json",
++    "sha256": "3561a99003047ec89bda90b813dc712af3dc6ee2db6ec4907d009b7bf138d117",
++    "bytes": 3229870
++  },
++  "q8": [
++    {
++      "arm": "OFF",
++      "relative_path": "OFF/RGB8_NO_CODEC.pt",
++      "sha256": "be3f0eadb746f76136365e1e59dce79b963d759e4e16daefd9474e317782af30",
++      "bytes": 88966697,
++      "shape": [
++        181,
++        320,
++        512,
++        3
++      ],
++      "dtype": "torch.uint8",
++      "observed_drive_path": "G:\\我的云端硬盘\\Video-WM\\Zero-Mean-C1-Layered-Transport-V1\\20260930T165530863126Z\\fixed_reference\\OFF\\RGB8_NO_CODEC.pt",
++      "verification": "Drive stat only this design; SHA/shape/dtype from hash-bound result. Positive raster previously audited by main; no new raster load/hash here."
++    },
++    {
++      "arm": "PAYLOAD_MULTI",
++      "relative_path": "PAYLOAD_MULTI/RGB8_NO_CODEC.pt",
++      "sha256": "4adc9fcadd3b627e7d6300efcab481db8e91716b27e39b592aed6dd37421d78e",
++      "bytes": 88966697,
++      "shape": [
++        181,
++        320,
++        512,
++        3
++      ],
++      "dtype": "torch.uint8",
++      "observed_drive_path": "G:\\我的云端硬盘\\Video-WM\\Zero-Mean-C1-Layered-Transport-V1\\20260930T165530863126Z\\fixed_reference\\PAYLOAD_MULTI\\RGB8_NO_CODEC.pt",
++      "verification": "Drive stat only this design; SHA/shape/dtype from hash-bound result. Positive raster previously audited by main; no new raster load/hash here."
++    },
++    {
++      "arm": "OVERLAP_MULTI",
++      "relative_path": "OVERLAP_MULTI/RGB8_NO_CODEC.pt",
++      "sha256": "d20ee27689e43568ad5a295393aba256ed98b31a0fd9dcbe9d8739bd3d10ccc3",
++      "bytes": 88966697,
++      "shape": [
++        181,
++        320,
++        512,
++        3
++      ],
++      "dtype": "torch.uint8",
++      "observed_drive_path": "G:\\我的云端硬盘\\Video-WM\\Zero-Mean-C1-Layered-Transport-V1\\20260930T165530863126Z\\fixed_reference\\OVERLAP_MULTI\\RGB8_NO_CODEC.pt",
++      "verification": "Drive stat only this design; SHA/shape/dtype from hash-bound result. Positive raster previously audited by main; no new raster load/hash here."
++    }
++  ],
++  "references": [
++    {
++      "arm": "OFF",
++      "layer": "RGB8_NO_CODEC",
++      "kind": "normalized",
++      "relative_path": "OFF/RGB8_NO_CODEC.normalized.pt",
++      "sha256": "da96ed6ca23eab26a4e6fb41b50939893cad858b9abe58eb319287b0b1e6a096",
++      "shape": [
++        1,
++        16,
++        46,
++        40,
++        64
++      ],
++      "dtype": "torch.float32"
++    },
++    {
++      "arm": "OFF",
++      "layer": "RGB8_NO_CODEC",
++      "key_id": "CORRECT",
++      "kind": "raw",
++      "relative_path": "OFF/RGB8_NO_CODEC.CORRECT.raw.json.gz",
++      "sha256": "2aa33324304129b8d6c8bb38a837f43a263951fa24ae73897c7a92bcbb3bd6af",
++      "scored": 174,
++      "R": 44
++    },
++    {
++      "arm": "OFF",
++      "layer": "RGB8_NO_CODEC",
++      "key_id": "WRONG",
++      "kind": "raw",
++      "relative_path": "OFF/RGB8_NO_CODEC.WRONG.raw.json.gz",
++      "sha256": "bd1097bd16e5a3244d2ff618ae13a00d86d4b1e4322ccc4f009d087cf6df595f",
++      "scored": 174,
++      "R": 44
++    },
++    {
++      "arm": "OFF",
++      "layer": "MATCHED_SOURCE_MP4",
++      "kind": "normalized",
++      "relative_path": "OFF/MATCHED_SOURCE_MP4.normalized.pt",
++      "sha256": "92b2f79413ed0faad9cf6e740cbb012d0ecf6bad055ddd13743161b4568ca694",
++      "shape": [
++        1,
++        16,
++        46,
++        40,
++        64
++      ],
++      "dtype": "torch.float32"
++    },
++    {
++      "arm": "OFF",
++      "layer": "MATCHED_SOURCE_MP4",
++      "key_id": "CORRECT",
++      "kind": "raw",
++      "relative_path": "OFF/MATCHED_SOURCE_MP4.CORRECT.raw.json.gz",
++      "sha256": "e912e284c27409fdbfc3431f868e652374105ca0fca988db9256c7455cdec9d2",
++      "scored": 174,
++      "R": 44
++    },
++    {
++      "arm": "OFF",
++      "layer": "MATCHED_SOURCE_MP4",
++      "key_id": "WRONG",
++      "kind": "raw",
++      "relative_path": "OFF/MATCHED_SOURCE_MP4.WRONG.raw.json.gz",
++      "sha256": "60b50340924398b271f430ba5f73de4db5c7c3931e3b82188244f98acb633537",
++      "scored": 174,
++      "R": 44
++    },
++    {
++      "arm": "PAYLOAD_MULTI",
++      "layer": "RGB8_NO_CODEC",
++      "kind": "normalized",
++      "relative_path": "PAYLOAD_MULTI/RGB8_NO_CODEC.normalized.pt",
++      "sha256": "f3236127b659aae18e9e51941c4d7f6b923ecd32ca2a998c44ce52b376d4111b",
++      "shape": [
++        1,
++        16,
++        46,
++        40,
++        64
++      ],
++      "dtype": "torch.float32"
++    },
++    {
++      "arm": "PAYLOAD_MULTI",
++      "layer": "RGB8_NO_CODEC",
++      "key_id": "CORRECT",
++      "kind": "raw",
++      "relative_path": "PAYLOAD_MULTI/RGB8_NO_CODEC.CORRECT.raw.json.gz",
++      "sha256": "5ed67bed5c196b0f9e612c22c4a680eb363a8f33e1ba60a65dbdf27592ac56a0",
++      "scored": 174,
++      "R": 44
++    },
++    {
++      "arm": "PAYLOAD_MULTI",
++      "layer": "RGB8_NO_CODEC",
++      "key_id": "WRONG",
++      "kind": "raw",
++      "relative_path": "PAYLOAD_MULTI/RGB8_NO_CODEC.WRONG.raw.json.gz",
++      "sha256": "f1ad2b1e78161e8e7cec0085531e6c3f2537778b9db33d9864e6f85167db9dbb",
++      "scored": 174,
++      "R": 44
++    },
++    {
++      "arm": "PAYLOAD_MULTI",
++      "layer": "MATCHED_SOURCE_MP4",
++      "kind": "normalized",
++      "relative_path": "PAYLOAD_MULTI/MATCHED_SOURCE_MP4.normalized.pt",
++      "sha256": "142b6a3715beef6bcc58a785455ae4c85d977bc3df7683065080893d87556e66",
++      "shape": [
++        1,
++        16,
++        46,
++        40,
++        64
++      ],
++      "dtype": "torch.float32"
++    },
++    {
++      "arm": "PAYLOAD_MULTI",
++      "layer": "MATCHED_SOURCE_MP4",
++      "key_id": "CORRECT",
++      "kind": "raw",
++      "relative_path": "PAYLOAD_MULTI/MATCHED_SOURCE_MP4.CORRECT.raw.json.gz",
++      "sha256": "4af630ea077d2d0f45695a0fec7b9b87d7fbda0b4c97b99f13221a02d4675b10",
++      "scored": 174,
++      "R": 44
++    },
++    {
++      "arm": "PAYLOAD_MULTI",
++      "layer": "MATCHED_SOURCE_MP4",
++      "key_id": "WRONG",
++      "kind": "raw",
++      "relative_path": "PAYLOAD_MULTI/MATCHED_SOURCE_MP4.WRONG.raw.json.gz",
++      "sha256": "a4f4347b24f63ac0019b71f7c31da776e06a0c499be22d5a5c923e9f6ad10ec2",
++      "scored": 174,
++      "R": 44
++    },
++    {
++      "arm": "OVERLAP_MULTI",
++      "layer": "RGB8_NO_CODEC",
++      "kind": "normalized",
++      "relative_path": "OVERLAP_MULTI/RGB8_NO_CODEC.normalized.pt",
++      "sha256": "5cea037d52993cb8b130e92c4fe5fc655b092d73d88141a707614e915fe9437e",
++      "shape": [
++        1,
++        16,
++        46,
++        40,
++        64
++      ],
++      "dtype": "torch.float32"
++    },
++    {
++      "arm": "OVERLAP_MULTI",
++      "layer": "RGB8_NO_CODEC",
++      "key_id": "CORRECT",
++      "kind": "raw",
++      "relative_path": "OVERLAP_MULTI/RGB8_NO_CODEC.CORRECT.raw.json.gz",
++      "sha256": "68c9a005b3abc6adbb8ad0afefae62a690592718b34075d640967b43b22f2f33",
++      "scored": 174,
++      "R": 44
++    },
++    {
++      "arm": "OVERLAP_MULTI",
++      "layer": "RGB8_NO_CODEC",
++      "key_id": "WRONG",
++      "kind": "raw",
++      "relative_path": "OVERLAP_MULTI/RGB8_NO_CODEC.WRONG.raw.json.gz",
++      "sha256": "09a4bc091da9f0c9a6c9d41c2dc7d9666d945a9e8ee9c17eed27cefa6091ec19",
++      "scored": 174,
++      "R": 44
++    },
++    {
++      "arm": "OVERLAP_MULTI",
++      "layer": "MATCHED_SOURCE_MP4",
++      "kind": "normalized",
++      "relative_path": "OVERLAP_MULTI/MATCHED_SOURCE_MP4.normalized.pt",
++      "sha256": "098da447c1469811aa27861cb1ae11bd32b4e3a1b74bbcbb937ae9d6bf2fd6db",
++      "shape": [
++        1,
++        16,
++        46,
++        40,
++        64
++      ],
++      "dtype": "torch.float32"
++    },
++    {
++      "arm": "OVERLAP_MULTI",
++      "layer": "MATCHED_SOURCE_MP4",
++      "key_id": "CORRECT",
++      "kind": "raw",
++      "relative_path": "OVERLAP_MULTI/MATCHED_SOURCE_MP4.CORRECT.raw.json.gz",
++      "sha256": "464ba996fe8964958330a4148a40543f9bfa1e2ed62a162f8d8a88f4829dc012",
++      "scored": 174,
++      "R": 44
++    },
++    {
++      "arm": "OVERLAP_MULTI",
++      "layer": "MATCHED_SOURCE_MP4",
++      "key_id": "WRONG",
++      "kind": "raw",
++      "relative_path": "OVERLAP_MULTI/MATCHED_SOURCE_MP4.WRONG.raw.json.gz",
++      "sha256": "8f6ed44cb0992258985482ea0f95d1ad5c99b2e41fc360c223ef7cfc5e46f016",
++      "scored": 174,
++      "R": 44
++    }
++  ],
++  "source_mp4": [
++    {
++      "arm": "OFF",
++      "sha256": "9a48c66ef0c052b23f80623d4323da7c26310bd3746ab773e594192e74df8b88",
++      "bytes": 486707,
++      "relative_path": "OFF/MATCHED_SOURCE_MP4.mp4",
++      "verification": "small actual MP4 copy SHA equals result; only ffprobe stream/format, no frame decode"
++    },
++    {
++      "arm": "PAYLOAD_MULTI",
++      "sha256": "c858ec7339a95f33b787141c687c49cb13c2003dc67ef767ec307282a3ec53e8",
++      "bytes": 469507,
++      "relative_path": "PAYLOAD_MULTI/MATCHED_SOURCE_MP4.mp4",
++      "verification": "small actual MP4 copy SHA equals result; only ffprobe stream/format, no frame decode"
++    },
++    {
++      "arm": "OVERLAP_MULTI",
++      "sha256": "6cd119f77d14e10b84b100894ef3f14bff5b2d3820158872497478c1f9852bed",
++      "bytes": 455277,
++      "relative_path": "OVERLAP_MULTI/MATCHED_SOURCE_MP4.mp4",
++      "verification": "small actual MP4 copy SHA equals result; only ffprobe stream/format, no frame decode"
++    }
++  ],
++  "inherited_audits": [
++    {
++      "path": "/home/richar/projects/Video-WM/diagnostics/zero-mean-layered-real-run-audit-20261001/audit_result.json",
++      "sha256": "09de70887b619e4a876174fb9fbfc19eb3815b13533e180c3ae024ea084a1750",
++      "use": "reuse prior all5220cost/30projection audit; not rerun"
++    },
++    {
++      "path": "/home/richar/projects/Video-WM/diagnostics/zero-mean-layered-real-run-audit-20261001/assessment.json",
++      "sha256": "3236a69b60ad08164aec38d7873d4248f696dfc2bf132dc496f46191d81b5367",
++      "use": "reuse prior all5220cost/30projection audit; not rerun"
++    }
++  ],
++  "local_no_large_float_or_raster_reads": true,
++  "local_no_decode_conversion_or_scoring": true
++}
+diff --git a/diagnostics/zero_mean_c1_yuv420_no_h264_v1/local_validation.json b/diagnostics/zero_mean_c1_yuv420_no_h264_v1/local_validation.json
+new file mode 100644
+index 0000000..0cc3dea
+--- /dev/null
++++ b/diagnostics/zero_mean_c1_yuv420_no_h264_v1/local_validation.json
+@@ -0,0 +1,79 @@
++{
++  "status": "LOCAL_CPU_MOCK_STATIC_PASS",
++  "base_sha": "6864a9c9039af56b193b2612fab1f36658c8f47a",
++  "implementation_now_present": true,
++  "real_conversion": false,
++  "real_decode": false,
++  "real_vae": false,
++  "real_model": false,
++  "real_gpu": false,
++  "real_saved_data_rescored": false,
++  "environment": {
++    "python": "/home/richar/projects/CEG-WM/alive/CEG-WM/.venv/bin/python",
++    "CUDA_VISIBLE_DEVICES": "",
++    "PYTHONDONTWRITEBYTECODE": "1",
++    "OPENBLAS_NUM_THREADS": "1"
++  },
++  "pytest_runs": [
++    {
++      "command": "python -m pytest -q tests/test_zero_mean_c1_yuv420_no_h264.py --disable-warnings",
++      "passed": 9,
++      "failed": 0,
++      "skipped": 0,
++      "seconds": 10.06,
++      "returncode": 0,
++      "stdout": "/home/richar/projects/Video-WM/worktrees/Video-Trajectory-Blind-Validation-V1/diagnostics/zero_mean_c1_yuv420_no_h264_v1/pytest_initial.txt",
++      "sha256": "c5f5a0aa87ffce9c600170a45891bd85aa2bd0f00c0321048380382082a567c5"
++    },
++    {
++      "command": "python -m pytest -q tests/test_zero_mean_c1_yuv420_no_h264.py -k notebook --disable-warnings",
++      "passed": 1,
++      "deselected": 8,
++      "failed": 0,
++      "skipped": 0,
++      "seconds": 0.75,
++      "returncode": 0,
++      "purpose": "Only builder/notebook DISPLAY appended retained RESULT_PATH; no full-suite rerun",
++      "stdout": "/home/richar/projects/Video-WM/worktrees/Video-Trajectory-Blind-Validation-V1/diagnostics/zero_mean_c1_yuv420_no_h264_v1/pytest_display_delta.txt",
++      "sha256": "08ba04a901c04d4e41f669cc5440053d1bba480d129415195decbf92e709812c"
++    }
++  ],
++  "checked": [
++    "frozen two rawvideo commands and exact byte denominators",
++    "full3arm mock physical files ->3VAE mocks ->6original infer1044cost",
++    "18 hash-bound references reused;12posthoc projections with0reference infer",
++    "second conversion failed: first raw420 kept, other arms continue",
++    "short raw420 rejected before second process;no truncation/padding",
++    "R44 1408projection/1360active/48boundary gain orthogonal/sign,zero not same sign",
++    "canonical-first two hard-exit windows",
++    "worker own session/processgroup TERM/wait/KILL before latest disk reload",
++    "raw stable through truth/reference posthoc",
++    "output not inside input",
++    "six notebookcells/Drive first/emptyoutputs/sourceNone/currentPython/dependency/freshchild/builder identity"
++  ],
++  "notebook": {
++    "path": "notebooks/zero_mean_c1_yuv420_no_h264_v1_colab.ipynb",
++    "source_sha": null,
++    "unpublished": true,
++    "user_execution_only": true
++  },
++  "design_receipt_correction": {
++    "unchanged_files": 16,
++    "design_snapshot_sha256": "f78f355d2374fcdca24cf7811cd5ff1dd131d482fe4d4a9ee6261d5fd56bb3a2",
++    "mislabeled_recipe": "Original design tree claimed sorted path but hashed its listed files order.",
++    "actual_listed_order_tree": "e67eaf47ab39be045add519dcd55108df6057923280abb1ed81998966b9d9608",
++    "actual_fully_sorted_path_tree": "3f8561ab9a461e828c0b7c830b9e03137f84be197689cf5115ade6ca79dbb6f4",
++    "action": "Original design bytes and files retained. Final candidate uses explicit sorted(files,key=path)."
++  },
++  "inherited_method_runtime_changed": false,
++  "old_tracked_changes": [],
++  "commit": false,
++  "push": false,
++  "limits": "Only synthetic fixtures/fake VAE/processes. No numeric FFmpeg color transform or real VAE result tested; metadata/help/version are the only actual FFmpeg invocations.",
++  "independent_main_reference_check": {
++    "path": "/home/richar/projects/Video-WM/diagnostics/zero-mean-yuv420-main-review-20261001/reference_posthoc_check.json",
++    "sha256": "6947cb23b33166d012007d329edc9cb3478466298c8e87712484708e2c81f54c",
++    "runner_sha256": "287767088d4e12fbf5640bda56576985d65ecacdbf50d5ca4f84bfb0c90743a6",
++    "kind": "12 existing raw posthoc comparisons; no infer/tensor/VAE/conversion; no A1 repeat"
++  }
++}
+diff --git a/diagnostics/zero_mean_c1_yuv420_no_h264_v1/parameter_evidence.json b/diagnostics/zero_mean_c1_yuv420_no_h264_v1/parameter_evidence.json
+new file mode 100644
+index 0000000..5248afe
+--- /dev/null
++++ b/diagnostics/zero_mean_c1_yuv420_no_h264_v1/parameter_evidence.json
+@@ -0,0 +1,187 @@
++{
++  "schema": "zero-mean-c1-yuv420-no-h264-parameter-evidence-v1",
++  "source_io": {
++    "path": "runtime/wan/io.py",
++    "sha256": "db9caa843d632d733aa670dbe87bd38cf6084490d5bef71b8a69e6839cc33ae7"
++  },
++  "original_encoder": [
++    "ffmpeg",
++    "-v",
++    "error",
++    "-threads",
++    "1",
++    "-f",
++    "rawvideo",
++    "-pix_fmt",
++    "rgb24",
++    "-s",
++    "512x320",
++    "-r",
++    "8",
++    "-i",
++    "pipe:0",
++    "-an",
++    "-c:v",
++    "libx264",
++    "-crf",
++    "18",
++    "-pix_fmt",
++    "yuv420p",
++    "-n",
++    "SOURCE.mp4"
++  ],
++  "original_decoder": [
++    "ffmpeg",
++    "-v",
++    "error",
++    "-threads",
++    "1",
++    "-noautorotate",
++    "-i",
++    "SOURCE.mp4",
++    "-map",
++    "0:v:0",
++    "-f",
++    "rawvideo",
++    "-pix_fmt",
++    "rgb24",
++    "-"
++  ],
++  "original_versions": {
++    "ffmpeg": "ffmpeg version 6.1.1-3ubuntu5 Copyright (c) 2000-2023 the FFmpeg developers",
++    "ffprobe": "ffprobe version 6.1.1-3ubuntu5 Copyright (c) 2007-2023 the FFmpeg developers"
++  },
++  "original_libswscale": [
++    "libswscale      7.  5.100 /  7.  5.100",
++    "libswscale      7.  5.100 /  7.  5.100"
++  ],
++  "observed_streams": {
++    "OFF": {
++      "codec_name": "h264",
++      "profile": "High",
++      "width": 512,
++      "height": 320,
++      "pix_fmt": "yuv420p",
++      "color_range": null,
++      "color_space": null,
++      "color_transfer": null,
++      "color_primaries": null,
++      "chroma_location": "left",
++      "r_frame_rate": "8/1",
++      "nb_frames": "181"
++    },
++    "PAYLOAD_MULTI": {
++      "codec_name": "h264",
++      "profile": "High",
++      "width": 512,
++      "height": 320,
++      "pix_fmt": "yuv420p",
++      "color_range": null,
++      "color_space": null,
++      "color_transfer": null,
++      "color_primaries": null,
++      "chroma_location": "left",
++      "r_frame_rate": "8/1",
++      "nb_frames": "181"
++    },
++    "OVERLAP_MULTI": {
++      "codec_name": "h264",
++      "profile": "High",
++      "width": 512,
++      "height": 320,
++      "pix_fmt": "yuv420p",
++      "color_range": null,
++      "color_space": null,
++      "color_transfer": null,
++      "color_primaries": null,
++      "chroma_location": "left",
++      "r_frame_rate": "8/1",
++      "nb_frames": "181"
++    }
++  },
++  "missing_metadata": "null means not reported by stream probe, not BT601/BT709/limited/full evidence",
++  "frame_level_metadata": "NOT_OBSERVED: show_frames/read_intervals/frame decode not authorized or performed",
++  "actual_filtergraph": "ORIGINAL_NOT_RECORDED (-v error); new conversion NOT_EXECUTED. Future -v verbose stderr will be preserved; absent effective details remain UNKNOWN.",
++  "chroma_input_option_evidence": "local ffmpeg -h full marks -chroma_sample_location ED.V, default unknown; left=1; help only, no conversion",
++  "local_versions": {
++    "ffmpeg": "ffmpeg version 6.1.1-3ubuntu5 Copyright (c) 2000-2023 the FFmpeg developers",
++    "ffprobe": "ffprobe version 6.1.1-3ubuntu5 Copyright (c) 2007-2023 the FFmpeg developers"
++  },
++  "official_references": [
++    {
++      "url": "https://ffmpeg.org/ffmpeg-filters.html",
++      "use": "automatic format-conversion filters, matrix/range/chroma options; no assumption that current website defaults prove historical6.1.1 behavior"
++    },
++    {
++      "url": "https://ffmpeg.org/ffmpeg-scaler.html",
++      "use": "scaler/default/rounding controls; do not newly force sws_flags/bicubic/bitexact/accurate_rnd"
++    },
++    {
++      "url": "https://ffmpeg.org/ffmpeg-formats.html#rawvideo",
++      "use": "rawvideo has no size/pixel-format metadata; explicit demux parameters required"
++    }
++  ],
++  "evidence_files": [
++    {
++      "path": "diagnostics/zero_mean_c1_yuv420_no_h264_v1/parameter_evidence/OFF.ffprobe.json",
++      "sha256": "50d6c48c3fe14f96e3043f96e3e000feeb3281d01a762e6c0588fa3abe8ff682",
++      "bytes": 2125
++    },
++    {
++      "path": "diagnostics/zero_mean_c1_yuv420_no_h264_v1/parameter_evidence/OVERLAP_MULTI.ffprobe.json",
++      "sha256": "972e34fe92fb67b78a45284f47f399ee510a8ed198ffbadedc664ea17bf3202a",
++      "bytes": 2135
++    },
++    {
++      "path": "diagnostics/zero_mean_c1_yuv420_no_h264_v1/parameter_evidence/PAYLOAD_MULTI.ffprobe.json",
++      "sha256": "8523ba2bcbcdc3f4651b9912042a262702d7df139e8af7c21636c7cfdb906939",
++      "bytes": 2135
++    },
++    {
++      "path": "diagnostics/zero_mean_c1_yuv420_no_h264_v1/parameter_evidence/chroma_option_help_excerpt.txt",
++      "sha256": "b5e7683c42449ed7ef8d82728df1b5f1cc8159b3edde5a25eda8d6e5e6ab78dc",
++      "bytes": 741
++    },
++    {
++      "path": "diagnostics/zero_mean_c1_yuv420_no_h264_v1/parameter_evidence/local_ffmpeg_version.txt",
++      "sha256": "5b320c97f515e79171f10a2147d875ffb6b14bd2b25681047b73c46fe0a527ee",
++      "bytes": 1838
++    },
++    {
++      "path": "diagnostics/zero_mean_c1_yuv420_no_h264_v1/parameter_evidence/local_ffprobe_version.txt",
++      "sha256": "1b6410f756d8b5ef5308d712b51d2543bf8c8e6bc5796b7ede9570d099131e0b",
++      "bytes": 1839
++    },
++    {
++      "path": "diagnostics/zero_mean_c1_yuv420_no_h264_v1/parameter_evidence/original_drive_inventory.json",
++      "sha256": "9fe1bec7736b2df7ff4e30a056fafaa57d8a9272f1e169b38c84b4be3b08d8d5",
++      "bytes": 1256
++    },
++    {
++      "path": "diagnostics/zero_mean_c1_yuv420_no_h264_v1/parameter_evidence/original_environment_freeze.txt",
++      "sha256": "6e835c1fc07d2636f3c54df49256e4b4a15dc2085ce1b1103b2cff4beeb12da7",
++      "bytes": 14091
++    },
++    {
++      "path": "diagnostics/zero_mean_c1_yuv420_no_h264_v1/parameter_evidence/original_environment_receipt.json",
++      "sha256": "5fe575966abdc31d67af994eb4d13f74970c00f53be6691389edbf671e510bcd",
++      "bytes": 378
++    },
++    {
++      "path": "diagnostics/zero_mean_c1_yuv420_no_h264_v1/parameter_evidence/original_execution.log",
++      "sha256": "f89b94183529f3510832e726522f37f8636eed117d3efbad34f8a5a1119c63b2",
++      "bytes": 25576
++    },
++    {
++      "path": "diagnostics/zero_mean_c1_yuv420_no_h264_v1/parameter_evidence/original_source_receipt.json",
++      "sha256": "a3db1f90600efeb70e7390cbd97de88301e843fb3fb94736c4fd50d7b0674681",
++      "bytes": 80
++    },
++    {
++      "path": "diagnostics/zero_mean_c1_yuv420_no_h264_v1/parameter_evidence/source_mp4_probes.json",
++      "sha256": "2d73fa7eaed558187837704a38819989184d7c7956b11e1aa468745e5029ce9f",
++      "bytes": 7608
++    }
++  ],
++  "copying": "Only three small SOURCE MP4s and small logs/receipts staged on Windows then copied to isolated /tmp for stream probes; MP4 bytes not added to repository."
++}
+diff --git a/diagnostics/zero_mean_c1_yuv420_no_h264_v1/parameter_evidence/OFF.ffprobe.json b/diagnostics/zero_mean_c1_yuv420_no_h264_v1/parameter_evidence/OFF.ffprobe.json
+new file mode 100644
+index 0000000..b017184
+--- /dev/null
++++ b/diagnostics/zero_mean_c1_yuv420_no_h264_v1/parameter_evidence/OFF.ffprobe.json
+@@ -0,0 +1,83 @@
++{
++  "streams": [
++    {
++      "index": 0,
++      "codec_name": "h264",
++      "codec_long_name": "H.264 / AVC / MPEG-4 AVC / MPEG-4 part 10",
++      "profile": "High",
++      "codec_type": "video",
++      "codec_tag_string": "avc1",
++      "codec_tag": "0x31637661",
++      "width": 512,
++      "height": 320,
++      "coded_width": 512,
++      "coded_height": 320,
++      "closed_captions": 0,
++      "film_grain": 0,
++      "has_b_frames": 2,
++      "pix_fmt": "yuv420p",
++      "level": 21,
++      "chroma_location": "left",
++      "field_order": "progressive",
++      "refs": 1,
++      "is_avc": "true",
++      "nal_length_size": "4",
++      "id": "0x1",
++      "r_frame_rate": "8/1",
++      "avg_frame_rate": "8/1",
++      "time_base": "1/16384",
++      "start_pts": 0,
++      "start_time": "0.000000",
++      "duration_ts": 370688,
++      "duration": "22.625000",
++      "bit_rate": "171032",
++      "bits_per_raw_sample": "8",
++      "nb_frames": "181",
++      "extradata_size": 45,
++      "disposition": {
++        "default": 1,
++        "dub": 0,
++        "original": 0,
++        "comment": 0,
++        "lyrics": 0,
++        "karaoke": 0,
++        "forced": 0,
++        "hearing_impaired": 0,
++        "visual_impaired": 0,
++        "clean_effects": 0,
++        "attached_pic": 0,
++        "timed_thumbnails": 0,
++        "non_diegetic": 0,
++        "captions": 0,
++        "descriptions": 0,
++        "metadata": 0,
++        "dependent": 0,
++        "still_image": 0
++      },
++      "tags": {
++        "language": "und",
++        "handler_name": "VideoHandler",
++        "vendor_id": "[0][0][0][0]",
++        "encoder": "Lavc60.31.102 libx264"
++      }
++    }
++  ],
++  "format": {
++    "filename": "/tmp/zero-mean-yuv420-design-20261001-a1/OFF.mp4",
++    "nb_streams": 1,
++    "nb_programs": 0,
++    "format_name": "mov,mp4,m4a,3gp,3g2,mj2",
++    "format_long_name": "QuickTime / MOV",
++    "start_time": "0.000000",
++    "duration": "22.625000",
++    "size": "486707",
++    "bit_rate": "172095",
++    "probe_score": 100,
++    "tags": {
++      "major_brand": "isom",
++      "minor_version": "512",
++      "compatible_brands": "isomiso2avc1mp41",
++      "encoder": "Lavf60.16.100"
++    }
++  }
++}
+diff --git a/diagnostics/zero_mean_c1_yuv420_no_h264_v1/parameter_evidence/OVERLAP_MULTI.ffprobe.json b/diagnostics/zero_mean_c1_yuv420_no_h264_v1/parameter_evidence/OVERLAP_MULTI.ffprobe.json
+new file mode 100644
+index 0000000..6bb9d3c
+--- /dev/null
++++ b/diagnostics/zero_mean_c1_yuv420_no_h264_v1/parameter_evidence/OVERLAP_MULTI.ffprobe.json
+@@ -0,0 +1,83 @@
++{
++  "streams": [
++    {
++      "index": 0,
++      "codec_name": "h264",
++      "codec_long_name": "H.264 / AVC / MPEG-4 AVC / MPEG-4 part 10",
++      "profile": "High",
++      "codec_type": "video",
++      "codec_tag_string": "avc1",
++      "codec_tag": "0x31637661",
++      "width": 512,
++      "height": 320,
++      "coded_width": 512,
++      "coded_height": 320,
++      "closed_captions": 0,
++      "film_grain": 0,
++      "has_b_frames": 2,
++      "pix_fmt": "yuv420p",
++      "level": 21,
++      "chroma_location": "left",
++      "field_order": "progressive",
++      "refs": 1,
++      "is_avc": "true",
++      "nal_length_size": "4",
++      "id": "0x1",
++      "r_frame_rate": "8/1",
++      "avg_frame_rate": "8/1",
++      "time_base": "1/16384",
++      "start_pts": 0,
++      "start_time": "0.000000",
++      "duration_ts": 370688,
++      "duration": "22.625000",
++      "bit_rate": "159913",
++      "bits_per_raw_sample": "8",
++      "nb_frames": "181",
++      "extradata_size": 45,
++      "disposition": {
++        "default": 1,
++        "dub": 0,
++        "original": 0,
++        "comment": 0,
++        "lyrics": 0,
++        "karaoke": 0,
++        "forced": 0,
++        "hearing_impaired": 0,
++        "visual_impaired": 0,
++        "clean_effects": 0,
++        "attached_pic": 0,
++        "timed_thumbnails": 0,
++        "non_diegetic": 0,
++        "captions": 0,
++        "descriptions": 0,
++        "metadata": 0,
++        "dependent": 0,
++        "still_image": 0
++      },
++      "tags": {
++        "language": "und",
++        "handler_name": "VideoHandler",
++        "vendor_id": "[0][0][0][0]",
++        "encoder": "Lavc60.31.102 libx264"
++      }
++    }
++  ],
++  "format": {
++    "filename": "/tmp/zero-mean-yuv420-design-20261001-a1/OVERLAP_MULTI.mp4",
++    "nb_streams": 1,
++    "nb_programs": 0,
++    "format_name": "mov,mp4,m4a,3gp,3g2,mj2",
++    "format_long_name": "QuickTime / MOV",
++    "start_time": "0.000000",
++    "duration": "22.625000",
++    "size": "455277",
++    "bit_rate": "160981",
++    "probe_score": 100,
++    "tags": {
++      "major_brand": "isom",
++      "minor_version": "512",
++      "compatible_brands": "isomiso2avc1mp41",
++      "encoder": "Lavf60.16.100"
++    }
++  }
++}
+diff --git a/diagnostics/zero_mean_c1_yuv420_no_h264_v1/parameter_evidence/PAYLOAD_MULTI.ffprobe.json b/diagnostics/zero_mean_c1_yuv420_no_h264_v1/parameter_evidence/PAYLOAD_MULTI.ffprobe.json
+new file mode 100644
+index 0000000..3cfa936
+--- /dev/null
++++ b/diagnostics/zero_mean_c1_yuv420_no_h264_v1/parameter_evidence/PAYLOAD_MULTI.ffprobe.json
+@@ -0,0 +1,83 @@
++{
++  "streams": [
++    {
++      "index": 0,
++      "codec_name": "h264",
++      "codec_long_name": "H.264 / AVC / MPEG-4 AVC / MPEG-4 part 10",
++      "profile": "High",
++      "codec_type": "video",
++      "codec_tag_string": "avc1",
++      "codec_tag": "0x31637661",
++      "width": 512,
++      "height": 320,
++      "coded_width": 512,
++      "coded_height": 320,
++      "closed_captions": 0,
++      "film_grain": 0,
++      "has_b_frames": 2,
++      "pix_fmt": "yuv420p",
++      "level": 21,
++      "chroma_location": "left",
++      "field_order": "progressive",
++      "refs": 1,
++      "is_avc": "true",
++      "nal_length_size": "4",
++      "id": "0x1",
++      "r_frame_rate": "8/1",
++      "avg_frame_rate": "8/1",
++      "time_base": "1/16384",
++      "start_pts": 0,
++      "start_time": "0.000000",
++      "duration_ts": 370688,
++      "duration": "22.625000",
++      "bit_rate": "164944",
++      "bits_per_raw_sample": "8",
++      "nb_frames": "181",
++      "extradata_size": 45,
++      "disposition": {
++        "default": 1,
++        "dub": 0,
++        "original": 0,
++        "comment": 0,
++        "lyrics": 0,
++        "karaoke": 0,
++        "forced": 0,
++        "hearing_impaired": 0,
++        "visual_impaired": 0,
++        "clean_effects": 0,
++        "attached_pic": 0,
++        "timed_thumbnails": 0,
++        "non_diegetic": 0,
++        "captions": 0,
++        "descriptions": 0,
++        "metadata": 0,
++        "dependent": 0,
++        "still_image": 0
++      },
++      "tags": {
++        "language": "und",
++        "handler_name": "VideoHandler",
++        "vendor_id": "[0][0][0][0]",
++        "encoder": "Lavc60.31.102 libx264"
++      }
++    }
++  ],
++  "format": {
++    "filename": "/tmp/zero-mean-yuv420-design-20261001-a1/PAYLOAD_MULTI.mp4",
++    "nb_streams": 1,
++    "nb_programs": 0,
++    "format_name": "mov,mp4,m4a,3gp,3g2,mj2",
++    "format_long_name": "QuickTime / MOV",
++    "start_time": "0.000000",
++    "duration": "22.625000",
++    "size": "469507",
++    "bit_rate": "166013",
++    "probe_score": 100,
++    "tags": {
++      "major_brand": "isom",
++      "minor_version": "512",
++      "compatible_brands": "isomiso2avc1mp41",
++      "encoder": "Lavf60.16.100"
++    }
++  }
++}
+diff --git a/diagnostics/zero_mean_c1_yuv420_no_h264_v1/parameter_evidence/chroma_option_help_excerpt.txt b/diagnostics/zero_mean_c1_yuv420_no_h264_v1/parameter_evidence/chroma_option_help_excerpt.txt
+new file mode 100644
+index 0000000..5fffa08
+--- /dev/null
++++ b/diagnostics/zero_mean_c1_yuv420_no_h264_v1/parameter_evidence/chroma_option_help_excerpt.txt
+@@ -0,0 +1,11 @@
++     full            2            ED.V....... JPEG (2^n-1)
++  -chroma_sample_location <int>        ED.V....... chroma sample location (from 0 to INT_MAX) (default unknown)
++     unknown         0            ED.V....... Unspecified
++     left            1            ED.V....... Left
++     center          2            ED.V....... Center
++     topleft         3            ED.V....... Top-left
++     top             4            ED.V....... Top
++     bottomleft      5            ED.V....... Bottom-left
++     bottom          6            ED.V....... Bottom
++     unspecified     0            ED.V....... Unspecified
++  -slices            <int>        E..V....... set the number of slices, used in parallelized encoding (from 0 to INT_MAX) (default 0)
+diff --git a/diagnostics/zero_mean_c1_yuv420_no_h264_v1/parameter_evidence/local_ffmpeg_version.txt b/diagnostics/zero_mean_c1_yuv420_no_h264_v1/parameter_evidence/local_ffmpeg_version.txt
+new file mode 100644
+index 0000000..90a0657
+--- /dev/null
++++ b/diagnostics/zero_mean_c1_yuv420_no_h264_v1/parameter_evidence/local_ffmpeg_version.txt
+@@ -0,0 +1,11 @@
++ffmpeg version 6.1.1-3ubuntu5 Copyright (c) 2000-2023 the FFmpeg developers
++built with gcc 13 (Ubuntu 13.2.0-23ubuntu3)
++configuration: --prefix=/usr --extra-version=3ubuntu5 --toolchain=hardened --libdir=/usr/lib/x86_64-linux-gnu --incdir=/usr/include/x86_64-linux-gnu --arch=amd64 --enable-gpl --disable-stripping --disable-omx --enable-gnutls --enable-libaom --enable-libass --enable-libbs2b --enable-libcaca --enable-libcdio --enable-libcodec2 --enable-libdav1d --enable-libflite --enable-libfontconfig --enable-libfreetype --enable-libfribidi --enable-libglslang --enable-libgme --enable-libgsm --enable-libharfbuzz --enable-libmp3lame --enable-libmysofa --enable-libopenjpeg --enable-libopenmpt --enable-libopus --enable-librubberband --enable-libshine --enable-libsnappy --enable-libsoxr --enable-libspeex --enable-libtheora --enable-libtwolame --enable-libvidstab --enable-libvorbis --enable-libvpx --enable-libwebp --enable-libx265 --enable-libxml2 --enable-libxvid --enable-libzimg --enable-openal --enable-opencl --enable-opengl --disable-sndio --enable-libvpl --disable-libmfx --enable-libdc1394 --enable-libdrm --enable-libiec61883 --enable-chromaprint --enable-frei0r --enable-ladspa --enable-libbluray --enable-libjack --enable-libpulse --enable-librabbitmq --enable-librist --enable-libsrt --enable-libssh --enable-libsvtav1 --enable-libx264 --enable-libzmq --enable-libzvbi --enable-lv2 --enable-sdl2 --enable-libplacebo --enable-librav1e --enable-pocketsphinx --enable-librsvg --enable-libjxl --enable-shared
++libavutil      58. 29.100 / 58. 29.100
++libavcodec     60. 31.102 / 60. 31.102
++libavformat    60. 16.100 / 60. 16.100
++libavdevice    60.  3.100 / 60.  3.100
++libavfilter     9. 12.100 /  9. 12.100
++libswscale      7.  5.100 /  7.  5.100
++libswresample   4. 12.100 /  4. 12.100
++libpostproc    57.  3.100 / 57.  3.100
+diff --git a/diagnostics/zero_mean_c1_yuv420_no_h264_v1/parameter_evidence/local_ffprobe_version.txt b/diagnostics/zero_mean_c1_yuv420_no_h264_v1/parameter_evidence/local_ffprobe_version.txt
+new file mode 100644
+index 0000000..dcfca7c
+--- /dev/null
++++ b/diagnostics/zero_mean_c1_yuv420_no_h264_v1/parameter_evidence/local_ffprobe_version.txt
+@@ -0,0 +1,11 @@
++ffprobe version 6.1.1-3ubuntu5 Copyright (c) 2007-2023 the FFmpeg developers
++built with gcc 13 (Ubuntu 13.2.0-23ubuntu3)
++configuration: --prefix=/usr --extra-version=3ubuntu5 --toolchain=hardened --libdir=/usr/lib/x86_64-linux-gnu --incdir=/usr/include/x86_64-linux-gnu --arch=amd64 --enable-gpl --disable-stripping --disable-omx --enable-gnutls --enable-libaom --enable-libass --enable-libbs2b --enable-libcaca --enable-libcdio --enable-libcodec2 --enable-libdav1d --enable-libflite --enable-libfontconfig --enable-libfreetype --enable-libfribidi --enable-libglslang --enable-libgme --enable-libgsm --enable-libharfbuzz --enable-libmp3lame --enable-libmysofa --enable-libopenjpeg --enable-libopenmpt --enable-libopus --enable-librubberband --enable-libshine --enable-libsnappy --enable-libsoxr --enable-libspeex --enable-libtheora --enable-libtwolame --enable-libvidstab --enable-libvorbis --enable-libvpx --enable-libwebp --enable-libx265 --enable-libxml2 --enable-libxvid --enable-libzimg --enable-openal --enable-opencl --enable-opengl --disable-sndio --enable-libvpl --disable-libmfx --enable-libdc1394 --enable-libdrm --enable-libiec61883 --enable-chromaprint --enable-frei0r --enable-ladspa --enable-libbluray --enable-libjack --enable-libpulse --enable-librabbitmq --enable-librist --enable-libsrt --enable-libssh --enable-libsvtav1 --enable-libx264 --enable-libzmq --enable-libzvbi --enable-lv2 --enable-sdl2 --enable-libplacebo --enable-librav1e --enable-pocketsphinx --enable-librsvg --enable-libjxl --enable-shared
++libavutil      58. 29.100 / 58. 29.100
++libavcodec     60. 31.102 / 60. 31.102
++libavformat    60. 16.100 / 60. 16.100
++libavdevice    60.  3.100 / 60.  3.100
++libavfilter     9. 12.100 /  9. 12.100
++libswscale      7.  5.100 /  7.  5.100
++libswresample   4. 12.100 /  4. 12.100
++libpostproc    57.  3.100 / 57.  3.100
+diff --git a/diagnostics/zero_mean_c1_yuv420_no_h264_v1/parameter_evidence/original_drive_inventory.json b/diagnostics/zero_mean_c1_yuv420_no_h264_v1/parameter_evidence/original_drive_inventory.json
+new file mode 100644
+index 0000000..8517ee9
+--- /dev/null
++++ b/diagnostics/zero_mean_c1_yuv420_no_h264_v1/parameter_evidence/original_drive_inventory.json
+@@ -0,0 +1,23 @@
++[
++  {
++    "q8_path": "G:\\我的云端硬盘\\Video-WM\\Zero-Mean-C1-Layered-Transport-V1\\20260930T165530863126Z\\fixed_reference\\OFF\\RGB8_NO_CODEC.pt",
++    "source_path": "G:\\我的云端硬盘\\Video-WM\\Zero-Mean-C1-Layered-Transport-V1\\20260930T165530863126Z\\fixed_reference\\OFF\\MATCHED_SOURCE_MP4.mp4",
++    "q8_bytes": 88966697,
++    "arm": "OFF",
++    "source_bytes": 486707
++  },
++  {
++    "q8_path": "G:\\我的云端硬盘\\Video-WM\\Zero-Mean-C1-Layered-Transport-V1\\20260930T165530863126Z\\fixed_reference\\PAYLOAD_MULTI\\RGB8_NO_CODEC.pt",
++    "source_path": "G:\\我的云端硬盘\\Video-WM\\Zero-Mean-C1-Layered-Transport-V1\\20260930T165530863126Z\\fixed_reference\\PAYLOAD_MULTI\\MATCHED_SOURCE_MP4.mp4",
++    "q8_bytes": 88966697,
++    "arm": "PAYLOAD_MULTI",
++    "source_bytes": 469507
++  },
++  {
++    "q8_path": "G:\\我的云端硬盘\\Video-WM\\Zero-Mean-C1-Layered-Transport-V1\\20260930T165530863126Z\\fixed_reference\\OVERLAP_MULTI\\RGB8_NO_CODEC.pt",
++    "source_path": "G:\\我的云端硬盘\\Video-WM\\Zero-Mean-C1-Layered-Transport-V1\\20260930T165530863126Z\\fixed_reference\\OVERLAP_MULTI\\MATCHED_SOURCE_MP4.mp4",
++    "q8_bytes": 88966697,
++    "arm": "OVERLAP_MULTI",
++    "source_bytes": 455277
++  }
++]
+diff --git a/diagnostics/zero_mean_c1_yuv420_no_h264_v1/parameter_evidence/original_environment_freeze.txt b/diagnostics/zero_mean_c1_yuv420_no_h264_v1/parameter_evidence/original_environment_freeze.txt
+new file mode 100644
+index 0000000..a5c29e7
+--- /dev/null
++++ b/diagnostics/zero_mean_c1_yuv420_no_h264_v1/parameter_evidence/original_environment_freeze.txt
+@@ -0,0 +1,705 @@
++absl-py==1.4.0
++accelerate==1.14.0
++access==1.1.10.post3
++affine==3.0.1
++aiofiles==25.1.0
++aiohappyeyeballs==2.7.1
++aiohttp==3.14.3
++aiosignal==1.4.0
++aiosqlite==0.22.1
++alabaster==1.0.0
++albucore==0.0.24
++albumentations==2.0.8
++ale-py==0.12.1
++altair==5.5.0
++annotated-doc==0.0.5
++annotated-types==0.8.0
++antlr4-python3-runtime==4.9.3
++anyio==4.14.2
++anywidget==0.9.21
++apsw==3.53.4.0
++argon2-cffi==25.1.0
++argon2-cffi-bindings==26.1.0
++array_record==0.8.3
++arrow==1.4.0
++arviz==0.22.0
++astropy==7.2.2
++astropy-iers-data==0.2026.8.31.0.57.9
++astunparse==1.6.3
++atpublic==5.1
++attrs==26.1.0
++audioop-lts==0.2.2
++audioread==3.1.0
++Authlib==1.8.0
++autograd==1.9.1
++babel==2.18.0
++backcall==0.2.0
++beartype==0.22.9
++beautifulsoup4==4.13.5
++betterproto==2.0.0b7
++bigframes==2.48.0
++bigquery-magics==0.14.0
++bleach==6.4.0
++blinker==1.9.0
++blis==1.3.3
++blobfile==3.3.0
++blosc2==4.12.0
++bokeh==3.8.2
++Bottleneck==1.4.2
++bqplot==0.12.47
++branca==0.8.2
++brotli==1.2.0
++CacheControl==0.14.4
++cachetools==6.2.6
++catalogue==2.0.10
++certifi==2026.7.22
++cffi==2.1.1
++chardet==5.2.0
++charset-normalizer==3.4.9
++clarabel==0.11.1
++click==8.5.0
++cligj==0.7.2
++cloudpathlib==0.25.0
++cloudpickle==3.1.2
++cmake==3.31.10
++cmdstanpy==1.3.0
++colorcet==3.2.1
++colorlover==0.3.0
++community==1.0.0b1
++confection==1.3.3
++cons==0.4.7
++contourpy==1.3.3
++cramjam==2.12.1
++cryptography==50.0.1
++cucim-cu12 @ https://pypi.nvidia.com/cucim-cu12/cucim_cu12-26.2.1-cp313-cp313-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl
++cuda-bindings==12.9.7
++cuda-core==0.3.2
++cuda-pathfinder==1.8.0
++cuda-python==12.9.7
++cuda-toolkit==12.8.1
++cudf-cu12==26.2.1
++cudf-polars-cu12==26.2.1
++cufflinks==0.17.3
++cuml-cu12==26.2.0
++cupy-cuda12x==14.0.1
++curl_cffi==0.16.2
++cuvs-cu12 @ https://pypi.nvidia.com/cuvs-cu12/cuvs_cu12-26.2.0-cp313-cp313-manylinux_2_24_x86_64.manylinux_2_28_x86_64.whl
++cvxopt==1.3.2
++cvxpy==1.6.7
++cycler==0.12.1
++cyipopt==1.5.0
++cymem==2.0.13
++Cython==3.0.12
++dask==2026.1.1
++dask-cuda==26.2.0
++dask-cudf-cu12==26.2.1
++dataproc-spark-connect==1.1.0
++datasets==4.8.5
++db-dtypes==1.7.1
++dbus-python==1.3.2
++debugpy==1.8.15
++decorator==4.4.2
++defusedxml==0.7.1
++deprecation==2.1.0
++diffusers==0.39.0
++dill==0.4.1
++distributed==2026.1.1
++distributed-ucxx-cu12==0.48.0
++distro==1.9.0
++dlib==19.24.6
++dm-tree==0.1.10
++docstring_parser==0.18.0
++docutils==0.21.2
++dopamine_rl==4.1.2
++duckdb==1.3.2
++earthengine-api==1.7.39
++easydict==1.13
++editdistance==0.8.1
++eerepr==0.1.2
++einops==0.8.2
++en_core_web_sm @ https://github.com/explosion/spacy-models/releases/download/en_core_web_sm-3.8.0/en_core_web_sm-3.8.0-py3-none-any.whl#sha256=1932429db727d4bff3deed6b34cfc05df17794f4a52eeb26cf8928f7c1a0fb85
++entrypoints==0.4
++esda==2.9.0
++et_xmlfile==2.0.0
++etils==1.14.0
++etuples==0.3.10
++Farama-Notifications==0.0.6
++fastai==2.8.8
++fastapi==0.141.1
++fastcore==2.2.19
++fastdownload==0.0.7
++fastjsonschema==2.22.2
++fastprogress==1.1.6
++fasttransform==0.0.2
++filelock==3.32.5
++firebase-admin==6.9.0
++Flask==3.1.3
++flatbuffers==25.12.19
++flax==0.11.2
++folium==0.20.0
++fonttools==4.64.0
++formulaic==1.2.2
++fqdn==1.5.1
++frozendict==2.4.7
++frozenlist==1.8.0
++fsspec==2025.12.0
++ftfy==6.3.1
++future==1.0.0
++gast==0.7.0
++gcsfs==2025.12.0
++GDAL==3.8.4
++gdown==5.2.2
++geemap==0.38.4
++geocoder==1.38.1
++geographiclib==2.1
++geopandas==1.1.4
++geopy==2.4.1
++giddy==2.3.9
++gin-config==0.5.0
++glob2==0.7
++google==3.0.0
++google-adk==2.7.1
++google-ai-generativelanguage==0.6.15
++google-api-core==2.30.3
++google-api-python-client==2.200.0
++google-auth==2.49.0
++google-auth-httplib2==0.4.2
++google-auth-oauthlib==1.4.1
++google-cloud-bigquery==3.44.0
++google-cloud-bigquery-connection==1.22.0
++google-cloud-bigquery-storage==2.39.0
++google-cloud-core==2.7.0
++google-cloud-dataproc==5.28.0
++google-cloud-datastore==2.25.0
++google-cloud-firestore==2.27.0
++google-cloud-functions==1.24.0
++google-cloud-language==2.21.0
++google-cloud-monitoring==2.31.0
++google-cloud-resource-manager==1.18.0
++google-cloud-spanner==3.68.0
++google-cloud-storage==3.13.1
++google-cloud-storage-control==1.12.0
++google-cloud-translate==3.27.0
++google-colab @ file:///colabtools/dist/google_colab-1.0.0.tar.gz
++google-crc32c==1.8.0
++google-genai==2.12.1
++google-generativeai==0.8.6
++google-pasta==0.2.0
++google-resumable-media==2.10.2
++googleapis-common-protos==1.75.0
++googledrivedownloader==1.1.0
++gradio==6.26.0
++gradio_client==2.6.1
++grain==0.2.18
++graphviz==0.21
++greenlet==3.5.5
++groovy==0.1.2
++grpc-google-iam-v1==0.14.4
++grpc-interceptor==0.15.4
++grpcio==1.83.1
++grpcio-status==1.71.2
++grpclib==0.4.9
++gspread==6.2.1
++gspread-dataframe==4.0.0
++gym==0.25.2
++gym-notices==0.1.0
++gymnasium==1.3.0
++h11==0.16.0
++h2==4.4.1
++h5netcdf==1.8.1
++h5py==3.16.0
++hdbscan==0.8.44
++hf-gradio==0.4.1
++hf-xet==1.6.0
++highspy==1.15.1
++holidays==0.103
++holoviews==1.23.2
++hpack==4.2.0
++html5lib==1.1
++httpcore==1.0.9
++httpcore2==2.12.0
++httpimport==1.4.1
++httplib2==0.32.0
++httptools==0.8.0
++httpx==0.28.1
++httpx2==2.12.0
++huggingface_hub==0.36.2
++humanize==4.16.0
++hyperframe==6.1.0
++hyperopt==0.3.0
++ibis-framework==9.5.0
++idna==3.19
++ImageIO==2.37.4
++imageio-ffmpeg==0.6.0
++imagesize==2.0.1
++imbalanced-learn==0.14.2
++immutabledict==4.3.1
++importlib_metadata==9.0.1
++imutils==0.5.4
++inequality==1.1.2
++inflect==7.5.0
++iniconfig==2.3.0
++intel-cmplr-lib-ur==2025.3.3
++intel-openmp==2025.3.3
++interface_meta==2.0.1
++ipyevents==2.0.4
++ipyfilechooser==0.6.0
++ipykernel==6.17.1
++ipyleaflet==0.20.0
++ipyparallel==8.8.0
++ipython==7.34.0
++ipython-genutils==0.2.0
++ipython-sql==0.5.0
++ipywidgets==7.7.1
++isoduration==20.11.0
++itsdangerous==2.2.0
++jaraco.classes==3.4.0
++jaraco.context==6.1.2
++jaraco.functools==4.6.0
++jax==0.11.1
++jax-cuda12-pjrt==0.11.1
++jax-cuda12-plugin==0.11.1
++jaxlib==0.11.1
++jeepney==0.9.0
++jieba==0.42.1
++Jinja2==3.1.6
++jiter==0.16.0
++joblib==1.6.0
++joserfc==1.7.5
++jsonpatch==1.33
++jsonpickle==4.1.2
++jsonpointer==3.1.1
++jsonschema==4.26.0
++jsonschema-specifications==2025.9.1
++jupyter-console==6.6.3
++jupyter-events==0.12.1
++jupyter-leaflet==0.20.0
++jupyter_client==7.4.9
++jupyter_core==5.9.1
++jupyter_kernel_gateway @ git+https://github.com/googlecolab/kernel_gateway@b134e9945df25c2dcb98ade9129399be10788671
++jupyter_server==2.20.0
++jupyter_server_terminals==0.5.4
++jupyterlab_pygments==0.3.0
++jupyterlab_widgets==3.0.17
++jupytext==1.19.5
++kaggle==2.0.2
++kagglehub==1.0.2
++kagglesdk==0.1.37
++keras==3.13.2
++keras-hub==0.26.0
++keras-nlp==0.26.0
++keyring==25.7.0
++keyrings.google-artifactregistry-auth==1.1.2
++kiwisolver==1.5.1
++langchain==1.3.18
++langchain-core==1.6.1
++langchain-protocol==0.0.19
++langgraph==1.2.11
++langgraph-checkpoint==4.2.0
++langgraph-prebuilt==1.1.0
++langgraph-sdk==0.4.4
++langsmith==0.12.1
++lark==1.3.1
++launchpadlib==1.11.0
++lazr.restfulclient==0.14.6
++lazr.uri==1.0.6
++lazy-loader==0.5
++libclang==18.1.1
++libcudf-cu12==26.2.1
++libcugraph-cu12==26.2.0
++libcuml-cu12==26.2.0
++libcuvs-cu12==26.2.0
++libkvikio-cu12==26.2.0
++libpysal==4.14.1
++libraft-cu12==26.2.0
++librmm-cu12==26.2.0
++librosa==0.11.0
++libucx-cu12==1.19.0
++libucxx-cu12==0.48.0
++lightgbm==4.6.0
++linkify-it-py==2.2.0
++llvmlite==0.44.0
++locket==1.0.0
++logical-unification==0.4.7
++lxml==6.1.2
++Mako==1.3.2.dev0
++mapclassify==2.10.0
++Markdown==3.10.3
++markdown-it-py==4.2.0
++MarkupSafe==3.0.3
++matplotlib==3.10.0
++matplotlib-inline==0.2.2
++matplotlib-venn==1.1.2
++mdit-py-plugins==0.6.1
++mdurl==0.1.2
++mgwr==2.2.1
++miniKanren==1.0.5
++missingno==0.5.2
++mistune==3.3.4
++mizani==0.13.5
++mkl==2025.3.1
++ml_dtypes==0.6.0
++mlxtend==0.23.4
++mmh3==5.3.0
++momepy==0.11.0
++more-itertools==10.8.0
++moviepy==1.0.3
++mpmath==1.3.0
++msgpack==1.2.2
++multidict==6.7.1
++multipledispatch==1.0.0
++multiprocess==0.70.19
++multitasking==0.0.13
++murmurhash==1.0.15
++music21==9.9.2
++namex==0.1.0
++narwhals==2.25.0
++natsort==8.4.0
++nbclassic==1.3.3
++nbclient==0.10.4
++nbconvert==7.17.1
++nbformat==5.11.1
++ndindex==1.10.1
++nest-asyncio==1.6.0
++networkx==3.6.1
++nh3==0.3.7
++nibabel==5.4.2
++nltk==3.9.1
++notebook==6.5.7
++notebook_shim==0.2.4
++numba==0.61.2
++numba-cuda==0.22.2
++numexpr==2.14.2
++numpy==2.1.3
++nvidia-cublas-cu12==12.8.4.1
++nvidia-cuda-cccl-cu12==12.9.27
++nvidia-cuda-cupti-cu12==12.8.90
++nvidia-cuda-nvcc-cu12==12.8.93
++nvidia-cuda-nvrtc-cu12==12.8.93
++nvidia-cuda-runtime-cu12==12.8.90
++nvidia-cudnn-cu12==9.19.0.56
++nvidia-cufft-cu12==11.3.3.83
++nvidia-cufile-cu12==1.13.1.3
++nvidia-curand-cu12==10.3.9.90
++nvidia-cusolver-cu12==11.7.3.90
++nvidia-cusparse-cu12==12.5.8.93
++nvidia-cusparselt-cu12==0.7.1
++nvidia-libnvcomp-cu12==5.1.0.21
++nvidia-ml-py==13.610.43
++nvidia-nccl-cu12==2.28.9
++nvidia-nccl-cu13==2.31.2
++nvidia-nvimgcodec-cu12==0.7.0.11
++nvidia-nvjitlink-cu12==12.8.93
++nvidia-nvshmem-cu12==3.4.5
++nvidia-nvtx-cu12==12.8.90
++nvtx==0.2.16
++nx-cugraph-cu12 @ https://pypi.nvidia.com/nx-cugraph-cu12/nx_cugraph_cu12-26.2.0-py3-none-any.whl
++oauth2client==4.1.3
++oauthlib==3.3.1
++omegaconf==2.3.1
++onemkl-license==2025.3.1
++openai==2.54.0
++opencv-contrib-python==4.14.0.94
++opencv-python==5.0.0.93
++opencv-python-headless==5.0.0.93
++openpyxl==3.1.5
++opentelemetry-api==1.42.1
++opentelemetry-resourcedetector-gcp==1.14.0
++opentelemetry-sdk==1.42.1
++opentelemetry-semantic-conventions==0.63b1
++opt_einsum==3.4.0
++optax==0.2.8
++optree==0.20.0
++orbax-checkpoint==0.12.4
++orjson==3.12.0
++ormsgpack==1.12.2
++osqp==1.1.3
++packaging==26.3
++pandas==2.2.3
++pandas-datareader==0.11.1
++pandas-gbq==0.30.0
++pandas-stubs==2.2.3.250527
++pandocfilters==1.5.1
++panel==1.9.4
++panel-material-ui==0.14.2
++param==2.4.1
++parso==0.8.7
++parsy==2.2
++partd==1.4.2
++patsy==1.0.3
++peewee==4.4.0
++peft==0.20.0
++pexpect==4.9.0
++pickleshare==0.7.5
++pillow==11.3.0
++platformdirs==4.11.7
++plotly==5.24.1
++plotnine==0.14.5
++pluggy==1.6.0
++plum-dispatch==2.9.0
++pointpats==2.5.5
++polars==1.35.2
++polars-runtime-32==1.35.2
++pooch==1.9.0
++portpicker==1.5.2
++preshed==3.0.13
++prettytable==3.18.0
++proglog==0.1.12
++progressbar2==4.5.0
++prometheus_client==0.26.0
++promise==2.3
++prompt_toolkit==3.0.53
++propcache==0.5.2
++prophet==1.4.0
++proto-plus==1.28.2
++protobuf==5.29.6
++psutil==5.9.5
++psycopg2==2.9.12
++psygnal==0.15.1
++ptyprocess==0.7.0
++PuLP==3.3.2
++py-cpuinfo==9.0.0
++py4j==0.10.9.9
++pyarrow==23.0.1
++pyasn1==0.6.4
++pyasn1_modules==0.4.2
++pycairo==1.29.1
++pycocotools==2.0.11
++pycparser==3.0
++pycryptodomex==3.23.0
++pydantic==2.13.5
++pydantic_core==2.46.5
++pydata-google-auth==1.9.1
++pydot==4.0.1
++pydotplus==2.0.2
++PyDrive2==1.21.1
++pydub==0.25.1
++pyerfa==2.0.1.5
++pygame==2.6.1
++pygit2==1.20.0
++Pygments==2.21.0
++PyGObject==3.48.2
++pyiceberg==0.12.0
++PyJWT==2.13.0
++pylibcudf-cu12==26.2.1
++pylibcugraph-cu12==26.2.0
++pylibraft-cu12==26.2.0
++pymc==5.28.5
++pynndescent==0.6.0
++pyogrio==0.13.0
++pyomo==6.10.1
++PyOpenGL==3.1.10
++pyOpenSSL==26.4.0
++pyparsing==3.3.2
++pyperclip==1.11.0
++pyproj==3.7.2
++pyroaring==1.1.0
++pysal==25.7
++pyshp==3.1.6
++PySocks==1.7.1
++pyspark==4.0.4
++pytensor==2.38.3
++pytest==8.4.2
++python-apt==0.0.0
++python-box==7.4.1
++python-dateutil==2.9.0.post0
++python-dotenv==1.2.3
++python-fasthtml==0.14.12
++python-json-logger==4.2.0
++python-louvain==0.16
++python-multipart==0.0.32
++python-slugify==8.0.4
++python-snappy==0.7.3
++python-utils==4.0.1
++pytz==2025.2
++pyviz_comms==3.0.6
++PyWavelets==1.9.0
++PyYAML==6.0.3
++pyzmq==26.2.1
++quantecon==0.11.4
++raft-dask-cu12==26.2.0
++rapids-dask-dependency==26.2.0
++rapids-logger==0.2.3
++rasterio==1.5.1
++rasterstats==0.21.0
++ratelim==0.1.6
++referencing==0.37.0
++regex==2025.11.3
++requests==2.32.4
++requests-oauthlib==2.0.0
++requests-toolbelt==1.0.0
++requirements-parser==0.9.0
++rfc3339-validator==0.1.4
++rfc3986-validator==0.1.1
++rfc3987-syntax==1.1.0
++rich==13.9.4
++rmm-cu12==26.2.0
++roman-numerals==4.1.0
++roman-numerals-py==4.1.0
++rpds-py==2026.6.3
++rpy2==3.5.17
++rsa==4.9.1
++rtree==1.4.1
++safehttpx==0.1.7
++safetensors==0.8.0
++scikit-image==0.25.2
++scikit-learn==1.6.1
++scipy==1.16.3
++scooby==0.11.2
++scs==3.2.11
++seaborn==0.13.2
++SecretStorage==3.5.0
++segregation==2.5.4
++semantic-version==2.10.0
++Send2Trash==2.1.0
++sentence-transformers==5.7.0
++sentencepiece==0.2.2
++sentry-sdk==2.68.1
++setuptools==80.10.2
++shap==0.52.0
++shapely==2.1.2
++shellingham==1.5.4
++simple-parsing==0.1.9
++simplejson==4.1.2
++simsimd==6.5.16
++six==1.17.0
++sklearn-compat==0.1.6
++sklearn-pandas==2.2.0
++slicer==0.0.8
++smart_open==8.0.1
++sniffio==1.3.1
++snowballstemmer==3.1.1
++sortedcontainers==2.4.0
++soundfile==0.14.0
++soupsieve==2.9.2
++soxr==1.1.0
++spacy==3.8.16
++spacy-legacy==3.0.12
++spacy-loggers==1.0.5
++spaghetti==1.7.6
++spanner-graph-notebook==1.1.10
++spglm==1.1.0
++Sphinx==8.2.3
++sphinxcontrib-applehelp==2.0.0
++sphinxcontrib-devhelp==2.0.0
++sphinxcontrib-htmlhelp==2.1.0
++sphinxcontrib-jsmath==1.0.1
++sphinxcontrib-qthelp==2.0.0
++sphinxcontrib-serializinghtml==2.0.0
++spint==1.1.0
++splot==1.1.7
++spopt==0.7.0
++spreg==1.9.0
++SQLAlchemy==2.0.52
++sqlglot==25.20.2
++sqlparse==0.6.0
++srsly==2.5.3
++standard-aifc==3.13.0
++standard-chunk==3.13.0
++standard-sunau==3.13.0
++stanio==0.5.1
++starlette==1.6.0
++statsmodels==0.15.0
++strictyaml==1.7.3
++stringzilla==5.1.2
++stumpy==1.14.1
++sympy==1.14.0
++tables==3.10.2
++tabulate==0.9.0
++tbb==2022.3.1
++tblib==3.2.2
++tcmlib==1.5.0
++tenacity==9.1.4
++tensorboard==2.20.0
++tensorboard-data-server==0.7.2
++tensorflow==2.20.0
++tensorflow-datasets==4.9.10
++tensorflow-hub==0.16.1
++tensorflow-metadata==1.21.0
++tensorflow-probability==0.25.0
++tensorflow-text==2.20.1
++tensorstore==0.1.85
++termcolor==3.3.0
++terminado==0.18.1
++text-unidecode==1.3
++textblob==0.19.0
++tf-slim==1.1.0
++tf_keras==2.20.1
++thinc==8.3.13
++threadpoolctl==3.6.0
++tifffile==2026.8.23
++tiktoken==0.14.0
++timm==1.0.29
++tinycss2==1.5.1
++tobler==0.14.0
++tokenizers==0.22.2
++toml==0.10.2
++tomlkit==0.14.0
++toolz==0.12.1
++torch==2.11.0+cu128
++torchao==0.10.0
++torchaudio==2.11.0+cu128
++torchcodec==0.11.0+cu128
++torchdata==0.11.0
++torchsummary==1.5.1
++torchtune==0.6.1
++torchvision==0.26.0+cu128
++tornado==6.5.7
++tqdm==4.67.3
++traitlets==5.7.1
++traittypes==0.2.3
++transformers==4.57.6
++treelite==4.7.1
++treescope==0.1.10
++triton==3.6.0
++truststore==0.10.4
++tsfresh==0.21.2
++tweepy==4.17.0
++typeguard==4.6.0
++typer==0.27.2
++types-pytz==2026.3.1.20260727
++types-setuptools==84.0.0.20260812
++typing-inspection==0.4.4
++typing_extensions==4.16.0
++tzdata==2026.3
++tzlocal==5.4.4
++ucxx-cu12==0.48.0
++umap-learn==0.5.12
++umf==1.0.3
++uri-template==1.3.0
++uritemplate==4.2.0
++urllib3==2.5.0
++uuid_utils==0.17.0
++uvicorn==0.52.4
++uvloop==0.22.1
++vega-datasets==0.9.0
++wadllib==1.3.6
++wandb==0.28.1
++wasabi==1.1.3
++watchdog==6.0.0
++watchfiles==1.2.0
++wcwidth==0.8.3
++weasel==1.0.0
++webcolors==25.10.0
++webencodings==0.6.1
++websocket-client==1.9.2
++websockets==15.0.1
++Werkzeug==3.1.8
++wheel==0.48.0
++widgetsnbextension==3.6.10
++wordcloud==1.9.6
++wrapt==2.4.0
++xarray==2025.12.0
++xarray-einstats==0.11.0
++xgboost==3.4.1
++xlrd==2.0.2
++xxhash==4.0.1
++xyzservices==2026.3.0
++yarl==1.24.5
++ydf==0.15.0
++ydf_tf==2.20.0
++yellowbrick==1.5
++yfinance==0.2.66
++zict==3.0.0
++zipp==4.1.0
++zstandard==0.25.0
+diff --git a/diagnostics/zero_mean_c1_yuv420_no_h264_v1/parameter_evidence/original_environment_receipt.json b/diagnostics/zero_mean_c1_yuv420_no_h264_v1/parameter_evidence/original_environment_receipt.json
+new file mode 100644
+index 0000000..75e0a4f
+--- /dev/null
++++ b/diagnostics/zero_mean_c1_yuv420_no_h264_v1/parameter_evidence/original_environment_receipt.json
+@@ -0,0 +1,15 @@
++{
++  "python": "3.13.15 (main, Aug  6 2026, 11:06:22) [GCC 13.3.0]",
++  "executable": "/usr/bin/python3",
++  "packages": {
++    "torch": "2.11.0+cu128",
++    "torchvision": "0.26.0+cu128",
++    "diffusers": "0.39.0",
++    "transformers": "4.57.6",
++    "accelerate": "1.14.0",
++    "numpy": "2.1.3",
++    "imageio": "2.37.4",
++    "imageio-ffmpeg": "0.6.0"
++  },
++  "cuda_available": true
++}
+diff --git a/diagnostics/zero_mean_c1_yuv420_no_h264_v1/parameter_evidence/original_execution.log b/diagnostics/zero_mean_c1_yuv420_no_h264_v1/parameter_evidence/original_execution.log
+new file mode 100644
+index 0000000..48b90ef
+--- /dev/null
++++ b/diagnostics/zero_mean_c1_yuv420_no_h264_v1/parameter_evidence/original_execution.log
+@@ -0,0 +1,143 @@
++COMMAND ['git', 'clone', '--filter=blob:none', 'https://github.com/RICHAAARC/SC-SSTW.git', '/content/SC-SSTW-LAYERED-TRANSPORT-20260930T165530863126Z']
++Cloning into '/content/SC-SSTW-LAYERED-TRANSPORT-20260930T165530863126Z'...
++EXIT 0
++COMMAND ['git', '-C', '/content/SC-SSTW-LAYERED-TRANSPORT-20260930T165530863126Z', 'fetch', 'origin', 'd4f5d73c506c20f4dfa5e1f74065836c23432064']
++From https://github.com/RICHAAARC/SC-SSTW
++ * branch            d4f5d73c506c20f4dfa5e1f74065836c23432064 -> FETCH_HEAD
++EXIT 0
++COMMAND ['git', '-C', '/content/SC-SSTW-LAYERED-TRANSPORT-20260930T165530863126Z', 'checkout', '--detach', 'd4f5d73c506c20f4dfa5e1f74065836c23432064']
++HEAD is now at d4f5d73 Add matched five-layer zero-mean transfer diagnostic
++EXIT 0
++COMMAND ['/usr/bin/python3', '-c', 'import torch,torchvision; print(torch.__version__,torchvision.__version__)']
++2.11.0+cu128 0.26.0+cu128
++EXIT 0
++COMMAND ['/usr/bin/python3', '-m', 'pip', 'install', '-r', '/content/SC-SSTW-LAYERED-TRANSPORT-20260930T165530863126Z/experiments/wan_state_clock/requirements-grow-video-reference.txt']
++Collecting diffusers<0.40,>=0.35 (from -r /content/SC-SSTW-LAYERED-TRANSPORT-20260930T165530863126Z/experiments/wan_state_clock/requirements-grow-video-reference.txt (line 3))
++  Downloading diffusers-0.39.0-py3-none-any.whl.metadata (20 kB)
++Collecting transformers<5,>=4.44 (from -r /content/SC-SSTW-LAYERED-TRANSPORT-20260930T165530863126Z/experiments/wan_state_clock/requirements-grow-video-reference.txt (line 4))
++  Downloading transformers-4.57.6-py3-none-any.whl.metadata (43 kB)
++     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 44.0/44.0 kB 5.7 MB/s eta 0:00:00
++Requirement already satisfied: accelerate<2,>=0.34 in /usr/local/lib/python3.13/dist-packages (from -r /content/SC-SSTW-LAYERED-TRANSPORT-20260930T165530863126Z/experiments/wan_state_clock/requirements-grow-video-reference.txt (line 5)) (1.14.0)
++Requirement already satisfied: numpy>=1.26 in /usr/local/lib/python3.13/dist-packages (from -r /content/SC-SSTW-LAYERED-TRANSPORT-20260930T165530863126Z/experiments/wan_state_clock/requirements-grow-video-reference.txt (line 6)) (2.1.3)
++Requirement already satisfied: Pillow>=10 in /usr/local/lib/python3.13/dist-packages (from -r /content/SC-SSTW-LAYERED-TRANSPORT-20260930T165530863126Z/experiments/wan_state_clock/requirements-grow-video-reference.txt (line 7)) (11.3.0)
++Requirement already satisfied: tqdm>=4.66 in /usr/local/lib/python3.13/dist-packages (from -r /content/SC-SSTW-LAYERED-TRANSPORT-20260930T165530863126Z/experiments/wan_state_clock/requirements-grow-video-reference.txt (line 8)) (4.67.3)
++Requirement already satisfied: PyYAML>=6 in /usr/local/lib/python3.13/dist-packages (from -r /content/SC-SSTW-LAYERED-TRANSPORT-20260930T165530863126Z/experiments/wan_state_clock/requirements-grow-video-reference.txt (line 9)) (6.0.3)
++Collecting huggingface_hub<1,>=0.34 (from -r /content/SC-SSTW-LAYERED-TRANSPORT-20260930T165530863126Z/experiments/wan_state_clock/requirements-grow-video-reference.txt (line 10))
++  Downloading huggingface_hub-0.36.2-py3-none-any.whl.metadata (15 kB)
++Requirement already satisfied: safetensors>=0.4 in /usr/local/lib/python3.13/dist-packages (from -r /content/SC-SSTW-LAYERED-TRANSPORT-20260930T165530863126Z/experiments/wan_state_clock/requirements-grow-video-reference.txt (line 11)) (0.8.0)
++Collecting ftfy>=6 (from -r /content/SC-SSTW-LAYERED-TRANSPORT-20260930T165530863126Z/experiments/wan_state_clock/requirements-grow-video-reference.txt (line 12))
++  Downloading ftfy-6.3.1-py3-none-any.whl.metadata (7.3 kB)
++Requirement already satisfied: sentencepiece>=0.2 in /usr/local/lib/python3.13/dist-packages (from -r /content/SC-SSTW-LAYERED-TRANSPORT-20260930T165530863126Z/experiments/wan_state_clock/requirements-grow-video-reference.txt (line 13)) (0.2.2)
++Requirement already satisfied: importlib_metadata in /usr/local/lib/python3.13/dist-packages (from diffusers<0.40,>=0.35->-r /content/SC-SSTW-LAYERED-TRANSPORT-20260930T165530863126Z/experiments/wan_state_clock/requirements-grow-video-reference.txt (line 3)) (9.0.1)
++Requirement already satisfied: filelock in /usr/local/lib/python3.13/dist-packages (from diffusers<0.40,>=0.35->-r /content/SC-SSTW-LAYERED-TRANSPORT-20260930T165530863126Z/experiments/wan_state_clock/requirements-grow-video-reference.txt (line 3)) (3.32.5)
++Requirement already satisfied: httpx<1.0.0 in /usr/local/lib/python3.13/dist-packages (from diffusers<0.40,>=0.35->-r /content/SC-SSTW-LAYERED-TRANSPORT-20260930T165530863126Z/experiments/wan_state_clock/requirements-grow-video-reference.txt (line 3)) (0.28.1)
++Requirement already satisfied: regex!=2019.12.17 in /usr/local/lib/python3.13/dist-packages (from diffusers<0.40,>=0.35->-r /content/SC-SSTW-LAYERED-TRANSPORT-20260930T165530863126Z/experiments/wan_state_clock/requirements-grow-video-reference.txt (line 3)) (2025.11.3)
++Requirement already satisfied: requests in /usr/local/lib/python3.13/dist-packages (from diffusers<0.40,>=0.35->-r /content/SC-SSTW-LAYERED-TRANSPORT-20260930T165530863126Z/experiments/wan_state_clock/requirements-grow-video-reference.txt (line 3)) (2.32.4)
++Requirement already satisfied: packaging>=20.0 in /usr/local/lib/python3.13/dist-packages (from transformers<5,>=4.44->-r /content/SC-SSTW-LAYERED-TRANSPORT-20260930T165530863126Z/experiments/wan_state_clock/requirements-grow-video-reference.txt (line 4)) (26.3)
++Collecting tokenizers<=0.23.0,>=0.22.0 (from transformers<5,>=4.44->-r /content/SC-SSTW-LAYERED-TRANSPORT-20260930T165530863126Z/experiments/wan_state_clock/requirements-grow-video-reference.txt (line 4))
++  Downloading tokenizers-0.22.2-cp39-abi3-manylinux_2_17_x86_64.manylinux2014_x86_64.whl.metadata (7.3 kB)
++Requirement already satisfied: psutil in /usr/local/lib/python3.13/dist-packages (from accelerate<2,>=0.34->-r /content/SC-SSTW-LAYERED-TRANSPORT-20260930T165530863126Z/experiments/wan_state_clock/requirements-grow-video-reference.txt (line 5)) (5.9.5)
++Requirement already satisfied: torch>=2.0.0 in /usr/local/lib/python3.13/dist-packages (from accelerate<2,>=0.34->-r /content/SC-SSTW-LAYERED-TRANSPORT-20260930T165530863126Z/experiments/wan_state_clock/requirements-grow-video-reference.txt (line 5)) (2.11.0+cu128)
++Requirement already satisfied: fsspec>=2023.5.0 in /usr/local/lib/python3.13/dist-packages (from huggingface_hub<1,>=0.34->-r /content/SC-SSTW-LAYERED-TRANSPORT-20260930T165530863126Z/experiments/wan_state_clock/requirements-grow-video-reference.txt (line 10)) (2025.12.0)
++Requirement already satisfied: hf-xet<2.0.0,>=1.1.3 in /usr/local/lib/python3.13/dist-packages (from huggingface_hub<1,>=0.34->-r /content/SC-SSTW-LAYERED-TRANSPORT-20260930T165530863126Z/experiments/wan_state_clock/requirements-grow-video-reference.txt (line 10)) (1.6.0)
++Requirement already satisfied: typing-extensions>=3.7.4.3 in /usr/local/lib/python3.13/dist-packages (from huggingface_hub<1,>=0.34->-r /content/SC-SSTW-LAYERED-TRANSPORT-20260930T165530863126Z/experiments/wan_state_clock/requirements-grow-video-reference.txt (line 10)) (4.16.0)
++Requirement already satisfied: wcwidth in /usr/local/lib/python3.13/dist-packages (from ftfy>=6->-r /content/SC-SSTW-LAYERED-TRANSPORT-20260930T165530863126Z/experiments/wan_state_clock/requirements-grow-video-reference.txt (line 12)) (0.8.3)
++Requirement already satisfied: anyio in /usr/local/lib/python3.13/dist-packages (from httpx<1.0.0->diffusers<0.40,>=0.35->-r /content/SC-SSTW-LAYERED-TRANSPORT-20260930T165530863126Z/experiments/wan_state_clock/requirements-grow-video-reference.txt (line 3)) (4.14.2)
++Requirement already satisfied: certifi in /usr/local/lib/python3.13/dist-packages (from httpx<1.0.0->diffusers<0.40,>=0.35->-r /content/SC-SSTW-LAYERED-TRANSPORT-20260930T165530863126Z/experiments/wan_state_clock/requirements-grow-video-reference.txt (line 3)) (2026.7.22)
++Requirement already satisfied: httpcore==1.* in /usr/local/lib/python3.13/dist-packages (from httpx<1.0.0->diffusers<0.40,>=0.35->-r /content/SC-SSTW-LAYERED-TRANSPORT-20260930T165530863126Z/experiments/wan_state_clock/requirements-grow-video-reference.txt (line 3)) (1.0.9)
++Requirement already satisfied: idna in /usr/local/lib/python3.13/dist-packages (from httpx<1.0.0->diffusers<0.40,>=0.35->-r /content/SC-SSTW-LAYERED-TRANSPORT-20260930T165530863126Z/experiments/wan_state_clock/requirements-grow-video-reference.txt (line 3)) (3.19)
++Requirement already satisfied: h11>=0.16 in /usr/local/lib/python3.13/dist-packages (from httpcore==1.*->httpx<1.0.0->diffusers<0.40,>=0.35->-r /content/SC-SSTW-LAYERED-TRANSPORT-20260930T165530863126Z/experiments/wan_state_clock/requirements-grow-video-reference.txt (line 3)) (0.16.0)
++Requirement already satisfied: setuptools<82 in /usr/local/lib/python3.13/dist-packages (from torch>=2.0.0->accelerate<2,>=0.34->-r /content/SC-SSTW-LAYERED-TRANSPORT-20260930T165530863126Z/experiments/wan_state_clock/requirements-grow-video-reference.txt (line 5)) (80.10.2)
++Requirement already satisfied: sympy>=1.13.3 in /usr/local/lib/python3.13/dist-packages (from torch>=2.0.0->accelerate<2,>=0.34->-r /content/SC-SSTW-LAYERED-TRANSPORT-20260930T165530863126Z/experiments/wan_state_clock/requirements-grow-video-reference.txt (line 5)) (1.14.0)
++Requirement already satisfied: networkx>=2.5.1 in /usr/local/lib/python3.13/dist-packages (from torch>=2.0.0->accelerate<2,>=0.34->-r /content/SC-SSTW-LAYERED-TRANSPORT-20260930T165530863126Z/experiments/wan_state_clock/requirements-grow-video-reference.txt (line 5)) (3.6.1)
++Requirement already satisfied: jinja2 in /usr/local/lib/python3.13/dist-packages (from torch>=2.0.0->accelerate<2,>=0.34->-r /content/SC-SSTW-LAYERED-TRANSPORT-20260930T165530863126Z/experiments/wan_state_clock/requirements-grow-video-reference.txt (line 5)) (3.1.6)
++Requirement already satisfied: cuda-toolkit==12.8.1 in /usr/local/lib/python3.13/dist-packages (from cuda-toolkit[cublas,cudart,cufft,cufile,cupti,curand,cusolver,cusparse,nvjitlink,nvrtc,nvtx]==12.8.1; platform_system == "Linux"->torch>=2.0.0->accelerate<2,>=0.34->-r /content/SC-SSTW-LAYERED-TRANSPORT-20260930T165530863126Z/experiments/wan_state_clock/requirements-grow-video-reference.txt (line 5)) (12.8.1)
++Requirement already satisfied: cuda-bindings<13,>=12.9.4 in /usr/local/lib/python3.13/dist-packages (from torch>=2.0.0->accelerate<2,>=0.34->-r /content/SC-SSTW-LAYERED-TRANSPORT-20260930T165530863126Z/experiments/wan_state_clock/requirements-grow-video-reference.txt (line 5)) (12.9.7)
++Requirement already satisfied: nvidia-cudnn-cu12==9.19.0.56 in /usr/local/lib/python3.13/dist-packages (from torch>=2.0.0->accelerate<2,>=0.34->-r /content/SC-SSTW-LAYERED-TRANSPORT-20260930T165530863126Z/experiments/wan_state_clock/requirements-grow-video-reference.txt (line 5)) (9.19.0.56)
++Requirement already satisfied: nvidia-cusparselt-cu12==0.7.1 in /usr/local/lib/python3.13/dist-packages (from torch>=2.0.0->accelerate<2,>=0.34->-r /content/SC-SSTW-LAYERED-TRANSPORT-20260930T165530863126Z/experiments/wan_state_clock/requirements-grow-video-reference.txt (line 5)) (0.7.1)
++Requirement already satisfied: nvidia-nccl-cu12==2.28.9 in /usr/local/lib/python3.13/dist-packages (from torch>=2.0.0->accelerate<2,>=0.34->-r /content/SC-SSTW-LAYERED-TRANSPORT-20260930T165530863126Z/experiments/wan_state_clock/requirements-grow-video-reference.txt (line 5)) (2.28.9)
++Requirement already satisfied: nvidia-nvshmem-cu12==3.4.5 in /usr/local/lib/python3.13/dist-packages (from torch>=2.0.0->accelerate<2,>=0.34->-r /content/SC-SSTW-LAYERED-TRANSPORT-20260930T165530863126Z/experiments/wan_state_clock/requirements-grow-video-reference.txt (line 5)) (3.4.5)
++Requirement already satisfied: triton==3.6.0 in /usr/local/lib/python3.13/dist-packages (from torch>=2.0.0->accelerate<2,>=0.34->-r /content/SC-SSTW-LAYERED-TRANSPORT-20260930T165530863126Z/experiments/wan_state_clock/requirements-grow-video-reference.txt (line 5)) (3.6.0)
++Requirement already satisfied: nvidia-cublas-cu12==12.8.4.1.* in /usr/local/lib/python3.13/dist-packages (from cuda-toolkit[cublas,cudart,cufft,cufile,cupti,curand,cusolver,cusparse,nvjitlink,nvrtc,nvtx]==12.8.1; platform_system == "Linux"->torch>=2.0.0->accelerate<2,>=0.34->-r /content/SC-SSTW-LAYERED-TRANSPORT-20260930T165530863126Z/experiments/wan_state_clock/requirements-grow-video-reference.txt (line 5)) (12.8.4.1)
++Requirement already satisfied: nvidia-cuda-runtime-cu12==12.8.90.* in /usr/local/lib/python3.13/dist-packages (from cuda-toolkit[cublas,cudart,cufft,cufile,cupti,curand,cusolver,cusparse,nvjitlink,nvrtc,nvtx]==12.8.1; platform_system == "Linux"->torch>=2.0.0->accelerate<2,>=0.34->-r /content/SC-SSTW-LAYERED-TRANSPORT-20260930T165530863126Z/experiments/wan_state_clock/requirements-grow-video-reference.txt (line 5)) (12.8.90)
++Requirement already satisfied: nvidia-cufft-cu12==11.3.3.83.* in /usr/local/lib/python3.13/dist-packages (from cuda-toolkit[cublas,cudart,cufft,cufile,cupti,curand,cusolver,cusparse,nvjitlink,nvrtc,nvtx]==12.8.1; platform_system == "Linux"->torch>=2.0.0->accelerate<2,>=0.34->-r /content/SC-SSTW-LAYERED-TRANSPORT-20260930T165530863126Z/experiments/wan_state_clock/requirements-grow-video-reference.txt (line 5)) (11.3.3.83)
++Requirement already satisfied: nvidia-cufile-cu12==1.13.1.3.* in /usr/local/lib/python3.13/dist-packages (from cuda-toolkit[cublas,cudart,cufft,cufile,cupti,curand,cusolver,cusparse,nvjitlink,nvrtc,nvtx]==12.8.1; platform_system == "Linux"->torch>=2.0.0->accelerate<2,>=0.34->-r /content/SC-SSTW-LAYERED-TRANSPORT-20260930T165530863126Z/experiments/wan_state_clock/requirements-grow-video-reference.txt (line 5)) (1.13.1.3)
++Requirement already satisfied: nvidia-cuda-cupti-cu12==12.8.90.* in /usr/local/lib/python3.13/dist-packages (from cuda-toolkit[cublas,cudart,cufft,cufile,cupti,curand,cusolver,cusparse,nvjitlink,nvrtc,nvtx]==12.8.1; platform_system == "Linux"->torch>=2.0.0->accelerate<2,>=0.34->-r /content/SC-SSTW-LAYERED-TRANSPORT-20260930T165530863126Z/experiments/wan_state_clock/requirements-grow-video-reference.txt (line 5)) (12.8.90)
++Requirement already satisfied: nvidia-curand-cu12==10.3.9.90.* in /usr/local/lib/python3.13/dist-packages (from cuda-toolkit[cublas,cudart,cufft,cufile,cupti,curand,cusolver,cusparse,nvjitlink,nvrtc,nvtx]==12.8.1; platform_system == "Linux"->torch>=2.0.0->accelerate<2,>=0.34->-r /content/SC-SSTW-LAYERED-TRANSPORT-20260930T165530863126Z/experiments/wan_state_clock/requirements-grow-video-reference.txt (line 5)) (10.3.9.90)
++Requirement already satisfied: nvidia-cusolver-cu12==11.7.3.90.* in /usr/local/lib/python3.13/dist-packages (from cuda-toolkit[cublas,cudart,cufft,cufile,cupti,curand,cusolver,cusparse,nvjitlink,nvrtc,nvtx]==12.8.1; platform_system == "Linux"->torch>=2.0.0->accelerate<2,>=0.34->-r /content/SC-SSTW-LAYERED-TRANSPORT-20260930T165530863126Z/experiments/wan_state_clock/requirements-grow-video-reference.txt (line 5)) (11.7.3.90)
++Requirement already satisfied: nvidia-cusparse-cu12==12.5.8.93.* in /usr/local/lib/python3.13/dist-packages (from cuda-toolkit[cublas,cudart,cufft,cufile,cupti,curand,cusolver,cusparse,nvjitlink,nvrtc,nvtx]==12.8.1; platform_system == "Linux"->torch>=2.0.0->accelerate<2,>=0.34->-r /content/SC-SSTW-LAYERED-TRANSPORT-20260930T165530863126Z/experiments/wan_state_clock/requirements-grow-video-reference.txt (line 5)) (12.5.8.93)
++Requirement already satisfied: nvidia-nvjitlink-cu12==12.8.93.* in /usr/local/lib/python3.13/dist-packages (from cuda-toolkit[cublas,cudart,cufft,cufile,cupti,curand,cusolver,cusparse,nvjitlink,nvrtc,nvtx]==12.8.1; platform_system == "Linux"->torch>=2.0.0->accelerate<2,>=0.34->-r /content/SC-SSTW-LAYERED-TRANSPORT-20260930T165530863126Z/experiments/wan_state_clock/requirements-grow-video-reference.txt (line 5)) (12.8.93)
++Requirement already satisfied: nvidia-cuda-nvrtc-cu12==12.8.93.* in /usr/local/lib/python3.13/dist-packages (from cuda-toolkit[cublas,cudart,cufft,cufile,cupti,curand,cusolver,cusparse,nvjitlink,nvrtc,nvtx]==12.8.1; platform_system == "Linux"->torch>=2.0.0->accelerate<2,>=0.34->-r /content/SC-SSTW-LAYERED-TRANSPORT-20260930T165530863126Z/experiments/wan_state_clock/requirements-grow-video-reference.txt (line 5)) (12.8.93)
++Requirement already satisfied: nvidia-nvtx-cu12==12.8.90.* in /usr/local/lib/python3.13/dist-packages (from cuda-toolkit[cublas,cudart,cufft,cufile,cupti,curand,cusolver,cusparse,nvjitlink,nvrtc,nvtx]==12.8.1; platform_system == "Linux"->torch>=2.0.0->accelerate<2,>=0.34->-r /content/SC-SSTW-LAYERED-TRANSPORT-20260930T165530863126Z/experiments/wan_state_clock/requirements-grow-video-reference.txt (line 5)) (12.8.90)
++Requirement already satisfied: zipp>=3.20 in /usr/local/lib/python3.13/dist-packages (from importlib_metadata->diffusers<0.40,>=0.35->-r /content/SC-SSTW-LAYERED-TRANSPORT-20260930T165530863126Z/experiments/wan_state_clock/requirements-grow-video-reference.txt (line 3)) (4.1.0)
++Requirement already satisfied: charset_normalizer<4,>=2 in /usr/local/lib/python3.13/dist-packages (from requests->diffusers<0.40,>=0.35->-r /content/SC-SSTW-LAYERED-TRANSPORT-20260930T165530863126Z/experiments/wan_state_clock/requirements-grow-video-reference.txt (line 3)) (3.4.9)
++Requirement already satisfied: urllib3<3,>=1.21.1 in /usr/local/lib/python3.13/dist-packages (from requests->diffusers<0.40,>=0.35->-r /content/SC-SSTW-LAYERED-TRANSPORT-20260930T165530863126Z/experiments/wan_state_clock/requirements-grow-video-reference.txt (line 3)) (2.5.0)
++Requirement already satisfied: cuda-pathfinder~=1.1 in /usr/local/lib/python3.13/dist-packages (from cuda-bindings<13,>=12.9.4->torch>=2.0.0->accelerate<2,>=0.34->-r /content/SC-SSTW-LAYERED-TRANSPORT-20260930T165530863126Z/experiments/wan_state_clock/requirements-grow-video-reference.txt (line 5)) (1.8.0)
++Requirement already satisfied: mpmath<1.4,>=1.1.0 in /usr/local/lib/python3.13/dist-packages (from sympy>=1.13.3->torch>=2.0.0->accelerate<2,>=0.34->-r /content/SC-SSTW-LAYERED-TRANSPORT-20260930T165530863126Z/experiments/wan_state_clock/requirements-grow-video-reference.txt (line 5)) (1.3.0)
++Requirement already satisfied: MarkupSafe>=2.0 in /usr/local/lib/python3.13/dist-packages (from jinja2->torch>=2.0.0->accelerate<2,>=0.34->-r /content/SC-SSTW-LAYERED-TRANSPORT-20260930T165530863126Z/experiments/wan_state_clock/requirements-grow-video-reference.txt (line 5)) (3.0.3)
++Downloading diffusers-0.39.0-py3-none-any.whl (5.6 MB)
++   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 5.6/5.6 MB 89.6 MB/s eta 0:00:00
++Downloading transformers-4.57.6-py3-none-any.whl (12.0 MB)
++   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 12.0/12.0 MB 139.0 MB/s eta 0:00:00
++Downloading huggingface_hub-0.36.2-py3-none-any.whl (566 kB)
++   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 566.4/566.4 kB 48.0 MB/s eta 0:00:00
++Downloading ftfy-6.3.1-py3-none-any.whl (44 kB)
++   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 44.8/44.8 kB 4.5 MB/s eta 0:00:00
++Downloading tokenizers-0.22.2-cp39-abi3-manylinux_2_17_x86_64.manylinux2014_x86_64.whl (3.3 MB)
++   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 3.3/3.3 MB 103.8 MB/s eta 0:00:00
++Installing collected packages: ftfy, huggingface_hub, tokenizers, diffusers, transformers
++  Attempting uninstall: huggingface_hub
++    Found existing installation: huggingface_hub 1.29.0
++    Uninstalling huggingface_hub-1.29.0:
++      Successfully uninstalled huggingface_hub-1.29.0
++  Attempting uninstall: tokenizers
++    Found existing installation: tokenizers 0.23.1
++    Uninstalling tokenizers-0.23.1:
++      Successfully uninstalled tokenizers-0.23.1
++  Attempting uninstall: diffusers
++    Found existing installation: diffusers 0.40.0
++    Uninstalling diffusers-0.40.0:
++      Successfully uninstalled diffusers-0.40.0
++  Attempting uninstall: transformers
++    Found existing installation: transformers 5.16.1
++    Uninstalling transformers-5.16.1:
++      Successfully uninstalled transformers-5.16.1
++ERROR: pip's dependency resolver does not currently take into account all the packages that are installed. This behaviour is the source of the following dependency conflicts.
++gradio 6.26.0 requires huggingface-hub<2.0,>=1.16.0, but you have huggingface-hub 0.36.2 which is incompatible.
++Successfully installed diffusers-0.39.0 ftfy-6.3.1 huggingface_hub-0.36.2 tokenizers-0.22.2 transformers-4.57.6
++EXIT 0
++COMMAND ['/usr/bin/python3', '-m', 'pip', 'check']
++ipython 7.34.0 requires jedi, which is not installed.
++gradio 6.26.0 has requirement huggingface-hub<2.0,>=1.16.0, but you have huggingface-hub 0.36.2.
++EXIT 1
++COMMAND ['ffmpeg', '-version']
++ffmpeg version 6.1.1-3ubuntu5 Copyright (c) 2000-2023 the FFmpeg developers
++built with gcc 13 (Ubuntu 13.2.0-23ubuntu3)
++configuration: --prefix=/usr --extra-version=3ubuntu5 --toolchain=hardened --libdir=/usr/lib/x86_64-linux-gnu --incdir=/usr/include/x86_64-linux-gnu --arch=amd64 --enable-gpl --disable-stripping --disable-omx --enable-gnutls --enable-libaom --enable-libass --enable-libbs2b --enable-libcaca --enable-libcdio --enable-libcodec2 --enable-libdav1d --enable-libflite --enable-libfontconfig --enable-libfreetype --enable-libfribidi --enable-libglslang --enable-libgme --enable-libgsm --enable-libharfbuzz --enable-libmp3lame --enable-libmysofa --enable-libopenjpeg --enable-libopenmpt --enable-libopus --enable-librubberband --enable-libshine --enable-libsnappy --enable-libsoxr --enable-libspeex --enable-libtheora --enable-libtwolame --enable-libvidstab --enable-libvorbis --enable-libvpx --enable-libwebp --enable-libx265 --enable-libxml2 --enable-libxvid --enable-libzimg --enable-openal --enable-opencl --enable-opengl --disable-sndio --enable-libvpl --disable-libmfx --enable-libdc1394 --enable-libdrm --enable-libiec61883 --enable-chromaprint --enable-frei0r --enable-ladspa --enable-libbluray --enable-libjack --enable-libpulse --enable-librabbitmq --enable-librist --enable-libsrt --enable-libssh --enable-libsvtav1 --enable-libx264 --enable-libzmq --enable-libzvbi --enable-lv2 --enable-sdl2 --enable-libplacebo --enable-librav1e --enable-pocketsphinx --enable-librsvg --enable-libjxl --enable-shared
++libavutil      58. 29.100 / 58. 29.100
++libavcodec     60. 31.102 / 60. 31.102
++libavformat    60. 16.100 / 60. 16.100
++libavdevice    60.  3.100 / 60.  3.100
++libavfilter     9. 12.100 /  9. 12.100
++libswscale      7.  5.100 /  7.  5.100
++libswresample   4. 12.100 /  4. 12.100
++libpostproc    57.  3.100 / 57.  3.100
++EXIT 0
++COMMAND ['ffprobe', '-version']
++ffprobe version 6.1.1-3ubuntu5 Copyright (c) 2007-2023 the FFmpeg developers
++built with gcc 13 (Ubuntu 13.2.0-23ubuntu3)
++configuration: --prefix=/usr --extra-version=3ubuntu5 --toolchain=hardened --libdir=/usr/lib/x86_64-linux-gnu --incdir=/usr/include/x86_64-linux-gnu --arch=amd64 --enable-gpl --disable-stripping --disable-omx --enable-gnutls --enable-libaom --enable-libass --enable-libbs2b --enable-libcaca --enable-libcdio --enable-libcodec2 --enable-libdav1d --enable-libflite --enable-libfontconfig --enable-libfreetype --enable-libfribidi --enable-libglslang --enable-libgme --enable-libgsm --enable-libharfbuzz --enable-libmp3lame --enable-libmysofa --enable-libopenjpeg --enable-libopenmpt --enable-libopus --enable-librubberband --enable-libshine --enable-libsnappy --enable-libsoxr --enable-libspeex --enable-libtheora --enable-libtwolame --enable-libvidstab --enable-libvorbis --enable-libvpx --enable-libwebp --enable-libx265 --enable-libxml2 --enable-libxvid --enable-libzimg --enable-openal --enable-opencl --enable-opengl --disable-sndio --enable-libvpl --disable-libmfx --enable-libdc1394 --enable-libdrm --enable-libiec61883 --enable-chromaprint --enable-frei0r --enable-ladspa --enable-libbluray --enable-libjack --enable-libpulse --enable-librabbitmq --enable-librist --enable-libsrt --enable-libssh --enable-libsvtav1 --enable-libx264 --enable-libzmq --enable-libzvbi --enable-lv2 --enable-sdl2 --enable-libplacebo --enable-librav1e --enable-pocketsphinx --enable-librsvg --enable-libjxl --enable-shared
++libavutil      58. 29.100 / 58. 29.100
++libavcodec     60. 31.102 / 60. 31.102
++libavformat    60. 16.100 / 60. 16.100
++libavdevice    60.  3.100 / 60.  3.100
++libavfilter     9. 12.100 /  9. 12.100
++libswscale      7.  5.100 /  7.  5.100
++libswresample   4. 12.100 /  4. 12.100
++libpostproc    57.  3.100 / 57.  3.100
++EXIT 0
++COMMAND ['/usr/bin/python3', '-u', '-m', 'experiments.wan_state_clock.zero_mean_c1_layered_transport_run', '--output', '/content/drive/MyDrive/Video-WM/Zero-Mean-C1-Layered-Transport-V1/20260930T165530863126Z/fixed_reference', '--input-root', '/content/drive/MyDrive/Video-WM/Video-Overlap-Zero-Mean-C1-V1/20260930T113335113338Z/fixed_reference']
++Flax classes are deprecated and will be removed in Diffusers v0.40.0. We recommend migrating to PyTorch classes or pinning your version of Diffusers.
++Flax classes are deprecated and will be removed in Diffusers v0.40.0. We recommend migrating to PyTorch classes or pinning your version of Diffusers.
++{"status": "EXECUTION_COMPLETE", "counts": {"normalized": 15, "path_reads": 30, "payload_reads": 30, "valid_costs": 5220, "catalog_slots": 117450, "structural_exclusions": 112230, "path_posthoc": 30, "message_evaluations": 60, "rasters": 6, "mp4_saved": 6, "mp4_read": 6, "decode_diagnostics": 3}}
++EXIT 0
+diff --git a/diagnostics/zero_mean_c1_yuv420_no_h264_v1/parameter_evidence/original_source_receipt.json b/diagnostics/zero_mean_c1_yuv420_no_h264_v1/parameter_evidence/original_source_receipt.json
+new file mode 100644
+index 0000000..689ecd9
+--- /dev/null
++++ b/diagnostics/zero_mean_c1_yuv420_no_h264_v1/parameter_evidence/original_source_receipt.json
+@@ -0,0 +1,4 @@
++{
++  "source_sha": "d4f5d73c506c20f4dfa5e1f74065836c23432064",
++  "clean": true
++}
+diff --git a/diagnostics/zero_mean_c1_yuv420_no_h264_v1/parameter_evidence/source_mp4_probes.json b/diagnostics/zero_mean_c1_yuv420_no_h264_v1/parameter_evidence/source_mp4_probes.json
+new file mode 100644
+index 0000000..47e3b76
+--- /dev/null
++++ b/diagnostics/zero_mean_c1_yuv420_no_h264_v1/parameter_evidence/source_mp4_probes.json
+@@ -0,0 +1,287 @@
++{
++  "OFF": {
++    "command": [
++      "/usr/bin/ffprobe",
++      "-v",
++      "error",
++      "-select_streams",
++      "v:0",
++      "-show_streams",
++      "-show_format",
++      "-of",
++      "json",
++      "/tmp/zero-mean-yuv420-design-20261001-a1/OFF.mp4"
++    ],
++    "mp4_sha256": "9a48c66ef0c052b23f80623d4323da7c26310bd3746ab773e594192e74df8b88",
++    "bytes": 486707,
++    "stream": {
++      "index": 0,
++      "codec_name": "h264",
++      "codec_long_name": "H.264 / AVC / MPEG-4 AVC / MPEG-4 part 10",
++      "profile": "High",
++      "codec_type": "video",
++      "codec_tag_string": "avc1",
++      "codec_tag": "0x31637661",
++      "width": 512,
++      "height": 320,
++      "coded_width": 512,
++      "coded_height": 320,
++      "closed_captions": 0,
++      "film_grain": 0,
++      "has_b_frames": 2,
++      "pix_fmt": "yuv420p",
++      "level": 21,
++      "chroma_location": "left",
++      "field_order": "progressive",
++      "refs": 1,
++      "is_avc": "true",
++      "nal_length_size": "4",
++      "id": "0x1",
++      "r_frame_rate": "8/1",
++      "avg_frame_rate": "8/1",
++      "time_base": "1/16384",
++      "start_pts": 0,
++      "start_time": "0.000000",
++      "duration_ts": 370688,
++      "duration": "22.625000",
++      "bit_rate": "171032",
++      "bits_per_raw_sample": "8",
++      "nb_frames": "181",
++      "extradata_size": 45,
++      "disposition": {
++        "default": 1,
++        "dub": 0,
++        "original": 0,
++        "comment": 0,
++        "lyrics": 0,
++        "karaoke": 0,
++        "forced": 0,
++        "hearing_impaired": 0,
++        "visual_impaired": 0,
++        "clean_effects": 0,
++        "attached_pic": 0,
++        "timed_thumbnails": 0,
++        "non_diegetic": 0,
++        "captions": 0,
++        "descriptions": 0,
++        "metadata": 0,
++        "dependent": 0,
++        "still_image": 0
++      },
++      "tags": {
++        "language": "und",
++        "handler_name": "VideoHandler",
++        "vendor_id": "[0][0][0][0]",
++        "encoder": "Lavc60.31.102 libx264"
++      }
++    },
++    "format": {
++      "filename": "/tmp/zero-mean-yuv420-design-20261001-a1/OFF.mp4",
++      "nb_streams": 1,
++      "nb_programs": 0,
++      "format_name": "mov,mp4,m4a,3gp,3g2,mj2",
++      "format_long_name": "QuickTime / MOV",
++      "start_time": "0.000000",
++      "duration": "22.625000",
++      "size": "486707",
++      "bit_rate": "172095",
++      "probe_score": 100,
++      "tags": {
++        "major_brand": "isom",
++        "minor_version": "512",
++        "compatible_brands": "isomiso2avc1mp41",
++        "encoder": "Lavf60.16.100"
++      }
++    }
++  },
++  "PAYLOAD_MULTI": {
++    "command": [
++      "/usr/bin/ffprobe",
++      "-v",
++      "error",
++      "-select_streams",
++      "v:0",
++      "-show_streams",
++      "-show_format",
++      "-of",
++      "json",
++      "/tmp/zero-mean-yuv420-design-20261001-a1/PAYLOAD_MULTI.mp4"
++    ],
++    "mp4_sha256": "c858ec7339a95f33b787141c687c49cb13c2003dc67ef767ec307282a3ec53e8",
++    "bytes": 469507,
++    "stream": {
++      "index": 0,
++      "codec_name": "h264",
++      "codec_long_name": "H.264 / AVC / MPEG-4 AVC / MPEG-4 part 10",
++      "profile": "High",
++      "codec_type": "video",
++      "codec_tag_string": "avc1",
++      "codec_tag": "0x31637661",
++      "width": 512,
++      "height": 320,
++      "coded_width": 512,
++      "coded_height": 320,
++      "closed_captions": 0,
++      "film_grain": 0,
++      "has_b_frames": 2,
++      "pix_fmt": "yuv420p",
++      "level": 21,
++      "chroma_location": "left",
++      "field_order": "progressive",
++      "refs": 1,
++      "is_avc": "true",
++      "nal_length_size": "4",
++      "id": "0x1",
++      "r_frame_rate": "8/1",
++      "avg_frame_rate": "8/1",
++      "time_base": "1/16384",
++      "start_pts": 0,
++      "start_time": "0.000000",
++      "duration_ts": 370688,
++      "duration": "22.625000",
++      "bit_rate": "164944",
++      "bits_per_raw_sample": "8",
++      "nb_frames": "181",
++      "extradata_size": 45,
++      "disposition": {
++        "default": 1,
++        "dub": 0,
++        "original": 0,
++        "comment": 0,
++        "lyrics": 0,
++        "karaoke": 0,
++        "forced": 0,
++        "hearing_impaired": 0,
++        "visual_impaired": 0,
++        "clean_effects": 0,
++        "attached_pic": 0,
++        "timed_thumbnails": 0,
++        "non_diegetic": 0,
++        "captions": 0,
++        "descriptions": 0,
++        "metadata": 0,
++        "dependent": 0,
++        "still_image": 0
++      },
++      "tags": {
++        "language": "und",
++        "handler_name": "VideoHandler",
++        "vendor_id": "[0][0][0][0]",
++        "encoder": "Lavc60.31.102 libx264"
++      }
++    },
++    "format": {
++      "filename": "/tmp/zero-mean-yuv420-design-20261001-a1/PAYLOAD_MULTI.mp4",
++      "nb_streams": 1,
++      "nb_programs": 0,
++      "format_name": "mov,mp4,m4a,3gp,3g2,mj2",
++      "format_long_name": "QuickTime / MOV",
++      "start_time": "0.000000",
++      "duration": "22.625000",
++      "size": "469507",
++      "bit_rate": "166013",
++      "probe_score": 100,
++      "tags": {
++        "major_brand": "isom",
++        "minor_version": "512",
++        "compatible_brands": "isomiso2avc1mp41",
++        "encoder": "Lavf60.16.100"
++      }
++    }
++  },
++  "OVERLAP_MULTI": {
++    "command": [
++      "/usr/bin/ffprobe",
++      "-v",
++      "error",
++      "-select_streams",
++      "v:0",
++      "-show_streams",
++      "-show_format",
++      "-of",
++      "json",
++      "/tmp/zero-mean-yuv420-design-20261001-a1/OVERLAP_MULTI.mp4"
++    ],
++    "mp4_sha256": "6cd119f77d14e10b84b100894ef3f14bff5b2d3820158872497478c1f9852bed",
++    "bytes": 455277,
++    "stream": {
++      "index": 0,
++      "codec_name": "h264",
++      "codec_long_name": "H.264 / AVC / MPEG-4 AVC / MPEG-4 part 10",
++      "profile": "High",
++      "codec_type": "video",
++      "codec_tag_string": "avc1",
++      "codec_tag": "0x31637661",
++      "width": 512,
++      "height": 320,
++      "coded_width": 512,
++      "coded_height": 320,
++      "closed_captions": 0,
++      "film_grain": 0,
++      "has_b_frames": 2,
++      "pix_fmt": "yuv420p",
++      "level": 21,
++      "chroma_location": "left",
++      "field_order": "progressive",
++      "refs": 1,
++      "is_avc": "true",
++      "nal_length_size": "4",
++      "id": "0x1",
++      "r_frame_rate": "8/1",
++      "avg_frame_rate": "8/1",
++      "time_base": "1/16384",
++      "start_pts": 0,
++      "start_time": "0.000000",
++      "duration_ts": 370688,
++      "duration": "22.625000",
++      "bit_rate": "159913",
++      "bits_per_raw_sample": "8",
++      "nb_frames": "181",
++      "extradata_size": 45,
++      "disposition": {
++        "default": 1,
++        "dub": 0,
++        "original": 0,
++        "comment": 0,
++        "lyrics": 0,
++        "karaoke": 0,
++        "forced": 0,
++        "hearing_impaired": 0,
++        "visual_impaired": 0,
++        "clean_effects": 0,
++        "attached_pic": 0,
++        "timed_thumbnails": 0,
++        "non_diegetic": 0,
++        "captions": 0,
++        "descriptions": 0,
++        "metadata": 0,
++        "dependent": 0,
++        "still_image": 0
++      },
++      "tags": {
++        "language": "und",
++        "handler_name": "VideoHandler",
++        "vendor_id": "[0][0][0][0]",
++        "encoder": "Lavc60.31.102 libx264"
++      }
++    },
++    "format": {
++      "filename": "/tmp/zero-mean-yuv420-design-20261001-a1/OVERLAP_MULTI.mp4",
++      "nb_streams": 1,
++      "nb_programs": 0,
++      "format_name": "mov,mp4,m4a,3gp,3g2,mj2",
++      "format_long_name": "QuickTime / MOV",
++      "start_time": "0.000000",
++      "duration": "22.625000",
++      "size": "455277",
++      "bit_rate": "160981",
++      "probe_score": 100,
++      "tags": {
++        "major_brand": "isom",
++        "minor_version": "512",
++        "compatible_brands": "isomiso2avc1mp41",
++        "encoder": "Lavf60.16.100"
++      }
++    }
++  }
++}
+diff --git a/diagnostics/zero_mean_c1_yuv420_no_h264_v1/pytest_display_delta.txt b/diagnostics/zero_mean_c1_yuv420_no_h264_v1/pytest_display_delta.txt
+new file mode 100644
+index 0000000..3282767
+--- /dev/null
++++ b/diagnostics/zero_mean_c1_yuv420_no_h264_v1/pytest_display_delta.txt
+@@ -0,0 +1,2 @@
++.                                                                        [100%]
++1 passed, 8 deselected in 0.75s
+diff --git a/diagnostics/zero_mean_c1_yuv420_no_h264_v1/pytest_initial.txt b/diagnostics/zero_mean_c1_yuv420_no_h264_v1/pytest_initial.txt
+new file mode 100644
+index 0000000..f42fa50
+--- /dev/null
++++ b/diagnostics/zero_mean_c1_yuv420_no_h264_v1/pytest_initial.txt
+@@ -0,0 +1,2 @@
++.........                                                                [100%]
++9 passed in 10.06s
+diff --git a/docs/zero_mean_c1_yuv420_no_h264_v1.md b/docs/zero_mean_c1_yuv420_no_h264_v1.md
+new file mode 100644
+index 0000000..b1f4f89
+--- /dev/null
++++ b/docs/zero_mean_c1_yuv420_no_h264_v1.md
+@@ -0,0 +1,49 @@
++# Zero-mean C1：无 H.264 的 raw YUV420 往返控制
++
++本阶段仅冻结设计和参数证据，未实现runner/notebook，未执行颜色转换、视频解码、VAE或评分。输入固定run20260930T165530863126Z/source d4f5d73c506c20f4dfa5e1f74065836c23432064，result SHA3561a99003047ec89bda90b813dc712af3dc6ee2db6ec4907d009b7bf138d117。复用已保存RGB8及原零均值reader；不改writer、码、预算、loss、路径族、排序或阈值。
++
++## 实际盘点与参数证据
++
++三臂OFF/PAYLOAD_MULTI/OVERLAP_MULTI的RGB8_NO_CODEC.pt均已在Drive逐文件stat确认存在，大小88,966,697B；shape181×320×512×3、dtype uint8与期望SHA来自已hash绑定result。本阶段不再读取或重新哈希大Q8/float；OVERLAP的Q8已被主审上一轮核验。正式执行时三份输入均须实际SHA匹配后加载。
++
++| arm | Q8容器SHA256 |
++|---|---|
++| OFF | be3f0eadb746f76136365e1e59dce79b963d759e4e16daefd9474e317782af30 |
++| PAYLOAD_MULTI | 4adc9fcadd3b627e7d6300efcab481db8e91716b27e39b592aed6dd37421d78e |
++| OVERLAP_MULTI | d20ee27689e43568ad5a295393aba256ed98b31a0fd9dcbe9d8739bd3d10ccc3 |
++
++仅复制三份小SOURCE MP4（486707/469507/455277B）与小日志/收据至独立临时目录，实际媒体SHA均匹配result。ffprobe仅使用show_streams/show_format，没有show_frames/read_intervals或像素解码。三者都是H264 High、yuv420p、512×320、181帧、8/1fps；chroma_location=left。color_range/color_space/color_transfer/color_primaries均未报告，准确记为unknown，不能由分辨率推断BT601/709或limited/full。
++
++原execution.log明确FFmpeg/ffprobe6.1.1-3ubuntu5，libswscale7.5.100；当前WSL非转换version探针相同。原命令只有-v error，没有原auto_scale详细日志，不能追认完整原转换上下文。未来执行仍保存实际binary版本、build/library行、完整命令及verbose stderr；版本相同不自动证明数值链相同。没有读取大float或重算上一轮5220cost/30投影。
++
++## 唯一固定控制
++
++每臂从同一已保存Q8直接取uint8连续RGB24字节。第一段真实物化为raw yuv420p文件，确认退出成功及长度后第二段重新打开该文件转RGB24，再重新读回RGB24实际文件供VAE。不能用一条保持内部metadata的filter链替代。原始Q8不经过float再量化、不重新decode、不调用H264。
++
++第一段固定argv（文件占位符由独立输出目录解析）：
++
++    ffmpeg -v verbose -threads 1 -f rawvideo -pix_fmt rgb24 -s 512x320 -r 8 -i pipe:0 -an -c:v rawvideo -pix_fmt yuv420p -f rawvideo -n {yuv420_output}
++
++第二段：
++
++    ffmpeg -v verbose -threads 1 -noautorotate -f rawvideo -pix_fmt yuv420p -s 512x320 -r 8 -chroma_sample_location left -i {yuv420_input} -map 0:v:0 -f rawvideo -pix_fmt rgb24 -n {rgb24_output}
++
++保留原输入线程参数位置和自动像素格式转换，不加scale/zscale、BT709/BT601、range、sws_flags、bitexact或accurate_rnd。第二段显式带回原SOURCE已知left标签；本地-help证明该AVOption可用于解码，但未以真实转换试跑。它是codec-context属性，实际scaler采样位置还有独立控制项；left是输入metadata解释约定，不证明第一段物理格点与原x264前buffer或插值完全一致。第一段不额外加left输出标签。unknown色域/范围等字段不虚构，继续依赖实际版本auto fallback并记录其可观察信息；verbose未显示的内容仍是unknown。
++
++FFmpeg官方说明rawvideo不保存尺寸/格式，必须显式提供demux参数；滤镜可插入格式转换，scaler行为涉及多个可配置选项。因此相同pix_fmt不足以证明完整处理相同。本候选叫“无H264 raw420控制”，不宣称严格纯H264单因素因果隔离。[rawvideo](https://ffmpeg.org/ffmpeg-formats.html#rawvideo)、[filters](https://ffmpeg.org/ffmpeg-filters.html)、[scaler](https://ffmpeg.org/ffmpeg-scaler.html)。当前官网不被用来证明旧6.1.1的全部自动默认值。
++
++## 固定分母、接收与参考
++
++单臂原始YUV420应44,482,560B=181×512×320×3/2；回读RGB24应88,965,120B=181×512×320×3。三臂新增两类原始字节总400,343,040B，另存3完整normalized tensor和6raw成本文件。每段命令、退出码、stderr、实际SHA/字节和按精确长度确定的帧数都保留。长度不符不能裁齐、补帧或继续伪称完成。
++
++未来仅0Transformer、0VAEdecode、3VAEencode、3RGB→raw420、3raw420→RGB；0H264编码、0MP4解码。VAE同Wan revision0fad780a534b6463e45facd96134c9f345acfa5b、FP32、posterior.mode、Wan mean/std及前后cache清理。编码完整181帧，不裁177；保存[1,16,46,40,64]，主支持仅regular1..44，extra45保留不评分。固定g0不称恢复相位。
++
++3臂×2key只有6次新infer、6次原payload read，合计23490目录/1044有效成本/22446结构排除、6path后评/12message后评。原完整family/ties及UNCALIBRATED、accepted_payload=False保持。盲API只接实际新normalized张量、公开key和mask，不接arm、truth、旧观察或路径名。
++
++已有RGB8_NO_CODEC与MATCHED_SOURCE_MP4的6norm/12raw按SHA原样引用，不重新编码或评分，不能把引用算成18次新infer。主审audit_result/assessment仅为既有证据，不重跑原矩阵。新raw全部提交后再与两参考层比较同R44的真实路径rank/unique、起点、虚构edit、已定赢家及固定同一对手成本/局部time-block-age贡献。固定历史对手直接来自hash绑定父result.path_posthoc[arm/RGB8_NO_CODEC/key].fixed_historical_phase0_opponent的raw_sha256/catalog_index/path，明确是原FULL的phase0对手，非global其他phase；不用新增远古Drive根依赖。缺失只标该后评比较MISSING_REFERENCE，不改变盲排名或主分母。
++
++## 失败、范围与下一步
++
++初始化所有新观察/转换/normalized/read/evaluation槽和完整公开catalog，独立臂继续。保留失败、部分输出和未完成；canonical结果先于盲投影原子提交。输出目录不得等于或位于输入根后代，已存在旧输入不可覆写。new/reference/package完整性分列：参考不可用不抹掉新结果，新失败也不抹掉已有参考。任何执行完成都不自动升级科学PASS、FPR、质量或一般同步结论。
++
++当前仅新增本config/doc、input_inventory、parameter_evidence及design_freeze。待主审确认才新增独立runtime/runner/builder/notebook/tests；旧runtime/method/builder/notebook完全不动。Notebook后续仍未发布SOURCE_SHA=None，current Python/fresh child，不设GPU型号或精确Python门槛。本阶段无commit/push/merge，无自动真实转换、VAE、媒体或Colab执行；不扩第二控制矩阵。
+diff --git a/experiments/wan_state_clock/configs/zero_mean_c1_yuv420_no_h264_v1.json b/experiments/wan_state_clock/configs/zero_mean_c1_yuv420_no_h264_v1.json
+new file mode 100644
+index 0000000..d8eb837
+--- /dev/null
++++ b/experiments/wan_state_clock/configs/zero_mean_c1_yuv420_no_h264_v1.json
+@@ -0,0 +1,673 @@
++{
++  "name": "zero_mean_c1_yuv420_no_h264_v1",
++  "status": "DESIGN_DRAFT_FOR_PARAMETER_REVIEW",
++  "source_sha": null,
++  "fixed_input": {
++    "run": "20260930T165530863126Z",
++    "source_sha": "d4f5d73c506c20f4dfa5e1f74065836c23432064",
++    "result_sha256": "3561a99003047ec89bda90b813dc712af3dc6ee2db6ec4907d009b7bf138d117",
++    "root": "/content/drive/MyDrive/Video-WM/Zero-Mean-C1-Layered-Transport-V1/20260930T165530863126Z/fixed_reference",
++    "required_q8": [
++      {
++        "arm": "OFF",
++        "relative_path": "OFF/RGB8_NO_CODEC.pt",
++        "sha256": "be3f0eadb746f76136365e1e59dce79b963d759e4e16daefd9474e317782af30",
++        "bytes": 88966697,
++        "shape": [
++          181,
++          320,
++          512,
++          3
++        ],
++        "dtype": "torch.uint8",
++        "observed_drive_path": "G:\\我的云端硬盘\\Video-WM\\Zero-Mean-C1-Layered-Transport-V1\\20260930T165530863126Z\\fixed_reference\\OFF\\RGB8_NO_CODEC.pt",
++        "verification": "Drive stat only this design; SHA/shape/dtype from hash-bound result. Positive raster previously audited by main; no new raster load/hash here."
++      },
++      {
++        "arm": "PAYLOAD_MULTI",
++        "relative_path": "PAYLOAD_MULTI/RGB8_NO_CODEC.pt",
++        "sha256": "4adc9fcadd3b627e7d6300efcab481db8e91716b27e39b592aed6dd37421d78e",
++        "bytes": 88966697,
++        "shape": [
++          181,
++          320,
++          512,
++          3
++        ],
++        "dtype": "torch.uint8",
++        "observed_drive_path": "G:\\我的云端硬盘\\Video-WM\\Zero-Mean-C1-Layered-Transport-V1\\20260930T165530863126Z\\fixed_reference\\PAYLOAD_MULTI\\RGB8_NO_CODEC.pt",
++        "verification": "Drive stat only this design; SHA/shape/dtype from hash-bound result. Positive raster previously audited by main; no new raster load/hash here."
++      },
++      {
++        "arm": "OVERLAP_MULTI",
++        "relative_path": "OVERLAP_MULTI/RGB8_NO_CODEC.pt",
++        "sha256": "d20ee27689e43568ad5a295393aba256ed98b31a0fd9dcbe9d8739bd3d10ccc3",
++        "bytes": 88966697,
++        "shape": [
++          181,
++          320,
++          512,
++          3
++        ],
++        "dtype": "torch.uint8",
++        "observed_drive_path": "G:\\我的云端硬盘\\Video-WM\\Zero-Mean-C1-Layered-Transport-V1\\20260930T165530863126Z\\fixed_reference\\OVERLAP_MULTI\\RGB8_NO_CODEC.pt",
++        "verification": "Drive stat only this design; SHA/shape/dtype from hash-bound result. Positive raster previously audited by main; no new raster load/hash here."
++      }
++    ],
++    "reference_artifacts": [
++      {
++        "arm": "OFF",
++        "layer": "RGB8_NO_CODEC",
++        "kind": "normalized",
++        "relative_path": "OFF/RGB8_NO_CODEC.normalized.pt",
++        "sha256": "da96ed6ca23eab26a4e6fb41b50939893cad858b9abe58eb319287b0b1e6a096",
++        "shape": [
++          1,
++          16,
++          46,
++          40,
++          64
++        ],
++        "dtype": "torch.float32"
++      },
++      {
++        "arm": "OFF",
++        "layer": "RGB8_NO_CODEC",
++        "key_id": "CORRECT",
++        "kind": "raw",
++        "relative_path": "OFF/RGB8_NO_CODEC.CORRECT.raw.json.gz",
++        "sha256": "2aa33324304129b8d6c8bb38a837f43a263951fa24ae73897c7a92bcbb3bd6af",
++        "scored": 174,
++        "R": 44
++      },
++      {
++        "arm": "OFF",
++        "layer": "RGB8_NO_CODEC",
++        "key_id": "WRONG",
++        "kind": "raw",
++        "relative_path": "OFF/RGB8_NO_CODEC.WRONG.raw.json.gz",
++        "sha256": "bd1097bd16e5a3244d2ff618ae13a00d86d4b1e4322ccc4f009d087cf6df595f",
++        "scored": 174,
++        "R": 44
++      },
++      {
++        "arm": "OFF",
++        "layer": "MATCHED_SOURCE_MP4",
++        "kind": "normalized",
++        "relative_path": "OFF/MATCHED_SOURCE_MP4.normalized.pt",
++        "sha256": "92b2f79413ed0faad9cf6e740cbb012d0ecf6bad055ddd13743161b4568ca694",
++        "shape": [
++          1,
++          16,
++          46,
++          40,
++          64
++        ],
++        "dtype": "torch.float32"
++      },
++      {
++        "arm": "OFF",
++        "layer": "MATCHED_SOURCE_MP4",
++        "key_id": "CORRECT",
++        "kind": "raw",
++        "relative_path": "OFF/MATCHED_SOURCE_MP4.CORRECT.raw.json.gz",
++        "sha256": "e912e284c27409fdbfc3431f868e652374105ca0fca988db9256c7455cdec9d2",
++        "scored": 174,
++        "R": 44
++      },
++      {
++        "arm": "OFF",
++        "layer": "MATCHED_SOURCE_MP4",
++        "key_id": "WRONG",
++        "kind": "raw",
++        "relative_path": "OFF/MATCHED_SOURCE_MP4.WRONG.raw.json.gz",
++        "sha256": "60b50340924398b271f430ba5f73de4db5c7c3931e3b82188244f98acb633537",
++        "scored": 174,
++        "R": 44
++      },
++      {
++        "arm": "PAYLOAD_MULTI",
++        "layer": "RGB8_NO_CODEC",
++        "kind": "normalized",
++        "relative_path": "PAYLOAD_MULTI/RGB8_NO_CODEC.normalized.pt",
++        "sha256": "f3236127b659aae18e9e51941c4d7f6b923ecd32ca2a998c44ce52b376d4111b",
++        "shape": [
++          1,
++          16,
++          46,
++          40,
++          64
++        ],
++        "dtype": "torch.float32"
++      },
++      {
++        "arm": "PAYLOAD_MULTI",
++        "layer": "RGB8_NO_CODEC",
++        "key_id": "CORRECT",
++        "kind": "raw",
++        "relative_path": "PAYLOAD_MULTI/RGB8_NO_CODEC.CORRECT.raw.json.gz",
++        "sha256": "5ed67bed5c196b0f9e612c22c4a680eb363a8f33e1ba60a65dbdf27592ac56a0",
++        "scored": 174,
++        "R": 44
++      },
++      {
++        "arm": "PAYLOAD_MULTI",
++        "layer": "RGB8_NO_CODEC",
++        "key_id": "WRONG",
++        "kind": "raw",
++        "relative_path": "PAYLOAD_MULTI/RGB8_NO_CODEC.WRONG.raw.json.gz",
++        "sha256": "f1ad2b1e78161e8e7cec0085531e6c3f2537778b9db33d9864e6f85167db9dbb",
++        "scored": 174,
++        "R": 44
++      },
++      {
++        "arm": "PAYLOAD_MULTI",
++        "layer": "MATCHED_SOURCE_MP4",
++        "kind": "normalized",
++        "relative_path": "PAYLOAD_MULTI/MATCHED_SOURCE_MP4.normalized.pt",
++        "sha256": "142b6a3715beef6bcc58a785455ae4c85d977bc3df7683065080893d87556e66",
++        "shape": [
++          1,
++          16,
++          46,
++          40,
++          64
++        ],
++        "dtype": "torch.float32"
++      },
++      {
++        "arm": "PAYLOAD_MULTI",
++        "layer": "MATCHED_SOURCE_MP4",
++        "key_id": "CORRECT",
++        "kind": "raw",
++        "relative_path": "PAYLOAD_MULTI/MATCHED_SOURCE_MP4.CORRECT.raw.json.gz",
++        "sha256": "4af630ea077d2d0f45695a0fec7b9b87d7fbda0b4c97b99f13221a02d4675b10",
++        "scored": 174,
++        "R": 44
++      },
++      {
++        "arm": "PAYLOAD_MULTI",
++        "layer": "MATCHED_SOURCE_MP4",
++        "key_id": "WRONG",
++        "kind": "raw",
++        "relative_path": "PAYLOAD_MULTI/MATCHED_SOURCE_MP4.WRONG.raw.json.gz",
++        "sha256": "a4f4347b24f63ac0019b71f7c31da776e06a0c499be22d5a5c923e9f6ad10ec2",
++        "scored": 174,
++        "R": 44
++      },
++      {
++        "arm": "OVERLAP_MULTI",
++        "layer": "RGB8_NO_CODEC",
++        "kind": "normalized",
++        "relative_path": "OVERLAP_MULTI/RGB8_NO_CODEC.normalized.pt",
++        "sha256": "5cea037d52993cb8b130e92c4fe5fc655b092d73d88141a707614e915fe9437e",
++        "shape": [
++          1,
++          16,
++          46,
++          40,
++          64
++        ],
++        "dtype": "torch.float32"
++      },
++      {
++        "arm": "OVERLAP_MULTI",
++        "layer": "RGB8_NO_CODEC",
++        "key_id": "CORRECT",
++        "kind": "raw",
++        "relative_path": "OVERLAP_MULTI/RGB8_NO_CODEC.CORRECT.raw.json.gz",
++        "sha256": "68c9a005b3abc6adbb8ad0afefae62a690592718b34075d640967b43b22f2f33",
++        "scored": 174,
++        "R": 44
++      },
++      {
++        "arm": "OVERLAP_MULTI",
++        "layer": "RGB8_NO_CODEC",
++        "key_id": "WRONG",
++        "kind": "raw",
++        "relative_path": "OVERLAP_MULTI/RGB8_NO_CODEC.WRONG.raw.json.gz",
++        "sha256": "09a4bc091da9f0c9a6c9d41c2dc7d9666d945a9e8ee9c17eed27cefa6091ec19",
++        "scored": 174,
++        "R": 44
++      },
++      {
++        "arm": "OVERLAP_MULTI",
++        "layer": "MATCHED_SOURCE_MP4",
++        "kind": "normalized",
++        "relative_path": "OVERLAP_MULTI/MATCHED_SOURCE_MP4.normalized.pt",
++        "sha256": "098da447c1469811aa27861cb1ae11bd32b4e3a1b74bbcbb937ae9d6bf2fd6db",
++        "shape": [
++          1,
++          16,
++          46,
++          40,
++          64
++        ],
++        "dtype": "torch.float32"
++      },
++      {
++        "arm": "OVERLAP_MULTI",
++        "layer": "MATCHED_SOURCE_MP4",
++        "key_id": "CORRECT",
++        "kind": "raw",
++        "relative_path": "OVERLAP_MULTI/MATCHED_SOURCE_MP4.CORRECT.raw.json.gz",
++        "sha256": "464ba996fe8964958330a4148a40543f9bfa1e2ed62a162f8d8a88f4829dc012",
++        "scored": 174,
++        "R": 44
++      },
++      {
++        "arm": "OVERLAP_MULTI",
++        "layer": "MATCHED_SOURCE_MP4",
++        "key_id": "WRONG",
++        "kind": "raw",
++        "relative_path": "OVERLAP_MULTI/MATCHED_SOURCE_MP4.WRONG.raw.json.gz",
++        "sha256": "8f6ed44cb0992258985482ea0f95d1ad5c99b2e41fc360c223ef7cfc5e46f016",
++        "scored": 174,
++        "R": 44
++      }
++    ],
++    "source_mp4": [
++      {
++        "arm": "OFF",
++        "sha256": "9a48c66ef0c052b23f80623d4323da7c26310bd3746ab773e594192e74df8b88",
++        "bytes": 486707,
++        "relative_path": "OFF/MATCHED_SOURCE_MP4.mp4",
++        "verification": "small actual MP4 copy SHA equals result; only ffprobe stream/format, no frame decode"
++      },
++      {
++        "arm": "PAYLOAD_MULTI",
++        "sha256": "c858ec7339a95f33b787141c687c49cb13c2003dc67ef767ec307282a3ec53e8",
++        "bytes": 469507,
++        "relative_path": "PAYLOAD_MULTI/MATCHED_SOURCE_MP4.mp4",
++        "verification": "small actual MP4 copy SHA equals result; only ffprobe stream/format, no frame decode"
++      },
++      {
++        "arm": "OVERLAP_MULTI",
++        "sha256": "6cd119f77d14e10b84b100894ef3f14bff5b2d3820158872497478c1f9852bed",
++        "bytes": 455277,
++        "relative_path": "OVERLAP_MULTI/MATCHED_SOURCE_MP4.mp4",
++        "verification": "small actual MP4 copy SHA equals result; only ffprobe stream/format, no frame decode"
++      }
++    ],
++    "inherited_source_files": {
++      "main/tube_state/video_overlap_zero_mean_state.py": "77b82a4da4d45904093d1d41abd53309eeb808d92a85a2752757b058dd35a4e3",
++      "main/tube_state/video_overlap_zero_mean_control.py": "1aaecaf3cb5c9d27068989a2a3be71dee40c83168fe32d0afaa27724868714ce",
++      "main/tube_state/grow_video_reference.py": "35b186833dee508552235df1bb3c2524db01848e507402f87c0b9655016c8ead",
++      "runtime/wan/generation.py": "3538921118a429339412eee4d72e57268c9cb232d6ebb6e8677e2e55f143bde3",
++      "runtime/wan/vae.py": "ff3aec5659a14238923cd943364c6eda62d4648343b3ac17910cfbecdfec3670",
++      "runtime/wan/io.py": "db9caa843d632d733aa670dbe87bd38cf6084490d5bef71b8a69e6839cc33ae7",
++      "runtime/wan/zero_mean_c1_layered_transport.py": "5f419ec9fa61c402cc05f47fd8e4285986886b3de978cabede49f5f88a9b55dc",
++      "experiments/wan_state_clock/configs/zero_mean_c1_layered_transport_v1.json": "771019d83ca18e7edde3a0dd130441e9179e65ae1d2dc30c4f113612c78d0062",
++      "experiments/wan_state_clock/zero_mean_c1_layered_transport_run.py": "3d1f27a800ffc151b0d682fe8d28f972bccbd18a3363c8f5ce5a8107d97523e3",
++      "experiments/wan_state_clock/requirements-grow-video-reference.txt": "4c9fb7f727f2923f7e1b33893f9094905fa9071358b81b7f77a13cd172bf407e"
++    }
++  },
++  "arms": [
++    "OFF",
++    "PAYLOAD_MULTI",
++    "OVERLAP_MULTI"
++  ],
++  "keys": {
++    "CORRECT": "watermark",
++    "WRONG": "watermark-wrong"
++  },
++  "messages": {
++    "REGISTERED": "OKOK",
++    "WRONG_MESSAGE": "NOPE"
++  },
++  "layer": "YUV420_NO_H264",
++  "geometry": {
++    "frames": 181,
++    "height": 320,
++    "width": 512,
++    "fps": 8,
++    "pixel_input": "rgb24",
++    "intermediate": "yuv420p",
++    "pixel_output": "rgb24",
++    "normalized_shape": [
++      1,
++      16,
++      46,
++      40,
++      64
++    ],
++    "fixed_phase": 0,
++    "R": 44,
++    "regular_indices": [
++      1,
++      2,
++      3,
++      4,
++      5,
++      6,
++      7,
++      8,
++      9,
++      10,
++      11,
++      12,
++      13,
++      14,
++      15,
++      16,
++      17,
++      18,
++      19,
++      20,
++      21,
++      22,
++      23,
++      24,
++      25,
++      26,
++      27,
++      28,
++      29,
++      30,
++      31,
++      32,
++      33,
++      34,
++      35,
++      36,
++      37,
++      38,
++      39,
++      40,
++      41,
++      42,
++      43,
++      44
++    ],
++    "extra_regular_index": 45,
++    "full181_encode": true
++  },
++  "model": {
++    "id": "Wan-AI/Wan2.1-T2V-1.3B-Diffusers",
++    "revision": "0fad780a534b6463e45facd96134c9f345acfa5b"
++  },
++  "vae": {
++    "dtype": "float32",
++    "posterior": "mode",
++    "normalization": "(raw-mean)/std",
++    "cache": "shared runtime clears before/after encode",
++    "latents_mean": [
++      -0.7571,
++      -0.7089,
++      -0.9113,
++      0.1075,
++      -0.1745,
++      0.9653,
++      -0.1517,
++      1.5508,
++      0.4134,
++      -0.0715,
++      0.5517,
++      -0.3632,
++      -0.1922,
++      -0.9497,
++      0.2503,
++      -0.2921
++    ],
++    "latents_std": [
++      2.8184,
++      1.4541,
++      2.3275,
++      2.6558,
++      1.2196,
++      1.7708,
++      2.6052,
++      2.0743,
++      3.2687,
++      2.1526,
++      2.8652,
++      1.5579,
++      1.6382,
++      1.1253,
++      2.8251,
++      1.916
++    ]
++  },
++  "conversion": {
++    "segments": 2,
++    "materialize_intermediate": true,
++    "segment1_argv": [
++      "ffmpeg",
++      "-v",
++      "verbose",
++      "-threads",
++      "1",
++      "-f",
++      "rawvideo",
++      "-pix_fmt",
++      "rgb24",
++      "-s",
++      "512x320",
++      "-r",
++      "8",
++      "-i",
++      "pipe:0",
++      "-an",
++      "-c:v",
++      "rawvideo",
++      "-pix_fmt",
++      "yuv420p",
++      "-f",
++      "rawvideo",
++      "-n",
++      "{yuv420_output}"
++    ],
++    "segment2_argv": [
++      "ffmpeg",
++      "-v",
++      "verbose",
++      "-threads",
++      "1",
++      "-noautorotate",
++      "-f",
++      "rawvideo",
++      "-pix_fmt",
++      "yuv420p",
++      "-s",
++      "512x320",
++      "-r",
++      "8",
++      "-chroma_sample_location",
++      "left",
++      "-i",
++      "{yuv420_input}",
++      "-map",
++      "0:v:0",
++      "-f",
++      "rawvideo",
++      "-pix_fmt",
++      "rgb24",
++      "-n",
++      "{rgb24_output}"
++    ],
++    "input_bytes": "saved Q8 tensor uint8 contiguous bytes exactly; no float re-quantization or new decode",
++    "intermediate_bytes_per_arm": 44482560,
++    "output_rgb_bytes_per_arm": 88965120,
++    "total_new_raster_bytes": 400343040,
++    "metadata_policy": {
++      "chroma_location": {
++        "value": "left",
++        "source": "same-run three SOURCE stream probes",
++        "role": "explicit raw-decoder interpretation matching known SOURCE field; first auto-downsample effective grid not independently proven identical"
++      },
++      "color_space": "UNKNOWN_AUTO_NO_OVERRIDE",
++      "color_range": "UNKNOWN_AUTO_NO_OVERRIDE",
++      "color_primaries": "UNKNOWN_AUTO_NO_OVERRIDE",
++      "color_transfer": "UNKNOWN_AUTO_NO_OVERRIDE"
++    },
++    "added_filters": [],
++    "sws_flags_override": null,
++    "forbidden_new_controls": [
++      "BT709",
++      "BT601",
++      "range override",
++      "scale/zscale resampler",
++      "bitexact",
++      "accurate_rnd",
++      "second control matrix"
++    ],
++    "receipt": [
++      "each exact argv",
++      "returncode",
++      "stderr verbose auto_scale chain",
++      "ffmpeg/ffprobe versions and library/build lines",
++      "input/intermediate/output SHA256 and byte counts",
++      "frame counts from exact raw lengths",
++      "known/unknown metadata and provenance"
++    ],
++    "claim": "NO_H264_RAW420_CONTROL; not guaranteed pure H264 causal isolation"
++  },
++  "fixed_denominator": {
++    "arms": 3,
++    "new_observations": 3,
++    "yuv420_files": 3,
++    "roundtrip_rgb24_files": 3,
++    "normalized": 3,
++    "path_reads": 6,
++    "payload_reads": 6,
++    "path_posthoc": 6,
++    "message_evaluations": 12,
++    "catalog_slots": 23490,
++    "valid_costs": 1044,
++    "structural_exclusions": 22446,
++    "catalog_per_condition": 3915,
++    "valid_per_condition": 174,
++    "reference_normalized": 6,
++    "reference_raw": 12,
++    "reference_layers": 2
++  },
++  "planned_calls": {
++    "transformer": 0,
++    "vae_decode": 0,
++    "vae_encode": 3,
++    "rgb_to_raw420": 3,
++    "raw420_to_rgb24": 3,
++    "h264_encode": 0,
++    "mp4_decode": 0,
++    "new_path_infer": 6,
++    "new_payload_read": 6,
++    "reference_reencode": 0,
++    "reference_rescore": 0
++  },
++  "reader": {
++    "module": "main.tube_state.video_overlap_zero_mean_state",
++    "entry": "infer",
++    "public_key_only": true,
++    "original_family": true,
++    "full_costs_ties_exclusions": true,
++    "score_status": "UNCALIBRATED_DIAGNOSTIC",
++    "accepted_payload": false,
++    "state_path_accepted": false,
++    "payload": "original read only diagnostic; never rank path",
++    "no_writer_or_truth_inputs": true
++  },
++  "posthoc": {
++    "raw_committed_first": true,
++    "registered_tau": [
++      1,
++      2,
++      3,
++      4,
++      5,
++      6,
++      7,
++      8,
++      9,
++      10,
++      11,
++      12,
++      13,
++      14,
++      15,
++      16,
++      17,
++      18,
++      19,
++      20,
++      21,
++      22,
++      23,
++      24,
++      25,
++      26,
++      27,
++      28,
++      29,
++      30,
++      31,
++      32,
++      33,
++      34,
++      35,
++      36,
++      37,
++      38,
++      39,
++      40,
++      41,
++      42,
++      43,
++      44
++    ],
++    "report": [
++      "true rank using original1e-12 tolerance",
++      "truth unique top",
++      "top classes/paths and ties",
++      "start correctness",
++      "invented edit",
++      "own-winner and fixed-opponent costs/margins",
++      "time/block/age contributions",
++      "diagnostic payload errors"
++    ],
++    "fixed_opponent_source": "hash-bound parent result.path_posthoc[arm/RGB8_NO_CODEC/key].fixed_historical_phase0_opponent (original FULL phase0 canonical); fields raw_sha256/catalog_index/path; only after raw. Not parent current SOURCE winner or global other-phase winner.",
++    "no_ancient_drive_dependency": true,
++    "missing_fixed_opponent": "MISSING_REFERENCE in that comparison only; cannot replace or select primary path"
++  },
++  "references": {
++    "layers": [
++      "RGB8_NO_CODEC",
++      "MATCHED_SOURCE_MP4"
++    ],
++    "reuse": "existing normalized/raw hash-bound; no VAE re-encode, no infer rerun",
++    "reporting": "sameR44 samekey path costs and saved projections; new vs already observed boundary, no pure codec causality claim",
++    "statuses": [
++      "primary_execution",
++      "reference_completeness",
++      "package_completeness"
++    ]
++  },
++  "failure": {
++    "fixed_slots_before_load": true,
++    "per_arm_independent": true,
++    "partial_outputs_retained": true,
++    "raw_exact_size_required": true,
++    "no_padding_truncation_or_frame_duplication": true,
++    "output_outside_input_required": true,
++    "canonical_first": true,
++    "reference_failure_does_not_erase_new": true,
++    "primary_failure_does_not_erase_reference": true,
++    "science_pass": false
++  },
++  "local_stage": {
++    "allowed": "read small metadata/probe/version/help; design only",
++    "conversion_executed": false,
++    "real_vae_executed": false,
++    "score_executed": false,
++    "runner_implemented": false,
++    "notebook_implemented": false,
++    "commit_or_push": false
++  },
++  "future_new_files": [
++    "runtime/wan/zero_mean_c1_yuv420_no_h264.py",
++    "experiments/wan_state_clock/zero_mean_c1_yuv420_no_h264_run.py",
++    "scripts/build_zero_mean_c1_yuv420_no_h264_notebook.py",
++    "notebooks/zero_mean_c1_yuv420_no_h264_v1_colab.ipynb",
++    "tests/test_zero_mean_c1_yuv420_no_h264.py"
++  ],
++  "evidence_ceiling": "single saved source/three dependent arms; fixedg0/R44; unknown historical matrix/range and auto-conversion details; no calibrated acceptance, no unique synchronization, FPR or pure-H264 causal claim"
++}
+diff --git a/experiments/wan_state_clock/zero_mean_c1_yuv420_no_h264_run.py b/experiments/wan_state_clock/zero_mean_c1_yuv420_no_h264_run.py
+new file mode 100644
+index 0000000..e3f557f
+--- /dev/null
++++ b/experiments/wan_state_clock/zero_mean_c1_yuv420_no_h264_run.py
+@@ -0,0 +1,375 @@
++"""Saved Q8 -> materialized raw420 -> RGB24 user-run diagnostic, no new writer."""
++from __future__ import annotations
++import argparse,gzip,hashlib,importlib.metadata,json,os,signal,subprocess,sys,time
++from pathlib import Path
++import numpy as np
++from main.tube_state import video_overlap_zero_mean_state as state,video_overlap_zero_mean_control as payload
++from runtime.wan import zero_mean_c1_yuv420_no_h264 as adapter
++ROOT=Path(__file__).resolve().parents[2]
++CONFIG=ROOT/'experiments/wan_state_clock/configs/zero_mean_c1_yuv420_no_h264_v1.json'
++MODULE='experiments.wan_state_clock.zero_mean_c1_yuv420_no_h264_run'
++ARMS=('OFF','PAYLOAD_MULTI','OVERLAP_MULTI');KEYS=('CORRECT','WRONG');GOOD=('COMPLETE','NO_ENERGY')
++
++def dump(path,value):
++    path=Path(path);path.parent.mkdir(parents=True,exist_ok=True);tmp=path.with_suffix(path.suffix+'.tmp')
++    with tmp.open('w') as f:json.dump(value,f,indent=2,allow_nan=False);f.write('\n');f.flush();os.fsync(f.fileno())
++    os.replace(tmp,path)
++
++def dump_gzip(path,value):
++    path=Path(path);path.parent.mkdir(parents=True,exist_ok=True);tmp=path.with_suffix(path.suffix+'.tmp')
++    with tmp.open('wb') as f:
++        f.write(gzip.compress(json.dumps(value,allow_nan=False,separators=(',',':')).encode(),mtime=0));f.flush();os.fsync(f.fileno())
++    os.replace(tmp,path)
++
++def load_gzip(path):
++    return json.loads(gzip.decompress(Path(path).read_bytes()))
++
++def environment():
++    versions={}
++    for name in ('torch','torchvision','diffusers','transformers','accelerate','numpy','imageio','imageio-ffmpeg'):
++        try:versions[name]=importlib.metadata.version(name)
++        except importlib.metadata.PackageNotFoundError:versions[name]=None
++    return dict(python=sys.version,executable=sys.executable,packages=versions)
++
++def validate_latent(z):
++    import torch
++    if tuple(z.shape)!=(1,16,46,40,64) or z.dtype!=torch.float32 or not bool(torch.isfinite(z).all()):raise ValueError('full normalized tensor geometry/dtype/finite mismatch')
++    return z
++
++def save_tensor(path,value):
++    import torch
++    path=Path(path);path.parent.mkdir(parents=True,exist_ok=True);tmp=path.with_suffix('.tmp')
++    with tmp.open('wb') as f:torch.save(value,f);f.flush();os.fsync(f.fileno())
++    os.replace(tmp,path)
++    return dict(path=str(path),sha256=adapter.file_sha256(path),shape=list(value.shape),dtype=str(value.dtype),status='SAVED')
++
++def reopen_tensor(row):
++    import torch
++    if adapter.file_sha256(row['path'])!=row['sha256']:raise ValueError('saved tensor identity mismatch')
++    return torch.load(row['path'],map_location='cpu',weights_only=True)
++
++def candidate_terms(obs,template):
++    return dict(cost=float(np.mean((obs-template)**2)),observed_energy=float(np.sum(obs*obs)),
++        template_energy=float(np.sum(template*template)),dot=float(np.sum(obs*template)),
++        squared_error_by_time_block_age=np.sum((obs-template)**2,axis=-1).tolist())
++
++def stop_worker(child):
++    """The fresh child owns a new session; include any live FFmpeg descendants."""
++    try:os.killpg(child.pid,signal.SIGTERM)
++    except ProcessLookupError:pass
++    try:code=child.wait(timeout=10)
++    except subprocess.TimeoutExpired:
++        try:os.killpg(child.pid,signal.SIGKILL)
++        except ProcessLookupError:pass
++        code=child.wait(timeout=10)
++    # Parent may have exited before a descendant. End the entire owned group
++    # before reopening canonical records; no ffmpeg may keep writing raw files.
++    try:os.killpg(child.pid,signal.SIGKILL)
++    except ProcessLookupError:pass
++    return code
++
++
++def load_config():
++    cfg=json.loads(CONFIG.read_text())
++    if cfg['arms']!=list(ARMS) or cfg['geometry']['R']!=44 or cfg['layer']!='YUV420_NO_H264':raise ValueError('frozen roster mismatch')
++    for rel,sha in cfg['fixed_input']['inherited_source_files'].items():
++        if adapter.file_sha256(ROOT/rel)!=sha:raise ValueError('inherited source identity mismatch: '+rel)
++    expected=adapter.conversion_commands('{yuv420_output}','{rgb24_output}')
++    if expected[0]!=cfg['conversion']['segment1_argv']:raise ValueError('first conversion command drift')
++    if expected[1]!=[s.replace('{yuv420_input}','{yuv420_output}') for s in cfg['conversion']['segment2_argv']]:raise ValueError('second conversion command drift')
++    return cfg
++
++def initial_result(output,cfg,input_root):
++    catalog=state.catalog(44);cp=output/'catalog_R44.json.gz';dump_gzip(cp,dict(rows=catalog));shared={}
++    for kid,key in cfg['keys'].items():
++        family=state.family_receipt(key,44,np.ones((44,4),bool));fp=output/f'family_R44_{kid}.json.gz';dump_gzip(fp,family)
++        if len(catalog)!=3915 or len(family['valid_catalog_indices'])!=174:raise ValueError('original family changed')
++        shared[kid]=dict(catalog_path=str(cp),catalog_sha256=adapter.file_sha256(cp),family_path=str(fp),family_sha256=adapter.file_sha256(fp),
++                         catalog=3915,valid=174,excluded=3741,class_count=len(family['classes']))
++    tables=dict(conversions={},normalized={},reads={},path_posthoc={},message_evaluations={})
++    for arm in ARMS:
++        for stage,ext in [('yuv420','yuv'),('rgb24','rgb')]:
++            tables['conversions'][arm+'/'+stage]=dict(status='PENDING',path=str(output/arm/('roundtrip.'+ext)),stage=stage)
++        tables['normalized'][arm]=dict(status='PENDING',path=str(output/arm/'normalized.pt'),R=44,full_latent_steps=46)
++        for kid in KEYS:
++            sid=arm+'/'+kid
++            tables['reads'][sid]=dict(status='PENDING',payload_status='PENDING',scored=0,path=str(output/arm/(kid+'.raw.json.gz')),
++                shared=shared[kid],accepted_payload=False,state_path_accepted=False)
++            tables['path_posthoc'][sid]=dict(status='PENDING',accepted_payload=False,state_path_accepted=False)
++            for t in cfg['messages']:tables['message_evaluations'][sid+'/'+t]=dict(status='PENDING',bit_errors=None,accepted_payload=False)
++    paths=list(cfg['fixed_input']['inherited_source_files'])+[str(CONFIG.relative_to(ROOT)),str(Path(__file__).relative_to(ROOT)),
++        'runtime/wan/zero_mean_c1_yuv420_no_h264.py']
++    return dict(status='RUNNING',stage='INITIALIZE',**tables,shared=shared,
++        input_identity=dict(status='PENDING'),input_root=str(input_root),
++        inputs={r['arm']:dict(r,status='PENDING') for r in cfg['fixed_input']['required_q8']},
++        references={str(i):dict(r,status='PENDING') for i,r in enumerate(cfg['fixed_input']['reference_artifacts'])},
++        fixed_opponents={a+'/'+k:dict(status='PENDING') for a in ARMS for k in KEYS},
++        reference_posthoc={},calls={k:dict(attempted=0,completed=0) for k in cfg['planned_calls']},
++        model_loaded=False,actual_model_calls=False,workers={},failures=[],environment=environment(),model=cfg['model'],
++        source_sha=subprocess.check_output(['git','rev-parse','HEAD'],cwd=ROOT,text=True).strip(),
++        source_files={p:adapter.file_sha256(ROOT/p) for p in paths},config_sha256=adapter.file_sha256(CONFIG),
++        method_version=state.PUBLIC.method_version,basis_layout={k:state.basis_layout(v) for k,v in cfg['keys'].items()},
++        fixed_denominator=cfg['fixed_denominator'],planned_calls=cfg['planned_calls'],evidence_ceiling=cfg['evidence_ceiling'],
++        score_status='UNCALIBRATED_DIAGNOSTIC',science_status='NO_AUTOMATIC_SCIENTIFIC_PASS')
++
++class Store:
++    def __init__(self,output,*,create=False,cfg=None,input_root=None):
++        self.output=Path(output);self.path=self.output/'result.json'
++        if create:
++            if self.output.resolve().is_relative_to(Path(input_root).resolve()):raise ValueError('output must be outside read-only input')
++            self.output.mkdir(parents=True,exist_ok=False);self.data=initial_result(self.output,cfg,input_root)
++        else:self.data=json.loads(self.path.read_text())
++        self.save()
++    def save(self):
++        d=self.data;sizes=dict(inputs=3,conversions=6,normalized=3,reads=6,path_posthoc=6,message_evaluations=12,references=18,fixed_opponents=6)
++        if any(len(d[k])!=n for k,n in sizes.items()):raise ValueError('fixed roster changed')
++        d['counts']=dict(yuv420_files=sum(r['status']=='SAVED' and r['stage']=='yuv420' for r in d['conversions'].values()),
++            rgb24_files=sum(r['status']=='SAVED' and r['stage']=='rgb24' for r in d['conversions'].values()),
++            normalized=sum(r['status']=='SAVED' for r in d['normalized'].values()),
++            path_reads=sum(r['status'] in GOOD for r in d['reads'].values()),
++            payload_reads=sum(r['payload_status']=='READ' for r in d['reads'].values()),
++            valid_costs=sum(r['scored'] for r in d['reads'].values()),
++            catalog_slots=sum(r['shared']['catalog'] for r in d['reads'].values()),
++            structural_exclusions=sum(r['shared']['excluded'] for r in d['reads'].values()),
++            path_posthoc=sum(r['status']=='EVALUATED' for r in d['path_posthoc'].values()),
++            message_evaluations=sum(r['status']=='EVALUATED' for r in d['message_evaluations'].values()))
++        dump(self.path,d)
++    def blind(self):
++        dump(self.output/'blind_readouts.json',{k:self.data[k] for k in ('normalized','reads','shared','fixed_denominator','method_version','basis_layout')})
++    def checkpoint(self):self.save();self.blind()
++    def count(self,kind,completed):
++        self.data['calls'][kind]['completed' if completed else 'attempted']+=1
++        if kind=='vae_encode' and not completed:self.data['actual_model_calls']=True
++        self.save()
++    def call(self,kind,fn):
++        self.count(kind,False);v=fn();self.count(kind,True);return v
++    def failure(self,stage,exc):
++        self.data['failures'].append(dict(stage=stage,error=f'{type(exc).__name__}: {exc}'));self.save()
++    def conversion_event(self,arm,stage,row):
++        self.data['conversions'][arm+'/'+stage].update(row);self.checkpoint()
++
++def preflight(store,cfg):
++    root=Path(store.data['input_root']);identity=store.data['input_identity']
++    try:
++        p=root/'result.json'
++        if adapter.file_sha256(p)!=cfg['fixed_input']['result_sha256']:raise ValueError('parent result identity mismatch')
++        parent=json.loads(p.read_text())
++        if parent['source_sha']!=cfg['fixed_input']['source_sha']:raise ValueError('parent source mismatch')
++        identity.update(status='VERIFIED',path=str(p),sha256=adapter.file_sha256(p),source_sha=parent['source_sha'],
++                        historical_environment=parent.get('environment'),historical_vae=parent.get('vae_runtime'))
++    except Exception as exc:identity.update(status='FAILED',error=str(exc));store.failure('PARENT_INPUT',exc)
++    for row in store.data['inputs'].values():
++        p=root/row['relative_path']
++        try:
++            if identity['status']!='VERIFIED':raise ValueError('verified parent required')
++            if p.stat().st_size!=row['bytes'] or adapter.file_sha256(p)!=row['sha256']:raise ValueError('Q8 size/hash mismatch')
++            row.update(status='VERIFIED',path=str(p))
++        except Exception as exc:row.update(status='FAILED',path=str(p),error=str(exc))
++    for row in store.data['references'].values():
++        p=root/row['relative_path']
++        try:
++            if identity['status']!='VERIFIED':raise ValueError('verified parent required')
++            if adapter.file_sha256(p)!=row['sha256']:raise ValueError('reference hash mismatch')
++            row.update(status='VERIFIED',path=str(p))
++        except Exception as exc:row.update(status='MISSING_OR_INVALID',path=str(p),error=str(exc))
++    # Do not load the parent's truth/opponent table before the new blind stage.
++    store.checkpoint()
++
++def read_normalized(z,key,call):
++    received=z[0,:,1:45].numpy().transpose(1,0,2,3)
++    inf=call('new_path_infer',lambda:state.infer(received,key,np.ones((44,4),bool)))
++    try:bits=call('new_payload_read',lambda:payload.payload_read(z,key,44))
++    except Exception as exc:bits=dict(status='FAILED',decoded_bits=None,error=str(exc))
++    return dict(inference=inf,payload=bits,fixed_phase=0,truth_used=False,writer_inputs=False)
++
++def score_new(store,arm,cfg):
++    normal=store.data['normalized'][arm];z=validate_latent(reopen_tensor(normal))
++    for kid,key in cfg['keys'].items():
++        row=store.data['reads'][arm+'/'+kid]
++        try:
++            raw=read_normalized(z,key,store.call);inf=raw['inference']
++            if inf['summary']['status'] in GOOD:
++                if inf['counts']['scored']!=174 or len(inf['path_costs'])!=174 or not np.isfinite(inf['path_costs']).all():raise ValueError('invalid path costs')
++                if len(inf['class_costs'])!=row['shared']['class_count'] or not np.isfinite(inf['class_costs']).all():raise ValueError('invalid class costs')
++            raw['normalized_sha256']=normal['sha256'];dump_gzip(Path(row['path']),raw)
++            row.update(status=inf['summary']['status'],payload_status=raw['payload']['status'],scored=inf['counts']['scored'],
++                sha256=adapter.file_sha256(row['path']),summary=inf['summary'],payload=raw['payload'])
++        except Exception as exc:row.update(status='FAILED',payload_status='FAILED',error=str(exc))
++        store.checkpoint()
++
++def conversion_worker(store,cfg):
++    import torch
++    from runtime.wan.generation import load_frozen_vae
++    store.data['stage']='VERSIONS';store.save();versions={}
++    for exe in ('ffmpeg','ffprobe'):
++        p=subprocess.run([exe,'-version'],capture_output=True,text=True,check=True)
++        path=store.output/(exe+'_version.txt');path.write_text(p.stdout)
++        versions[exe]=dict(path=str(path),sha256=adapter.file_sha256(path),first_line=p.stdout.splitlines()[0])
++    store.data['actual_conversion_versions']=versions;store.data['stage']='VAE_LOAD';store.save()
++    frozen=load_frozen_vae(cfg,device='cuda' if torch.cuda.is_available() else 'cpu')
++    store.data.update(model_loaded=True,vae_runtime=dict(device=str(next(frozen.parameters()).device),dtype=str(next(frozen.parameters()).dtype),
++        latents_mean=list(frozen.config.latents_mean),latents_std=list(frozen.config.latents_std),posterior='mode',frames=181,normalization='(raw-mean)/std'))
++    store.save()
++    for arm in ARMS:
++        store.data['stage']='CONVERT_ENCODE_'+arm;store.save()
++        try:
++            src=store.data['inputs'][arm]
++            if src['status']!='VERIFIED':raise ValueError('verified Q8 unavailable')
++            q8=reopen_tensor(src)
++            if tuple(q8.shape)!=(181,320,512,3) or q8.dtype!=torch.uint8:raise ValueError('Q8 geometry/dtype mismatch')
++            pixel=adapter.roundtrip(q8,store.data['conversions'][arm+'/yuv420']['path'],store.data['conversions'][arm+'/rgb24']['path'],
++                count=store.count,event=lambda stage,row:store.conversion_event(arm,stage,row))
++            del q8
++            z=store.call('vae_encode',lambda:adapter.encode_normalized(frozen,pixel.float()/255.));del pixel
++            row=store.data['normalized'][arm];row.update(save_tensor(row['path'],z));del z
++            store.checkpoint();score_new(store,arm,cfg)
++        except Exception as exc:store.failure('ARM_'+arm,exc)
++        store.checkpoint()
++
++def recover_unfinished(store,reason):
++    for group in ('conversions','normalized','reads'):
++        for row in store.data[group].values():
++            if row['status'] in ('PENDING','RUNNING','SAVING'):row.update(status='NOT_COMPLETED',error=reason)
++            if group=='reads' and row['payload_status']=='PENDING':row['payload_status']='NOT_COMPLETED'
++    store.checkpoint()
++
++def projection_metrics(q,mu):
++    """Posthoc only: R44 full1408, target active1360; no threshold or path decision."""
++    if q.shape!=(44,4,4,2) or mu.shape!=q.shape:raise ValueError('R44 projection required')
++    active=mu!=0;energy=float(np.sum(mu*mu));dot=float(np.sum(q*mu));gain=dot/energy
++    residual=q-gain*mu
++    return dict(shape=list(q.shape),dimensions=1408,active_dimensions=int(active.sum()),boundary_dimensions=int((~active).sum()),
++        alpha=state.PUBLIC.alpha,target_energy=energy,target_norm=energy**.5,observation_norm=float(np.linalg.norm(q)),
++        dot=dot,signal_gain= gain,orthogonal_residual_full1408_l2=float(np.linalg.norm(residual)),
++        sign_agreements=int(np.sum(np.sign(q[active])==np.sign(mu[active]))),sign_denominator=int(active.sum()),
++        zero_observation_active=int(np.sum(q[active]==0)),zero_is_not_agreement=True,
++        squared_error_by_time_block_age=np.sum((q-mu)**2,axis=-1).tolist())
++
++def describe_inference(inf,key,opponent):
++    rows=state.catalog(44);mu=state.composite_signs(key).astype(np.float64)[:44]*state.PUBLIC.alpha
++    q=np.asarray(inf['projection'],dtype=np.float64);true_index=0
++    costs=np.asarray(inf['path_costs'],dtype=np.float64);true_cost=float(np.mean((q-mu)**2));summary=inf['summary']
++    canonical=summary['canonical_catalog_index'];winner=None;fixed=dict(opponent)
++    if canonical is not None:
++        target=state.composite_signs(key)[np.asarray(rows[canonical]['taus'])-1]*state.PUBLIC.alpha
++        winner=candidate_terms(q,target)
++    if fixed['status']=='AVAILABLE':
++        target=state.composite_signs(key)[np.asarray(fixed['path']['taus'])-1]*state.PUBLIC.alpha
++        terms=candidate_terms(q,target);fixed.update(status='COMPARED',terms=terms,true_minus_fixed=true_cost-terms['cost'])
++    return dict(status='EVALUATED',fixed_phase=0,phase_is_not_recovered=True,registered_tau=list(range(1,45)),
++        true_rank=1+int(np.sum(costs<true_cost-state.PUBLIC.tie_atol)),truth_unique_top=summary['top_catalog_indices']==[true_index],
++        truth_in_top=true_index in summary['top_catalog_indices'],true_cost=true_cost,
++        true_cost_ties=[i for i,c in zip(inf['valid_catalog_indices'],costs) if abs(float(c)-true_cost)<=state.PUBLIC.tie_atol],
++        top_class_indices=summary['top_class_indices'],top_catalog_indices=summary['top_catalog_indices'],
++        canonical_catalog_index=canonical,canonical_path=rows[canonical] if canonical is not None else None,
++        canonical_start_correct=None if canonical is None else rows[canonical]['tau1']==1,
++        invented_edit=None if canonical is None else rows[canonical]['event_type']!='ZERO_EDIT',
++        true_minus_winner=None if winner is None else true_cost-winner['cost'],winner_terms=winner,
++        fixed_historical_phase0_opponent=fixed,projection=projection_metrics(q,mu),
++        accepted_payload=False,state_path_accepted=False,score_status='UNCALIBRATED_DIAGNOSTIC')
++
++def load_parent_opponents(store,cfg):
++    try:
++        p=Path(store.data['input_identity']['path'])
++        if adapter.file_sha256(p)!=cfg['fixed_input']['result_sha256']:raise ValueError('parent changed before posthoc')
++        parent=json.loads(p.read_text())
++    except Exception as exc:
++        for row in store.data['fixed_opponents'].values():row.update(status='MISSING_REFERENCE',error=str(exc))
++        return
++    rows=state.catalog(44)
++    for arm in ARMS:
++        for kid in KEYS:
++            row=store.data['fixed_opponents'][arm+'/'+kid]
++            try:
++                old=parent['path_posthoc'][arm+'/RGB8_NO_CODEC/'+kid]['fixed_historical_phase0_opponent'];i=old['catalog_index']
++                if old['status']!='COMPARED' or rows[i]!=old['path'] or not rows[i]['structurally_valid']:raise ValueError('invalid fixed old phase0 opponent')
++                row.update(status='AVAILABLE',catalog_index=i,path=old['path'],raw_sha256=old['raw_sha256'],
++                    parent_result_sha256=cfg['fixed_input']['result_sha256'],role='original FULL phase0 opponent carried by parent posthoc; no old root reread')
++            except Exception as exc:row.update(status='MISSING_REFERENCE',error=str(exc))
++
++def evaluate_saved(store,cfg):
++    store.data['stage']='POSTHOC';store.checkpoint();blind=store.output/'blind_readouts.json';before=adapter.file_sha256(blind)
++    load_parent_opponents(store,cfg)
++    for sid,row in store.data['reads'].items():
++        arm,kid=sid.split('/');dest=store.data['path_posthoc'][sid]
++        try:
++            if row['status'] not in GOOD:raise ValueError('new raw unavailable')
++            if adapter.file_sha256(row['path'])!=row['sha256']:raise ValueError('new raw identity mismatch')
++            raw=load_gzip(row['path']);dest.update(describe_inference(raw['inference'],cfg['keys'][kid],store.data['fixed_opponents'][sid]))
++        except Exception as exc:dest.update(status='MISSING_READ',error=str(exc))
++        for target,text in cfg['messages'].items():
++            m=store.data['message_evaluations'][sid+'/'+target];bits=(row.get('payload') or {}).get('decoded_bits')
++            if row['payload_status']=='READ' and bits is not None:
++                truth=payload.message_bits(text);m.update(status='EVALUATED',diagnostic_bit_errors=sum(a!=b for a,b in zip(bits,truth)),diagnostic_exact=bits==truth)
++            else:m.update(status='MISSING_READ')
++        store.save()
++    for ref in store.data['references'].values():
++        if ref['kind']!='raw':continue
++        arm,kid,layer=ref['arm'],ref['key_id'],ref['layer'];sid=arm+'/'+layer+'/'+kid
++        report=dict(status='MISSING_REFERENCE',new_infer_calls=0)
++        try:
++            if ref['status']!='VERIFIED' or adapter.file_sha256(ref['path'])!=ref['sha256']:raise ValueError('reference raw unavailable/changed')
++            raw=load_gzip(ref['path']);inf=raw['inference']
++            if inf['summary']['status'] not in GOOD or inf['received_length']!=44 or inf['counts']['scored']!=174:raise ValueError('reference incomplete or support changed')
++            report.update(describe_inference(inf,cfg['keys'][kid],store.data['fixed_opponents'][arm+'/'+kid]),reference_raw_sha256=ref['sha256'],
++                          source='existing raw projection and costs; no new infer/VAE',diagnostic_payload=raw.get('payload'))
++            fresh=store.data['path_posthoc'][arm+'/'+kid]
++            if fresh['status']=='EVALUATED':report['new_minus_reference_true_cost']=fresh['true_cost']-report['true_cost']
++        except Exception as exc:report['error']=str(exc)
++        store.data['reference_posthoc'][sid]=report
++    if adapter.file_sha256(blind)!=before:raise RuntimeError('posthoc changed blind evidence')
++    store.data['blind_sha256']=before;store.save()
++
++def finalize(store,cfg):
++    recover_unfinished(store,'worker or input incomplete');evaluate_saved(store,cfg)
++    expected=dict(yuv420_files=3,rgb24_files=3,normalized=3,path_reads=6,payload_reads=6,valid_costs=1044,
++        catalog_slots=23490,structural_exclusions=22446,path_posthoc=6,message_evaluations=12)
++    done=store.data['counts']==expected and all(store.data['calls'][k]['completed']==n for k,n in cfg['planned_calls'].items()) and not store.data.get('interrupted',False)
++    refs=all(r['status']=='VERIFIED' for r in store.data['references'].values())
++    comparisons=len(store.data['reference_posthoc'])==12 and all(r['status']=='EVALUATED' for r in store.data['reference_posthoc'].values())
++    opponents=all(r['status']=='AVAILABLE' for r in store.data['fixed_opponents'].values())
++    store.data.update(status='EXECUTION_COMPLETE' if done else 'INCOMPLETE',primary_execution='EXECUTION_COMPLETE' if done else 'INCOMPLETE',
++        reference_completeness='COMPLETE' if refs and comparisons else 'INCOMPLETE',posthoc_fixed_opponent_status='COMPLETE' if opponents else 'INCOMPLETE',
++        package_completeness='COMPLETE' if done and refs and comparisons and opponents else 'INCOMPLETE',stage='FINISHED')
++    store.save();return done
++
++def worker_phase(output):
++    command=[sys.executable,'-u','-m',MODULE,'--output',str(output),'--worker'];child=None;error=None;code=None;halt=False;cleanup=None
++    try:
++        with (Path(output)/'conversion_encode.log').open('w') as log:
++            child=subprocess.Popen(command,cwd=ROOT,stdout=subprocess.PIPE,stderr=subprocess.STDOUT,text=True,bufsize=1,start_new_session=True)
++            for line in child.stdout:print(line,end='',flush=True);log.write(line);log.flush()
++            code=child.wait()
++            if code!=0:code=stop_worker(child)
++    except BaseException as exc:
++        error=f'{type(exc).__name__}: {exc}';halt=not isinstance(exc,Exception)
++        if child is not None:
++            try:code=stop_worker(child)
++            except BaseException as err:cleanup=str(err);halt=True
++    finally:
++        if child is not None and child.stdout is not None:
++            try:child.stdout.close()
++            except Exception:pass
++    store=Store(output)
++    store.data['workers']['conversion_encode']=dict(command=command,status='COMPLETE' if error is None and code==0 else 'FAILED',
++        error=error,cleanup_error=cleanup,returncode=code)
++    if error or code!=0:store.failure('WORKER',RuntimeError(error or str(code)))
++    if halt:store.data['interrupted']=True
++    store.checkpoint();return store,halt
++
++def main():
++    p=argparse.ArgumentParser(description=__doc__);p.add_argument('--output',required=True,type=Path);p.add_argument('--input-root',type=Path);p.add_argument('--worker',action='store_true')
++    args=p.parse_args();cfg=load_config()
++    if args.worker:
++        store=Store(args.output)
++        try:conversion_worker(store,cfg)
++        except Exception as exc:store.failure('CONVERSION_ENCODE',exc);recover_unfinished(store,str(exc));raise
++        return
++    store=Store(args.output,create=True,cfg=cfg,input_root=args.input_root or cfg['fixed_input']['root']);preflight(store,cfg)
++    if any(r['status']=='VERIFIED' for r in store.data['inputs'].values()):store,halt=worker_phase(args.output)
++    else:halt=False;store.data['workers']['conversion_encode']=dict(status='NOT_STARTED_NO_INPUT')
++    done=finalize(store,cfg);print(json.dumps(dict(status=store.data['status'],counts=store.data['counts'])))
++    if halt:raise SystemExit(130)
++    if not done:raise SystemExit(1)
++
++if __name__=='__main__':main()
+diff --git a/notebooks/zero_mean_c1_yuv420_no_h264_v1_colab.ipynb b/notebooks/zero_mean_c1_yuv420_no_h264_v1_colab.ipynb
+new file mode 100644
+index 0000000..ed8def8
+--- /dev/null
++++ b/notebooks/zero_mean_c1_yuv420_no_h264_v1_colab.ipynb
+@@ -0,0 +1,186 @@
++{
++ "nbformat": 4,
++ "nbformat_minor": 5,
++ "cells": [
++  {
++   "cell_type": "code",
++   "id": "yuv420-no-h264-0",
++   "metadata": {},
++   "source": [
++    "from google.colab import drive\n",
++    "drive.mount('/content/drive')\n"
++   ],
++   "outputs": [],
++   "execution_count": null
++  },
++  {
++   "cell_type": "markdown",
++   "id": "yuv420-no-h264-1",
++   "metadata": {},
++   "source": [
++    "# Zero-mean C1: materialized raw YUV420 roundtrip without H264\n",
++    "\n",
++    "Run all uses the three saved uint8 rasters from run20260930T165530863126Z. It performs no generation, VAE decode or H264/MP4 decoding. Each raster is converted by two serial FFmpeg processes: RGB24 to a real raw yuv420p file, then reopen that file as512x320/8fps/yuv420p and convert to a real RGB24 file. The latter actual bytes,181complete frames, are VAE mode-encoded in FP32 and normalized by the same Wan mean/std.\n",
++    "\n",
++    "The first process retains automatic conversion. The second explicitly restores the known original SOURCE chroma_location=left; original matrix/range/transfer/primaries were unreported and remain unknown/auto. No scale/zscale, new BT709/601, range, sws_flags, bitexact or accurate_rnd options are introduced. Left metadata does not prove the first process's physical sample grid equals the original x264 input. Exact commands, versions, verbose stderr, raw sizes/hashes and failures are saved. This is a no-H264 raw420 control, not a guaranteed pure-H264 causal intervention.\n",
++    "\n",
++    "Fixed new evidence:3YUV420files +3RGB24files (~400MB),3normalized tensors,6new path/payload readouts,1044valid costs/23490catalog slots/22446exclusions,6path truth joins/12message comparisons.3VAEencode,0Transformer,0VAEdecode. All181frames are encoded; only regular1..44 at fixedg0 enters the original receiver. Existing two-layer6normalized/12raw references are hash-verified and reused without re-encoding or rescoring. They are not18new searches. New,reference,and package completeness are separate.\n",
++    "\n",
++    "Truth and the parent's fixed original FULL.phase0 opponent are joined only after raw persistence. Projection gain is dot(q,mu)/norm(mu)^2 at R44; orthogonal residue uses all1408coordinates, while sign agreement uses only1360nonzero target coordinates. No new threshold/ranking rule or scientific acceptance. This one saved source and dependent arms do not establish FPR or general robustness. Local tests use fake conversion/VAE only; no local real conversion or model execution.\n",
++    "\n",
++    "Current Python/Torch-pair probe/fresh child; no venv, exact-Python or GPU-model gate. UNPUBLISHED DRAFT: publish and verify source before binding.\n"
++   ]
++  },
++  {
++   "cell_type": "code",
++   "id": "yuv420-no-h264-2",
++   "metadata": {},
++   "source": [
++    "SOURCE_SHA = None\n",
++    "from pathlib import Path\n",
++    "import datetime,json,os,subprocess,sys,traceback\n",
++    "STAMP=datetime.datetime.now(datetime.timezone.utc).strftime('%Y%m%dT%H%M%S%fZ')\n",
++    "OUTPUT=Path('/content/drive/MyDrive/Video-WM/Zero-Mean-C1-YUV420-No-H264-V1')/STAMP\n",
++    "OUTPUT.mkdir(parents=True,exist_ok=False)\n",
++    "REPO=Path('/content/SC-SSTW-YUV420-NO-H264-'+STAMP)\n",
++    "RUN_OUTPUT=OUTPUT/'fixed_reference'\n",
++    "PYTHON=sys.executable\n",
++    "INPUT_ROOT=Path('/content/drive/MyDrive/Video-WM/Zero-Mean-C1-Layered-Transport-V1/20260930T165530863126Z/fixed_reference')\n",
++    "ARMS=('OFF','PAYLOAD_MULTI','OVERLAP_MULTI');KEYS=('CORRECT','WRONG')\n",
++    "FIXED={'arms': 3, 'new_observations': 3, 'yuv420_files': 3, 'roundtrip_rgb24_files': 3, 'normalized': 3, 'path_reads': 6, 'payload_reads': 6, 'path_posthoc': 6, 'message_evaluations': 12, 'catalog_slots': 23490, 'valid_costs': 1044, 'structural_exclusions': 22446, 'catalog_per_condition': 3915, 'valid_per_condition': 174, 'reference_normalized': 6, 'reference_raw': 12, 'reference_layers': 2}\n",
++    "setup=dict(status='SETUP_STARTED',source_sha=SOURCE_SHA,fixed_denominator=FIXED,input_root=str(INPUT_ROOT),\n",
++    " conversions={a+'/'+s:{'status':'NOT_RUN_SETUP'} for a in ARMS for s in ('yuv420','rgb24')},\n",
++    " normalized={a:{'status':'NOT_RUN_SETUP'} for a in ARMS},\n",
++    " reads={a+'/'+k:{'status':'NOT_RUN_SETUP','catalog_slots':3915,'valid_slots':174,'excluded_slots':3741} for a in ARMS for k in KEYS},\n",
++    " path_posthoc={a+'/'+k:{'status':'NOT_RUN_SETUP'} for a in ARMS for k in KEYS},\n",
++    " message_evaluations={a+'/'+k+'/'+t:{'status':'NOT_RUN_SETUP'} for a in ARMS for k in KEYS for t in ('REGISTERED','WRONG_MESSAGE')},\n",
++    " reference_normalized={a+'/'+l:{'status':'NOT_RUN_SETUP'} for a in ARMS for l in ('RGB8_NO_CODEC','MATCHED_SOURCE_MP4')},\n",
++    " reference_raw={a+'/'+l+'/'+k:{'status':'NOT_RUN_SETUP'} for a in ARMS for l in ('RGB8_NO_CODEC','MATCHED_SOURCE_MP4') for k in KEYS})\n",
++    "def write_json(path,value):\n",
++    "    temp=path.with_suffix(path.suffix+'.tmp');temp.write_text(json.dumps(value,indent=2)+'\\n');os.replace(temp,path)\n",
++    "def failed(stage,exc):\n",
++    "    setup.update(status='SETUP_FAILED',stage=stage,error=f'{type(exc).__name__}: {exc}')\n",
++    "    write_json(OUTPUT/'setup_receipt.json',setup)\n",
++    "    write_json(OUTPUT/'setup_failure.json',dict(stage=stage,error=str(exc),traceback=traceback.format_exc()))\n",
++    "def logged(command,stage,cwd=None,check=True):\n",
++    "    try:\n",
++    "        with (OUTPUT/'execution.log').open('a') as log:\n",
++    "            log.write('COMMAND '+repr(command)+'\\n');log.flush()\n",
++    "            child=subprocess.Popen(command,cwd=cwd,stdout=subprocess.PIPE,stderr=subprocess.STDOUT,text=True,bufsize=1)\n",
++    "            for line in child.stdout:print(line,end='',flush=True);log.write(line);log.flush()\n",
++    "            code=child.wait();log.write('EXIT '+str(code)+'\\n')\n",
++    "        if check and code:raise subprocess.CalledProcessError(code,command)\n",
++    "        return code\n",
++    "    except Exception as exc:failed(stage,exc);raise\n",
++    "write_json(OUTPUT/'setup_receipt.json',setup)\n",
++    "print('Fixed input:',INPUT_ROOT,'New output:',OUTPUT)\n",
++    "if SOURCE_SHA is None:\n",
++    "    error=RuntimeError('Unpublished draft: bind verified published source SHA before Run all')\n",
++    "    failed('SOURCE_BINDING',error);raise error\n"
++   ],
++   "outputs": [],
++   "execution_count": null
++  },
++  {
++   "cell_type": "code",
++   "id": "yuv420-no-h264-3",
++   "metadata": {},
++   "source": [
++    "try:\n",
++    "    logged(['git','clone','--filter=blob:none','https://github.com/RICHAAARC/SC-SSTW.git',str(REPO)],'SOURCE_CLONE')\n",
++    "    logged(['git','-C',str(REPO),'fetch','origin',SOURCE_SHA],'SOURCE_FETCH')\n",
++    "    logged(['git','-C',str(REPO),'checkout','--detach',SOURCE_SHA],'SOURCE_CHECKOUT')\n",
++    "    actual=subprocess.check_output(['git','-C',str(REPO),'rev-parse','HEAD'],text=True).strip()\n",
++    "    dirty=subprocess.check_output(['git','-C',str(REPO),'status','--porcelain'],text=True)\n",
++    "    if actual!=SOURCE_SHA or dirty:raise RuntimeError('source SHA/clean checkout mismatch')\n",
++    "    write_json(OUTPUT/'source_receipt.json',dict(source_sha=actual,clean=True))\n",
++    "    torch_ok=logged([PYTHON,'-c','import torch,torchvision; print(torch.__version__,torchvision.__version__)'],'TORCH_PROBE',check=False)==0\n",
++    "    if not torch_ok:\n",
++    "        logged([PYTHON,'-m','pip','install','--upgrade','torch','torchvision'],'TORCH_REPAIR')\n",
++    "    logged([PYTHON,'-m','pip','install','-r',str(REPO/'experiments/wan_state_clock/requirements-grow-video-reference.txt')],'DEPENDENCIES')\n",
++    "    dependency_code=logged([PYTHON,'-m','pip','check'],'DEPENDENCY_REPORT',check=False)\n",
++    "    setup['dependency_check_returncode']=dependency_code\n",
++    "    if dependency_code:print('Metadata conflicts retained; actual imports determine availability.')\n",
++    "    (OUTPUT/'environment_freeze.txt').write_text(subprocess.check_output([PYTHON,'-m','pip','freeze'],text=True))\n",
++    "    import_code='import json,torch; from diffusers import AutoencoderKLWan; from experiments.wan_state_clock.zero_mean_c1_yuv420_no_h264_run import environment; r=environment(); r.update(cuda_available=torch.cuda.is_available()); print(json.dumps(r))'\n",
++    "    env=json.loads(subprocess.check_output([PYTHON,'-c',import_code],cwd=REPO,text=True))\n",
++    "    write_json(OUTPUT/'environment_receipt.json',env)\n",
++    "    if not env['cuda_available']:print('CUDA unavailable: CPU path selected; much slower.')\n",
++    "    logged(['ffmpeg','-version'],'FFMPEG_PROBE');logged(['ffprobe','-version'],'FFPROBE_PROBE')\n",
++    "    setup.update(status='SETUP_COMPLETE',python_executable=PYTHON,environment_strategy='current_python_fresh_children')\n",
++    "    write_json(OUTPUT/'setup_receipt.json',setup)\n",
++    "except Exception as exc:failed('SOURCE_OR_ENVIRONMENT',exc);raise\n"
++   ],
++   "outputs": [],
++   "execution_count": null
++  },
++  {
++   "cell_type": "code",
++   "id": "yuv420-no-h264-4",
++   "metadata": {},
++   "source": [
++    "try:\n",
++    "    from google.colab import userdata\n",
++    "    token=userdata.get('HF_TOKEN')\n",
++    "    if token:os.environ['HF_TOKEN']=token\n",
++    "except Exception:\n",
++    "    pass\n",
++    "finally:\n",
++    "    token=None\n",
++    "command=[PYTHON,'-u','-m','experiments.wan_state_clock.zero_mean_c1_yuv420_no_h264_run','--output',str(RUN_OUTPUT),'--input-root',str(INPUT_ROOT)]\n",
++    "try:\n",
++    "    returncode=logged(command,'FIXED_RUN',cwd=REPO,check=False)\n",
++    "    RESULT_PATH=RUN_OUTPUT/'result.json'\n",
++    "    write_json(OUTPUT/'execution_receipt.json',dict(command=command,returncode=returncode,result_path=str(RESULT_PATH),result_exists=RESULT_PATH.is_file()))\n",
++    "    if not RESULT_PATH.is_file():raise RuntimeError('No runner result; full setup denominator is retained')\n",
++    "    setup.update(status='SUPERSEDED_BY_RESULT',result_path=str(RESULT_PATH));write_json(OUTPUT/'setup_receipt.json',setup)\n",
++    "except Exception as exc:failed('RUNNER',exc);raise\n"
++   ],
++   "outputs": [],
++   "execution_count": null
++  },
++  {
++   "cell_type": "code",
++   "id": "yuv420-no-h264-5",
++   "metadata": {},
++   "source": [
++    "result=json.loads(RESULT_PATH.read_text())\n",
++    "if result['source_sha']!=SOURCE_SHA or result['fixed_denominator']!=FIXED:raise RuntimeError('result identity/denominator mismatch')\n",
++    "print('New:',result['primary_execution'],'References:',result['reference_completeness'],'Package:',result['package_completeness'])\n",
++    "print('Counts:',result['counts'],'Calls:',result['calls'])\n",
++    "print('Actual versions:',result.get('actual_conversion_versions'),'VAE:',result.get('vae_runtime'))\n",
++    "for name,row in result['conversions'].items():\n",
++    "    print(name,row['status'],row.get('returncode'),row.get('bytes'),'stderr=',row.get('stderr_path'))\n",
++    "for group in ('path_posthoc','reference_posthoc'):\n",
++    "    for name,row in result[group].items():\n",
++    "        projection=row.get('projection',{});fixed=row.get('fixed_historical_phase0_opponent',{})\n",
++    "        print(group,name,row['status'],'true_rank=',row.get('true_rank'),'unique_true_top=',row.get('truth_unique_top'),\n",
++    "          'invented_edit=',row.get('invented_edit'),'true-minus-fixed=',fixed.get('true_minus_fixed'),\n",
++    "          'gain=',projection.get('signal_gain'),'orth_full1408=',projection.get('orthogonal_residual_full1408_l2'),\n",
++    "          'signs=',projection.get('sign_agreements'),'/',projection.get('sign_denominator'))\n",
++    "for name,row in result['message_evaluations'].items():print(name,row['status'],'diagnostic bit errors=',row.get('diagnostic_bit_errors'))\n",
++    "print('No H264 raw420 control; automatic conversion and unknown matrix/range do not guarantee strict pure-H264 causal isolation.')\n",
++    "print('Fixed g0/R44 and uncalibrated/unaccepted paths; no automatic science or quality PASS.')\n",
++    "print(result['evidence_ceiling'])\n",
++    "print('Retained result:',RESULT_PATH)\n"
++   ],
++   "outputs": [],
++   "execution_count": null
++  }
++ ],
++ "metadata": {
++  "kernelspec": {
++   "display_name": "Python3",
++   "language": "python",
++   "name": "python3"
++  },
++  "language_info": {
++   "name": "python"
++  },
++  "candidate_binding": {
++   "source_sha": null,
++   "status": "UNPUBLISHED_DRAFT",
++   "execution": "User-run only; no local real VAE/codec/model execution"
++  }
++ }
++}
+diff --git a/runtime/wan/zero_mean_c1_yuv420_no_h264.py b/runtime/wan/zero_mean_c1_yuv420_no_h264.py
+new file mode 100644
+index 0000000..e8725b2
+--- /dev/null
++++ b/runtime/wan/zero_mean_c1_yuv420_no_h264.py
+@@ -0,0 +1,61 @@
++"""Materialized RGB24 -> raw420 -> RGB24; no H264, model or receiver changes."""
++from __future__ import annotations
++import hashlib,os,subprocess
++from pathlib import Path
++from runtime.wan.zero_mean_c1_layered_transport import file_sha256,encode_normalized
++RGB_SHAPE=(181,320,512,3)
++YUV_BYTES=44482560
++RGB_BYTES=88965120
++
++def conversion_commands(yuv_path,rgb_path):
++    return [
++        ['ffmpeg','-v','verbose','-threads','1','-f','rawvideo','-pix_fmt','rgb24','-s','512x320','-r','8','-i','pipe:0',
++         '-an','-c:v','rawvideo','-pix_fmt','yuv420p','-f','rawvideo','-n',str(yuv_path)],
++        ['ffmpeg','-v','verbose','-threads','1','-noautorotate','-f','rawvideo','-pix_fmt','yuv420p','-s','512x320','-r','8',
++         '-chroma_sample_location','left','-i',str(yuv_path),'-map','0:v:0','-f','rawvideo','-pix_fmt','rgb24','-n',str(rgb_path)]]
++
++def reopen_rgb(path,expected_sha):
++    import numpy as np,torch
++    if file_sha256(path)!=expected_sha:raise ValueError('roundtrip RGB identity mismatch')
++    raw=Path(path).read_bytes()
++    if len(raw)!=RGB_BYTES:raise ValueError('roundtrip RGB must contain exactly181 full frames')
++    return torch.from_numpy(np.frombuffer(raw,dtype=np.uint8).reshape(RGB_SHAPE).copy())
++
++def roundtrip(q8,yuv_path,rgb_path,*,count,event):
++    """Persist each physical raw file and stage outcome; callbacks receive no truth."""
++    import torch
++    if tuple(q8.shape)!=RGB_SHAPE or q8.dtype!=torch.uint8:raise ValueError('fixed full uint8 input required')
++    source=q8.detach().cpu().contiguous().numpy().tobytes()
++    source_sha=hashlib.sha256(source).hexdigest()
++    yuv_path,rgb_path=Path(yuv_path),Path(rgb_path)
++    yuv_path.parent.mkdir(parents=True,exist_ok=True);rgb_path.parent.mkdir(parents=True,exist_ok=True)
++    rows={}
++    for stage,target,expected,kind in [('yuv420',yuv_path,YUV_BYTES,'rgb_to_raw420'),('rgb24',rgb_path,RGB_BYTES,'raw420_to_rgb24')]:
++        partial=target.with_suffix(target.suffix+'.partial')
++        if target.exists() or partial.exists():raise FileExistsError('new raw output already exists: '+str(target))
++        commands=conversion_commands(partial if stage=='yuv420' else yuv_path,partial if stage=='rgb24' else rgb_path)
++        command=commands[0 if stage=='yuv420' else 1]
++        row=dict(status='RUNNING',command=command,path=str(target),partial_path=str(partial),expected_bytes=expected,
++                 input_raster_sha256=source_sha if stage=='yuv420' else rows['yuv420']['sha256'],
++                 chroma_location='AUTO_UNPROVEN_GRID' if stage=='yuv420' else 'left (known original SOURCE stream label, not proof of forward grid)',
++                 color_space='UNKNOWN_AUTO',color_range='UNKNOWN_AUTO',effective_filtergraph='see verbatim verbose stderr; absent details remain unknown')
++        event(stage,dict(row))
++        count(kind,False)
++        try:
++            completed=subprocess.run(command,input=source if stage=='yuv420' else None,capture_output=True,check=False)
++            stderr=target.with_suffix(target.suffix+'.stderr.txt');stderr.write_bytes(completed.stderr)
++            row.update(returncode=completed.returncode,stderr_path=str(stderr),stderr_sha256=file_sha256(stderr))
++            if completed.returncode:raise RuntimeError('conversion process returned '+str(completed.returncode))
++            size=partial.stat().st_size
++            if size!=expected:raise ValueError(f'raw byte count {size} != {expected}; no truncation/padding')
++            row.update(sha256=file_sha256(partial),bytes=size,frames=181)
++            os.replace(partial,target);row['status']='SAVED';rows[stage]=dict(row)
++            count(kind,True);event(stage,dict(row))
++        except Exception as exc:
++            row.update(status='FAILED',error=f'{type(exc).__name__}: {exc}')
++            if partial.exists():row.update(partial_bytes=partial.stat().st_size,partial_sha256=file_sha256(partial))
++            event(stage,dict(row));raise
++        if stage=='yuv420':
++            if file_sha256(yuv_path)!=rows['yuv420']['sha256']:raise ValueError('materialized raw420 changed before second process')
++            source=None
++    return reopen_rgb(rgb_path,rows['rgb24']['sha256'])
+diff --git a/scripts/build_zero_mean_c1_yuv420_no_h264_notebook.py b/scripts/build_zero_mean_c1_yuv420_no_h264_notebook.py
+new file mode 100644
+index 0000000..3bb59ac
+--- /dev/null
++++ b/scripts/build_zero_mean_c1_yuv420_no_h264_notebook.py
+@@ -0,0 +1,30 @@
++"""Build only the fixed no-H264 raw420 user-run notebook."""
++from pathlib import Path
++import argparse,ast,json,re
++ROOT=Path(__file__).resolve().parents[1]
++OUTPUT=ROOT/'notebooks/zero_mean_c1_yuv420_no_h264_v1_colab.ipynb'
++MARKDOWN="# Zero-mean C1: materialized raw YUV420 roundtrip without H264\n\nRun all uses the three saved uint8 rasters from run20260930T165530863126Z. It performs no generation, VAE decode or H264/MP4 decoding. Each raster is converted by two serial FFmpeg processes: RGB24 to a real raw yuv420p file, then reopen that file as512x320/8fps/yuv420p and convert to a real RGB24 file. The latter actual bytes,181complete frames, are VAE mode-encoded in FP32 and normalized by the same Wan mean/std.\n\nThe first process retains automatic conversion. The second explicitly restores the known original SOURCE chroma_location=left; original matrix/range/transfer/primaries were unreported and remain unknown/auto. No scale/zscale, new BT709/601, range, sws_flags, bitexact or accurate_rnd options are introduced. Left metadata does not prove the first process's physical sample grid equals the original x264 input. Exact commands, versions, verbose stderr, raw sizes/hashes and failures are saved. This is a no-H264 raw420 control, not a guaranteed pure-H264 causal intervention.\n\nFixed new evidence:3YUV420files +3RGB24files (~400MB),3normalized tensors,6new path/payload readouts,1044valid costs/23490catalog slots/22446exclusions,6path truth joins/12message comparisons.3VAEencode,0Transformer,0VAEdecode. All181frames are encoded; only regular1..44 at fixedg0 enters the original receiver. Existing two-layer6normalized/12raw references are hash-verified and reused without re-encoding or rescoring. They are not18new searches. New,reference,and package completeness are separate.\n\nTruth and the parent's fixed original FULL.phase0 opponent are joined only after raw persistence. Projection gain is dot(q,mu)/norm(mu)^2 at R44; orthogonal residue uses all1408coordinates, while sign agreement uses only1360nonzero target coordinates. No new threshold/ranking rule or scientific acceptance. This one saved source and dependent arms do not establish FPR or general robustness. Local tests use fake conversion/VAE only; no local real conversion or model execution.\n\nCurrent Python/Torch-pair probe/fresh child; no venv, exact-Python or GPU-model gate. Source is an unpublished draft until the main session publishes and binds its immutable SHA.\n"
++SETUP="from pathlib import Path\nimport datetime,json,os,subprocess,sys,traceback\nSTAMP=datetime.datetime.now(datetime.timezone.utc).strftime('%Y%m%dT%H%M%S%fZ')\nOUTPUT=Path('/content/drive/MyDrive/Video-WM/Zero-Mean-C1-YUV420-No-H264-V1')/STAMP\nOUTPUT.mkdir(parents=True,exist_ok=False)\nREPO=Path('/content/SC-SSTW-YUV420-NO-H264-'+STAMP)\nRUN_OUTPUT=OUTPUT/'fixed_reference'\nPYTHON=sys.executable\nINPUT_ROOT=Path('/content/drive/MyDrive/Video-WM/Zero-Mean-C1-Layered-Transport-V1/20260930T165530863126Z/fixed_reference')\nARMS=('OFF','PAYLOAD_MULTI','OVERLAP_MULTI');KEYS=('CORRECT','WRONG')\nFIXED={'arms': 3, 'new_observations': 3, 'yuv420_files': 3, 'roundtrip_rgb24_files': 3, 'normalized': 3, 'path_reads': 6, 'payload_reads': 6, 'path_posthoc': 6, 'message_evaluations': 12, 'catalog_slots': 23490, 'valid_costs': 1044, 'structural_exclusions': 22446, 'catalog_per_condition': 3915, 'valid_per_condition': 174, 'reference_normalized': 6, 'reference_raw': 12, 'reference_layers': 2}\nsetup=dict(status='SETUP_STARTED',source_sha=SOURCE_SHA,fixed_denominator=FIXED,input_root=str(INPUT_ROOT),\n conversions={a+'/'+s:{'status':'NOT_RUN_SETUP'} for a in ARMS for s in ('yuv420','rgb24')},\n normalized={a:{'status':'NOT_RUN_SETUP'} for a in ARMS},\n reads={a+'/'+k:{'status':'NOT_RUN_SETUP','catalog_slots':3915,'valid_slots':174,'excluded_slots':3741} for a in ARMS for k in KEYS},\n path_posthoc={a+'/'+k:{'status':'NOT_RUN_SETUP'} for a in ARMS for k in KEYS},\n message_evaluations={a+'/'+k+'/'+t:{'status':'NOT_RUN_SETUP'} for a in ARMS for k in KEYS for t in ('REGISTERED','WRONG_MESSAGE')},\n reference_normalized={a+'/'+l:{'status':'NOT_RUN_SETUP'} for a in ARMS for l in ('RGB8_NO_CODEC','MATCHED_SOURCE_MP4')},\n reference_raw={a+'/'+l+'/'+k:{'status':'NOT_RUN_SETUP'} for a in ARMS for l in ('RGB8_NO_CODEC','MATCHED_SOURCE_MP4') for k in KEYS})\ndef write_json(path,value):\n    temp=path.with_suffix(path.suffix+'.tmp');temp.write_text(json.dumps(value,indent=2)+'\\n');os.replace(temp,path)\ndef failed(stage,exc):\n    setup.update(status='SETUP_FAILED',stage=stage,error=f'{type(exc).__name__}: {exc}')\n    write_json(OUTPUT/'setup_receipt.json',setup)\n    write_json(OUTPUT/'setup_failure.json',dict(stage=stage,error=str(exc),traceback=traceback.format_exc()))\ndef logged(command,stage,cwd=None,check=True):\n    try:\n        with (OUTPUT/'execution.log').open('a') as log:\n            log.write('COMMAND '+repr(command)+'\\n');log.flush()\n            child=subprocess.Popen(command,cwd=cwd,stdout=subprocess.PIPE,stderr=subprocess.STDOUT,text=True,bufsize=1)\n            for line in child.stdout:print(line,end='',flush=True);log.write(line);log.flush()\n            code=child.wait();log.write('EXIT '+str(code)+'\\n')\n        if check and code:raise subprocess.CalledProcessError(code,command)\n        return code\n    except Exception as exc:failed(stage,exc);raise\nwrite_json(OUTPUT/'setup_receipt.json',setup)\nprint('Fixed input:',INPUT_ROOT,'New output:',OUTPUT)\nif SOURCE_SHA is None:\n    error=RuntimeError('Unpublished draft: bind verified published source SHA before Run all')\n    failed('SOURCE_BINDING',error);raise error\n"
++ENVIRONMENT="try:\n    logged(['git','clone','--filter=blob:none','https://github.com/RICHAAARC/SC-SSTW.git',str(REPO)],'SOURCE_CLONE')\n    logged(['git','-C',str(REPO),'fetch','origin',SOURCE_SHA],'SOURCE_FETCH')\n    logged(['git','-C',str(REPO),'checkout','--detach',SOURCE_SHA],'SOURCE_CHECKOUT')\n    actual=subprocess.check_output(['git','-C',str(REPO),'rev-parse','HEAD'],text=True).strip()\n    dirty=subprocess.check_output(['git','-C',str(REPO),'status','--porcelain'],text=True)\n    if actual!=SOURCE_SHA or dirty:raise RuntimeError('source SHA/clean checkout mismatch')\n    write_json(OUTPUT/'source_receipt.json',dict(source_sha=actual,clean=True))\n    torch_ok=logged([PYTHON,'-c','import torch,torchvision; print(torch.__version__,torchvision.__version__)'],'TORCH_PROBE',check=False)==0\n    if not torch_ok:\n        logged([PYTHON,'-m','pip','install','--upgrade','torch','torchvision'],'TORCH_REPAIR')\n    logged([PYTHON,'-m','pip','install','-r',str(REPO/'experiments/wan_state_clock/requirements-grow-video-reference.txt')],'DEPENDENCIES')\n    dependency_code=logged([PYTHON,'-m','pip','check'],'DEPENDENCY_REPORT',check=False)\n    setup['dependency_check_returncode']=dependency_code\n    if dependency_code:print('Metadata conflicts retained; actual imports determine availability.')\n    (OUTPUT/'environment_freeze.txt').write_text(subprocess.check_output([PYTHON,'-m','pip','freeze'],text=True))\n    import_code='import json,torch; from diffusers import AutoencoderKLWan; from experiments.wan_state_clock.zero_mean_c1_yuv420_no_h264_run import environment; r=environment(); r.update(cuda_available=torch.cuda.is_available()); print(json.dumps(r))'\n    env=json.loads(subprocess.check_output([PYTHON,'-c',import_code],cwd=REPO,text=True))\n    write_json(OUTPUT/'environment_receipt.json',env)\n    if not env['cuda_available']:print('CUDA unavailable: CPU path selected; much slower.')\n    logged(['ffmpeg','-version'],'FFMPEG_PROBE');logged(['ffprobe','-version'],'FFPROBE_PROBE')\n    setup.update(status='SETUP_COMPLETE',python_executable=PYTHON,environment_strategy='current_python_fresh_children')\n    write_json(OUTPUT/'setup_receipt.json',setup)\nexcept Exception as exc:failed('SOURCE_OR_ENVIRONMENT',exc);raise\n"
++RUN="try:\n    from google.colab import userdata\n    token=userdata.get('HF_TOKEN')\n    if token:os.environ['HF_TOKEN']=token\nexcept Exception:\n    pass\nfinally:\n    token=None\ncommand=[PYTHON,'-u','-m','experiments.wan_state_clock.zero_mean_c1_yuv420_no_h264_run','--output',str(RUN_OUTPUT),'--input-root',str(INPUT_ROOT)]\ntry:\n    returncode=logged(command,'FIXED_RUN',cwd=REPO,check=False)\n    RESULT_PATH=RUN_OUTPUT/'result.json'\n    write_json(OUTPUT/'execution_receipt.json',dict(command=command,returncode=returncode,result_path=str(RESULT_PATH),result_exists=RESULT_PATH.is_file()))\n    if not RESULT_PATH.is_file():raise RuntimeError('No runner result; full setup denominator is retained')\n    setup.update(status='SUPERSEDED_BY_RESULT',result_path=str(RESULT_PATH));write_json(OUTPUT/'setup_receipt.json',setup)\nexcept Exception as exc:failed('RUNNER',exc);raise\n"
++DISPLAY="result=json.loads(RESULT_PATH.read_text())\nif result['source_sha']!=SOURCE_SHA or result['fixed_denominator']!=FIXED:raise RuntimeError('result identity/denominator mismatch')\nprint('New:',result['primary_execution'],'References:',result['reference_completeness'],'Package:',result['package_completeness'])\nprint('Counts:',result['counts'],'Calls:',result['calls'])\nprint('Actual versions:',result.get('actual_conversion_versions'),'VAE:',result.get('vae_runtime'))\nfor name,row in result['conversions'].items():\n    print(name,row['status'],row.get('returncode'),row.get('bytes'),'stderr=',row.get('stderr_path'))\nfor group in ('path_posthoc','reference_posthoc'):\n    for name,row in result[group].items():\n        projection=row.get('projection',{});fixed=row.get('fixed_historical_phase0_opponent',{})\n        print(group,name,row['status'],'true_rank=',row.get('true_rank'),'unique_true_top=',row.get('truth_unique_top'),\n          'invented_edit=',row.get('invented_edit'),'true-minus-fixed=',fixed.get('true_minus_fixed'),\n          'gain=',projection.get('signal_gain'),'orth_full1408=',projection.get('orthogonal_residual_full1408_l2'),\n          'signs=',projection.get('sign_agreements'),'/',projection.get('sign_denominator'))\nfor name,row in result['message_evaluations'].items():print(name,row['status'],'diagnostic bit errors=',row.get('diagnostic_bit_errors'))\nprint('No H264 raw420 control; automatic conversion and unknown matrix/range do not guarantee strict pure-H264 causal isolation.')\nprint('Fixed g0/R44 and uncalibrated/unaccepted paths; no automatic science or quality PASS.')\nprint(result['evidence_ceiling'])\nprint('Retained result:',RESULT_PATH)\n"
++
++def build(source_sha=None,output=OUTPUT):
++    if source_sha is not None and not re.fullmatch('[0-9a-f]{40}',source_sha):raise ValueError('published immutable source SHA required')
++    wording=('Published source: '+source_sha+'. Checks out this immutable source.' if source_sha else 'UNPUBLISHED DRAFT: publish and verify source before binding.')
++    sources=[('code',"from google.colab import drive\ndrive.mount('/content/drive')\n"),
++      ('markdown',MARKDOWN.replace('Source is an unpublished draft until the main session publishes and binds its immutable SHA.',wording)),
++      ('code',f'SOURCE_SHA = {source_sha!r}\n'+SETUP),('code',ENVIRONMENT),('code',RUN),('code',DISPLAY)]
++    cells=[]
++    for i,(kind,text) in enumerate(sources):
++        cell=dict(cell_type=kind,id=f'yuv420-no-h264-{i}',metadata={},source=text.splitlines(keepends=True))
++        if kind=='code':ast.parse(text);cell.update(outputs=[],execution_count=None)
++        cells.append(cell)
++    result=dict(nbformat=4,nbformat_minor=5,cells=cells,metadata=dict(kernelspec=dict(display_name='Python3',language='python',name='python3'),
++      language_info=dict(name='python'),candidate_binding=dict(source_sha=source_sha,status='PUBLISHED_SHA_BOUND' if source_sha else 'UNPUBLISHED_DRAFT',
++      execution='User-run only; no local real VAE/codec/model execution')))
++    Path(output).write_text(json.dumps(result,indent=1)+'\n');return Path(output)
++
++if __name__=='__main__':
++    parser=argparse.ArgumentParser();parser.add_argument('--source-sha');parser.add_argument('--output',type=Path,default=OUTPUT)
++    args=parser.parse_args();print(build(args.source_sha,args.output))
+diff --git a/tests/test_zero_mean_c1_yuv420_no_h264.py b/tests/test_zero_mean_c1_yuv420_no_h264.py
+new file mode 100644
+index 0000000..6c952aa
+--- /dev/null
++++ b/tests/test_zero_mean_c1_yuv420_no_h264.py
+@@ -0,0 +1,194 @@
++"""Necessary mock/static tests only; no real FFmpeg conversion or VAE/model."""
++import ast,copy,importlib.util,json,re
++from pathlib import Path
++from types import SimpleNamespace
++import numpy as np
++import pytest
++import torch
++from main.tube_state import video_overlap_zero_mean_state as state
++from runtime.wan import zero_mean_c1_yuv420_no_h264 as b,generation
++from experiments.wan_state_clock import zero_mean_c1_yuv420_no_h264_run as run
++pytestmark=pytest.mark.unit
++
++@pytest.fixture(autouse=True)
++def threads():
++    n=torch.get_num_threads();torch.set_num_threads(1)
++    yield
++    torch.set_num_threads(n)
++
++def latent():return torch.from_numpy(state.synthesize('watermark',dtype=np.float32))
++def q8():return torch.tensor(128,dtype=torch.uint8).reshape(1,1,1,1).expand(*b.RGB_SHAPE)
++
++def fixture_store(tmp_path):
++    cfg=copy.deepcopy(run.load_config());source=tmp_path/'input';source.mkdir()
++    raw_by_key={k:dict(inference=state.infer(latent()[0,:,1:45].numpy().transpose(1,0,2,3),v,np.ones((44,4),bool)),
++                      payload=dict(status='READ',decoded_bits=[0]*32,R=44)) for k,v in cfg['keys'].items()}
++    for r in cfg['fixed_input']['required_q8']:
++        p=source/r['relative_path'];p.parent.mkdir(parents=True,exist_ok=True);torch.save(q8(),p)
++        r.update(sha256=b.file_sha256(p),bytes=p.stat().st_size)
++    for r in cfg['fixed_input']['reference_artifacts']:
++        p=source/r['relative_path']
++        if r['kind']=='normalized':torch.save(latent(),p)
++        else:run.dump_gzip(p,raw_by_key[r['key_id']])
++        r['sha256']=b.file_sha256(p)
++    parent=dict(source_sha=cfg['fixed_input']['source_sha'],path_posthoc={
++        a+'/RGB8_NO_CODEC/'+k:dict(fixed_historical_phase0_opponent=dict(status='COMPARED',catalog_index=1,path=state.catalog(44)[1],raw_sha256='fixture-old-phase0-sha'))
++        for a in run.ARMS for k in run.KEYS})
++    rp=source/'result.json';run.dump(rp,parent);cfg['fixed_input']['result_sha256']=b.file_sha256(rp)
++    store=run.Store(tmp_path/'output',create=True,cfg=cfg,input_root=source);run.preflight(store,cfg)
++    return store,cfg
++
++class FakeVAE:
++    config=SimpleNamespace(latents_mean=[0.]*16,latents_std=[1.]*16)
++    def parameters(self):return iter([torch.nn.Parameter(torch.tensor(0.),requires_grad=False)])
++
++def install_fake_commands(monkeypatch,*,fail_arm=None,short_stage=None):
++    calls=[]
++    def fake(command,**kwargs):
++        if command[-1]=='-version':
++            return SimpleNamespace(returncode=0,stdout='mock ffmpeg version; no codec executed\n',stderr='')
++        assert command[0]=='ffmpeg' and '-v' in command and 'verbose' in command
++        assert 'libx264' not in command and '-crf' not in command and '-vf' not in command
++        first=command[command.index('-i')+1]=='pipe:0'
++        path=Path(command[-1]);size=b.YUV_BYTES if first else b.RGB_BYTES
++        if first:
++            assert len(kwargs['input'])==b.RGB_BYTES and kwargs['input'][0]==128
++            assert '-chroma_sample_location' not in command
++        else:
++            source=Path(command[command.index('-i')+1])
++            assert source.is_file() and source.stat().st_size==b.YUV_BYTES
++            assert command[command.index('-chroma_sample_location')+1]=='left'
++            assert kwargs['input'] is None
++        path.parent.mkdir(parents=True,exist_ok=True)
++        fail=fail_arm is not None and fail_arm in path.parts and not first
++        with path.open('wb') as f:f.truncate(19 if fail else size-1 if short_stage==('yuv420' if first else 'rgb24') else size)
++        calls.append(dict(first=first,path=str(path)))
++        return SimpleNamespace(returncode=1 if fail else 0,stdout=b'',stderr=b'mock auto_scale; intentionally not a real conversion\n')
++    monkeypatch.setattr(b.subprocess,'run',fake)
++    monkeypatch.setattr(generation,'load_frozen_vae',lambda *a,**k:FakeVAE())
++    def encode(frozen,rgb):
++        assert tuple(rgb.shape)==b.RGB_SHAPE and rgb.dtype==torch.float32
++        assert torch.all(rgb==0) # actual saved sparse mock RGB bytes were reopened
++        return latent()
++    monkeypatch.setattr(b,'encode_normalized',encode)
++    return calls
++
++def test_frozen_command_pair_and_denominators():
++    cfg=run.load_config();a,c=b.conversion_commands('{yuv420_output}','{rgb24_output}')
++    assert a==cfg['conversion']['segment1_argv']
++    assert c==[s.replace('{yuv420_input}','{yuv420_output}') for s in cfg['conversion']['segment2_argv']]
++    assert b.YUV_BYTES==181*320*512*3//2 and b.RGB_BYTES==181*320*512*3
++    assert sum((b.YUV_BYTES,b.RGB_BYTES))*3==400343040
++    assert cfg['fixed_denominator']['valid_costs']==1044
++    assert len(cfg['fixed_input']['reference_artifacts'])==18
++
++def test_full_mock_chain_reference_reuse_and_raw_posthoc_isolation(tmp_path,monkeypatch):
++    store,cfg=fixture_store(tmp_path);calls=install_fake_commands(monkeypatch)
++    run.conversion_worker(store,cfg)
++    store.checkpoint();before=b.file_sha256(store.output/'blind_readouts.json')
++    assert run.finalize(store,cfg)
++    assert store.data['primary_execution']==store.data['status']=='EXECUTION_COMPLETE'
++    assert store.data['reference_completeness']==store.data['package_completeness']=='COMPLETE'
++    assert store.data['counts']==dict(yuv420_files=3,rgb24_files=3,normalized=3,path_reads=6,payload_reads=6,valid_costs=1044,
++        catalog_slots=23490,structural_exclusions=22446,path_posthoc=6,message_evaluations=12)
++    assert [c['first'] for c in calls]==[True,False]*3
++    for k,n in cfg['planned_calls'].items():assert store.data['calls'][k]['completed']==n
++    assert len(store.data['reference_posthoc'])==12
++    assert all(r['new_infer_calls']==0 for r in store.data['reference_posthoc'].values())
++    assert b.file_sha256(store.output/'blind_readouts.json')==before
++    for a in run.ARMS:
++        r=store.data['path_posthoc'][a+'/CORRECT']
++        assert r['true_rank']==1 and r['truth_unique_top'] and r['canonical_start_correct']
++        assert r['invented_edit'] is False
++        assert r['fixed_historical_phase0_opponent']['catalog_index']==1
++        assert r['projection']['sign_denominator']==1360 and r['projection']['dimensions']==1408
++        assert r['projection']['target_energy']==pytest.approx(1360/1392)
++    text=(store.output/'blind_readouts.json').read_text()
++    assert all(w not in text for w in ('registered_tau','true_rank','OKOK','NOPE','fixed_historical_phase0_opponent'))
++    assert not list(store.output.rglob('*.partial'))
++    # Reference-only loss does not remove new primary evidence.
++    first=next(iter(store.data['references'].values()));first['status']='MISSING_OR_INVALID'
++    assert run.finalize(store,cfg)
++    assert store.data['primary_execution']=='EXECUTION_COMPLETE' and store.data['package_completeness']=='INCOMPLETE'
++
++def test_second_conversion_failure_keeps_first_and_other_arms(tmp_path,monkeypatch):
++    store,cfg=fixture_store(tmp_path);install_fake_commands(monkeypatch,fail_arm='PAYLOAD_MULTI')
++    run.conversion_worker(store,cfg)
++    assert not run.finalize(store,cfg)
++    assert store.data['conversions']['PAYLOAD_MULTI/yuv420']['status']=='SAVED'
++    failed=store.data['conversions']['PAYLOAD_MULTI/rgb24']
++    assert failed['status']=='FAILED' and failed['partial_bytes']==19 and Path(failed['partial_path']).is_file()
++    assert store.data['counts']['path_reads']==4 and store.data['counts']['valid_costs']==696
++    assert store.data['reference_completeness']=='COMPLETE'
++    assert len(store.data['reads'])==6 and len(store.data['message_evaluations'])==12
++    assert all(r['status']!='PENDING' for g in ('conversions','normalized','reads','path_posthoc','message_evaluations') for r in store.data[g].values())
++
++def test_short_raw420_fails_before_second_process(tmp_path,monkeypatch):
++    calls=install_fake_commands(monkeypatch,short_stage='yuv420');events=[];counts=[]
++    with pytest.raises(ValueError,match='no truncation/padding'):
++        b.roundtrip(q8(),tmp_path/'raw.yuv',tmp_path/'out.rgb',count=lambda k,v:counts.append((k,v)),event=lambda k,r:events.append((k,r)))
++    assert len(calls)==1 and events[-1][1]['status']=='FAILED'
++    assert events[-1][1]['partial_bytes']==b.YUV_BYTES-1 and not (tmp_path/'raw.yuv').exists()
++    assert counts==[('rgb_to_raw420',False)]
++
++def test_projection_metrics_full_boundary_and_zero_sign():
++    mu=state.composite_signs('watermark')[:44].astype(np.float64)*state.PUBLIC.alpha
++    q=.75*mu;q[0,0,1,0]=2. # boundary coordinate
++    stats=run.projection_metrics(q,mu)
++    assert stats['signal_gain']==pytest.approx(.75)
++    assert stats['orthogonal_residual_full1408_l2']==pytest.approx(2.)
++    assert stats['active_dimensions']==1360 and stats['boundary_dimensions']==48
++    assert stats['target_energy']==pytest.approx(1360/1392)
++    q[0,0,0,0]=0.
++    zero=run.projection_metrics(q,mu)
++    assert zero['sign_agreements']==1359 and zero['zero_observation_active']==1
++    assert zero['orthogonal_residual_full1408_l2']==pytest.approx(np.linalg.norm(q-(np.sum(q*mu)/np.sum(mu*mu))*mu))
++
++@pytest.mark.parametrize('after_canonical',[False,True])
++def test_canonical_failure_window_preserves_committed_conversion(tmp_path,monkeypatch,after_canonical):
++    store,cfg=fixture_store(tmp_path)
++    store.data['conversions']['OFF/yuv420'].update(status='SAVED',sha256='fixture')
++    def stop():raise SystemExit('fixture hard exit')
++    monkeypatch.setattr(store,'blind' if after_canonical else 'save',stop)
++    with pytest.raises(SystemExit):store.checkpoint()
++    restored=run.Store(store.output);run.recover_unfinished(restored,'fixture')
++    assert restored.data['conversions']['OFF/yuv420']['status']==('SAVED' if after_canonical else 'NOT_COMPLETED')
++    assert len(restored.data['reads'])==6
++
++def test_monitor_cleanup_owns_group_and_precedes_latest_reload(tmp_path,monkeypatch):
++    store,cfg=fixture_store(tmp_path);events=[]
++    class Stream:
++        def __iter__(self):
++            latest=run.Store(store.output);latest.data['conversions']['OFF/yuv420']['status']='SAVED';latest.save()
++            raise OSError('monitor failure')
++        def close(self):events.append('close')
++    class Child:
++        pid=12345678;stdout=Stream()
++        def wait(self,timeout=None):events.append('wait');return -15
++    def spawn(*a,**k):
++        assert k['start_new_session'] is True
++        return Child()
++    monkeypatch.setattr(run.subprocess,'Popen',spawn)
++    monkeypatch.setattr(run.os,'killpg',lambda pid,sig:events.append(('killpg',pid,sig)))
++    restored,halt=run.worker_phase(store.output)
++    assert not halt and restored.data['conversions']['OFF/yuv420']['status']=='SAVED'
++    assert events[:3]==[('killpg',12345678,run.signal.SIGTERM),'wait',('killpg',12345678,run.signal.SIGKILL)]
++
++def test_notebook_and_source_scope_static(tmp_path):
++    path=run.ROOT/'scripts/build_zero_mean_c1_yuv420_no_h264_notebook.py'
++    spec=importlib.util.spec_from_file_location('builder',path);builder=importlib.util.module_from_spec(spec);spec.loader.exec_module(builder)
++    built=builder.build(output=tmp_path/'new.ipynb')
++    assert built.read_bytes()==(run.ROOT/'notebooks/zero_mean_c1_yuv420_no_h264_v1_colab.ipynb').read_bytes()
++    nb=json.loads(built.read_text());code='\n'.join(''.join(c['source']) for c in nb['cells'] if c['cell_type']=='code')
++    assert ''.join(nb['cells'][0]['source'])=="from google.colab import drive\ndrive.mount('/content/drive')\n"
++    assert 'SOURCE_SHA = None' in code and '20260930T165530863126Z/fixed_reference' in code
++    assert 'PYTHON=sys.executable' in code and 'torch,torchvision' in code
++    assert 'true_rank' in code and 'orthogonal_residual_full1408_l2' in code
++    assert all(x not in code for x in ('ensurepip','venv','prepare_generation','WanPipeline'))
++    for c in nb['cells']:
++        if c['cell_type']=='code':ast.parse(''.join(c['source']));assert c['outputs']==[] and c['execution_count'] is None
++    for rel in re.findall(r"REPO/'([^']+)'",code):
++        if 'requirements' in rel:assert (run.ROOT/rel).is_file()
++    assert 'experiments.' not in Path(b.__file__).read_text()
++    with pytest.raises(ValueError,match='read-only'):
++        run.Store(tmp_path/'input'/'out',create=True,cfg=run.load_config(),input_root=tmp_path/'input')

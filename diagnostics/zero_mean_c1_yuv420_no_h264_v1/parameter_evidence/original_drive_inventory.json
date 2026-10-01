@@ -1,0 +1,23 @@
+[
+  {
+    "q8_path": "G:\\我的云端硬盘\\Video-WM\\Zero-Mean-C1-Layered-Transport-V1\\20260930T165530863126Z\\fixed_reference\\OFF\\RGB8_NO_CODEC.pt",
+    "source_path": "G:\\我的云端硬盘\\Video-WM\\Zero-Mean-C1-Layered-Transport-V1\\20260930T165530863126Z\\fixed_reference\\OFF\\MATCHED_SOURCE_MP4.mp4",
+    "q8_bytes": 88966697,
+    "arm": "OFF",
+    "source_bytes": 486707
+  },
+  {
+    "q8_path": "G:\\我的云端硬盘\\Video-WM\\Zero-Mean-C1-Layered-Transport-V1\\20260930T165530863126Z\\fixed_reference\\PAYLOAD_MULTI\\RGB8_NO_CODEC.pt",
+    "source_path": "G:\\我的云端硬盘\\Video-WM\\Zero-Mean-C1-Layered-Transport-V1\\20260930T165530863126Z\\fixed_reference\\PAYLOAD_MULTI\\MATCHED_SOURCE_MP4.mp4",
+    "q8_bytes": 88966697,
+    "arm": "PAYLOAD_MULTI",
+    "source_bytes": 469507
+  },
+  {
+    "q8_path": "G:\\我的云端硬盘\\Video-WM\\Zero-Mean-C1-Layered-Transport-V1\\20260930T165530863126Z\\fixed_reference\\OVERLAP_MULTI\\RGB8_NO_CODEC.pt",
+    "source_path": "G:\\我的云端硬盘\\Video-WM\\Zero-Mean-C1-Layered-Transport-V1\\20260930T165530863126Z\\fixed_reference\\OVERLAP_MULTI\\MATCHED_SOURCE_MP4.mp4",
+    "q8_bytes": 88966697,
+    "arm": "OVERLAP_MULTI",
+    "source_bytes": 455277
+  }
+]

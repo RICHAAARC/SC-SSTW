@@ -1,0 +1,187 @@
+{
+  "schema": "zero-mean-c1-yuv420-no-h264-parameter-evidence-v1",
+  "source_io": {
+    "path": "runtime/wan/io.py",
+    "sha256": "db9caa843d632d733aa670dbe87bd38cf6084490d5bef71b8a69e6839cc33ae7"
+  },
+  "original_encoder": [
+    "ffmpeg",
+    "-v",
+    "error",
+    "-threads",
+    "1",
+    "-f",
+    "rawvideo",
+    "-pix_fmt",
+    "rgb24",
+    "-s",
+    "512x320",
+    "-r",
+    "8",
+    "-i",
+    "pipe:0",
+    "-an",
+    "-c:v",
+    "libx264",
+    "-crf",
+    "18",
+    "-pix_fmt",
+    "yuv420p",
+    "-n",
+    "SOURCE.mp4"
+  ],
+  "original_decoder": [
+    "ffmpeg",
+    "-v",
+    "error",
+    "-threads",
+    "1",
+    "-noautorotate",
+    "-i",
+    "SOURCE.mp4",
+    "-map",
+    "0:v:0",
+    "-f",
+    "rawvideo",
+    "-pix_fmt",
+    "rgb24",
+    "-"
+  ],
+  "original_versions": {
+    "ffmpeg": "ffmpeg version 6.1.1-3ubuntu5 Copyright (c) 2000-2023 the FFmpeg developers",
+    "ffprobe": "ffprobe version 6.1.1-3ubuntu5 Copyright (c) 2007-2023 the FFmpeg developers"
+  },
+  "original_libswscale": [
+    "libswscale      7.  5.100 /  7.  5.100",
+    "libswscale      7.  5.100 /  7.  5.100"
+  ],
+  "observed_streams": {
+    "OFF": {
+      "codec_name": "h264",
+      "profile": "High",
+      "width": 512,
+      "height": 320,
+      "pix_fmt": "yuv420p",
+      "color_range": null,
+      "color_space": null,
+      "color_transfer": null,
+      "color_primaries": null,
+      "chroma_location": "left",
+      "r_frame_rate": "8/1",
+      "nb_frames": "181"
+    },
+    "PAYLOAD_MULTI": {
+      "codec_name": "h264",
+      "profile": "High",
+      "width": 512,
+      "height": 320,
+      "pix_fmt": "yuv420p",
+      "color_range": null,
+      "color_space": null,
+      "color_transfer": null,
+      "color_primaries": null,
+      "chroma_location": "left",
+      "r_frame_rate": "8/1",
+      "nb_frames": "181"
+    },
+    "OVERLAP_MULTI": {
+      "codec_name": "h264",
+      "profile": "High",
+      "width": 512,
+      "height": 320,
+      "pix_fmt": "yuv420p",
+      "color_range": null,
+      "color_space": null,
+      "color_transfer": null,
+      "color_primaries": null,
+      "chroma_location": "left",
+      "r_frame_rate": "8/1",
+      "nb_frames": "181"
+    }
+  },
+  "missing_metadata": "null means not reported by stream probe, not BT601/BT709/limited/full evidence",
+  "frame_level_metadata": "NOT_OBSERVED: show_frames/read_intervals/frame decode not authorized or performed",
+  "actual_filtergraph": "ORIGINAL_NOT_RECORDED (-v error); new conversion NOT_EXECUTED. Future -v verbose stderr will be preserved; absent effective details remain UNKNOWN.",
+  "chroma_input_option_evidence": "local ffmpeg -h full marks -chroma_sample_location ED.V, default unknown; left=1; help only, no conversion",
+  "local_versions": {
+    "ffmpeg": "ffmpeg version 6.1.1-3ubuntu5 Copyright (c) 2000-2023 the FFmpeg developers",
+    "ffprobe": "ffprobe version 6.1.1-3ubuntu5 Copyright (c) 2007-2023 the FFmpeg developers"
+  },
+  "official_references": [
+    {
+      "url": "https://ffmpeg.org/ffmpeg-filters.html",
+      "use": "automatic format-conversion filters, matrix/range/chroma options; no assumption that current website defaults prove historical6.1.1 behavior"
+    },
+    {
+      "url": "https://ffmpeg.org/ffmpeg-scaler.html",
+      "use": "scaler/default/rounding controls; do not newly force sws_flags/bicubic/bitexact/accurate_rnd"
+    },
+    {
+      "url": "https://ffmpeg.org/ffmpeg-formats.html#rawvideo",
+      "use": "rawvideo has no size/pixel-format metadata; explicit demux parameters required"
+    }
+  ],
+  "evidence_files": [
+    {
+      "path": "diagnostics/zero_mean_c1_yuv420_no_h264_v1/parameter_evidence/OFF.ffprobe.json",
+      "sha256": "50d6c48c3fe14f96e3043f96e3e000feeb3281d01a762e6c0588fa3abe8ff682",
+      "bytes": 2125
+    },
+    {
+      "path": "diagnostics/zero_mean_c1_yuv420_no_h264_v1/parameter_evidence/OVERLAP_MULTI.ffprobe.json",
+      "sha256": "972e34fe92fb67b78a45284f47f399ee510a8ed198ffbadedc664ea17bf3202a",
+      "bytes": 2135
+    },
+    {
+      "path": "diagnostics/zero_mean_c1_yuv420_no_h264_v1/parameter_evidence/PAYLOAD_MULTI.ffprobe.json",
+      "sha256": "8523ba2bcbcdc3f4651b9912042a262702d7df139e8af7c21636c7cfdb906939",
+      "bytes": 2135
+    },
+    {
+      "path": "diagnostics/zero_mean_c1_yuv420_no_h264_v1/parameter_evidence/chroma_option_help_excerpt.txt",
+      "sha256": "b5e7683c42449ed7ef8d82728df1b5f1cc8159b3edde5a25eda8d6e5e6ab78dc",
+      "bytes": 741
+    },
+    {
+      "path": "diagnostics/zero_mean_c1_yuv420_no_h264_v1/parameter_evidence/local_ffmpeg_version.txt",
+      "sha256": "5b320c97f515e79171f10a2147d875ffb6b14bd2b25681047b73c46fe0a527ee",
+      "bytes": 1838
+    },
+    {
+      "path": "diagnostics/zero_mean_c1_yuv420_no_h264_v1/parameter_evidence/local_ffprobe_version.txt",
+      "sha256": "1b6410f756d8b5ef5308d712b51d2543bf8c8e6bc5796b7ede9570d099131e0b",
+      "bytes": 1839
+    },
+    {
+      "path": "diagnostics/zero_mean_c1_yuv420_no_h264_v1/parameter_evidence/original_drive_inventory.json",
+      "sha256": "9fe1bec7736b2df7ff4e30a056fafaa57d8a9272f1e169b38c84b4be3b08d8d5",
+      "bytes": 1256
+    },
+    {
+      "path": "diagnostics/zero_mean_c1_yuv420_no_h264_v1/parameter_evidence/original_environment_freeze.txt",
+      "sha256": "6e835c1fc07d2636f3c54df49256e4b4a15dc2085ce1b1103b2cff4beeb12da7",
+      "bytes": 14091
+    },
+    {
+      "path": "diagnostics/zero_mean_c1_yuv420_no_h264_v1/parameter_evidence/original_environment_receipt.json",
+      "sha256": "5fe575966abdc31d67af994eb4d13f74970c00f53be6691389edbf671e510bcd",
+      "bytes": 378
+    },
+    {
+      "path": "diagnostics/zero_mean_c1_yuv420_no_h264_v1/parameter_evidence/original_execution.log",
+      "sha256": "f89b94183529f3510832e726522f37f8636eed117d3efbad34f8a5a1119c63b2",
+      "bytes": 25576
+    },
+    {
+      "path": "diagnostics/zero_mean_c1_yuv420_no_h264_v1/parameter_evidence/original_source_receipt.json",
+      "sha256": "a3db1f90600efeb70e7390cbd97de88301e843fb3fb94736c4fd50d7b0674681",
+      "bytes": 80
+    },
+    {
+      "path": "diagnostics/zero_mean_c1_yuv420_no_h264_v1/parameter_evidence/source_mp4_probes.json",
+      "sha256": "2d73fa7eaed558187837704a38819989184d7c7956b11e1aa468745e5029ce9f",
+      "bytes": 7608
+    }
+  ],
+  "copying": "Only three small SOURCE MP4s and small logs/receipts staged on Windows then copied to isolated /tmp for stream probes; MP4 bytes not added to repository."
+}

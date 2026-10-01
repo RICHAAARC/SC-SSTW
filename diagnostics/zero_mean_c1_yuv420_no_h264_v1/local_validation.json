@@ -1,0 +1,79 @@
+{
+  "status": "LOCAL_CPU_MOCK_STATIC_PASS",
+  "base_sha": "6864a9c9039af56b193b2612fab1f36658c8f47a",
+  "implementation_now_present": true,
+  "real_conversion": false,
+  "real_decode": false,
+  "real_vae": false,
+  "real_model": false,
+  "real_gpu": false,
+  "real_saved_data_rescored": false,
+  "environment": {
+    "python": "/home/richar/projects/CEG-WM/alive/CEG-WM/.venv/bin/python",
+    "CUDA_VISIBLE_DEVICES": "",
+    "PYTHONDONTWRITEBYTECODE": "1",
+    "OPENBLAS_NUM_THREADS": "1"
+  },
+  "pytest_runs": [
+    {
+      "command": "python -m pytest -q tests/test_zero_mean_c1_yuv420_no_h264.py --disable-warnings",
+      "passed": 9,
+      "failed": 0,
+      "skipped": 0,
+      "seconds": 10.06,
+      "returncode": 0,
+      "stdout": "/home/richar/projects/Video-WM/worktrees/Video-Trajectory-Blind-Validation-V1/diagnostics/zero_mean_c1_yuv420_no_h264_v1/pytest_initial.txt",
+      "sha256": "c5f5a0aa87ffce9c600170a45891bd85aa2bd0f00c0321048380382082a567c5"
+    },
+    {
+      "command": "python -m pytest -q tests/test_zero_mean_c1_yuv420_no_h264.py -k notebook --disable-warnings",
+      "passed": 1,
+      "deselected": 8,
+      "failed": 0,
+      "skipped": 0,
+      "seconds": 0.75,
+      "returncode": 0,
+      "purpose": "Only builder/notebook DISPLAY appended retained RESULT_PATH; no full-suite rerun",
+      "stdout": "/home/richar/projects/Video-WM/worktrees/Video-Trajectory-Blind-Validation-V1/diagnostics/zero_mean_c1_yuv420_no_h264_v1/pytest_display_delta.txt",
+      "sha256": "08ba04a901c04d4e41f669cc5440053d1bba480d129415195decbf92e709812c"
+    }
+  ],
+  "checked": [
+    "frozen two rawvideo commands and exact byte denominators",
+    "full3arm mock physical files ->3VAE mocks ->6original infer1044cost",
+    "18 hash-bound references reused;12posthoc projections with0reference infer",
+    "second conversion failed: first raw420 kept, other arms continue",
+    "short raw420 rejected before second process;no truncation/padding",
+    "R44 1408projection/1360active/48boundary gain orthogonal/sign,zero not same sign",
+    "canonical-first two hard-exit windows",
+    "worker own session/processgroup TERM/wait/KILL before latest disk reload",
+    "raw stable through truth/reference posthoc",
+    "output not inside input",
+    "six notebookcells/Drive first/emptyoutputs/sourceNone/currentPython/dependency/freshchild/builder identity"
+  ],
+  "notebook": {
+    "path": "notebooks/zero_mean_c1_yuv420_no_h264_v1_colab.ipynb",
+    "source_sha": null,
+    "unpublished": true,
+    "user_execution_only": true
+  },
+  "design_receipt_correction": {
+    "unchanged_files": 16,
+    "design_snapshot_sha256": "f78f355d2374fcdca24cf7811cd5ff1dd131d482fe4d4a9ee6261d5fd56bb3a2",
+    "mislabeled_recipe": "Original design tree claimed sorted path but hashed its listed files order.",
+    "actual_listed_order_tree": "e67eaf47ab39be045add519dcd55108df6057923280abb1ed81998966b9d9608",
+    "actual_fully_sorted_path_tree": "3f8561ab9a461e828c0b7c830b9e03137f84be197689cf5115ade6ca79dbb6f4",
+    "action": "Original design bytes and files retained. Final candidate uses explicit sorted(files,key=path)."
+  },
+  "inherited_method_runtime_changed": false,
+  "old_tracked_changes": [],
+  "commit": false,
+  "push": false,
+  "limits": "Only synthetic fixtures/fake VAE/processes. No numeric FFmpeg color transform or real VAE result tested; metadata/help/version are the only actual FFmpeg invocations.",
+  "independent_main_reference_check": {
+    "path": "/home/richar/projects/Video-WM/diagnostics/zero-mean-yuv420-main-review-20261001/reference_posthoc_check.json",
+    "sha256": "6947cb23b33166d012007d329edc9cb3478466298c8e87712484708e2c81f54c",
+    "runner_sha256": "287767088d4e12fbf5640bda56576985d65ecacdbf50d5ca4f84bfb0c90743a6",
+    "kind": "12 existing raw posthoc comparisons; no infer/tensor/VAE/conversion; no A1 repeat"
+  }
+}

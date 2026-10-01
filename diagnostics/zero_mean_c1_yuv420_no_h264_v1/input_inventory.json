@@ -1,0 +1,306 @@
+{
+  "schema": "zero-mean-c1-yuv420-no-h264-input-inventory-v1",
+  "input_run": "20260930T165530863126Z",
+  "source_sha": "d4f5d73c506c20f4dfa5e1f74065836c23432064",
+  "parent_result": {
+    "path": "/home/richar/projects/Video-WM/diagnostics/zero-mean-layered-real-run-audit-20261001/saved/result.json",
+    "sha256": "3561a99003047ec89bda90b813dc712af3dc6ee2db6ec4907d009b7bf138d117",
+    "bytes": 3229870
+  },
+  "q8": [
+    {
+      "arm": "OFF",
+      "relative_path": "OFF/RGB8_NO_CODEC.pt",
+      "sha256": "be3f0eadb746f76136365e1e59dce79b963d759e4e16daefd9474e317782af30",
+      "bytes": 88966697,
+      "shape": [
+        181,
+        320,
+        512,
+        3
+      ],
+      "dtype": "torch.uint8",
+      "observed_drive_path": "G:\\我的云端硬盘\\Video-WM\\Zero-Mean-C1-Layered-Transport-V1\\20260930T165530863126Z\\fixed_reference\\OFF\\RGB8_NO_CODEC.pt",
+      "verification": "Drive stat only this design; SHA/shape/dtype from hash-bound result. Positive raster previously audited by main; no new raster load/hash here."
+    },
+    {
+      "arm": "PAYLOAD_MULTI",
+      "relative_path": "PAYLOAD_MULTI/RGB8_NO_CODEC.pt",
+      "sha256": "4adc9fcadd3b627e7d6300efcab481db8e91716b27e39b592aed6dd37421d78e",
+      "bytes": 88966697,
+      "shape": [
+        181,
+        320,
+        512,
+        3
+      ],
+      "dtype": "torch.uint8",
+      "observed_drive_path": "G:\\我的云端硬盘\\Video-WM\\Zero-Mean-C1-Layered-Transport-V1\\20260930T165530863126Z\\fixed_reference\\PAYLOAD_MULTI\\RGB8_NO_CODEC.pt",
+      "verification": "Drive stat only this design; SHA/shape/dtype from hash-bound result. Positive raster previously audited by main; no new raster load/hash here."
+    },
+    {
+      "arm": "OVERLAP_MULTI",
+      "relative_path": "OVERLAP_MULTI/RGB8_NO_CODEC.pt",
+      "sha256": "d20ee27689e43568ad5a295393aba256ed98b31a0fd9dcbe9d8739bd3d10ccc3",
+      "bytes": 88966697,
+      "shape": [
+        181,
+        320,
+        512,
+        3
+      ],
+      "dtype": "torch.uint8",
+      "observed_drive_path": "G:\\我的云端硬盘\\Video-WM\\Zero-Mean-C1-Layered-Transport-V1\\20260930T165530863126Z\\fixed_reference\\OVERLAP_MULTI\\RGB8_NO_CODEC.pt",
+      "verification": "Drive stat only this design; SHA/shape/dtype from hash-bound result. Positive raster previously audited by main; no new raster load/hash here."
+    }
+  ],
+  "references": [
+    {
+      "arm": "OFF",
+      "layer": "RGB8_NO_CODEC",
+      "kind": "normalized",
+      "relative_path": "OFF/RGB8_NO_CODEC.normalized.pt",
+      "sha256": "da96ed6ca23eab26a4e6fb41b50939893cad858b9abe58eb319287b0b1e6a096",
+      "shape": [
+        1,
+        16,
+        46,
+        40,
+        64
+      ],
+      "dtype": "torch.float32"
+    },
+    {
+      "arm": "OFF",
+      "layer": "RGB8_NO_CODEC",
+      "key_id": "CORRECT",
+      "kind": "raw",
+      "relative_path": "OFF/RGB8_NO_CODEC.CORRECT.raw.json.gz",
+      "sha256": "2aa33324304129b8d6c8bb38a837f43a263951fa24ae73897c7a92bcbb3bd6af",
+      "scored": 174,
+      "R": 44
+    },
+    {
+      "arm": "OFF",
+      "layer": "RGB8_NO_CODEC",
+      "key_id": "WRONG",
+      "kind": "raw",
+      "relative_path": "OFF/RGB8_NO_CODEC.WRONG.raw.json.gz",
+      "sha256": "bd1097bd16e5a3244d2ff618ae13a00d86d4b1e4322ccc4f009d087cf6df595f",
+      "scored": 174,
+      "R": 44
+    },
+    {
+      "arm": "OFF",
+      "layer": "MATCHED_SOURCE_MP4",
+      "kind": "normalized",
+      "relative_path": "OFF/MATCHED_SOURCE_MP4.normalized.pt",
+      "sha256": "92b2f79413ed0faad9cf6e740cbb012d0ecf6bad055ddd13743161b4568ca694",
+      "shape": [
+        1,
+        16,
+        46,
+        40,
+        64
+      ],
+      "dtype": "torch.float32"
+    },
+    {
+      "arm": "OFF",
+      "layer": "MATCHED_SOURCE_MP4",
+      "key_id": "CORRECT",
+      "kind": "raw",
+      "relative_path": "OFF/MATCHED_SOURCE_MP4.CORRECT.raw.json.gz",
+      "sha256": "e912e284c27409fdbfc3431f868e652374105ca0fca988db9256c7455cdec9d2",
+      "scored": 174,
+      "R": 44
+    },
+    {
+      "arm": "OFF",
+      "layer": "MATCHED_SOURCE_MP4",
+      "key_id": "WRONG",
+      "kind": "raw",
+      "relative_path": "OFF/MATCHED_SOURCE_MP4.WRONG.raw.json.gz",
+      "sha256": "60b50340924398b271f430ba5f73de4db5c7c3931e3b82188244f98acb633537",
+      "scored": 174,
+      "R": 44
+    },
+    {
+      "arm": "PAYLOAD_MULTI",
+      "layer": "RGB8_NO_CODEC",
+      "kind": "normalized",
+      "relative_path": "PAYLOAD_MULTI/RGB8_NO_CODEC.normalized.pt",
+      "sha256": "f3236127b659aae18e9e51941c4d7f6b923ecd32ca2a998c44ce52b376d4111b",
+      "shape": [
+        1,
+        16,
+        46,
+        40,
+        64
+      ],
+      "dtype": "torch.float32"
+    },
+    {
+      "arm": "PAYLOAD_MULTI",
+      "layer": "RGB8_NO_CODEC",
+      "key_id": "CORRECT",
+      "kind": "raw",
+      "relative_path": "PAYLOAD_MULTI/RGB8_NO_CODEC.CORRECT.raw.json.gz",
+      "sha256": "5ed67bed5c196b0f9e612c22c4a680eb363a8f33e1ba60a65dbdf27592ac56a0",
+      "scored": 174,
+      "R": 44
+    },
+    {
+      "arm": "PAYLOAD_MULTI",
+      "layer": "RGB8_NO_CODEC",
+      "key_id": "WRONG",
+      "kind": "raw",
+      "relative_path": "PAYLOAD_MULTI/RGB8_NO_CODEC.WRONG.raw.json.gz",
+      "sha256": "f1ad2b1e78161e8e7cec0085531e6c3f2537778b9db33d9864e6f85167db9dbb",
+      "scored": 174,
+      "R": 44
+    },
+    {
+      "arm": "PAYLOAD_MULTI",
+      "layer": "MATCHED_SOURCE_MP4",
+      "kind": "normalized",
+      "relative_path": "PAYLOAD_MULTI/MATCHED_SOURCE_MP4.normalized.pt",
+      "sha256": "142b6a3715beef6bcc58a785455ae4c85d977bc3df7683065080893d87556e66",
+      "shape": [
+        1,
+        16,
+        46,
+        40,
+        64
+      ],
+      "dtype": "torch.float32"
+    },
+    {
+      "arm": "PAYLOAD_MULTI",
+      "layer": "MATCHED_SOURCE_MP4",
+      "key_id": "CORRECT",
+      "kind": "raw",
+      "relative_path": "PAYLOAD_MULTI/MATCHED_SOURCE_MP4.CORRECT.raw.json.gz",
+      "sha256": "4af630ea077d2d0f45695a0fec7b9b87d7fbda0b4c97b99f13221a02d4675b10",
+      "scored": 174,
+      "R": 44
+    },
+    {
+      "arm": "PAYLOAD_MULTI",
+      "layer": "MATCHED_SOURCE_MP4",
+      "key_id": "WRONG",
+      "kind": "raw",
+      "relative_path": "PAYLOAD_MULTI/MATCHED_SOURCE_MP4.WRONG.raw.json.gz",
+      "sha256": "a4f4347b24f63ac0019b71f7c31da776e06a0c499be22d5a5c923e9f6ad10ec2",
+      "scored": 174,
+      "R": 44
+    },
+    {
+      "arm": "OVERLAP_MULTI",
+      "layer": "RGB8_NO_CODEC",
+      "kind": "normalized",
+      "relative_path": "OVERLAP_MULTI/RGB8_NO_CODEC.normalized.pt",
+      "sha256": "5cea037d52993cb8b130e92c4fe5fc655b092d73d88141a707614e915fe9437e",
+      "shape": [
+        1,
+        16,
+        46,
+        40,
+        64
+      ],
+      "dtype": "torch.float32"
+    },
+    {
+      "arm": "OVERLAP_MULTI",
+      "layer": "RGB8_NO_CODEC",
+      "key_id": "CORRECT",
+      "kind": "raw",
+      "relative_path": "OVERLAP_MULTI/RGB8_NO_CODEC.CORRECT.raw.json.gz",
+      "sha256": "68c9a005b3abc6adbb8ad0afefae62a690592718b34075d640967b43b22f2f33",
+      "scored": 174,
+      "R": 44
+    },
+    {
+      "arm": "OVERLAP_MULTI",
+      "layer": "RGB8_NO_CODEC",
+      "key_id": "WRONG",
+      "kind": "raw",
+      "relative_path": "OVERLAP_MULTI/RGB8_NO_CODEC.WRONG.raw.json.gz",
+      "sha256": "09a4bc091da9f0c9a6c9d41c2dc7d9666d945a9e8ee9c17eed27cefa6091ec19",
+      "scored": 174,
+      "R": 44
+    },
+    {
+      "arm": "OVERLAP_MULTI",
+      "layer": "MATCHED_SOURCE_MP4",
+      "kind": "normalized",
+      "relative_path": "OVERLAP_MULTI/MATCHED_SOURCE_MP4.normalized.pt",
+      "sha256": "098da447c1469811aa27861cb1ae11bd32b4e3a1b74bbcbb937ae9d6bf2fd6db",
+      "shape": [
+        1,
+        16,
+        46,
+        40,
+        64
+      ],
+      "dtype": "torch.float32"
+    },
+    {
+      "arm": "OVERLAP_MULTI",
+      "layer": "MATCHED_SOURCE_MP4",
+      "key_id": "CORRECT",
+      "kind": "raw",
+      "relative_path": "OVERLAP_MULTI/MATCHED_SOURCE_MP4.CORRECT.raw.json.gz",
+      "sha256": "464ba996fe8964958330a4148a40543f9bfa1e2ed62a162f8d8a88f4829dc012",
+      "scored": 174,
+      "R": 44
+    },
+    {
+      "arm": "OVERLAP_MULTI",
+      "layer": "MATCHED_SOURCE_MP4",
+      "key_id": "WRONG",
+      "kind": "raw",
+      "relative_path": "OVERLAP_MULTI/MATCHED_SOURCE_MP4.WRONG.raw.json.gz",
+      "sha256": "8f6ed44cb0992258985482ea0f95d1ad5c99b2e41fc360c223ef7cfc5e46f016",
+      "scored": 174,
+      "R": 44
+    }
+  ],
+  "source_mp4": [
+    {
+      "arm": "OFF",
+      "sha256": "9a48c66ef0c052b23f80623d4323da7c26310bd3746ab773e594192e74df8b88",
+      "bytes": 486707,
+      "relative_path": "OFF/MATCHED_SOURCE_MP4.mp4",
+      "verification": "small actual MP4 copy SHA equals result; only ffprobe stream/format, no frame decode"
+    },
+    {
+      "arm": "PAYLOAD_MULTI",
+      "sha256": "c858ec7339a95f33b787141c687c49cb13c2003dc67ef767ec307282a3ec53e8",
+      "bytes": 469507,
+      "relative_path": "PAYLOAD_MULTI/MATCHED_SOURCE_MP4.mp4",
+      "verification": "small actual MP4 copy SHA equals result; only ffprobe stream/format, no frame decode"
+    },
+    {
+      "arm": "OVERLAP_MULTI",
+      "sha256": "6cd119f77d14e10b84b100894ef3f14bff5b2d3820158872497478c1f9852bed",
+      "bytes": 455277,
+      "relative_path": "OVERLAP_MULTI/MATCHED_SOURCE_MP4.mp4",
+      "verification": "small actual MP4 copy SHA equals result; only ffprobe stream/format, no frame decode"
+    }
+  ],
+  "inherited_audits": [
+    {
+      "path": "/home/richar/projects/Video-WM/diagnostics/zero-mean-layered-real-run-audit-20261001/audit_result.json",
+      "sha256": "09de70887b619e4a876174fb9fbfc19eb3815b13533e180c3ae024ea084a1750",
+      "use": "reuse prior all5220cost/30projection audit; not rerun"
+    },
+    {
+      "path": "/home/richar/projects/Video-WM/diagnostics/zero-mean-layered-real-run-audit-20261001/assessment.json",
+      "sha256": "3236a69b60ad08164aec38d7873d4248f696dfc2bf132dc496f46191d81b5367",
+      "use": "reuse prior all5220cost/30projection audit; not rerun"
+    }
+  ],
+  "local_no_large_float_or_raster_reads": true,
+  "local_no_decode_conversion_or_scoring": true
+}
