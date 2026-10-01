@@ -1,0 +1,16 @@
+{
+  "status": "SOURCE_PUBLISHED_NOTEBOOK_BOUND",
+  "source_sha": "e28e2030ee9f45792b1ba618466a4f76eae9c196",
+  "notebook": "notebooks/zero_mean_channel_margin_v1_colab.ipynb",
+  "notebook_sha256": "b58af50788643237cb9b41d70584097c1f053b56049cc915ef2a8320dca467bb",
+  "binding_verified": true,
+  "code_cells_ast_valid": true,
+  "outputs_empty": true,
+  "user_execution_pending": true,
+  "planned_experiment": "one saved-terminal update; real YUV444 forward channel; no Transformer generation",
+  "cpu_tests": {
+    "passed": 9,
+    "source_preparation": "diagnostics/zero_mean_channel_margin_v1/preparation.json"
+  },
+  "previous_main": "58776e57905b2b50de232b76a89101ae7229713a"
+}
