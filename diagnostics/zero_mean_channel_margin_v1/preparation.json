@@ -1,0 +1,74 @@
+{
+  "status": "LOCAL_PROPOSAL",
+  "base_commit": "947c18108a517026287e94b08d6ee36472b1ed12",
+  "full_terminal_verified": {
+    "path": "/home/richar/projects/Video-WM/diagnostics/zero-mean-c1-real-run-audit-20260930/saved/fixed_reference/OVERLAP_MULTI/terminal.pt",
+    "sha256": "5c96d514454cd1b23e700f0072b4a40c073e8a038269962743904fb6189c5164",
+    "shape": [
+      1,
+      16,
+      46,
+      40,
+      64
+    ],
+    "dtype": "torch.float32"
+  },
+  "saved_observation_loss_only": {
+    "RGB8_NO_CODEC": {
+      "delta": 6.2774570913337495e-06,
+      "loss": 1.0772966477716334e-08,
+      "global_margin": 4.081765935214211e-06,
+      "global_term": 0.0,
+      "local_mean": 1.0772966477716334e-08,
+      "local_active": 1,
+      "distinct_wrong_classes": 173
+    },
+    "MATCHED_SOURCE_MP4": {
+      "delta": -0.0002587137944672627,
+      "loss": 0.000520033015547922,
+      "global_margin": 4.081765935214211e-06,
+      "global_term": 0.0002627955604024769,
+      "local_mean": 0.00025723745514544515,
+      "local_active": 168,
+      "distinct_wrong_classes": 173
+    },
+    "YUV444_NO_H264": {
+      "delta": -1.2783301028193188e-05,
+      "loss": 1.8917700921047144e-05,
+      "global_margin": 4.081765935214211e-06,
+      "global_term": 1.68650669634074e-05,
+      "local_mean": 2.052633957639746e-06,
+      "local_active": 16,
+      "distinct_wrong_classes": 173
+    },
+    "YUV420_NO_H264": {
+      "delta": -2.3969266578229974e-05,
+      "loss": 4.732687463545663e-05,
+      "global_margin": 4.081765935214211e-06,
+      "global_term": 2.8051032513444183e-05,
+      "local_mean": 1.9275842122012447e-05,
+      "local_active": 55,
+      "distinct_wrong_classes": 173
+    }
+  },
+  "notebook": "JSON schema fields and code cell AST checked; nbformat unavailable",
+  "no_pretrained_models_or_external_runs": true,
+  "publication": "NOT_PUSHED",
+  "files": {
+    "main/tube_state/zero_mean_channel_margin.py": "ef74ff1a22dd31347426d4c71244029d1890186b5dbbbd5979c122c24cdba40d",
+    "runtime/wan/zero_mean_channel_margin.py": "cb08c22b166826e01d2747c96ea3389855eb3e0a876c50fe115abcf40969dc2a",
+    "experiments/wan_state_clock/zero_mean_channel_margin_run.py": "da17acb67054ceae9f8f2f43270750daf024f2d6ee56bc76e0e3b7fbc88afa06",
+    "scripts/build_zero_mean_channel_margin_notebook.py": "0e7f2f1a02c686cd8d46e7fa89021ba602e83db456e6b09cabeb9dff198c0fc1",
+    "tests/test_zero_mean_channel_margin.py": "d4b22ff9328bfce18d6ab32ba08dbe304531370434de8fae5b356adc86c99e0c",
+    "docs/zero_mean_channel_margin_v1.md": "ba16376325f538f19a7e1afb4c5ad60e2bc802ce9f80104efdd91cb1a19d795f",
+    "experiments/wan_state_clock/configs/zero_mean_channel_margin_v1.json": "772ac2264b36435ed4725a764ee347101394699d49740b29175ff4d95f6d9337",
+    "notebooks/zero_mean_channel_margin_v1_colab.ipynb": "b8846a395f9a7b9cf45ff71a0d0785628ede8397c58dbca9180abf87a7b02c78"
+  },
+  "tests": {
+    "command": "PYTHONDONTWRITEBYTECODE=1 CUDA_VISIBLE_DEVICES= OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 python -m pytest tests/test_zero_mean_channel_margin.py -q -p no:cacheprovider",
+    "passed": 9,
+    "elapsed_seconds": 3.01,
+    "scope": "CPU pure method, native tiny random-weight Wan, persistence, notebook AST; no pretrained-model or codec execution"
+  },
+  "remaining": "Review/approve the concrete new loss and single-step terminal semantics; new push authorization; immutable source binding; user Run-all real-model validation."
+}

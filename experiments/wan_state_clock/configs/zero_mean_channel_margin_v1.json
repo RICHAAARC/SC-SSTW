@@ -1,0 +1,67 @@
+{
+  "candidate_status": "LOCAL_PROPOSAL_NOT_PUBLISHED_OR_RUN",
+  "model": {
+    "id": "Wan-AI/Wan2.1-T2V-1.3B-Diffusers",
+    "revision": "0fad780a534b6463e45facd96134c9f345acfa5b"
+  },
+  "key": "watermark",
+  "keys": {
+    "CORRECT": "watermark",
+    "WRONG": "watermark-wrong"
+  },
+  "messages": {
+    "REGISTERED": "OKOK",
+    "WRONG_MESSAGE": "NOPE"
+  },
+  "R": 44,
+  "phase": 0,
+  "update": {
+    "steps": 1,
+    "eta": 174.0,
+    "cap_l2": 1.0,
+    "support": "original1392",
+    "loss": "global_worst_hinge_plus_mean_pair_hinge",
+    "margin_rule": "half ideal public template separation; global uses minimum",
+    "channel_backward": "identity STE for RGB8/YUV444/RGB8; exact native VAE VJPs"
+  },
+  "input": {
+    "root": "/content/drive/MyDrive/Video-WM/Video-Overlap-Zero-Mean-C1-V1/20260930T113335113338Z/fixed_reference",
+    "result_sha256": "5ccd4138fdd0b3bf368a9c7fb76b8f77108e935d73ad68ccfed600d9aa39cbdd",
+    "terminal_relative_path": "OVERLAP_MULTI/terminal.pt",
+    "terminal_sha256": "5c96d514454cd1b23e700f0072b4a40c073e8a038269962743904fb6189c5164"
+  },
+  "reference": {
+    "root": "/content/drive/MyDrive/Video-WM/Zero-Mean-C1-YUV444-No-H264-V1/20261001T110124499275Z/fixed_reference",
+    "result_sha256": "5bea29ef9ae3563d53043188817b0827fd33f69eb000c236b9bc44864b506d78"
+  },
+  "fixed_denominator": {
+    "updates": 1,
+    "new_observations": 2,
+    "path_reads": 4,
+    "payload_reads": 4,
+    "message_evaluations": 8,
+    "valid_costs": 696,
+    "catalog_slots": 15660,
+    "structural_exclusions": 14964,
+    "reference_normalized": 3,
+    "reference_raw": 6
+  },
+  "planned_calls": {
+    "vae_decode_native": 2,
+    "vae_encode_native": 1,
+    "vae_encode_gradient": 1,
+    "vae_decode_gradient": 1,
+    "encoder_vjp": 1,
+    "decoder_vjp": 1,
+    "rgb_to_raw444": 2,
+    "raw444_to_rgb24": 2,
+    "path_read": 4,
+    "payload_read": 4,
+    "encoder_chunk_forward": 46,
+    "encoder_chunk_recompute": 46,
+    "decoder_chunk_forward": 46,
+    "decoder_chunk_recompute": 46,
+    "transformer": 0
+  },
+  "evidence_ceiling": "One saved-source terminal controllability development diagnostic at fixed g0/R44. Identity STE supplies direction only; real color roundtrip and VAE output decides improvement. Not generation-time embedding, MP4 robustness, blind phase recovery, independent confirmation or scientific PASS."
+}
