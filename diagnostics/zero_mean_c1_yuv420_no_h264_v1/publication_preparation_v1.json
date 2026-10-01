@@ -1,0 +1,79 @@
+{
+  "schema": "zero-mean-yuv420-publication-preparation-v1",
+  "created_at": "2026-10-01T07:07:36.379981+00:00",
+  "status": "SOURCE_PUBLISHED_NOTEBOOK_BOUND_LOCALLY",
+  "source_sha": "edfcdb2df433abaca228984031812567b75edb35",
+  "source_publication": {
+    "stage": "SOURCE_PUBLISHED_AND_VERIFIED",
+    "verified_at": "2026-10-01T07:06:11.269289+00:00",
+    "base_sha": "6864a9c9039af56b193b2612fab1f36658c8f47a",
+    "source_sha": "edfcdb2df433abaca228984031812567b75edb35",
+    "source_parent": "6864a9c9039af56b193b2612fab1f36658c8f47a",
+    "branch": "dev/video-trajectory-blind-validation-v1",
+    "remote_heads": {
+      "refs/heads/dev/video-trajectory-blind-validation-v1": "edfcdb2df433abaca228984031812567b75edb35",
+      "refs/heads/main": "58776e57905b2b50de232b76a89101ae7229713a"
+    },
+    "remote_commit_fetched": "edfcdb2df433abaca228984031812567b75edb35",
+    "frozen_snapshot_sha256": "798adcb837bca08ca61444dac7d4f1047167f1eaa947f44c51606aafbe34964a",
+    "frozen_payload_tree_sha256": "194970a4015dfed4a349c5ad6eab41cc8184a8208d7f9dde426dcd9cb70c3fa5",
+    "frozen_files_verified": 26,
+    "patch_sha256": "952341c6f20e3e9de42ad708d509398842128c00bf01553d9078988c8581837d",
+    "source_paths_count": 28,
+    "inherited_CRLF_preserved": true,
+    "all_staged_blobs_byte_equal": true,
+    "whitespace_check": "default whitespace categories with cr-at-eol enabled for the verbatim inventory evidence",
+    "push_returncode": 0,
+    "real_execution": false
+  },
+  "frozen_snapshot_interpretation": "Unchanged historical unbound candidate at source S. Later delivery N changes only notebook binding, its static test, and this publication receipt.",
+  "delivery_commit": "Assigned after commit; final remote verification is outside the repository to avoid commit self-reference.",
+  "allowed_delivery_paths": [
+    "notebooks/zero_mean_c1_yuv420_no_h264_v1_colab.ipynb",
+    "tests/test_zero_mean_c1_yuv420_no_h264.py",
+    "diagnostics/zero_mean_c1_yuv420_no_h264_v1/publication_preparation_v1.json"
+  ],
+  "notebook": {
+    "path": "notebooks/zero_mean_c1_yuv420_no_h264_v1_colab.ipynb",
+    "sha256": "cc9c9f58edda53958d13f1f266fb6787fb88b07e4a0eed04e78214b3419c2c6b",
+    "bytes": 12507,
+    "source_sha": "edfcdb2df433abaca228984031812567b75edb35",
+    "cells": 6,
+    "code_cells": 5,
+    "binding_only_diff": true,
+    "display_unchanged": true,
+    "builder_unchanged": true,
+    "ast": "PASS",
+    "drive_first_cell": "PASS",
+    "empty_outputs": true
+  },
+  "binding_test": {
+    "path": "tests/test_zero_mean_c1_yuv420_no_h264.py",
+    "sha256": "429bfda6f752a67331073b2cbefe9aa4a676d10e15710055139528fe02f31118",
+    "draft_builder_validation_preserved": true,
+    "command": [
+      "/home/richar/projects/CEG-WM/alive/CEG-WM/.venv/bin/python",
+      "-m",
+      "pytest",
+      "-q",
+      "tests/test_zero_mean_c1_yuv420_no_h264.py",
+      "-k",
+      "notebook_and_source_scope_static",
+      "--disable-warnings"
+    ],
+    "returncode": 0,
+    "stdout": ".                                                                        [100%]\n1 passed, 8 deselected in 1.23s\n",
+    "stderr": "",
+    "stdout_path": "/home/richar/projects/Video-WM/diagnostics/zero-mean-yuv420-publication-20261001/pytest_notebook_binding.txt",
+    "stdout_sha256": "54996b3062ace12b5bd4c12838bddc85788018c360d95351d68fb52bd1f648a7",
+    "scope": "Only affected existing notebook static test; no method suite rerun"
+  },
+  "historical_validation": "Initial 9 passed; DISPLAY delta 1 passed / 8 deselected. Frozen reports unchanged.",
+  "boundaries": {
+    "branch": "dev/video-trajectory-blind-validation-v1",
+    "main_untouched": true,
+    "method_changes": false,
+    "real_codec_vae_gpu_colab_execution": false,
+    "scientific_pass": false
+  }
+}

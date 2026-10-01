@@ -177,11 +177,19 @@ def test_monitor_cleanup_owns_group_and_precedes_latest_reload(tmp_path,monkeypa
 def test_notebook_and_source_scope_static(tmp_path):
     path=run.ROOT/'scripts/build_zero_mean_c1_yuv420_no_h264_notebook.py'
     spec=importlib.util.spec_from_file_location('builder',path);builder=importlib.util.module_from_spec(spec);spec.loader.exec_module(builder)
-    built=builder.build(output=tmp_path/'new.ipynb')
-    assert built.read_bytes()==(run.ROOT/'notebooks/zero_mean_c1_yuv420_no_h264_v1_colab.ipynb').read_bytes()
+    draft=json.loads(builder.build(output=tmp_path/'draft.ipynb').read_text())
+    assert draft['metadata']['candidate_binding']['source_sha'] is None
+    assert draft['metadata']['candidate_binding']['status']=='UNPUBLISHED_DRAFT'
+    assert 'SOURCE_SHA = None' in ''.join(draft['cells'][2]['source'])
+    current=run.ROOT/'notebooks/zero_mean_c1_yuv420_no_h264_v1_colab.ipynb'
+    binding=json.loads(current.read_text())['metadata']['candidate_binding'];source_sha=binding['source_sha']
+    assert source_sha is None or re.fullmatch('[0-9a-f]{40}',source_sha)
+    assert binding['status']==('PUBLISHED_SHA_BOUND' if source_sha else 'UNPUBLISHED_DRAFT')
+    built=builder.build(source_sha,output=tmp_path/'new.ipynb')
+    assert built.read_bytes()==current.read_bytes()
     nb=json.loads(built.read_text());code='\n'.join(''.join(c['source']) for c in nb['cells'] if c['cell_type']=='code')
     assert ''.join(nb['cells'][0]['source'])=="from google.colab import drive\ndrive.mount('/content/drive')\n"
-    assert 'SOURCE_SHA = None' in code and '20260930T165530863126Z/fixed_reference' in code
+    assert f'SOURCE_SHA = {source_sha!r}' in code and '20260930T165530863126Z/fixed_reference' in code
     assert 'PYTHON=sys.executable' in code and 'torch,torchvision' in code
     assert 'true_rank' in code and 'orthogonal_residual_full1408_l2' in code
     assert all(x not in code for x in ('ensurepip','venv','prepare_generation','WanPipeline'))
