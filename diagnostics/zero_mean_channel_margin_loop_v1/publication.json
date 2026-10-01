@@ -1,0 +1,16 @@
+{
+  "status": "SOURCE_PUBLISHED_NOTEBOOK_BOUND",
+  "source_sha": "14589a13472f62ad83165d3f1e23efdd15e75d61",
+  "notebook": "notebooks/zero_mean_channel_margin_loop_v1_colab.ipynb",
+  "notebook_sha256": "ccf030474f895cb418c6915b1367bcebdd729cdc9d49b6cbbfc04a12c75658d7",
+  "additional_updates": 3,
+  "total_updates": 4,
+  "endpoint": "POINT4",
+  "binding_verified": true,
+  "code_cells_ast_valid": true,
+  "outputs_empty": true,
+  "user_execution_pending": true,
+  "cpu_tests_passed": 5,
+  "actual_saved_inputs_verified": true,
+  "model_or_codec_execution": false
+}
