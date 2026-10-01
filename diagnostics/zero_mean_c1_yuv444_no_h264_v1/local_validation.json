@@ -1,0 +1,102 @@
+{
+  "status": "LOCAL_ENGINEERING_PASS",
+  "created_utc": "2026-10-01T10:43:08.215740+00:00",
+  "base_head": "ce9ecde36e5506b032f9bc9742436645a18cffae",
+  "tracked_files_changed": [],
+  "pytest": {
+    "command": "CUDA_VISIBLE_DEVICES= PYTHONDONTWRITEBYTECODE=1 OPENBLAS_NUM_THREADS=1 /home/richar/projects/CEG-WM/alive/CEG-WM/.venv/bin/python -m pytest -q -p no:cacheprovider tests/test_zero_mean_c1_yuv444_no_h264.py",
+    "passed": 5,
+    "seconds": 10.06,
+    "log": "pytest_local.txt",
+    "log_sha256": "def9ac186e98743812ca4e0a308aba6ba2668ea44932c5bdca00f93a13e0fcdd"
+  },
+  "references": {
+    "artifacts": 27,
+    "normalized": 9,
+    "raw": 18,
+    "layers": [
+      "RGB8_NO_CODEC",
+      "YUV420_NO_H264",
+      "MATCHED_SOURCE_MP4"
+    ],
+    "physical_local_hashes_verified": 27,
+    "parent_result_hashes_verified": 2,
+    "missing": 0,
+    "local_audit_roots": {
+      "layered": "/home/richar/projects/Video-WM/diagnostics/zero-mean-layered-real-run-audit-20261001/saved",
+      "reference420": "/home/richar/projects/Video-WM/diagnostics/zero-mean-yuv420-real-run-audit-20261001/saved"
+    },
+    "original_positive_fixed_opponent": 34,
+    "latest420_winner_not_substituted": 86
+  },
+  "unchanged_runner_function_ASTs": [
+    "read_normalized",
+    "score_new",
+    "projection_metrics",
+    "describe_inference",
+    "load_parent_opponents",
+    "evaluate_saved",
+    "stop_worker",
+    "worker_phase",
+    "recover_unfinished"
+  ],
+  "notebook": {
+    "cells": 6,
+    "code_cells": 5,
+    "source_sha": null,
+    "binding_status": "UNPUBLISHED_DRAFT"
+  },
+  "fixed_new": {
+    "raw_files": 6,
+    "bytes_each": 88965120,
+    "total_raw_bytes": 533790720,
+    "normalized": 3,
+    "path_reads": 6,
+    "valid_costs": 1044,
+    "vae_encodes": 3
+  },
+  "actual_local_execution": {
+    "real_ffmpeg_conversion": 0,
+    "real_vae_encode": 0,
+    "real_vae_decode": 0,
+    "transformer": 0,
+    "gpu": 0,
+    "reference_infer": 0,
+    "git_commit": 0,
+    "git_push": 0
+  },
+  "scope": "Controlled independent copy of proven raw420 path, with explicit two input roots and 27 references; no dynamic module/global patching.",
+  "files": {
+    "runtime/wan/zero_mean_c1_yuv444_no_h264.py": {
+      "bytes": 4172,
+      "sha256": "70b6e7fee2e2a045c7ac1d4af7822d00401c0e83b19ca87c501f719cdcb48247"
+    },
+    "experiments/wan_state_clock/zero_mean_c1_yuv444_no_h264_run.py": {
+      "bytes": 27846,
+      "sha256": "0ae4b9af0fa4df93114c91217211042bede58415ece5ab537e61ccd36bd51937"
+    },
+    "experiments/wan_state_clock/configs/zero_mean_c1_yuv444_no_h264_v1.json": {
+      "bytes": 23875,
+      "sha256": "0ece8adffa8d81948e1d1245c65fad6aa02bb445ecf5711569de2c6237662aec"
+    },
+    "scripts/build_zero_mean_c1_yuv444_no_h264_notebook.py": {
+      "bytes": 13246,
+      "sha256": "94b209f7ee5b0bce4c96ef511df9e234f433929d85e1537ccad0cefa9d1d91bd"
+    },
+    "notebooks/zero_mean_c1_yuv444_no_h264_v1_colab.ipynb": {
+      "bytes": 13516,
+      "sha256": "91054ae8909606b636f6fe9beb8b76aea2cbe4d0fb1cbcb806d6cfba4f687a82"
+    },
+    "tests/test_zero_mean_c1_yuv444_no_h264.py": {
+      "bytes": 12307,
+      "sha256": "405f9b55c0dd78fd5a3d4b1b4d61ef5afa2781bceabeb060ad6b16a036e8d131"
+    }
+  },
+  "evidence_ceiling": "Single saved source, three dependent arms. Tests whether ranking failure persists without chroma subsampling. Recovery supports a role for 420-related processing differences, but does not prove pure chroma subsampling caused the original MP4 failure. No FPR, quality, generalization or scientific PASS.",
+  "main_review": {
+    "status": "MAIN_REVIEW_PASS",
+    "path": "/home/richar/projects/Video-WM/diagnostics/zero-mean-yuv444-main-review-20261001/review.json",
+    "sha256": "c4fc05d652d6bba75c27cf1b5d1af56d252fa721386468d2fddae0c9e7a3bbec",
+    "same_six_core_files": true
+  }
+}

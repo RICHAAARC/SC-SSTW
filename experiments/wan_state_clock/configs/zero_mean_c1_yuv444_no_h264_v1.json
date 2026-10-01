@@ -1,0 +1,778 @@
+{
+  "name": "zero_mean_c1_yuv444_no_h264_v1",
+  "status": "LOCAL_CANDIDATE_UNPUBLISHED",
+  "source_sha": null,
+  "fixed_input": {
+    "run": "20260930T165530863126Z",
+    "source_sha": "d4f5d73c506c20f4dfa5e1f74065836c23432064",
+    "result_sha256": "3561a99003047ec89bda90b813dc712af3dc6ee2db6ec4907d009b7bf138d117",
+    "root": "/content/drive/MyDrive/Video-WM/Zero-Mean-C1-Layered-Transport-V1/20260930T165530863126Z/fixed_reference",
+    "required_q8": [
+      {
+        "arm": "OFF",
+        "relative_path": "OFF/RGB8_NO_CODEC.pt",
+        "sha256": "be3f0eadb746f76136365e1e59dce79b963d759e4e16daefd9474e317782af30",
+        "bytes": 88966697,
+        "shape": [
+          181,
+          320,
+          512,
+          3
+        ],
+        "dtype": "torch.uint8",
+        "observed_drive_path": "G:\\我的云端硬盘\\Video-WM\\Zero-Mean-C1-Layered-Transport-V1\\20260930T165530863126Z\\fixed_reference\\OFF\\RGB8_NO_CODEC.pt",
+        "verification": "Drive stat only this design; SHA/shape/dtype from hash-bound result. Positive raster previously audited by main; no new raster load/hash here."
+      },
+      {
+        "arm": "PAYLOAD_MULTI",
+        "relative_path": "PAYLOAD_MULTI/RGB8_NO_CODEC.pt",
+        "sha256": "4adc9fcadd3b627e7d6300efcab481db8e91716b27e39b592aed6dd37421d78e",
+        "bytes": 88966697,
+        "shape": [
+          181,
+          320,
+          512,
+          3
+        ],
+        "dtype": "torch.uint8",
+        "observed_drive_path": "G:\\我的云端硬盘\\Video-WM\\Zero-Mean-C1-Layered-Transport-V1\\20260930T165530863126Z\\fixed_reference\\PAYLOAD_MULTI\\RGB8_NO_CODEC.pt",
+        "verification": "Drive stat only this design; SHA/shape/dtype from hash-bound result. Positive raster previously audited by main; no new raster load/hash here."
+      },
+      {
+        "arm": "OVERLAP_MULTI",
+        "relative_path": "OVERLAP_MULTI/RGB8_NO_CODEC.pt",
+        "sha256": "d20ee27689e43568ad5a295393aba256ed98b31a0fd9dcbe9d8739bd3d10ccc3",
+        "bytes": 88966697,
+        "shape": [
+          181,
+          320,
+          512,
+          3
+        ],
+        "dtype": "torch.uint8",
+        "observed_drive_path": "G:\\我的云端硬盘\\Video-WM\\Zero-Mean-C1-Layered-Transport-V1\\20260930T165530863126Z\\fixed_reference\\OVERLAP_MULTI\\RGB8_NO_CODEC.pt",
+        "verification": "Drive stat only this design; SHA/shape/dtype from hash-bound result. Positive raster previously audited by main; no new raster load/hash here."
+      }
+    ],
+    "reference_artifacts": [
+      {
+        "arm": "OFF",
+        "layer": "RGB8_NO_CODEC",
+        "kind": "normalized",
+        "relative_path": "OFF/RGB8_NO_CODEC.normalized.pt",
+        "sha256": "da96ed6ca23eab26a4e6fb41b50939893cad858b9abe58eb319287b0b1e6a096",
+        "shape": [
+          1,
+          16,
+          46,
+          40,
+          64
+        ],
+        "dtype": "torch.float32",
+        "root_id": "layered"
+      },
+      {
+        "arm": "OFF",
+        "layer": "RGB8_NO_CODEC",
+        "key_id": "CORRECT",
+        "kind": "raw",
+        "relative_path": "OFF/RGB8_NO_CODEC.CORRECT.raw.json.gz",
+        "sha256": "2aa33324304129b8d6c8bb38a837f43a263951fa24ae73897c7a92bcbb3bd6af",
+        "scored": 174,
+        "R": 44,
+        "root_id": "layered"
+      },
+      {
+        "arm": "OFF",
+        "layer": "RGB8_NO_CODEC",
+        "key_id": "WRONG",
+        "kind": "raw",
+        "relative_path": "OFF/RGB8_NO_CODEC.WRONG.raw.json.gz",
+        "sha256": "bd1097bd16e5a3244d2ff618ae13a00d86d4b1e4322ccc4f009d087cf6df595f",
+        "scored": 174,
+        "R": 44,
+        "root_id": "layered"
+      },
+      {
+        "arm": "OFF",
+        "layer": "MATCHED_SOURCE_MP4",
+        "kind": "normalized",
+        "relative_path": "OFF/MATCHED_SOURCE_MP4.normalized.pt",
+        "sha256": "92b2f79413ed0faad9cf6e740cbb012d0ecf6bad055ddd13743161b4568ca694",
+        "shape": [
+          1,
+          16,
+          46,
+          40,
+          64
+        ],
+        "dtype": "torch.float32",
+        "root_id": "layered"
+      },
+      {
+        "arm": "OFF",
+        "layer": "MATCHED_SOURCE_MP4",
+        "key_id": "CORRECT",
+        "kind": "raw",
+        "relative_path": "OFF/MATCHED_SOURCE_MP4.CORRECT.raw.json.gz",
+        "sha256": "e912e284c27409fdbfc3431f868e652374105ca0fca988db9256c7455cdec9d2",
+        "scored": 174,
+        "R": 44,
+        "root_id": "layered"
+      },
+      {
+        "arm": "OFF",
+        "layer": "MATCHED_SOURCE_MP4",
+        "key_id": "WRONG",
+        "kind": "raw",
+        "relative_path": "OFF/MATCHED_SOURCE_MP4.WRONG.raw.json.gz",
+        "sha256": "60b50340924398b271f430ba5f73de4db5c7c3931e3b82188244f98acb633537",
+        "scored": 174,
+        "R": 44,
+        "root_id": "layered"
+      },
+      {
+        "arm": "PAYLOAD_MULTI",
+        "layer": "RGB8_NO_CODEC",
+        "kind": "normalized",
+        "relative_path": "PAYLOAD_MULTI/RGB8_NO_CODEC.normalized.pt",
+        "sha256": "f3236127b659aae18e9e51941c4d7f6b923ecd32ca2a998c44ce52b376d4111b",
+        "shape": [
+          1,
+          16,
+          46,
+          40,
+          64
+        ],
+        "dtype": "torch.float32",
+        "root_id": "layered"
+      },
+      {
+        "arm": "PAYLOAD_MULTI",
+        "layer": "RGB8_NO_CODEC",
+        "key_id": "CORRECT",
+        "kind": "raw",
+        "relative_path": "PAYLOAD_MULTI/RGB8_NO_CODEC.CORRECT.raw.json.gz",
+        "sha256": "5ed67bed5c196b0f9e612c22c4a680eb363a8f33e1ba60a65dbdf27592ac56a0",
+        "scored": 174,
+        "R": 44,
+        "root_id": "layered"
+      },
+      {
+        "arm": "PAYLOAD_MULTI",
+        "layer": "RGB8_NO_CODEC",
+        "key_id": "WRONG",
+        "kind": "raw",
+        "relative_path": "PAYLOAD_MULTI/RGB8_NO_CODEC.WRONG.raw.json.gz",
+        "sha256": "f1ad2b1e78161e8e7cec0085531e6c3f2537778b9db33d9864e6f85167db9dbb",
+        "scored": 174,
+        "R": 44,
+        "root_id": "layered"
+      },
+      {
+        "arm": "PAYLOAD_MULTI",
+        "layer": "MATCHED_SOURCE_MP4",
+        "kind": "normalized",
+        "relative_path": "PAYLOAD_MULTI/MATCHED_SOURCE_MP4.normalized.pt",
+        "sha256": "142b6a3715beef6bcc58a785455ae4c85d977bc3df7683065080893d87556e66",
+        "shape": [
+          1,
+          16,
+          46,
+          40,
+          64
+        ],
+        "dtype": "torch.float32",
+        "root_id": "layered"
+      },
+      {
+        "arm": "PAYLOAD_MULTI",
+        "layer": "MATCHED_SOURCE_MP4",
+        "key_id": "CORRECT",
+        "kind": "raw",
+        "relative_path": "PAYLOAD_MULTI/MATCHED_SOURCE_MP4.CORRECT.raw.json.gz",
+        "sha256": "4af630ea077d2d0f45695a0fec7b9b87d7fbda0b4c97b99f13221a02d4675b10",
+        "scored": 174,
+        "R": 44,
+        "root_id": "layered"
+      },
+      {
+        "arm": "PAYLOAD_MULTI",
+        "layer": "MATCHED_SOURCE_MP4",
+        "key_id": "WRONG",
+        "kind": "raw",
+        "relative_path": "PAYLOAD_MULTI/MATCHED_SOURCE_MP4.WRONG.raw.json.gz",
+        "sha256": "a4f4347b24f63ac0019b71f7c31da776e06a0c499be22d5a5c923e9f6ad10ec2",
+        "scored": 174,
+        "R": 44,
+        "root_id": "layered"
+      },
+      {
+        "arm": "OVERLAP_MULTI",
+        "layer": "RGB8_NO_CODEC",
+        "kind": "normalized",
+        "relative_path": "OVERLAP_MULTI/RGB8_NO_CODEC.normalized.pt",
+        "sha256": "5cea037d52993cb8b130e92c4fe5fc655b092d73d88141a707614e915fe9437e",
+        "shape": [
+          1,
+          16,
+          46,
+          40,
+          64
+        ],
+        "dtype": "torch.float32",
+        "root_id": "layered"
+      },
+      {
+        "arm": "OVERLAP_MULTI",
+        "layer": "RGB8_NO_CODEC",
+        "key_id": "CORRECT",
+        "kind": "raw",
+        "relative_path": "OVERLAP_MULTI/RGB8_NO_CODEC.CORRECT.raw.json.gz",
+        "sha256": "68c9a005b3abc6adbb8ad0afefae62a690592718b34075d640967b43b22f2f33",
+        "scored": 174,
+        "R": 44,
+        "root_id": "layered"
+      },
+      {
+        "arm": "OVERLAP_MULTI",
+        "layer": "RGB8_NO_CODEC",
+        "key_id": "WRONG",
+        "kind": "raw",
+        "relative_path": "OVERLAP_MULTI/RGB8_NO_CODEC.WRONG.raw.json.gz",
+        "sha256": "09a4bc091da9f0c9a6c9d41c2dc7d9666d945a9e8ee9c17eed27cefa6091ec19",
+        "scored": 174,
+        "R": 44,
+        "root_id": "layered"
+      },
+      {
+        "arm": "OVERLAP_MULTI",
+        "layer": "MATCHED_SOURCE_MP4",
+        "kind": "normalized",
+        "relative_path": "OVERLAP_MULTI/MATCHED_SOURCE_MP4.normalized.pt",
+        "sha256": "098da447c1469811aa27861cb1ae11bd32b4e3a1b74bbcbb937ae9d6bf2fd6db",
+        "shape": [
+          1,
+          16,
+          46,
+          40,
+          64
+        ],
+        "dtype": "torch.float32",
+        "root_id": "layered"
+      },
+      {
+        "arm": "OVERLAP_MULTI",
+        "layer": "MATCHED_SOURCE_MP4",
+        "key_id": "CORRECT",
+        "kind": "raw",
+        "relative_path": "OVERLAP_MULTI/MATCHED_SOURCE_MP4.CORRECT.raw.json.gz",
+        "sha256": "464ba996fe8964958330a4148a40543f9bfa1e2ed62a162f8d8a88f4829dc012",
+        "scored": 174,
+        "R": 44,
+        "root_id": "layered"
+      },
+      {
+        "arm": "OVERLAP_MULTI",
+        "layer": "MATCHED_SOURCE_MP4",
+        "key_id": "WRONG",
+        "kind": "raw",
+        "relative_path": "OVERLAP_MULTI/MATCHED_SOURCE_MP4.WRONG.raw.json.gz",
+        "sha256": "8f6ed44cb0992258985482ea0f95d1ad5c99b2e41fc360c223ef7cfc5e46f016",
+        "scored": 174,
+        "R": 44,
+        "root_id": "layered"
+      },
+      {
+        "arm": "OFF",
+        "layer": "YUV420_NO_H264",
+        "kind": "normalized",
+        "root_id": "reference420",
+        "relative_path": "OFF/normalized.pt",
+        "sha256": "9134f90d84c1b602a7876163a73c32c6c58e5a6134e0c0ef7b7ef2f36d1ed0ec"
+      },
+      {
+        "arm": "OFF",
+        "layer": "YUV420_NO_H264",
+        "kind": "raw",
+        "key_id": "CORRECT",
+        "root_id": "reference420",
+        "relative_path": "OFF/CORRECT.raw.json.gz",
+        "sha256": "10252f7adff05698e6e94e30979cbe6421c5a5ef048476424efac46ef50c7196"
+      },
+      {
+        "arm": "OFF",
+        "layer": "YUV420_NO_H264",
+        "kind": "raw",
+        "key_id": "WRONG",
+        "root_id": "reference420",
+        "relative_path": "OFF/WRONG.raw.json.gz",
+        "sha256": "3fe3fdd285933d43e7c29adc50d229e50365fb499dcc406951ed0a40f2e65f2a"
+      },
+      {
+        "arm": "PAYLOAD_MULTI",
+        "layer": "YUV420_NO_H264",
+        "kind": "normalized",
+        "root_id": "reference420",
+        "relative_path": "PAYLOAD_MULTI/normalized.pt",
+        "sha256": "856cb45cd3802d0b3c96534c3578d11711b6ce53262d4e877078f5243dbdf7f5"
+      },
+      {
+        "arm": "PAYLOAD_MULTI",
+        "layer": "YUV420_NO_H264",
+        "kind": "raw",
+        "key_id": "CORRECT",
+        "root_id": "reference420",
+        "relative_path": "PAYLOAD_MULTI/CORRECT.raw.json.gz",
+        "sha256": "a1c6bb4d3448531eb1affab2436f6abef6d6d37ba8d4d63b075124cf8ec10bb6"
+      },
+      {
+        "arm": "PAYLOAD_MULTI",
+        "layer": "YUV420_NO_H264",
+        "kind": "raw",
+        "key_id": "WRONG",
+        "root_id": "reference420",
+        "relative_path": "PAYLOAD_MULTI/WRONG.raw.json.gz",
+        "sha256": "533c4f575c94388e18a5437d1b9a2b2aa27562b0e91d2c86adf9ce44028ede02"
+      },
+      {
+        "arm": "OVERLAP_MULTI",
+        "layer": "YUV420_NO_H264",
+        "kind": "normalized",
+        "root_id": "reference420",
+        "relative_path": "OVERLAP_MULTI/normalized.pt",
+        "sha256": "55a67dc41b10a226cd07ac9f7e1a20918e104920464d67c49dbb049262d34e4a"
+      },
+      {
+        "arm": "OVERLAP_MULTI",
+        "layer": "YUV420_NO_H264",
+        "kind": "raw",
+        "key_id": "CORRECT",
+        "root_id": "reference420",
+        "relative_path": "OVERLAP_MULTI/CORRECT.raw.json.gz",
+        "sha256": "00d7bd25418143a599d253ff0c3c5086a2fd512979930b4a98f4acde5e1789a9"
+      },
+      {
+        "arm": "OVERLAP_MULTI",
+        "layer": "YUV420_NO_H264",
+        "kind": "raw",
+        "key_id": "WRONG",
+        "root_id": "reference420",
+        "relative_path": "OVERLAP_MULTI/WRONG.raw.json.gz",
+        "sha256": "b3de6efa46aaede19c9e576b6a4fd6744d7ebcf9800523974b3b7997186eedc4"
+      }
+    ],
+    "source_mp4": [
+      {
+        "arm": "OFF",
+        "sha256": "9a48c66ef0c052b23f80623d4323da7c26310bd3746ab773e594192e74df8b88",
+        "bytes": 486707,
+        "relative_path": "OFF/MATCHED_SOURCE_MP4.mp4",
+        "verification": "small actual MP4 copy SHA equals result; only ffprobe stream/format, no frame decode"
+      },
+      {
+        "arm": "PAYLOAD_MULTI",
+        "sha256": "c858ec7339a95f33b787141c687c49cb13c2003dc67ef767ec307282a3ec53e8",
+        "bytes": 469507,
+        "relative_path": "PAYLOAD_MULTI/MATCHED_SOURCE_MP4.mp4",
+        "verification": "small actual MP4 copy SHA equals result; only ffprobe stream/format, no frame decode"
+      },
+      {
+        "arm": "OVERLAP_MULTI",
+        "sha256": "6cd119f77d14e10b84b100894ef3f14bff5b2d3820158872497478c1f9852bed",
+        "bytes": 455277,
+        "relative_path": "OVERLAP_MULTI/MATCHED_SOURCE_MP4.mp4",
+        "verification": "small actual MP4 copy SHA equals result; only ffprobe stream/format, no frame decode"
+      }
+    ],
+    "inherited_source_files": {
+      "main/tube_state/video_overlap_zero_mean_state.py": "77b82a4da4d45904093d1d41abd53309eeb808d92a85a2752757b058dd35a4e3",
+      "main/tube_state/video_overlap_zero_mean_control.py": "1aaecaf3cb5c9d27068989a2a3be71dee40c83168fe32d0afaa27724868714ce",
+      "main/tube_state/grow_video_reference.py": "35b186833dee508552235df1bb3c2524db01848e507402f87c0b9655016c8ead",
+      "runtime/wan/generation.py": "3538921118a429339412eee4d72e57268c9cb232d6ebb6e8677e2e55f143bde3",
+      "runtime/wan/vae.py": "ff3aec5659a14238923cd943364c6eda62d4648343b3ac17910cfbecdfec3670",
+      "runtime/wan/io.py": "db9caa843d632d733aa670dbe87bd38cf6084490d5bef71b8a69e6839cc33ae7",
+      "runtime/wan/zero_mean_c1_layered_transport.py": "5f419ec9fa61c402cc05f47fd8e4285986886b3de978cabede49f5f88a9b55dc",
+      "experiments/wan_state_clock/configs/zero_mean_c1_layered_transport_v1.json": "771019d83ca18e7edde3a0dd130441e9179e65ae1d2dc30c4f113612c78d0062",
+      "experiments/wan_state_clock/zero_mean_c1_layered_transport_run.py": "3d1f27a800ffc151b0d682fe8d28f972bccbd18a3363c8f5ce5a8107d97523e3",
+      "experiments/wan_state_clock/requirements-grow-video-reference.txt": "4c9fb7f727f2923f7e1b33893f9094905fa9071358b81b7f77a13cd172bf407e"
+    }
+  },
+  "arms": [
+    "OFF",
+    "PAYLOAD_MULTI",
+    "OVERLAP_MULTI"
+  ],
+  "keys": {
+    "CORRECT": "watermark",
+    "WRONG": "watermark-wrong"
+  },
+  "messages": {
+    "REGISTERED": "OKOK",
+    "WRONG_MESSAGE": "NOPE"
+  },
+  "layer": "YUV444_NO_H264",
+  "geometry": {
+    "frames": 181,
+    "height": 320,
+    "width": 512,
+    "fps": 8,
+    "pixel_input": "rgb24",
+    "intermediate": "yuv444p",
+    "pixel_output": "rgb24",
+    "normalized_shape": [
+      1,
+      16,
+      46,
+      40,
+      64
+    ],
+    "fixed_phase": 0,
+    "R": 44,
+    "regular_indices": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11,
+      12,
+      13,
+      14,
+      15,
+      16,
+      17,
+      18,
+      19,
+      20,
+      21,
+      22,
+      23,
+      24,
+      25,
+      26,
+      27,
+      28,
+      29,
+      30,
+      31,
+      32,
+      33,
+      34,
+      35,
+      36,
+      37,
+      38,
+      39,
+      40,
+      41,
+      42,
+      43,
+      44
+    ],
+    "extra_regular_index": 45,
+    "full181_encode": true
+  },
+  "model": {
+    "id": "Wan-AI/Wan2.1-T2V-1.3B-Diffusers",
+    "revision": "0fad780a534b6463e45facd96134c9f345acfa5b"
+  },
+  "vae": {
+    "dtype": "float32",
+    "posterior": "mode",
+    "normalization": "(raw-mean)/std",
+    "cache": "shared runtime clears before/after encode",
+    "latents_mean": [
+      -0.7571,
+      -0.7089,
+      -0.9113,
+      0.1075,
+      -0.1745,
+      0.9653,
+      -0.1517,
+      1.5508,
+      0.4134,
+      -0.0715,
+      0.5517,
+      -0.3632,
+      -0.1922,
+      -0.9497,
+      0.2503,
+      -0.2921
+    ],
+    "latents_std": [
+      2.8184,
+      1.4541,
+      2.3275,
+      2.6558,
+      1.2196,
+      1.7708,
+      2.6052,
+      2.0743,
+      3.2687,
+      2.1526,
+      2.8652,
+      1.5579,
+      1.6382,
+      1.1253,
+      2.8251,
+      1.916
+    ]
+  },
+  "conversion": {
+    "segments": 2,
+    "materialize_intermediate": true,
+    "segment1_argv": [
+      "ffmpeg",
+      "-v",
+      "verbose",
+      "-threads",
+      "1",
+      "-f",
+      "rawvideo",
+      "-pix_fmt",
+      "rgb24",
+      "-s",
+      "512x320",
+      "-r",
+      "8",
+      "-i",
+      "pipe:0",
+      "-an",
+      "-c:v",
+      "rawvideo",
+      "-pix_fmt",
+      "yuv444p",
+      "-f",
+      "rawvideo",
+      "-n",
+      "{yuv444_output}"
+    ],
+    "segment2_argv": [
+      "ffmpeg",
+      "-v",
+      "verbose",
+      "-threads",
+      "1",
+      "-noautorotate",
+      "-f",
+      "rawvideo",
+      "-pix_fmt",
+      "yuv444p",
+      "-s",
+      "512x320",
+      "-r",
+      "8",
+      "-chroma_sample_location",
+      "left",
+      "-i",
+      "{yuv444_input}",
+      "-map",
+      "0:v:0",
+      "-f",
+      "rawvideo",
+      "-pix_fmt",
+      "rgb24",
+      "-n",
+      "{rgb24_output}"
+    ],
+    "input_bytes": "saved Q8 tensor uint8 contiguous bytes exactly; no float re-quantization or new decode",
+    "intermediate_bytes_per_arm": 88965120,
+    "output_rgb_bytes_per_arm": 88965120,
+    "total_new_raster_bytes": 533790720,
+    "metadata_policy": {
+      "chroma_location": {
+        "value": "left",
+        "source": "same-run three SOURCE stream probes",
+        "role": "Inherited left input label retained for the two-stage rawvideo comparison; YUV444 uses three full-resolution planes. This label does not establish equality with the original 420 conversion grid."
+      },
+      "color_space": "UNKNOWN_AUTO_NO_OVERRIDE",
+      "color_range": "UNKNOWN_AUTO_NO_OVERRIDE",
+      "color_primaries": "UNKNOWN_AUTO_NO_OVERRIDE",
+      "color_transfer": "UNKNOWN_AUTO_NO_OVERRIDE"
+    },
+    "added_filters": [],
+    "sws_flags_override": null,
+    "forbidden_new_controls": [
+      "BT709",
+      "BT601",
+      "range override",
+      "scale/zscale resampler",
+      "bitexact",
+      "accurate_rnd",
+      "second control matrix"
+    ],
+    "receipt": [
+      "each exact argv",
+      "returncode",
+      "stderr verbose auto_scale chain",
+      "ffmpeg/ffprobe versions and library/build lines",
+      "input/intermediate/output SHA256 and byte counts",
+      "frame counts from exact raw lengths",
+      "known/unknown metadata and provenance"
+    ],
+    "claim": "NO_H264_RAW444_CONTROL; tests persistence without chroma subsampling, not single-factor attribution of the original MP4 chain",
+    "raw444_limitation": "Three full-resolution YUV planes, no chroma subsampling; automatic matrix/range/scaler and 8-bit rounding remain. Inherited left label is an input metadata convention, not proof of physical grid equivalence. Runtime rejection is a retained conversion failure."
+  },
+  "fixed_denominator": {
+    "arms": 3,
+    "new_observations": 3,
+    "yuv444_files": 3,
+    "roundtrip_rgb24_files": 3,
+    "normalized": 3,
+    "path_reads": 6,
+    "payload_reads": 6,
+    "path_posthoc": 6,
+    "message_evaluations": 12,
+    "catalog_slots": 23490,
+    "valid_costs": 1044,
+    "structural_exclusions": 22446,
+    "catalog_per_condition": 3915,
+    "valid_per_condition": 174,
+    "reference_normalized": 9,
+    "reference_raw": 18,
+    "reference_layers": 3,
+    "reference_artifacts": 27
+  },
+  "planned_calls": {
+    "transformer": 0,
+    "vae_decode": 0,
+    "vae_encode": 3,
+    "rgb_to_raw444": 3,
+    "raw444_to_rgb24": 3,
+    "h264_encode": 0,
+    "mp4_decode": 0,
+    "new_path_infer": 6,
+    "new_payload_read": 6,
+    "reference_reencode": 0,
+    "reference_rescore": 0
+  },
+  "reader": {
+    "module": "main.tube_state.video_overlap_zero_mean_state",
+    "entry": "infer",
+    "public_key_only": true,
+    "original_family": true,
+    "full_costs_ties_exclusions": true,
+    "score_status": "UNCALIBRATED_DIAGNOSTIC",
+    "accepted_payload": false,
+    "state_path_accepted": false,
+    "payload": "original read only diagnostic; never rank path",
+    "no_writer_or_truth_inputs": true
+  },
+  "posthoc": {
+    "raw_committed_first": true,
+    "registered_tau": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11,
+      12,
+      13,
+      14,
+      15,
+      16,
+      17,
+      18,
+      19,
+      20,
+      21,
+      22,
+      23,
+      24,
+      25,
+      26,
+      27,
+      28,
+      29,
+      30,
+      31,
+      32,
+      33,
+      34,
+      35,
+      36,
+      37,
+      38,
+      39,
+      40,
+      41,
+      42,
+      43,
+      44
+    ],
+    "report": [
+      "true rank using original1e-12 tolerance",
+      "truth unique top",
+      "top classes/paths and ties",
+      "start correctness",
+      "invented edit",
+      "own-winner and fixed-opponent costs/margins",
+      "time/block/age contributions",
+      "diagnostic payload errors"
+    ],
+    "fixed_opponent_source": "hash-bound parent result.path_posthoc[arm/RGB8_NO_CODEC/key].fixed_historical_phase0_opponent (original FULL phase0 canonical); fields raw_sha256/catalog_index/path; only after raw. Not parent current SOURCE winner or global other-phase winner. The YUV420 winner is not the fixed opponent.",
+    "no_ancient_drive_dependency": true,
+    "missing_fixed_opponent": "MISSING_REFERENCE in that comparison only; cannot replace or select primary path"
+  },
+  "references": {
+    "layers": [
+      "RGB8_NO_CODEC",
+      "YUV420_NO_H264",
+      "MATCHED_SOURCE_MP4"
+    ],
+    "reuse": "existing normalized/raw hash-bound; no VAE re-encode, no infer rerun",
+    "reporting": "sameR44 samekey path costs and saved projections; new vs already observed boundary, no pure codec causality claim",
+    "statuses": [
+      "primary_execution",
+      "reference_completeness",
+      "package_completeness"
+    ],
+    "roots": "layered --input-root and independent --reference420-root; each parent identity checked separately"
+  },
+  "failure": {
+    "fixed_slots_before_load": true,
+    "per_arm_independent": true,
+    "partial_outputs_retained": true,
+    "raw_exact_size_required": true,
+    "no_padding_truncation_or_frame_duplication": true,
+    "output_outside_input_required": true,
+    "canonical_first": true,
+    "reference_failure_does_not_erase_new": true,
+    "primary_failure_does_not_erase_reference": true,
+    "science_pass": false,
+    "output_outside_both_input_roots_required": true
+  },
+  "local_stage": {
+    "allowed": "local implementation and focused CPU mock/static checks only",
+    "real_conversion_executed": false,
+    "real_vae_executed": false,
+    "commit_or_push": false
+  },
+  "future_new_files": [
+    "runtime/wan/zero_mean_c1_yuv444_no_h264.py",
+    "experiments/wan_state_clock/zero_mean_c1_yuv444_no_h264_run.py",
+    "scripts/build_zero_mean_c1_yuv444_no_h264_notebook.py",
+    "notebooks/zero_mean_c1_yuv444_no_h264_v1_colab.ipynb",
+    "tests/test_zero_mean_c1_yuv444_no_h264.py"
+  ],
+  "evidence_ceiling": "Single saved source, three dependent arms. Tests whether ranking failure persists without chroma subsampling. Recovery supports a role for 420-related processing differences, but does not prove pure chroma subsampling caused the original MP4 failure. No FPR, quality, generalization or scientific PASS.",
+  "reference420_input": {
+    "run_id": "20261001T092411269871Z",
+    "source_sha": "edfcdb2df433abaca228984031812567b75edb35",
+    "result_sha256": "20d62ebfe7f2405a8433f0f7ba3a06f5f82d25c52f836b9091d06116389f4cf9",
+    "root": "/content/drive/MyDrive/Video-WM/Zero-Mean-C1-YUV420-No-H264-V1/20261001T092411269871Z/fixed_reference",
+    "role": "independent YUV420 reference only; never supplies Q8 or fixed original FULL phase0 opponent"
+  }
+}
