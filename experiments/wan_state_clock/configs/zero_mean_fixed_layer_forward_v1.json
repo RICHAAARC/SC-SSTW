@@ -1,0 +1,73 @@
+{
+  "model": {
+    "id": "Wan-AI/Wan2.1-T2V-1.3B-Diffusers",
+    "revision": "0fad780a534b6463e45facd96134c9f345acfa5b"
+  },
+  "key": "watermark",
+  "keys": {
+    "CORRECT": "watermark",
+    "WRONG": "watermark-wrong"
+  },
+  "messages": {
+    "REGISTERED": "OKOK",
+    "WRONG_MESSAGE": "NOPE"
+  },
+  "R": 44,
+  "phase": 0,
+  "name": "zero_mean_fixed_layer_forward_v1",
+  "input": {
+    "root": "/content/drive/MyDrive/Video-WM/Zero-Mean-Raw420-Objective-Ablation-V1/20261002T053509124852Z/fixed_reference",
+    "result_sha256": "ec329f9a146d7359e4a66f3887f596c39460a4e73a343e5adedad781971bb873"
+  },
+  "reference": {
+    "root": "/content/drive/MyDrive/Video-WM/Zero-Mean-Raw420-Margin-Continue-V2/20261002T041230450908Z/fixed_reference",
+    "result_sha256": "16a98370cd11625964d5876132213f019510a2f7d4afe3ce8968f7356d993fd4",
+    "terminal_relative_path": "POINT3/terminal.pt",
+    "terminal_sha256": "747085816839e7112f0e5d64cca77d4aeba04bedbe8307fcf212b13a4875f785"
+  },
+  "points": [
+    "BASELINE",
+    "COMPOSITE",
+    "WORST_ONLY"
+  ],
+  "layers": [
+    "FLOAT",
+    "RGB8"
+  ],
+  "observations": [
+    "BASELINE_FLOAT",
+    "BASELINE_RGB8",
+    "COMPOSITE_FLOAT",
+    "COMPOSITE_RGB8",
+    "WORST_ONLY_FLOAT",
+    "WORST_ONLY_RGB8"
+  ],
+  "terminals": {
+    "BASELINE": "747085816839e7112f0e5d64cca77d4aeba04bedbe8307fcf212b13a4875f785",
+    "COMPOSITE": "d51211a01c9468b0ffc4c7a4b600862bb7606abc947d860fb120081c8e2e8910",
+    "WORST_ONLY": "59632328c3e21958665a20327985d4fd0c23c59b4bd8333a34509017d3a25084"
+  },
+  "planned_calls": {
+    "vae_decode_native": 3,
+    "vae_encode_native": 6,
+    "path_read": 12,
+    "payload_read": 12,
+    "transformer": 0,
+    "encoder_vjp": 0,
+    "decoder_vjp": 0
+  },
+  "fixed_denominator": {
+    "fixed_terminals": 3,
+    "new_observations": 6,
+    "path_reads": 12,
+    "payload_reads": 12,
+    "message_evaluations": 24,
+    "valid_costs": 2088,
+    "catalog_slots": 46980,
+    "structural_exclusions": 44892,
+    "reference_observations": 6,
+    "reference_raw": 12,
+    "updates": 0
+  },
+  "evidence_ceiling": "Fixed saved starting terminal and both ablation endpoints, with no new writer step. FLOAT includes the unchanged [0,1] clamp; RGB8 adds only quantization. Existing raw420/raw444 references are not new independent evidence. Layer comparisons localize finite forward changes, not a unique cause or a layer-specific gradient. No MP4, unknown-phase, generation-trajectory, population-FPR or scientific PASS claim."
+}

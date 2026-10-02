@@ -1,0 +1,13 @@
+# Fixed endpoints: locate the finite forward response by layer
+
+Select a GPU runtime and **Run all**. This diagnostic reuses the starting POINT3 terminal and both COMPOSITE/WORST_ONLY endpoints from run 20261002T053509124852Z. It does not update any terminal or choose a winning endpoint.
+
+Each of the three saved terminals is decoded once by the same native FP32 Wan VAE. FLOAT means the existing decoded/2+0.5 mapping and [0,1] clamp, without integer quantization. RGB8 adds only the existing uint8 quantization and division by 255. Both are separately mode-encoded and normalized by the same VAE. Saved float RGB, RGB8, normalized tensors and full blind readouts remain available for independent recomputation. This does not separately isolate clamp effects.
+
+Six new observations, twelve path and twelve payload reads, twenty-four message comparisons and 2088 valid candidate costs are fixed. Every read retains all 174 valid candidates at fixed phase 0 and R44. Three native decodes and six native encodes; zero writer updates, gradient/VJP calls, generation or new color/codec conversions. The six old raw420/raw444 observations and twelve old raw readouts are hash-verified references, not new evidence. Both keys and messages are retained. A point or layer failure stays in the denominator while independent points/layers continue.
+
+Compare each arm against the baseline of the SAME layer: minimum wrong-minus-true gap, rank, global-worst term, local mean and composite loss. Then compare the signed finite responses between FLOAT and RGB8, and between RGB8 and each old raw channel. Raw444 is a parallel contrast, not a stage after raw420. The previous gradient prediction belongs to the original raw420 identity-STE computation; it is not a true gradient of the new FLOAT or RGB8 layer. A sign reversal localizes an observed discrepancy and does not uniquely identify its cause.
+
+Each new RGB8 raster is compared by byte hash with the actual input raster recorded for both old channels. A mismatch is reported and limits cross-run attribution; it does not discard the new observations or require a matching GPU/environment. Current Python with the established dependency repair is used. No GPU model requirement, venv or ensurepip.
+
+This notebook is a user-run diagnostic with static/CPU validation only; the complete pretrained VAE run is pending user execution. Results persist under MyDrive/Video-WM/Zero-Mean-Fixed-Layer-Forward-V1/<timestamp>/fixed_reference/result.json. Recovery at these fixed saved terminals does not establish unknown-phase synchronization, path-aligned payload closure, generation-time trajectory embedding, MP4 robustness or population FPR.
