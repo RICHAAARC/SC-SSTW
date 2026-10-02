@@ -1,0 +1,78 @@
+{
+  "candidate_status": "USER_AUTHORIZED_IMPLEMENTATION",
+  "model": {
+    "id": "Wan-AI/Wan2.1-T2V-1.3B-Diffusers",
+    "revision": "0fad780a534b6463e45facd96134c9f345acfa5b"
+  },
+  "key": "watermark",
+  "keys": {
+    "CORRECT": "watermark",
+    "WRONG": "watermark-wrong"
+  },
+  "messages": {
+    "REGISTERED": "OKOK",
+    "WRONG_MESSAGE": "NOPE"
+  },
+  "R": 44,
+  "phase": 0,
+  "update": {
+    "steps": 1,
+    "eta": 174.0,
+    "cap_l2": 1.0,
+    "support": "original1392",
+    "loss": "global_worst_hinge_plus_mean_pair_hinge",
+    "margin_rule": "half ideal public template separation; global uses minimum",
+    "channel_backward": "identity STE for RGB8/raw420/RGB8; exact native VAE VJPs; actual raw420 forward decides improvement"
+  },
+  "input": {
+    "root": "/content/drive/MyDrive/Video-WM/Zero-Mean-Channel-Margin-Continue-V1/20261001T170749052584Z/fixed_reference",
+    "result_sha256": "96023f82ca5eed73c57ae161a22bc3e45d79321dc127951c8767ddc60ad49827",
+    "terminal_relative_path": "POINT4/terminal.pt",
+    "terminal_sha256": "2fa1a8b4b6c3954c7627e7e986b1b5d7e186f7095e05cc76a1c96d8e1e2118a2"
+  },
+  "reference": {
+    "root": "/content/drive/MyDrive/Video-WM/Zero-Mean-C1-YUV444-No-H264-V1/20261001T110124499275Z/fixed_reference",
+    "result_sha256": "5bea29ef9ae3563d53043188817b0827fd33f69eb000c236b9bc44864b506d78"
+  },
+  "fixed_denominator": {
+    "updates": 1,
+    "new_observations": 4,
+    "path_reads": 8,
+    "payload_reads": 8,
+    "message_evaluations": 16,
+    "valid_costs": 1392,
+    "catalog_slots": 31320,
+    "structural_exclusions": 29928,
+    "reference_normalized": 3,
+    "reference_raw": 6,
+    "raw420_files": 2,
+    "raw444_files": 2
+  },
+  "planned_calls": {
+    "vae_decode_native": 2,
+    "vae_encode_native": 3,
+    "vae_encode_gradient": 1,
+    "vae_decode_gradient": 1,
+    "encoder_vjp": 1,
+    "decoder_vjp": 1,
+    "rgb_to_raw444": 2,
+    "raw444_to_rgb24": 2,
+    "path_read": 8,
+    "payload_read": 8,
+    "encoder_chunk_forward": 46,
+    "encoder_chunk_recompute": 46,
+    "decoder_chunk_forward": 46,
+    "decoder_chunk_recompute": 46,
+    "transformer": 0,
+    "rgb_to_raw420": 2,
+    "raw420_to_rgb24": 2
+  },
+  "evidence_ceiling": "One fixed step7 terminal, one raw420-objective update, fresh matched before/after decode in one runtime; raw444 anchors and full174 paths retained. Identity STE is a direction approximation. Not MP4 robustness, path-aligned payload closure, generation-time trajectory embedding, calibrated FPR or unknown-phase synchronization.",
+  "name": "zero_mean_raw420_margin_v1",
+  "observations": [
+    "BEFORE_RAW420",
+    "BEFORE_RAW444",
+    "AFTER_RAW420",
+    "AFTER_RAW444"
+  ]
+}
