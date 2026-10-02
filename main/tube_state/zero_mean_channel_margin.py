@@ -28,7 +28,7 @@ def project(normalized,key):
                         for i,(h0,h1,w0,w1) in enumerate(state.PUBLIC.blocks)],dim=1)
 
 
-def margin_loss(projection,key):
+def margin_loss(projection,key,*,objective="composite"):
     """All competitors, including starts/repeats/skips; known truth is writer-only.
 
     Each local pair term cancels identically at equal-template coordinates, so
@@ -36,6 +36,7 @@ def margin_loss(projection,key):
     observation. All terms use the original M=1408 denominator.
     """
     import torch
+    if objective not in ('composite','worst_only'):raise ValueError('unknown margin objective')
     spec=objective_spec(key);q=projection.double().reshape(-1)
     if q.numel()!=1408 or not bool(q.isfinite().all()):raise ValueError('finite R44 projection required')
     means=torch.as_tensor(spec['means'],device=q.device,dtype=q.dtype)
@@ -45,7 +46,7 @@ def margin_loss(projection,key):
     target=torch.as_tensor(spec['local_margins'],device=q.device,dtype=q.dtype)
     global_term=torch.relu(q.new_tensor(spec['global_margin'])-margins.min())
     local_terms=torch.relu(target-margins)
-    loss=global_term+local_terms.mean()
+    loss=global_term+local_terms.mean() if objective=='composite' else global_term
     return loss,dict(delta=float(margins.min().detach()),loss=float(loss.detach()),
                      global_term=float(global_term.detach()),local_mean=float(local_terms.mean().detach()),
                      global_margin=spec['global_margin'],local_margins=spec['local_margins'].tolist(),

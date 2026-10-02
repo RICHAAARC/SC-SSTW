@@ -87,7 +87,7 @@ def checkpoint_native(vae,component,count,receipt,spool_factory=OnDemandSpool):
         spool.close();receipt['storage_cleanup_complete']=True
 
 
-def encoder_cotangent(vae,rgb,key,count,receipt,*,spool_factory=OnDemandSpool):
+def encoder_cotangent(vae,rgb,key,count,receipt,*,spool_factory=OnDemandSpool,objective="composite"):
     import torch
     device=next(vae.parameters()).device
     leaf=rgb.to(device=device,dtype=torch.float32).detach().requires_grad_(True)
@@ -96,7 +96,7 @@ def encoder_cotangent(vae,rgb,key,count,receipt,*,spool_factory=OnDemandSpool):
         raw=vae.encode(leaf.permute(3,0,1,2).unsqueeze(0)*2-1).latent_dist.mode()
         mean,std=shared._scale_tensors(vae,raw);normalized=(raw.float()-mean)/std
         count('vae_encode_gradient',True)
-        loss,metrics=method.margin_loss(method.project(normalized,key),key)
+        loss,metrics=method.margin_loss(method.project(normalized,key),key,objective=objective)
         if not loss.requires_grad:raise RuntimeError('encoder gradient detached')
         count('encoder_vjp',False);cotangent,=torch.autograd.grad(loss,leaf);count('encoder_vjp',True)
     if not bool(cotangent.isfinite().all()):raise FloatingPointError('nonfinite encoder cotangent')
