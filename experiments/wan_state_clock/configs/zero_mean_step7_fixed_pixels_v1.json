@@ -1,0 +1,76 @@
+{
+  "model": {
+    "id": "Wan-AI/Wan2.1-T2V-1.3B-Diffusers",
+    "revision": "0fad780a534b6463e45facd96134c9f345acfa5b"
+  },
+  "key": "watermark",
+  "keys": {
+    "CORRECT": "watermark",
+    "WRONG": "watermark-wrong"
+  },
+  "messages": {
+    "REGISTERED": "OKOK",
+    "WRONG_MESSAGE": "NOPE"
+  },
+  "R": 44,
+  "phase": 0,
+  "reference": {
+    "root": "/content/drive/MyDrive/Video-WM/Zero-Mean-C1-YUV444-No-H264-V1/20261001T110124499275Z/fixed_reference",
+    "result_sha256": "5bea29ef9ae3563d53043188817b0827fd33f69eb000c236b9bc44864b506d78"
+  },
+  "name": "zero_mean_step7_fixed_pixels_v1",
+  "parent_run": {
+    "root": "/content/drive/MyDrive/Video-WM/Zero-Mean-Channel-Margin-Continue-V1/20261001T170749052584Z/fixed_reference",
+    "result_sha256": "96023f82ca5eed73c57ae161a22bc3e45d79321dc127951c8767ddc60ad49827",
+    "source_sha": "2c3d6905cb6d05862b0794b959d0b594b9426851",
+    "observation": "POINT4",
+    "total_updates": 7,
+    "q8_relative_path": "POINT4/rgb8.pt",
+    "q8_file_sha256": "4fc1a96ce08f5b0aac1aebf5e43a4a37f133bb6fc37f3895c0ce049399d0175d",
+    "q8_raster_sha256": "134d804b3c7740bf314109c956c590ba66297eb366cb28609aaf6d6bf2a25017"
+  },
+  "observations": [
+    "SAVED_RAW444",
+    "RAW420",
+    "MP4"
+  ],
+  "primary_endpoint": "MP4",
+  "codec": {
+    "fps": 8,
+    "crf": 18,
+    "codec": "libx264",
+    "pixel_format": "yuv420p",
+    "adapter": "existing runtime.wan.zero_mean_c1_layered_transport.encode_raster/read_full_mp4"
+  },
+  "fixed_denominator": {
+    "observations": 3,
+    "mp4_saved": 1,
+    "mp4_read": 1,
+    "path_reads": 6,
+    "payload_reads": 6,
+    "message_evaluations": 12,
+    "valid_costs": 1044,
+    "catalog_slots": 23490,
+    "structural_exclusions": 22446,
+    "reference_normalized": 3,
+    "reference_raw": 6,
+    "parent_normalized": 1,
+    "parent_raw": 2,
+    "raw420_files": 1,
+    "raw420_rgb_readbacks": 1
+  },
+  "planned_calls": {
+    "vae_decode_native": 0,
+    "vae_encode_native": 3,
+    "rgb_to_raw420": 1,
+    "raw420_to_rgb24": 1,
+    "mp4_save": 1,
+    "mp4_read": 1,
+    "path_read": 6,
+    "payload_read": 6,
+    "transformer": 0,
+    "encoder_vjp": 0,
+    "decoder_vjp": 0
+  },
+  "evidence_ceiling": "Original saved step7 RGB8 held byte-exact; saved positive raw444 RGB re-encoded as anchor, plus raw420 and standardMP4 from that same RGB8. No VAE decode or optimization. One-source g0/R44 diagnostic; encoder replay/chroma420/MP4 contrasts, not independent confirmation, calibrated FPR, unknown-phase synchronization or full trajectory watermarking. Raw420-vs-MP4 is a channel contrast; exact internal color conversion equivalence is not assumed."
+}
