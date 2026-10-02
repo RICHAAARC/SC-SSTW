@@ -1,0 +1,67 @@
+{
+  "model": {
+    "id": "Wan-AI/Wan2.1-T2V-1.3B-Diffusers",
+    "revision": "0fad780a534b6463e45facd96134c9f345acfa5b"
+  },
+  "key": "watermark",
+  "keys": {
+    "CORRECT": "watermark",
+    "WRONG": "watermark-wrong"
+  },
+  "messages": {
+    "REGISTERED": "OKOK",
+    "WRONG_MESSAGE": "NOPE"
+  },
+  "R": 44,
+  "phase": 0,
+  "name": "zero_mean_channel_direction_v1",
+  "input": {
+    "root": "/content/drive/MyDrive/Video-WM/Zero-Mean-Fixed-Layer-Forward-V1/20261002T131059238475Z/fixed_reference",
+    "result_sha256": "de0f8c4bb223de3d4d3d45aa482b0c567e07ba805c8081a031057268bb211451"
+  },
+  "reference": {
+    "root": "/content/drive/MyDrive/Video-WM/Zero-Mean-Raw420-Objective-Ablation-V1/20261002T053509124852Z/fixed_reference",
+    "result_sha256": "ec329f9a146d7359e4a66f3887f596c39460a4e73a343e5adedad781971bb873"
+  },
+  "terminal": {
+    "root": "/content/drive/MyDrive/Video-WM/Zero-Mean-Raw420-Margin-Continue-V2/20261002T041230450908Z/fixed_reference",
+    "result_sha256": "16a98370cd11625964d5876132213f019510a2f7d4afe3ce8968f7356d993fd4",
+    "terminal_relative_path": "POINT3/terminal.pt",
+    "terminal_sha256": "747085816839e7112f0e5d64cca77d4aeba04bedbe8307fcf212b13a4875f785"
+  },
+  "observations": [],
+  "arms": {
+    "COMPOSITE": "composite",
+    "WORST_ONLY": "worst_only"
+  },
+  "cotangent_chunk_frames": 16,
+  "planned_calls": {
+    "vae_encode_gradient": 2,
+    "encoder_vjp": 2,
+    "encoder_chunk_forward": 92,
+    "encoder_chunk_recompute": 92,
+    "decoder_vjp": 0,
+    "vae_decode_native": 0,
+    "vae_encode_native": 0,
+    "transformer": 0,
+    "path_read": 0,
+    "payload_read": 0
+  },
+  "fixed_denominator": {
+    "encoder_vjps": 2,
+    "replay_normalized": 2,
+    "rgb_cotangents": 2,
+    "attributions": 2,
+    "updates": 0,
+    "new_path_reads": 0,
+    "new_payload_reads": 0,
+    "reference_observations": 3,
+    "reference_raw": 6,
+    "reference_message_evaluations": 12,
+    "fixed_terminals": 3,
+    "float_rasters": 3,
+    "rgb8_rasters": 3,
+    "raw420_rgb_rasters": 3
+  },
+  "evidence_ceiling": "Two matched fixed-direction attributions using encoder cotangents at the same saved raw420 baseline. No new writer updates, decoder VJP, generation, channel conversion or receiver searches. Intermediate dots use the raw420 baseline cotangent, not gradients at FLOAT/RGB8. Differences localize first-order prediction discrepancies, not unique causes. Stored terminal gradients are from an earlier run; native encoder replay and source identity are reported. No MP4, unknown-phase, FPR or full trajectory watermark claim."
+}
