@@ -1,0 +1,78 @@
+{
+  "model": {
+    "id": "Wan-AI/Wan2.1-T2V-1.3B-Diffusers",
+    "revision": "0fad780a534b6463e45facd96134c9f345acfa5b"
+  },
+  "key": "watermark",
+  "keys": {
+    "CORRECT": "watermark",
+    "WRONG": "watermark-wrong"
+  },
+  "messages": {
+    "REGISTERED": "OKOK",
+    "WRONG_MESSAGE": "NOPE"
+  },
+  "R": 44,
+  "phase": 0,
+  "input": {
+    "root": "/content/drive/MyDrive/Video-WM/Video-Overlap-Zero-Mean-C1-V1/20260930T113335113338Z/fixed_reference",
+    "result_sha256": "5ccd4138fdd0b3bf368a9c7fb76b8f77108e935d73ad68ccfed600d9aa39cbdd",
+    "terminal_relative_path": "OVERLAP_MULTI/terminal.pt",
+    "terminal_sha256": "5c96d514454cd1b23e700f0072b4a40c073e8a038269962743904fb6189c5164"
+  },
+  "reference": {
+    "root": "/content/drive/MyDrive/Video-WM/Zero-Mean-C1-YUV444-No-H264-V1/20261001T110124499275Z/fixed_reference",
+    "result_sha256": "5bea29ef9ae3563d53043188817b0827fd33f69eb000c236b9bc44864b506d78"
+  },
+  "name": "zero_mean_step7_mp4_v1",
+  "parent_run": {
+    "root": "/content/drive/MyDrive/Video-WM/Zero-Mean-Channel-Margin-Continue-V1/20261001T170749052584Z/fixed_reference",
+    "result_sha256": "96023f82ca5eed73c57ae161a22bc3e45d79321dc127951c8767ddc60ad49827",
+    "source_sha": "2c3d6905cb6d05862b0794b959d0b594b9426851",
+    "observation": "POINT4",
+    "terminal_relative_path": "POINT4/terminal.pt",
+    "terminal_sha256": "2fa1a8b4b6c3954c7627e7e986b1b5d7e186f7095e05cc76a1c96d8e1e2118a2",
+    "total_updates": 7
+  },
+  "observations": [
+    "RAW444",
+    "MP4"
+  ],
+  "primary_endpoint": "MP4",
+  "codec": {
+    "fps": 8,
+    "crf": 18,
+    "codec": "libx264",
+    "pixel_format": "yuv420p",
+    "adapter": "existing runtime.wan.zero_mean_c1_layered_transport.encode_raster/read_full_mp4"
+  },
+  "fixed_denominator": {
+    "observations": 2,
+    "mp4_saved": 1,
+    "mp4_read": 1,
+    "path_reads": 4,
+    "payload_reads": 4,
+    "message_evaluations": 8,
+    "valid_costs": 696,
+    "catalog_slots": 15660,
+    "structural_exclusions": 14964,
+    "reference_normalized": 3,
+    "reference_raw": 6,
+    "parent_normalized": 1,
+    "parent_raw": 2
+  },
+  "planned_calls": {
+    "vae_decode_native": 1,
+    "vae_encode_native": 2,
+    "rgb_to_raw444": 1,
+    "raw444_to_rgb24": 1,
+    "mp4_save": 1,
+    "mp4_read": 1,
+    "path_read": 4,
+    "payload_read": 4,
+    "transformer": 0,
+    "encoder_vjp": 0,
+    "decoder_vjp": 0
+  },
+  "evidence_ceiling": "One frozen total-step7 terminal; matched raw444 and standard H264/yuv420p MP4 save/read at CRF18,8fps. Same-source g0/R44 development diagnostic only. No update, generation-time trajectory embedding, unknown-phase synchronization, calibrated FPR or broad robustness claim. RAW444-vs-MP4 combines chroma subsampling and compression; it does not isolate H264 alone."
+}
