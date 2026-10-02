@@ -1,0 +1,237 @@
+{
+  "model": {
+    "id": "Wan-AI/Wan2.1-T2V-1.3B-Diffusers",
+    "revision": "0fad780a534b6463e45facd96134c9f345acfa5b"
+  },
+  "generation": {
+    "height": 320,
+    "width": 512,
+    "frames": 181,
+    "fps": 8,
+    "steps": 50,
+    "guidance_scale": 5.0,
+    "max_sequence_length": 512,
+    "negative_prompt": "text, watermark, logo, camera motion, cuts, multiple objects, flicker",
+    "prompt": "locked camera, a copper kettle resting on a plain wooden table, steady soft indoor light, no people, no cuts",
+    "seed": 2026092501
+  },
+  "case_id": "eval_copperkettle_s2501",
+  "key": "watermark",
+  "wrong_key": "watermark-wrong",
+  "message": "OKOK",
+  "wrong_message": "NOPE",
+  "media": {
+    "fps": 8,
+    "crf": 18,
+    "codec": "libx264",
+    "pixel_format": "yuv420p"
+  },
+  "precision": {
+    "cuda_transformer": "bfloat16 if is_bf16_supported else float16",
+    "cpu_transformer": "float32",
+    "state_control_cfg_vae": "float32"
+  },
+  "views": {
+    "FULL_SOURCE181": {
+      "start": 0,
+      "length": 181
+    }
+  },
+  "name": "video_local_fourier_rm_v1",
+  "arms": [
+    "OFF",
+    "PAYLOAD_MULTI",
+    "STATE_MULTI"
+  ],
+  "control": {
+    "steps": [
+      25,
+      26,
+      27,
+      28,
+      29,
+      30,
+      31,
+      32,
+      33,
+      34,
+      35,
+      36,
+      37,
+      38,
+      39,
+      40,
+      41,
+      42,
+      43,
+      44,
+      45,
+      46,
+      47,
+      48,
+      49
+    ],
+    "initial_identity_index": 25,
+    "payload_mask_count": 44160,
+    "payload_eta": 5520,
+    "pilot_active_coefficients": 5568,
+    "pilot_eta": 696.0,
+    "pilot_delta_cap": 1.0,
+    "target_l2": 1.0,
+    "total_budget_matched": false
+  },
+  "receiver": {
+    "phases": [
+      0,
+      1,
+      2,
+      3
+    ],
+    "common_R": {
+      "181": 44
+    },
+    "cost": "same common44 support for each legal global phase; full local45-state costs plus finite zero/one-event path SSE; no edit penalty",
+    "tie_atol": 1e-12,
+    "threshold": null,
+    "accepted_payload": false,
+    "state_path_accepted": false,
+    "extra_regular_rows": "saved in normalized tensor; diagnostic only"
+  },
+  "fixed_denominator": {
+    "source_cases": 1,
+    "arms": 3,
+    "source_mp4": 3,
+    "derived_mp4": 0,
+    "normalized": 12,
+    "phase_path_searches": 24,
+    "phase_payload_reads": 24,
+    "primary_searches": 6,
+    "posthoc": 12,
+    "catalog_slots": 93960,
+    "valid_costs": 4176,
+    "structural_exclusions": 89784,
+    "local_state_costs": 47520,
+    "local_posthoc": 6,
+    "pilot_positives": 1,
+    "pilot_negatives": 5
+  },
+  "planned_calls": {
+    "transformer_conditional": 150,
+    "transformer_unconditional": 150,
+    "native_step": 150,
+    "local_control": 50,
+    "payload_gradient": 50,
+    "pilot_gradient": 25,
+    "vae_decode": 3,
+    "vae_encode": 12,
+    "source_mp4_save": 3,
+    "source_mp4_read": 0,
+    "primary_mp4_read": 3,
+    "phase_path_search": 24,
+    "phase_payload_read": 24,
+    "primary_search": 6,
+    "quality_mp4_read": 3
+  },
+  "diagnostic_calls": {
+    "terminal_path_search": 6,
+    "terminal_payload_read": 6,
+    "oracle_saved_reference": 6
+  },
+  "source_sha": null,
+  "evidence_ceiling": "First local-carrier coexistence diagnostic: one source, MULTI25..49, source MP4 yuv420p, four legal global VAE phases, full local states and finite path competitors retained. True-phase, terminal, local ranking and repeated-payload success are separate diagnostics. No calibrated existence, blind synchronization closure, time-dependent payload, arbitrary frame-edit, population-FPR or quality PASS. Position-dependent payload and attacked clips follow only after carrier evidence.",
+  "method_version": "video-local-fourier-rm-state-v1",
+  "writer_diagnostics": {
+    "expected_slots": 75,
+    "arms": [
+      "OFF",
+      "PAYLOAD_MULTI",
+      "STATE_MULTI"
+    ],
+    "indices": [
+      25,
+      26,
+      27,
+      28,
+      29,
+      30,
+      31,
+      32,
+      33,
+      34,
+      35,
+      36,
+      37,
+      38,
+      39,
+      40,
+      41,
+      42,
+      43,
+      44,
+      45,
+      46,
+      47,
+      48,
+      49
+    ],
+    "dtype": "float32",
+    "shape": [
+      45,
+      4,
+      4,
+      8
+    ],
+    "arrays": [
+      "conditional_clean",
+      "pilot_delta",
+      "z_pre",
+      "z_post",
+      "cfg_clean"
+    ],
+    "uncompressed_numeric_bytes": 8640000,
+    "source": "actual existing tensors, detached; no additional model/VAE calls",
+    "boundary": "192 boundary dimensions retained per array",
+    "cfg_clean": "z_pre-sigma_pre*actual updated CFG velocity; not actual next native state",
+    "key": "registered writer key only; sidecars never in blind tables",
+    "failure": "retain every slot; report execution and writer_diagnostic completeness separately"
+  },
+  "carrier": {
+    "state_code": "keyed selection of45 balanced RM(1,5) words;32 chips;minimum Hamming16",
+    "blocks": [
+      [
+        8,
+        16,
+        12,
+        20
+      ],
+      [
+        8,
+        16,
+        44,
+        52
+      ],
+      [
+        28,
+        36,
+        12,
+        20
+      ],
+      [
+        28,
+        36,
+        44,
+        52
+      ]
+    ],
+    "channel": 4,
+    "ages": 4,
+    "chips_per_block": 8,
+    "local_transform": "orthonormal8x8 real Fourier cosine modes; exclude DC and(4,4); all other32 modes used, no band search",
+    "alpha_rule": "1/sqrt5568; same full-source alpha at receiver",
+    "target_l2": 1.0,
+    "physical_support_cells": 11520,
+    "active_coefficients": 5568,
+    "boundary_coefficients": 192,
+    "scope": "New local carrier, not inherited full-frame FFT or old spatial-DCT success"
+  }
+}
