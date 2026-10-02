@@ -1,0 +1,93 @@
+{
+  "candidate_status": "USER_AUTHORIZED_IMPLEMENTATION",
+  "model": {
+    "id": "Wan-AI/Wan2.1-T2V-1.3B-Diffusers",
+    "revision": "0fad780a534b6463e45facd96134c9f345acfa5b"
+  },
+  "key": "watermark",
+  "keys": {
+    "CORRECT": "watermark",
+    "WRONG": "watermark-wrong"
+  },
+  "messages": {
+    "REGISTERED": "OKOK",
+    "WRONG_MESSAGE": "NOPE"
+  },
+  "R": 44,
+  "phase": 0,
+  "update": {
+    "steps": 1,
+    "eta": 174.0,
+    "cap_l2": 1.0,
+    "support": "original1392",
+    "loss": "global_worst_hinge_plus_mean_pair_hinge",
+    "margin_rule": "half ideal public template separation; global uses minimum",
+    "channel_backward": "identity STE for RGB8/raw420/RGB8; exact native VAE VJPs; actual raw420 forward decides improvement"
+  },
+  "input": {
+    "root": "/content/drive/MyDrive/Video-WM/Zero-Mean-Raw420-Objective-Ablation-V1/20261002T053509124852Z/fixed_reference",
+    "result_sha256": "ec329f9a146d7359e4a66f3887f596c39460a4e73a343e5adedad781971bb873",
+    "terminal_relative_path": "COMPOSITE/terminal.pt",
+    "terminal_sha256": "d51211a01c9468b0ffc4c7a4b600862bb7606abc947d860fb120081c8e2e8910"
+  },
+  "reference": {
+    "root": "/content/drive/MyDrive/Video-WM/Zero-Mean-C1-YUV444-No-H264-V1/20261001T110124499275Z/fixed_reference",
+    "result_sha256": "5bea29ef9ae3563d53043188817b0827fd33f69eb000c236b9bc44864b506d78"
+  },
+  "fixed_denominator": {
+    "proposals": 1,
+    "new_observations": 4,
+    "path_reads": 8,
+    "payload_reads": 8,
+    "message_evaluations": 16,
+    "valid_costs": 1392,
+    "catalog_slots": 31320,
+    "structural_exclusions": 29928,
+    "reference_normalized": 3,
+    "reference_raw": 6,
+    "raw420_files": 2,
+    "raw444_files": 2,
+    "parent_normalized": 2,
+    "parent_raw": 4,
+    "acceptance_decisions": 1
+  },
+  "planned_calls": {
+    "vae_decode_native": 2,
+    "vae_encode_native": 4,
+    "vae_encode_gradient": 1,
+    "vae_decode_gradient": 1,
+    "encoder_vjp": 1,
+    "decoder_vjp": 1,
+    "rgb_to_raw444": 2,
+    "raw444_to_rgb24": 2,
+    "path_read": 8,
+    "payload_read": 8,
+    "encoder_chunk_forward": 46,
+    "encoder_chunk_recompute": 46,
+    "decoder_chunk_forward": 46,
+    "decoder_chunk_recompute": 46,
+    "transformer": 0,
+    "rgb_to_raw420": 2,
+    "raw420_to_rgb24": 2
+  },
+  "evidence_ceiling": "One fixed composite proposal from the adopted saved COMPOSITE endpoint; eta174/cap1/original1392 unchanged. Accept only strict improvement of actual raw420 full-family Delta against a fresh same-run baseline; otherwise retain baseline. Proposal and rejected evidence remain fixed-denominator records. Raw444, payload and quality are reported separately and do not enter this path-gap acceptance rule. No step scan, retry, calibrated detection, trajectory-generation, unknown-phase, MP4 or population-FPR claim.",
+  "name": "zero_mean_raw420_forward_accept_v1",
+  "observations": [
+    "BASELINE_RAW420",
+    "BASELINE_RAW444",
+    "PROPOSAL_RAW420",
+    "PROPOSAL_RAW444"
+  ],
+  "prior_raw420_updates": 8,
+  "arms": {
+    "PROPOSAL": "composite"
+  },
+  "acceptance": {
+    "rule": "strict_actual_raw420_delta_improvement",
+    "predicate": "proposal_delta > same_run_baseline_delta",
+    "scope": "writer acceptance only; all174 paths; no calibrated detector threshold",
+    "on_reject": "retain starting terminal",
+    "on_incomplete": "undecided; retain starting terminal if available",
+    "retries": 0
+  }
+}

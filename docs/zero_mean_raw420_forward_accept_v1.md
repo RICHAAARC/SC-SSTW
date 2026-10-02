@@ -1,0 +1,15 @@
+# One proposal with actual raw420 path-gap acceptance
+
+Select a GPU runtime and **Run all**. Start is explicitly the saved COMPOSITE endpoint of run 20261002T053509124852Z, after eight raw420 updates. The prior COMPOSITE and WORST_ONLY results remain referenced history. This notebook proposes exactly one further composite-gradient update with eta174, shrink-only cap1 and the original1392 pilot support. No step scan, retry or alternate proposal.
+
+A fresh decode of the starting terminal produces a shared RGB8 raster for actual raw420 and raw444 roundtrips. Four native encodes give BASELINE_RAW420, BASELINE_RAW444, PROPOSAL_RAW420 and PROPOSAL_RAW444. One additional checkpointed encoder VJP and one decoder VJP form the composite proposal. Native encoder and parent replays are recorded. No exact-runtime or GPU-model requirement is imposed.
+
+Acceptance is a WRITER rule, after the unchanged full blind readout has been persisted: accept if and only if the proposal's actual raw420 minimum wrong-minus-true Delta is strictly greater than the same-run baseline Delta. Every one of the174 valid paths participates. Equality or worsening is REJECTED and retains BASELINE. Missing/failed/nonfinite primary evidence is UNDECIDED and retains BASELINE if available; it is not scored as a rejection or a successful update. Raw444 is a parallel contrast and does not determine acceptance. A raw444 failure is retained while independent raw420 work can continue.
+
+The rule is adopted before running. The composite loss supplies a proposal direction; real raw420 Delta decides whether to retain it. Payload, wrong-key/wrong-message outcomes, composite/global/local losses, both channel rankings and quality are separately reported. Acceptance does not imply positive Delta, unique true top, payload preservation, quality acceptance or scientific completion. It does not repair the identity STE or guarantee progress.
+
+Fixed evidence: one proposal, four new observations, eight path and payload readouts, sixteen message evaluations,1392 valid costs; one acceptance decision. Both starting and proposed terminals, full gradient and step, materialized raw channels and all negative/failed rows remain saved even if rejected. retained_endpoint points to the accepted proposal or retained baseline and is not an additional observation.
+
+Two native decodes, four native encodes, one encoder/decoder VJP pair and zero generation/Transformer/MP4 calls. Existing historical controls and parent readouts are hash-verified references. Checkpoint storage and current-Python dependency repair reuse the working notebooks. Local validation is CPU/static and simulated; the complete pretrained VAE/FFmpeg run is left to the user.
+
+Results: MyDrive/Video-WM/Zero-Mean-Raw420-Forward-Accept-V1/<timestamp>/fixed_reference/result.json. This fixed-source/fixed-phase experiment does not establish generation-time trajectory embedding, unknown-phase alignment, path-aligned payload closure, MP4 robustness or population FPR.
