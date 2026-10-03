@@ -1,0 +1,194 @@
+{
+  "name": "video_local_fourier_rm_same_raster_v1",
+  "baseline": {
+    "path": "/content/drive/MyDrive/Video-WM/Video-Local-Fourier-RM-V1/20261003T050759442813Z/fixed_reference",
+    "source_sha": "5d0284feecfe8e29bf9d1cc55afff2cf623d257d"
+  },
+  "model": {
+    "id": "Wan-AI/Wan2.1-T2V-1.3B-Diffusers",
+    "revision": "0fad780a534b6463e45facd96134c9f345acfa5b"
+  },
+  "generation": {
+    "height": 320,
+    "width": 512,
+    "frames": 181,
+    "fps": 8,
+    "steps": 50,
+    "guidance_scale": 5.0,
+    "max_sequence_length": 512,
+    "negative_prompt": "text, watermark, logo, camera motion, cuts, multiple objects, flicker",
+    "prompt": "locked camera, a copper kettle resting on a plain wooden table, steady soft indoor light, no people, no cuts",
+    "seed": 2026092501
+  },
+  "control": {
+    "steps": [
+      25,
+      26,
+      27,
+      28,
+      29,
+      30,
+      31,
+      32,
+      33,
+      34,
+      35,
+      36,
+      37,
+      38,
+      39,
+      40,
+      41,
+      42,
+      43,
+      44,
+      45,
+      46,
+      47,
+      48,
+      49
+    ],
+    "initial_identity_index": 25,
+    "payload_mask_count": 44160,
+    "payload_eta": 5520,
+    "pilot_active_coefficients": 5568,
+    "pilot_eta": 696.0,
+    "pilot_delta_cap": 1.0,
+    "target_l2": 1.0,
+    "total_budget_matched": false
+  },
+  "carrier": {
+    "state_code": "keyed selection of45 balanced RM(1,5) words;32 chips;minimum Hamming16",
+    "blocks": [
+      [
+        8,
+        16,
+        12,
+        20
+      ],
+      [
+        8,
+        16,
+        44,
+        52
+      ],
+      [
+        28,
+        36,
+        12,
+        20
+      ],
+      [
+        28,
+        36,
+        44,
+        52
+      ]
+    ],
+    "channel": 4,
+    "ages": 4,
+    "chips_per_block": 8,
+    "local_transform": "orthonormal8x8 real Fourier cosine modes; exclude DC and(4,4); all other32 modes used, no band search",
+    "alpha_rule": "1/sqrt5568; same full-source alpha at receiver",
+    "target_l2": 1.0,
+    "physical_support_cells": 11520,
+    "active_coefficients": 5568,
+    "boundary_coefficients": 192,
+    "scope": "New local carrier, not inherited full-frame FFT or old spatial-DCT success"
+  },
+  "method_version": "video-local-fourier-rm-state-v1",
+  "key": "watermark",
+  "wrong_key": "watermark-wrong",
+  "message": "OKOK",
+  "wrong_message": "NOPE",
+  "arms": [
+    "OFF",
+    "PAYLOAD_MULTI",
+    "STATE_MULTI"
+  ],
+  "channels": [
+    "DIRECT_RGB8",
+    "RAW420",
+    "MP4"
+  ],
+  "modes": [
+    "ABSOLUTE_CONTROL",
+    "ADJACENT_DIFFERENCE"
+  ],
+  "receiver": {
+    "g": 0,
+    "R": 44,
+    "alpha": 0.013401406685472435,
+    "tie_atol": 1E-12,
+    "threshold": null,
+    "accepted_payload": false,
+    "state_path_accepted": false
+  },
+  "media": {
+    "rgb_shape": [
+      181,
+      320,
+      512,
+      3
+    ],
+    "rgb_bytes": 88965120,
+    "yuv420_bytes": 44482560,
+    "fps": 8,
+    "crf": 18,
+    "codec": "libx264",
+    "pixel_format": "yuv420p",
+    "geometry_policy": "exact full-frame byte count; no truncation/padding",
+    "raster_source": "single saved uint8 RGB8 file, reopened independently for each channel"
+  },
+  "fixed_denominator": {
+    "source_cases": 1,
+    "arms": 3,
+    "channels": 3,
+    "underlying_observations": 9,
+    "normalized": 9,
+    "keys": 2,
+    "keyed_projections": 18,
+    "path_score_records": 36,
+    "valid_paths": 174,
+    "catalog_per_record": 3915,
+    "path_costs": 6264,
+    "difference_edge_costs": 102168,
+    "absolute_local_state_costs": 35640,
+    "path_posthoc": 36,
+    "difference_edge_posthoc": 18,
+    "payload_reads": 18,
+    "payload_evaluations": 36,
+    "catalog_slots": 140940,
+    "structural_exclusions": 134676
+  },
+  "planned_calls": {
+    "vae_load": 1,
+    "vae_decode": 3,
+    "vae_encode": 9,
+    "raster_save": 3,
+    "rgb_to_raw420": 3,
+    "raw420_to_rgb24": 3,
+    "mp4_save": 3,
+    "mp4_probe": 3,
+    "mp4_readback": 3,
+    "projection_extract": 18,
+    "absolute_control": 18,
+    "difference_infer": 18,
+    "payload_read": 18
+  },
+  "source_files": [
+    "main/tube_state/video_local_fourier_rm_state.py",
+    "main/tube_state/video_local_fourier_rm_control.py",
+    "main/tube_state/grow_video_reference.py",
+    "experiments/wan_state_clock/video_local_fourier_rm_difference_receiver.py",
+    "runtime/wan/vae.py",
+    "runtime/wan/io.py",
+    "runtime/wan/generation.py",
+    "runtime/wan/zero_mean_c1_yuv420_no_h264.py",
+    "runtime/wan/zero_mean_c1_layered_transport.py",
+    "runtime/wan/video_local_fourier_rm_same_raster.py",
+    "experiments/wan_state_clock/video_local_fourier_rm_same_raster_run.py",
+    "experiments/wan_state_clock/configs/video_local_fourier_rm_same_raster_v1.json"
+  ],
+  "evidence_ceiling": "Fixed same-raster media-survival diagnostic only. Three saved original MULTI25..49 terminals, one existing VAE decode/clamp and original np.rint RGB8 quantization per arm; all three channels reopen exactly that same saved RGB8 file. Three decodes and nine encodes, no generation or writer/gradient update. Existing absolute/difference formulas, g0/R44 and full finite paths frozen.18 genuine repeated-payload reads cannot establish time-dependent attribution; payload never chooses state path. All acceptance is false and no automatic scientific PASS, arbitrary edits, calibrated rejection, generalization or blind-video method closure. Direct/raw420/MP4 retain actual bytes and commands; raw420 versus MP4 includes potentially different color conversions/metadata, so it does not isolate only H264. Fresh DIRECT failure is retained, with no older successful raster selected."
+}
