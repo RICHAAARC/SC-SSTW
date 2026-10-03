@@ -1,0 +1,73 @@
+{
+  "name": "video_local_fourier_rm_difference_v1",
+  "input": {
+    "path": "/content/drive/MyDrive/Video-WM/Video-Local-Fourier-RM-Channel-V1/20261003T064701431228Z/fixed_reference",
+    "source_sha": "b394a307320b1b3fb6f5cf684f1adfc08a077833"
+  },
+  "arms": [
+    "OFF",
+    "PAYLOAD_MULTI",
+    "STATE_MULTI"
+  ],
+  "stages": [
+    "TERMINAL44_REFERENCE",
+    "FLOAT_VAE_ROUNDTRIP",
+    "RGB8_VAE_ROUNDTRIP_WITHOUT_CODEC",
+    "MP4_G0_REFERENCE"
+  ],
+  "modes": [
+    "ABSOLUTE_CONTROL",
+    "ADJACENT_DIFFERENCE"
+  ],
+  "key": "watermark",
+  "wrong_key": "watermark-wrong",
+  "message": "OKOK",
+  "wrong_message": "NOPE",
+  "method_version": "video-local-fourier-rm-state-v1",
+  "receiver": {
+    "g": 0,
+    "R": 44,
+    "source_length": 45,
+    "alpha": 0.013401406685472435,
+    "tie_atol": 1E-12,
+    "edge_mask": "adjacent public availability intersection",
+    "difference": "q[j+1]-q[j]",
+    "threshold": null,
+    "accepted_payload": false,
+    "state_path_accepted": false
+  },
+  "fixed_denominator": {
+    "source_cases": 1,
+    "arms": 3,
+    "stages": 4,
+    "keys": 2,
+    "input_projections": 24,
+    "underlying_observations": 12,
+    "window_count": 44,
+    "edges": 43,
+    "valid_paths": 174,
+    "catalog": 3915,
+    "path_score_records": 48,
+    "path_costs": 8352,
+    "difference_edge_costs": 136224,
+    "path_posthoc": 48,
+    "difference_edge_posthoc": 24,
+    "cached_payload_readouts": 24,
+    "cached_payload_evaluations": 48,
+    "catalog_slots": 187920,
+    "structural_exclusions": 179568
+  },
+  "planned_calls": {
+    "source_raw_read": 24,
+    "absolute_control": 24,
+    "difference_infer": 24,
+    "cached_payload_reuse": 24
+  },
+  "source_files": [
+    "main/tube_state/video_local_fourier_rm_state.py",
+    "experiments/wan_state_clock/video_local_fourier_rm_difference_receiver.py",
+    "experiments/wan_state_clock/video_local_fourier_rm_difference_run.py",
+    "experiments/wan_state_clock/configs/video_local_fourier_rm_difference_v1.json"
+  ],
+  "evidence_ceiling": "Fixed cached-projection receiver diagnostic only. Adjacent differences use same saved44-window q, key, public adjacent-mask intersections and unmodified finite source paths. No latent tensor reload, writer change, regeneration, VAE, codec, phase search, affine fitting, penalty, tuning, calibrated acceptance, temporal attack or blind-video closure.43 edges are correlated and keep44 source-window coordinates. Absolute controls replay same observations; cached32-bit payload is REUSED and is not a new recovery or path selector. Terminal and old MP4 are separate references; old MP4 is cross-run consistency only. All hypotheses, equivalences, ties, missing observations and failures remain; no automatic scientific PASS."
+}
