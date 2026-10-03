@@ -1,0 +1,308 @@
+{
+  "model": {
+    "id": "Wan-AI/Wan2.1-T2V-1.3B-Diffusers",
+    "revision": "0fad780a534b6463e45facd96134c9f345acfa5b"
+  },
+  "generation": {
+    "height": 320,
+    "width": 512,
+    "frames": 181,
+    "fps": 8,
+    "steps": 50,
+    "guidance_scale": 5.0,
+    "max_sequence_length": 512,
+    "negative_prompt": "text, watermark, logo, camera motion, cuts, multiple objects, flicker",
+    "prompt": "locked camera, a copper kettle resting on a plain wooden table, steady soft indoor light, no people, no cuts",
+    "seed": 2026092501
+  },
+  "case_id": "eval_copperkettle_s2501",
+  "key": "watermark",
+  "wrong_key": "watermark-wrong",
+  "message": "OKOK",
+  "wrong_message": "NOPE",
+  "precision": {
+    "cuda_transformer": "bfloat16 if is_bf16_supported else float16",
+    "cpu_transformer": "float32",
+    "state_control_cfg_vae": "float32"
+  },
+  "control": {
+    "steps": [
+      25,
+      26,
+      27,
+      28,
+      29,
+      30,
+      31,
+      32,
+      33,
+      34,
+      35,
+      36,
+      37,
+      38,
+      39,
+      40,
+      41,
+      42,
+      43,
+      44,
+      45,
+      46,
+      47,
+      48,
+      49
+    ],
+    "initial_identity_index": 25,
+    "payload_mask_count": 44160,
+    "payload_eta": 5520,
+    "pilot_active_coefficients": 5568,
+    "pilot_eta": 696.0,
+    "pilot_delta_cap": 1.0,
+    "target_l2": 1.0,
+    "total_budget_matched": false
+  },
+  "name": "video_local_fourier_rm_lowband_v1",
+  "method_version": "video-local-fourier-rm-lowband-v1",
+  "arms": [
+    "OFF",
+    "PAYLOAD_MULTI",
+    "STATE_OLD_MULTI",
+    "STATE_LOWBAND_MULTI"
+  ],
+  "channels": [
+    "DIRECT_RGB8",
+    "RAW420",
+    "MP4"
+  ],
+  "reader_families": [
+    "OLD8",
+    "LOWBAND16"
+  ],
+  "modes": [
+    "ABSOLUTE_CONTROL",
+    "ADJACENT_DIFFERENCE"
+  ],
+  "fixed_denominator": {
+    "source_cases": 1,
+    "arms": 4,
+    "channels": 3,
+    "reader_families": 2,
+    "generated": 4,
+    "generation_steps": 200,
+    "controlled_steps": 75,
+    "writer_sidecars": 100,
+    "underlying_observations": 12,
+    "normalized": 12,
+    "keys": 2,
+    "keyed_projections": 48,
+    "path_score_records": 96,
+    "valid_paths": 174,
+    "catalog_per_record": 3915,
+    "path_costs": 16704,
+    "difference_edge_costs": 272448,
+    "absolute_local_state_costs": 95040,
+    "path_posthoc": 96,
+    "difference_edge_posthoc": 48,
+    "payload_reads": 24,
+    "payload_evaluations": 48,
+    "catalog_slots": 375840,
+    "structural_exclusions": 359136,
+    "quality_pairs": 18
+  },
+  "media": {
+    "rgb_shape": [
+      181,
+      320,
+      512,
+      3
+    ],
+    "rgb_bytes": 88965120,
+    "yuv420_bytes": 44482560,
+    "fps": 8,
+    "crf": 18,
+    "codec": "libx264",
+    "pixel_format": "yuv420p",
+    "geometry_policy": "exact full-frame byte count; no truncation/padding",
+    "raster_source": "single saved uint8 RGB8 file, reopened independently for each channel"
+  },
+  "receiver": {
+    "g": 0,
+    "R": 44,
+    "alpha": 0.013401406685472435,
+    "tie_atol": 1e-12,
+    "threshold": null,
+    "accepted_payload": false,
+    "state_path_accepted": false
+  },
+  "carrier_old": {
+    "state_code": "keyed selection of45 balanced RM(1,5) words;32 chips;minimum Hamming16",
+    "blocks": [
+      [
+        8,
+        16,
+        12,
+        20
+      ],
+      [
+        8,
+        16,
+        44,
+        52
+      ],
+      [
+        28,
+        36,
+        12,
+        20
+      ],
+      [
+        28,
+        36,
+        44,
+        52
+      ]
+    ],
+    "channel": 4,
+    "ages": 4,
+    "chips_per_block": 8,
+    "local_transform": "orthonormal8x8 real Fourier cosine modes; exclude DC and(4,4); all other32 modes used, no band search",
+    "alpha_rule": "1/sqrt5568; same full-source alpha at receiver",
+    "target_l2": 1.0,
+    "physical_support_cells": 11520,
+    "active_coefficients": 5568,
+    "boundary_coefficients": 192,
+    "scope": "New local carrier, not inherited full-frame FFT or old spatial-DCT success"
+  },
+  "carrier_lowband": {
+    "blocks": [
+      [
+        4,
+        20,
+        8,
+        24
+      ],
+      [
+        4,
+        20,
+        40,
+        56
+      ],
+      [
+        24,
+        40,
+        8,
+        24
+      ],
+      [
+        24,
+        40,
+        40,
+        56
+      ]
+    ],
+    "local_size": 16,
+    "columns": 32,
+    "channel": 4,
+    "ages": 4,
+    "chips_per_block": 8,
+    "alpha_rule": "1/sqrt5568",
+    "active_coefficients": 5568,
+    "boundary_coefficients": 192,
+    "physical_support_cells": 46080,
+    "mode_rule": "non-DC lex conjugate representatives; min(h,16-h)^2+min(w,16-w)^2 then original(h,w) lex; first32; original VLFRM1 key permutation/sign domains",
+    "scope": "one fixed new spatial carrier; wider support and lower frequency are not causally separated"
+  },
+  "planned_calls": {
+    "generation_load": 1,
+    "transformer_conditional": 200,
+    "transformer_unconditional": 200,
+    "native_step": 200,
+    "local_control": 75,
+    "payload_gradient": 75,
+    "pilot_gradient": 50,
+    "writer_sidecar_save": 100,
+    "vae_load": 1,
+    "vae_decode": 4,
+    "vae_encode": 12,
+    "raster_save": 4,
+    "rgb_to_raw420": 4,
+    "raw420_to_rgb24": 4,
+    "mp4_save": 4,
+    "mp4_probe": 4,
+    "mp4_readback": 4,
+    "projection_extract": 48,
+    "absolute_control": 48,
+    "difference_infer": 48,
+    "payload_read": 24,
+    "quality_compute": 18
+  },
+  "writer_diagnostics": {
+    "expected_slots": 100,
+    "indices": [
+      25,
+      26,
+      27,
+      28,
+      29,
+      30,
+      31,
+      32,
+      33,
+      34,
+      35,
+      36,
+      37,
+      38,
+      39,
+      40,
+      41,
+      42,
+      43,
+      44,
+      45,
+      46,
+      47,
+      48,
+      49
+    ],
+    "shape": [
+      45,
+      4,
+      4,
+      8
+    ],
+    "dtype": "float32",
+    "arrays": [
+      "conditional_clean",
+      "pilot_delta",
+      "z_pre",
+      "z_post",
+      "cfg_clean"
+    ],
+    "numeric_bytes": 11520000,
+    "source": "actual detach tensors only; original eta/cap; no additional model calls",
+    "blind_input": false
+  },
+  "source_files": [
+    "main/tube_state/video_local_fourier_rm_state.py",
+    "main/tube_state/video_local_fourier_rm_control.py",
+    "main/tube_state/grow_video_reference.py",
+    "main/tube_state/video_local_fourier_rm_lowband_v1_state.py",
+    "main/tube_state/video_local_fourier_rm_lowband_v1_control.py",
+    "experiments/wan_state_clock/video_local_fourier_rm_difference_receiver.py",
+    "runtime/wan/video_local_fourier_rm_lowband_v1.py",
+    "runtime/wan/video_local_fourier_rm_same_raster.py",
+    "runtime/wan/vae.py",
+    "runtime/wan/generation.py",
+    "runtime/wan/io.py",
+    "runtime/wan/trajectory.py",
+    "runtime/wan/video_temporal_sync_bridge.py",
+    "runtime/wan/zero_mean_c1_yuv420_no_h264.py",
+    "runtime/wan/zero_mean_c1_layered_transport.py",
+    "experiments/wan_state_clock/video_local_fourier_rm_lowband_v1_run.py",
+    "experiments/wan_state_clock/configs/video_local_fourier_rm_lowband_v1.json"
+  ],
+  "source_sha": null,
+  "evidence_ceiling": "One fixed source/seed four-arm real MULTI25..49 carrier comparison. Only the single16x16 lower-bandwidth spatial basis/support changes; original RM32/45 states/4 ages/alpha eta696/cap1 and repeated payload retained. Both public OLD8 and LOWBAND16 receivers independently read every arm/channel/key; no selecting family by arm or truth, no combining scores. Same saved RGB8 raster per arm for DIRECT/RAW420/MP4; g0/R44 frozen absolute/difference complete finite paths. Repeated24 payload reads are new but not time-dependent evidence. Snapshot-sealed truth joins only; all acceptance=false. No calibration/FPR/quality PASS, arbitrary edits, generalization or complete blind-video method. Larger support and lower frequency are one carrier change and RAW420/MP4 can differ in color conversions/metadata; no single-cause claim."
+}
