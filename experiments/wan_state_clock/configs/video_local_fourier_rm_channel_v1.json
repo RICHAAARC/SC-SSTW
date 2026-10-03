@@ -1,0 +1,141 @@
+{
+  "name": "video_local_fourier_rm_channel_v1",
+  "baseline": {
+    "path": "/content/drive/MyDrive/Video-WM/Video-Local-Fourier-RM-V1/20261003T050759442813Z/fixed_reference",
+    "source_sha": "5d0284feecfe8e29bf9d1cc55afff2cf623d257d"
+  },
+  "model": {
+    "id": "Wan-AI/Wan2.1-T2V-1.3B-Diffusers",
+    "revision": "0fad780a534b6463e45facd96134c9f345acfa5b"
+  },
+  "key": "watermark",
+  "wrong_key": "watermark-wrong",
+  "message": "OKOK",
+  "wrong_message": "NOPE",
+  "method_version": "video-local-fourier-rm-state-v1",
+  "control": {
+    "steps": [
+      25,
+      26,
+      27,
+      28,
+      29,
+      30,
+      31,
+      32,
+      33,
+      34,
+      35,
+      36,
+      37,
+      38,
+      39,
+      40,
+      41,
+      42,
+      43,
+      44,
+      45,
+      46,
+      47,
+      48,
+      49
+    ],
+    "initial_identity_index": 25,
+    "payload_mask_count": 44160,
+    "payload_eta": 5520,
+    "pilot_active_coefficients": 5568,
+    "pilot_eta": 696.0,
+    "pilot_delta_cap": 1.0,
+    "target_l2": 1.0,
+    "total_budget_matched": false
+  },
+  "carrier": {
+    "state_code": "keyed selection of45 balanced RM(1,5) words;32 chips;minimum Hamming16",
+    "blocks": [
+      [
+        8,
+        16,
+        12,
+        20
+      ],
+      [
+        8,
+        16,
+        44,
+        52
+      ],
+      [
+        28,
+        36,
+        12,
+        20
+      ],
+      [
+        28,
+        36,
+        44,
+        52
+      ]
+    ],
+    "channel": 4,
+    "ages": 4,
+    "chips_per_block": 8,
+    "local_transform": "orthonormal8x8 real Fourier cosine modes; exclude DC and(4,4); all other32 modes used, no band search",
+    "alpha_rule": "1/sqrt5568; same full-source alpha at receiver",
+    "target_l2": 1.0,
+    "physical_support_cells": 11520,
+    "active_coefficients": 5568,
+    "boundary_coefficients": 192,
+    "scope": "New local carrier, not inherited full-frame FFT or old spatial-DCT success"
+  },
+  "arms": [
+    "OFF",
+    "PAYLOAD_MULTI",
+    "STATE_MULTI"
+  ],
+  "channels": [
+    "FLOAT_VAE_ROUNDTRIP",
+    "RGB8_VAE_ROUNDTRIP_WITHOUT_CODEC"
+  ],
+  "fixed_denominator": {
+    "source_cases": 1,
+    "arms": 3,
+    "new_channels": 2,
+    "new_normalized": 6,
+    "reference_inputs": 6,
+    "observation_tensors": 12,
+    "new_keyed_reads": 12,
+    "reference_keyed_reads": 12,
+    "keyed_reads": 24,
+    "posthoc": 48,
+    "local_posthoc": 24,
+    "catalog_slots": 93960,
+    "valid_costs": 4176,
+    "structural_exclusions": 89784,
+    "local_state_costs": 47520
+  },
+  "planned_calls": {
+    "vae_load": 1,
+    "vae_decode": 3,
+    "vae_encode": 6,
+    "new_path_read": 12,
+    "new_payload_read": 12,
+    "reference_path_read": 12,
+    "reference_payload_read": 12
+  },
+  "source_files": [
+    "main/tube_state/video_local_fourier_rm_state.py",
+    "main/tube_state/video_local_fourier_rm_control.py",
+    "main/tube_state/grow_video_reference.py",
+    "runtime/wan/vae.py",
+    "runtime/wan/generation.py",
+    "runtime/wan/trajectory.py",
+    "runtime/wan/video_temporal_sync_bridge.py",
+    "experiments/wan_state_clock/configs/video_local_fourier_rm_v1.json",
+    "experiments/wan_state_clock/video_local_fourier_rm_channel_run.py",
+    "experiments/wan_state_clock/configs/video_local_fourier_rm_channel_v1.json"
+  ],
+  "reference_environment_limit": "Same frozen VAE model revision and adapter; previous MP4 was produced in a previous process/environment, and decoded RGB was not retained. Current FLOAT and RGB8 share one decode per arm. Their comparison isolates quantization; comparison with old MP4 is cross-run consistency evidence, not codec-only causality.",
+  "evidence_ceiling": "Fixed saved-terminal channel localization only. MULTI25..49, local support, codebook, alpha, budget and receiver stay unchanged. FLOAT includes existing VAE decode [0,1] clamp plus deterministic encode. RGB8 applies the exact existing single np.rint uint8 rounding and FP32 /255 to that same decode, with no codec. New reads are channel diagnostics; terminal44 and old MP4 g0 are separate offline references. No new generation, MP4 save/read, global phase search, state acceptance, time-dependent payload, temporal robustness or blind-video closure claim. A finite path argmin is uncalibrated, repeated payload does not choose a path, and old MP4 differences do not isolate codec causality."
+}
