@@ -29,8 +29,10 @@ def _load_args(model: dict[str, Any], *, torch_dtype: Any, subfolder: str | None
     return args
 
 
-def load_frozen_vae(config: dict[str, Any]) -> Any:
-    """Load only the fixed FP32 Wan VAE for a C2A readout.
+def load_frozen_vae(config: dict[str, Any], *, device: Any = None) -> Any:
+    """Load only the fixed FP32 Wan VAE for a readout.
+
+    Optional device preserves the legacy CUDA default for existing callers.
 
     This intentionally does not instantiate ``WanPipeline`` or a transformer.
     """
@@ -45,24 +47,28 @@ def load_frozen_vae(config: dict[str, Any]) -> Any:
         disable()
     for parameter in vae.parameters():
         parameter.requires_grad_(False)
-    return vae.to(torch.device("cuda"))
+    return vae.to(torch.device("cuda") if device is None else torch.device(device))
 
 
-def prepare_generation(config: dict[str, Any], *, load_vae: bool = True):
+def prepare_generation(config: dict[str, Any], *, load_vae: bool = True,
+                       device: Any = None, model_dtype: Any = None):
     """Prepare a fresh prompt-conditioned Wan noise state and native scheduler.
 
     ``load_vae=False`` is the generation-worker path: the transformer process
     owns no VAE, and the later media worker loads the VAE independently.
+    Optional device/model_dtype preserve old CUDA/BF16 defaults; callers can select
+    CPU/FP32 without a hardware-name gate.
     """
 
     import torch
     from diffusers import WanPipeline
 
     model, generation = config["model"], config["generation"]
-    device = torch.device("cuda")
+    device = torch.device("cuda") if device is None else torch.device(device)
+    model_dtype = torch.bfloat16 if model_dtype is None else model_dtype
     pipe = WanPipeline.from_pretrained(
         model["id"],
-        **_load_args(model, torch_dtype=torch.bfloat16),
+        **_load_args(model, torch_dtype=model_dtype),
         **({} if load_vae else {"vae": None}),
     )
     if (
@@ -81,13 +87,13 @@ def prepare_generation(config: dict[str, Any], *, load_vae: bool = True):
             max_sequence_length=generation["max_sequence_length"],
             device=device,
         )
-    prompt, negative = prompt.to(torch.bfloat16), negative.to(torch.bfloat16)
+    prompt, negative = prompt.to(model_dtype), negative.to(model_dtype)
     pipe.text_encoder = None
     pipe.vae = None
     gc.collect()
     torch.cuda.empty_cache()
     if load_vae:
-        vae = load_frozen_vae(config)
+        vae = load_frozen_vae(config, device=device)
         pipe.vae = vae
         pipe.vae_scale_factor_temporal = getattr(vae.config, "scale_factor_temporal", None) or 2 ** sum(vae.config.temperal_downsample)
         pipe.vae_scale_factor_spatial = getattr(vae.config, "scale_factor_spatial", None) or 2 ** len(vae.config.temperal_downsample)
