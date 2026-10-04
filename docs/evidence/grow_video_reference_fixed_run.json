@@ -1,0 +1,141 @@
+{
+  "run": "20260929T124706736859Z",
+  "source_sha": "24c44353289909b10d08bf5e2be90c49ed0b9b0f",
+  "result_sha256": "a13def2bab77da76f41b1b34cce7470be03f4c947dcd0c1232cd2e993711a489",
+  "drive_relative_path": "Video-WM/GROW-Video-Reference-V1/20260929T124706736859Z/fixed_reference/result.json",
+  "status": "EXECUTION_COMPLETE",
+  "counts": {
+    "generated": 3,
+    "saved_mp4": 3,
+    "reads": 24,
+    "evaluated": 48
+  },
+  "fixed_denominator": {
+    "sources": 1,
+    "arms": 3,
+    "mp4": 3,
+    "layers_per_arm": 4,
+    "keys": 2,
+    "raw_reads": 24,
+    "evaluations": 48
+  },
+  "primary_mp4_evaluations": {
+    "OFF/mp4/CORRECT/REGISTERED": {
+      "status": "EVALUATED",
+      "bit_errors": 19,
+      "ber": 0.59375,
+      "exact_bits": false
+    },
+    "OFF/mp4/CORRECT/WRONG_MESSAGE": {
+      "status": "EVALUATED",
+      "bit_errors": 19,
+      "ber": 0.59375,
+      "exact_bits": false
+    },
+    "OFF/mp4/WRONG/REGISTERED": {
+      "status": "EVALUATED",
+      "bit_errors": 9,
+      "ber": 0.28125,
+      "exact_bits": false
+    },
+    "OFF/mp4/WRONG/WRONG_MESSAGE": {
+      "status": "EVALUATED",
+      "bit_errors": 17,
+      "ber": 0.53125,
+      "exact_bits": false
+    },
+    "MULTI/mp4/CORRECT/REGISTERED": {
+      "status": "EVALUATED",
+      "bit_errors": 0,
+      "ber": 0.0,
+      "exact_bits": true
+    },
+    "MULTI/mp4/CORRECT/WRONG_MESSAGE": {
+      "status": "EVALUATED",
+      "bit_errors": 10,
+      "ber": 0.3125,
+      "exact_bits": false
+    },
+    "MULTI/mp4/WRONG/REGISTERED": {
+      "status": "EVALUATED",
+      "bit_errors": 12,
+      "ber": 0.375,
+      "exact_bits": false
+    },
+    "MULTI/mp4/WRONG/WRONG_MESSAGE": {
+      "status": "EVALUATED",
+      "bit_errors": 14,
+      "ber": 0.4375,
+      "exact_bits": false
+    },
+    "LAST/mp4/CORRECT/REGISTERED": {
+      "status": "EVALUATED",
+      "bit_errors": 0,
+      "ber": 0.0,
+      "exact_bits": true
+    },
+    "LAST/mp4/CORRECT/WRONG_MESSAGE": {
+      "status": "EVALUATED",
+      "bit_errors": 10,
+      "ber": 0.3125,
+      "exact_bits": false
+    },
+    "LAST/mp4/WRONG/REGISTERED": {
+      "status": "EVALUATED",
+      "bit_errors": 10,
+      "ber": 0.3125,
+      "exact_bits": false
+    },
+    "LAST/mp4/WRONG/WRONG_MESSAGE": {
+      "status": "EVALUATED",
+      "bit_errors": 16,
+      "ber": 0.5,
+      "exact_bits": false
+    }
+  },
+  "quality": {
+    "OFF": {
+      "status": "MEASURED",
+      "diagnostic_only": true,
+      "rgb_rmse": 0.0,
+      "psnr_db": null,
+      "identical_pixels": true,
+      "source": "same-format MP4 RGB24 readback relative to OFF",
+      "threshold": null,
+      "mp4_sha256": "9a48c66ef0c052b23f80623d4323da7c26310bd3746ab773e594192e74df8b88"
+    },
+    "MULTI": {
+      "status": "MEASURED",
+      "diagnostic_only": true,
+      "rgb_rmse": 0.024067353367541053,
+      "psnr_db": 32.371433309638306,
+      "identical_pixels": false,
+      "source": "same-format MP4 RGB24 readback relative to OFF",
+      "threshold": null,
+      "mp4_sha256": "c858ec7339a95f33b787141c687c49cb13c2003dc67ef767ec307282a3ec53e8"
+    },
+    "LAST": {
+      "status": "MEASURED",
+      "diagnostic_only": true,
+      "rgb_rmse": 0.015665762890671737,
+      "psnr_db": 36.100969020252464,
+      "identical_pixels": false,
+      "source": "same-format MP4 RGB24 readback relative to OFF",
+      "threshold": null,
+      "mp4_sha256": "f879e4302e6bcc3b19b48f67322559ecff35c02640cae7c43a9a7e3fe7e772a3"
+    }
+  },
+  "source_files": {
+    "main/tube_state/grow_video_reference.py": "35b186833dee508552235df1bb3c2524db01848e507402f87c0b9655016c8ead",
+    "runtime/wan/grow_video_reference.py": "de03c0c2e5c987dc5a8b198e8d0c29b99cbd99a0bf00625677d0d407a234afd8",
+    "runtime/wan/generation.py": "3538921118a429339412eee4d72e57268c9cb232d6ebb6e8677e2e55f143bde3",
+    "runtime/wan/trajectory.py": "a0e78f162705a2ec29ad82d9135a4d46ac664f6c763eabd6fdef98ef39a85478",
+    "runtime/wan/vae.py": "ff3aec5659a14238923cd943364c6eda62d4648343b3ac17910cfbecdfec3670",
+    "runtime/wan/io.py": "db9caa843d632d733aa670dbe87bd38cf6084490d5bef71b8a69e6839cc33ae7",
+    "experiments/wan_state_clock/grow_video_reference_run.py": "480bb35239ac636bfd99c7d43d9e6d20dbc06e52e67827e033b5a5298a7a5388",
+    "experiments/wan_state_clock/configs/grow_video_reference_v1.json": "fb4c7860f9c51ee3ce1771d05557cebc03199bfc16a15c1790832209cf1ffeee",
+    "experiments/wan_state_clock/requirements-grow-video-reference.txt": "4c9fb7f727f2923f7e1b33893f9094905fa9071358b81b7f77a13cd172bf407e"
+  },
+  "audit": "Reconciled source/config/artifact hashes, 24 raw rows, 48 evaluations; independently recalculated six terminal key reads and saved-MP4 quality. No generation or VAE rerun.",
+  "evidence_ceiling": "One fixed source and dependent views. Repeated payload, not temporal synchronization or calibrated FPR. No imperceptibility pass."
+}

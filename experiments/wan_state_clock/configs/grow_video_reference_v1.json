@@ -1,0 +1,114 @@
+{
+  "name": "grow_video_reference_v1",
+  "image_reference_source": "fea8dc9c8c48802d31d34316d6e2f7df2dd8fe08",
+  "image_reference_run": "20260929T110323836911Z",
+  "upstream_grow_commit": "6aa69a9c5d4a9e75df457fcca8dfc71b64a6b870",
+  "model": {
+    "id": "Wan-AI/Wan2.1-T2V-1.3B-Diffusers",
+    "revision": "0fad780a534b6463e45facd96134c9f345acfa5b"
+  },
+  "generation": {
+    "height": 320,
+    "width": 512,
+    "frames": 181,
+    "fps": 8,
+    "steps": 50,
+    "guidance_scale": 5.0,
+    "max_sequence_length": 512,
+    "negative_prompt": "text, watermark, logo, camera motion, cuts, multiple objects, flicker",
+    "prompt": "locked camera, a copper kettle resting on a plain wooden table, steady soft indoor light, no people, no cuts",
+    "seed": 2026092501
+  },
+  "case_id": "eval_copperkettle_s2501",
+  "arms": [
+    "OFF",
+    "MULTI",
+    "LAST"
+  ],
+  "control": {
+    "channels": [
+      0,
+      1,
+      2,
+      3
+    ],
+    "payload_bits": 32,
+    "alpha": 0.5,
+    "band_min": 0.2,
+    "band_max": 0.5,
+    "all_latent_times": 46,
+    "reference_mask_count": 1600,
+    "reference_eta": 200.0,
+    "actual_mask_count": 44160,
+    "derived_eta": 5520.0,
+    "MULTI": [
+      25,
+      26,
+      27,
+      28,
+      29,
+      30,
+      31,
+      32,
+      33,
+      34,
+      35,
+      36,
+      37,
+      38,
+      39,
+      40,
+      41,
+      42,
+      43,
+      44,
+      45,
+      46,
+      47,
+      48,
+      49
+    ],
+    "LAST": [
+      49
+    ],
+    "cfg_compensation": false,
+    "total_budget_matching": false
+  },
+  "key": "watermark",
+  "wrong_key": "watermark-wrong",
+  "message": "OKOK",
+  "wrong_message": "NOPE",
+  "media": {
+    "fps": 8,
+    "crf": 18,
+    "codec": "libx264",
+    "pixel_format": "yuv420p"
+  },
+  "fixed_denominator": {
+    "sources": 1,
+    "arms": 3,
+    "mp4": 3,
+    "layers_per_arm": 4,
+    "keys": 2,
+    "raw_reads": 24,
+    "evaluations": 48
+  },
+  "planned_calls": {
+    "transformer_conditional": 150,
+    "transformer_unconditional": 150,
+    "native_step": 150,
+    "local_gradient": 26,
+    "vae_decode": 3,
+    "vae_encode": 9,
+    "mp4_save": 3,
+    "mp4_read": 3,
+    "bit_read": 24,
+    "quality_mp4_read": 3
+  },
+  "evidence_ceiling": "One source,3 fixed schemes and4 dependent layers; MP4 primary. No synchronization, lowFPR, generalization or non-last independent contribution claim.",
+  "precision": {
+    "cuda_transformer": "bfloat16 if is_bf16_supported else float16",
+    "cpu_transformer": "float32",
+    "state_control_cfg_vae": "float32"
+  }
+}
