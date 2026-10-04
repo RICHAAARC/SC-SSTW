@@ -1,0 +1,24 @@
+{
+  "schema": 1,
+  "release_id": "grow-video-reference-v1-portable",
+  "content_sha256": "1842d2c9404642261e7f39e1ca0a6c6d3d3d999af543b9d59015ad2d1eba0860",
+  "files": {
+    "main/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "main/tube_state/__init__.py": "02e8c40e177859189abd75a300c71177d3c51265ff2ed2d34339600a8dfeadd1",
+    "main/tube_state/grow_video_reference.py": "35b186833dee508552235df1bb3c2524db01848e507402f87c0b9655016c8ead",
+    "runtime/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "runtime/wan/__init__.py": "a53fdb88e0ccef8b0de9db2ade1ce09720034d71f4e788fd7f6c9059fe43eb9c",
+    "runtime/wan/generation.py": "6b4d8c7289099668a11eed82dc65a44a9b85d6fec0883cb183aec2fb1e027ba7",
+    "runtime/wan/trajectory.py": "c36834abbf5a112ad41a2f75fd9ca6818332807b8a4ef53e68cbead1fad903d2",
+    "runtime/wan/vae.py": "3d64c1409038e63c6673d846d9e9f3e9c3fde6405c5d9d0b42b8fe6f7815bc1e",
+    "runtime/wan/io.py": "db9caa843d632d733aa670dbe87bd38cf6084490d5bef71b8a69e6839cc33ae7",
+    "runtime/wan/grow_video_reference.py": "de03c0c2e5c987dc5a8b198e8d0c29b99cbd99a0bf00625677d0d407a234afd8",
+    "runtime/wan/provenance.py": "6aa3e29a1a0709ce03d55d9380c3fbe2c64319b44ee354fc6497319f90640058",
+    "experiments/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "experiments/wan_state_clock/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "experiments/wan_state_clock/grow_video_reference_run.py": "2b31f69039e9722d78f58cd980b67bceaf553735414e5f8acae5a61cae7f69d4",
+    "experiments/wan_state_clock/configs/grow_video_reference_v1.json": "fb4c7860f9c51ee3ce1771d05557cebc03199bfc16a15c1790832209cf1ffeee",
+    "experiments/wan_state_clock/requirements-grow-video-reference.txt": "4c9fb7f727f2923f7e1b33893f9094905fa9071358b81b7f77a13cd172bf407e"
+  },
+  "identity": "Content identity of the runtime closure; not a Git commit or signature."
+}

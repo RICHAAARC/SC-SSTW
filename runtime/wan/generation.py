@@ -1,24 +1,7 @@
-"""One no-gradient Wan terminal-latent generation reused by C2A.
-
-This is the small, endpoint-only part of the prior public-statistic loader:
-it retains the WanPipeline prompt/latent/scheduler path and its independently
-loaded FP32 VAE, but drops feedback, autograd, checkpointing, and the old
-three-arm controller.
-"""
-
+"""Frozen Wan model loaders for the successful native GROW reference chain."""
 from __future__ import annotations
-
 import gc
-from dataclasses import dataclass
 from typing import Any
-
-
-@dataclass
-class GeneratedTerminal:
-    normalized_latent: Any
-    vae: Any
-    metadata: dict[str, Any]
-
 
 def _load_args(model: dict[str, Any], *, torch_dtype: Any, subfolder: str | None = None) -> dict[str, Any]:
     args: dict[str, Any] = {"torch_dtype": torch_dtype}
@@ -128,50 +111,3 @@ def prepare_generation(config: dict[str, Any], *, load_vae: bool = True,
     weight = getattr(getattr(pipe.transformer, "patch_embedding", None), "weight", None)
     input_dtype = weight.dtype if weight is not None else next(pipe.transformer.parameters()).dtype
     return pipe, latent, prompt, negative, input_dtype
-
-
-def generate_terminal_latent(config: dict[str, Any], progress: Any = None) -> GeneratedTerminal:
-    """Generate one normalized terminal latent by the existing Wan step path."""
-
-    import torch
-
-    pipe, latent, prompt, negative, input_dtype = prepare_generation(config)
-    model, generation, vae = config["model"], config["generation"], pipe.vae
-    transformer_calls = 0
-    transformer_attempted = 0
-    def record_forward(completed: bool) -> None:
-        nonlocal transformer_calls, transformer_attempted
-        if completed:
-            transformer_calls += 1
-        else:
-            transformer_attempted += 1
-        if progress is not None:
-            progress({"transformer_attempted": transformer_attempted, "transformer_completed": transformer_calls})
-    with torch.no_grad():
-        for index, timestep in enumerate(pipe.scheduler.timesteps):
-            hidden = latent.to(input_dtype)
-            time = timestep.expand(latent.shape[0])
-            record_forward(False)
-            conditional = pipe.transformer(hidden_states=hidden, timestep=time, encoder_hidden_states=prompt, attention_kwargs=None, return_dict=False)[0]
-            record_forward(True)
-            record_forward(False)
-            unconditional = pipe.transformer(hidden_states=hidden, timestep=time, encoder_hidden_states=negative, attention_kwargs=None, return_dict=False)[0]
-            record_forward(True)
-            velocity = unconditional + generation["guidance_scale"] * (conditional - unconditional)
-            latent = pipe.scheduler.step(velocity, timestep, latent, return_dict=False)[0]
-            if hasattr(pipe.scheduler, "step_index") and pipe.scheduler.step_index not in (None, index + 1):
-                raise RuntimeError("Wan scheduler cursor diverged during C2A terminal generation")
-    metadata = {
-        "generation_entry": "reused_public_statistic_single_transformer_wan_endpoint",
-        "model": model,
-        "generation": generation,
-        "scheduler_class": type(pipe.scheduler).__name__,
-        "scheduler_config": dict(pipe.scheduler.config),
-        "terminal_latent_shape": list(latent.shape),
-        "terminal_latent_dtype": str(latent.dtype),
-        "transformer_dtype": str(input_dtype),
-        "vae_dtype": str(next(vae.parameters()).dtype),
-        "transformer_calls": transformer_calls,
-        "generation_invocations": 1,
-    }
-    return GeneratedTerminal(latent.detach(), vae, metadata)

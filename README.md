@@ -1,56 +1,66 @@
 # SC-SSTW
 
-Research on video watermarks with local spatiotemporal carriers, generation-time
-control and blind temporal synchronization.
+**main is the sole authoritative release branch.** It contains one complete,
+independently copyable reference flow whose limited real mechanism has been
+verified: native Wan generation-time MULTI writing → real VAE / saved MP4 →
+independent blind 32-bit repeated-payload reading.
 
-## Current evidence
+This is not completion of the full research proposal. Local time-state
+synchronization, time-dependent segment payload, aggregation and calibrated
+rejection remain development work outside main. See
+[current scope](docs/current_method.md) and [fixed real evidence](docs/grow_video_reference_v1.md).
 
-The independent **GROW video reference** demonstrates real native Wan MULTI
-control and blind 32-bit repeated-payload recovery from a saved MP4 on one fixed
-source. It is a runnable reference baseline, not a completed video time-sync
-method. See [construction and verified run](docs/grow_video_reference_v1.md).
+## Run from a clone or a ZIP
 
-The remaining method chain is local time-state survival through VAE/media,
-blind path recovery, time-dependent segment payload, segment/sequence
-aggregation, and appropriate rejection. OLD8 and newer local-state candidates
-remain development work; they are not the verified default in main.
-See [current method status](docs/current_method.md) and the bounded
-[development-route index](docs/development_evidence_index.md).
-
-## Reference entrypoint
+External model weights and standard Python/FFmpeg dependencies are not bundled.
+Use a compatible Torch/Torchvision installation, then:
 
 ```bash
-python -m experiments.wan_state_clock.grow_video_reference_run \
-  --output /content/drive/MyDrive/Video-WM/GROW-Video-Reference-V1/my-fixed-run
+python -m pip install -r experiments/wan_state_clock/requirements-grow-video-reference.txt
+python -m experiments.wan_state_clock.grow_video_reference_run --output /absolute/new-result-directory
 ```
 
-Use a fresh output directory. The fixed OFF/MULTI/LAST run retains 3 MP4s,
-24 blind readouts and 48 post-read evaluations. Its [Colab notebook](https://colab.research.google.com/github/RICHAAARC/SC-SSTW/blob/main/notebooks/grow_video_reference_v1_colab.ipynb)
-checks out an immutable source SHA. Historical notebook links remain unchanged.
+Install FFmpeg and ffprobe through your normal system package manager if absent.
+Run from the extracted project root; choose a fresh output directory.
+The default fixed source produces OFF/MULTI/LAST, 3 MP4s, 24 blind readouts and
+48 post-read evaluations. There is no runtime dependency on a parent workspace,
+dev branch, archive or Git installation. CPU is supported but slow for real Wan.
 
-## Retained early engineering entrypoints
+The [Colab notebook](https://colab.research.google.com/github/RICHAAARC/SC-SSTW/blob/main/notebooks/grow_video_reference_v1_colab.ipynb)
+mounts Drive and checks out an immutable published source SHA. It writes a fresh
+timestamped result and preserves failed/missing rows.
 
-The four-bit / 44-46 [integrated payload entrypoint](docs/integrated_payload_v1.md)
-and legacy terminal state-clock `experiments.wan_state_clock.run` remain
-available for reproduction. Their engineering integration and tests are not
-evidence that the current method has completed real-video synchronization.
-The original integrated notebook remains [SHA-pinned](https://colab.research.google.com/github/RICHAAARC/SC-SSTW/blob/7cfe2e73807486700b6d62728fdb6cfccddbaf11/notebooks/integrated_payload_v1_colab.ipynb).
+## Source identity outside Git
 
-## Local validation and optional runtime
+The committed release_manifest.json identifies the complete runtime source,
+config and dependency declaration by SHA-256. GitHub's source ZIP includes it.
+A no-Git result records its observed content identity and manifest match; its
+source_sha is null. A real checkout additionally records its actual Git commit
+and source status. Local modifications are reported rather than called an
+official source match. A missing manifest remains explicitly unversioned.
 
-Core checks use `requirements-dev.txt`. The GROW CPU fixture tests additionally
-use Torch and the Diffusers/Wan APIs from
-`experiments/wan_state_clock/requirements-grow-video-reference.txt`; Torch
-should use a compatible existing installation. FFmpeg/ffprobe support fixture
-media checks and real saved-media execution.
+The manifest is a reproducibility record, not a cryptographic signature or a
+scientific acceptance threshold. Maintainers regenerate it with
+`python scripts/build_release_manifest.py` after runtime changes.
+
+## Validate the standalone release
 
 ```bash
-python -m pytest -q
+python -m pip install -r requirements-dev.txt
 python governance/tools/run_validation_profile.py release
 ```
 
-These are engineering checks. They neither download model weights nor execute
-a real generation experiment. Running the reference notebook loads the fixed
-Wan model and writes a new result; no hardware model or exact Python-version
-gate is imposed. Result completeness, payload recovery, quality and temporal
-synchronization are separate conclusions.
+In addition to installed runtime libraries, these checks use NumPy, pytest and
+nbformat. The release profile copies this tree to a temporary directory without
+.git and runs the current reference tests with isolated imports. The CPU fixture
+covers native steps, local writing, actual FFmpeg save/read, fixture-VAE
+interfaces, truth-free reception, evaluation and failure retention.
+It does not download weights or count as another real Wan experiment.
+
+## Historical reproduction
+
+Unverified combinations and obsolete executables are absent from the current
+release tree. Their immutable source and notebook links remain in the
+[historical entry index](docs/historical_entries.md). Branches and Git history
+are preserved. Successful results from different historical branches are not
+combined into a completed synchronized watermark claim.

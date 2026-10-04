@@ -59,105 +59,43 @@ def dependencies(root: Path, policy: dict) -> list[str]:
     return errors
 
 
-def notebooks(root: Path, policy: dict) -> list[str]:
-    import nbformat
-
-    errors = []
-    for name in policy['active_notebooks']:
-        try:
-            nb = nbformat.read(root / name, as_version=4)
-            nbformat.validate(nb)
-            cells = [c for c in nb.cells if c.cell_type == 'code']
-            if not nb.cells or nb.cells[0].cell_type != 'code' or nb.cells[0].source.strip() != "from google.colab import drive\ndrive.mount('/content/drive')":
-                errors.append(f'{name}: cell 0 must be the independent Drive mount')
-            combined = '\n'.join(c.source for c in cells)
-            if not re.search(r"REF\s*=\s*['\"][0-9a-f]{40}['\"]", combined):
-                errors.append(f'{name}: missing fixed source commit')
-            if 'https://github.com/' not in combined or '/content/drive/MyDrive/' not in combined:
-                errors.append(f'{name}: missing GitHub source or Drive result destination')
-            for cell in cells:
-                ast.parse(cell.source)
-                if cell.get('outputs') or cell.get('execution_count') is not None:
-                    errors.append(f'{name}: committed execution output')
-                if any(m == 'governance' or m.startswith('governance.') for m in imported_modules(cell.source, '')):
-                    errors.append(f'{name}: runtime governance import')
-                if re.search(r'\bRUN\w*\s*=\s*False\b|force_remount\s*=\s*True', cell.source):
-                    errors.append(f'{name}: disabled run or forced remount')
-        except (OSError, ValueError, SyntaxError, nbformat.ValidationError) as exc:
-            errors.append(f'{name}: {exc}')
-    return errors
-
-
-def release_templates(root: Path, policy: dict) -> list[str]:
-    import nbformat
-
-    errors = []
-    for name in policy.get('release_notebook_templates', ()):
-        try:
-            nb = nbformat.read(root / name, as_version=4)
-            nbformat.validate(nb)
-            if not nb.cells or nb.cells[0].cell_type != 'code' or nb.cells[0].source.strip() != "from google.colab import drive\ndrive.mount('/content/drive')":
-                errors.append(f'{name}: cell 0 must be the independent Drive mount')
-            combined = '\n'.join(cell.source for cell in nb.cells if cell.cell_type == 'code')
-            if 'RELEASE_SOURCE_REF = None' not in combined or 'RELEASE_SOURCE_URL = None' not in combined:
-                errors.append(f'{name}: unbound release source declaration missing')
-            if re.search(r"REF\s*=\s*['\"][0-9a-f]{40}['\"]", combined):
-                errors.append(f'{name}: template must not claim a released source commit')
-            for cell in nb.cells:
-                if cell.get('outputs') or cell.get('execution_count') is not None:
-                    errors.append(f'{name}: committed execution output')
-                if cell.cell_type == 'code':
-                    ast.parse(cell.source)
-        except (OSError, ValueError, SyntaxError, nbformat.ValidationError) as exc:
-            errors.append(f'{name}: {exc}')
-    return errors
-
 
 def published_release_notebooks(root: Path, policy: dict) -> list[str]:
     import nbformat
-
-    names = policy.get('published_release_notebooks')
-    if not names:
-        return ['no published release notebook is declared']
-    errors = []
+    names=policy.get('published_release_notebooks')
+    if not names:return ['no published release notebook is declared']
+    errors=[]
     for name in names:
         try:
-            nb = nbformat.read(root / name, as_version=4)
-            nbformat.validate(nb)
-            if not nb.cells or nb.cells[0].cell_type != 'code' or nb.cells[0].source.strip() != "from google.colab import drive\ndrive.mount('/content/drive')":
+            nb=nbformat.read(root/name,as_version=4);nbformat.validate(nb)
+            if not nb.cells or nb.cells[0].cell_type!='code' or nb.cells[0].source.strip()!="from google.colab import drive\ndrive.mount('/content/drive')":
                 errors.append(f'{name}: cell 0 must be the independent Drive mount')
-            cells = [cell for cell in nb.cells if cell.cell_type == 'code']
-            combined = '\n'.join(cell.source for cell in cells)
-            if not re.search(r"RELEASE_SOURCE_URL\s*=\s*['\"]https://github\.com/", combined):
-                errors.append(f'{name}: missing fixed GitHub source URL')
-            if not re.search(r"RELEASE_SOURCE_REF\s*=\s*['\"][0-9a-f]{40}['\"]", combined):
-                errors.append(f'{name}: missing fixed published source commit')
-            if 'experiments.wan_state_clock.run' not in combined or not re.search(r"experiments/wan_state_clock/configs/(fixed_terminal_validation|generate_replication)\.json", combined):
-                errors.append(f'{name}: missing formal runner or state-clock config entry')
-            if '/content/drive/MyDrive/' not in combined:
-                errors.append(f'{name}: missing Drive result destination')
-            for cell in cells:
-                ast.parse(cell.source)
-                if cell.get('outputs') or cell.get('execution_count') is not None:
-                    errors.append(f'{name}: committed execution output')
-                if any(module == 'governance' or module.startswith('governance.') for module in imported_modules(cell.source, '')):
-                    errors.append(f'{name}: runtime governance import')
-                if re.search(r'\bRUN\w*\s*=\s*False\b|force_remount\s*=\s*True', cell.source):
-                    errors.append(f'{name}: disabled run or forced remount')
-        except (OSError, ValueError, SyntaxError, nbformat.ValidationError) as exc:
+            cells=[c for c in nb.cells if c.cell_type=='code']
+            combined='\n'.join(c.source for c in cells)
+            bindings=[]
+            for c in cells:
+                for node in ast.parse(c.source).body:
+                    if isinstance(node,ast.Assign) and any(isinstance(t,ast.Name) and t.id=='SOURCE_SHA' for t in node.targets):
+                        bindings.append(ast.literal_eval(node.value))
+                if c.get('outputs') or c.get('execution_count') is not None:errors.append(f'{name}: committed execution output')
+                if any(m=='governance' or m.startswith('governance.') for m in imported_modules(c.source,'')):errors.append(f'{name}: runtime governance import')
+                if re.search(r'\bRUN\w*\s*=\s*False\b|force_remount\s*=\s*True',c.source):errors.append(f'{name}: disabled run or forced remount')
+            if len(bindings)!=1 or not isinstance(bindings[0],str) or not re.fullmatch('[0-9a-f]{40}',bindings[0]):
+                errors.append(f'{name}: missing fixed published SOURCE_SHA')
+            elif nb.metadata.get('candidate_binding',{}).get('source_sha')!=bindings[0]:
+                errors.append(f'{name}: metadata/source binding mismatch')
+            for text in ('https://github.com/RICHAAARC/SC-SSTW.git','/content/drive/MyDrive/',
+                         'experiments.wan_state_clock.grow_video_reference_run',
+                         'experiments/wan_state_clock/requirements-grow-video-reference.txt'):
+                if text not in combined:errors.append(f'{name}: missing current reference entry {text}')
+        except (OSError,ValueError,SyntaxError,nbformat.ValidationError) as exc:
             errors.append(f'{name}: {exc}')
     return errors
 
-
 def notebook_binding(root: Path, policy: dict) -> list[str]:
-    kind = policy.get('notebook_binding_kind')
-    if kind == 'template':
-        if not policy.get('release_notebook_templates'):
-            return ['no release notebook template is declared']
-        return release_templates(root, policy)
-    if kind == 'published':
-        return published_release_notebooks(root, policy)
-    return [f'unknown notebook binding kind: {kind!r}']
+    if policy.get('notebook_binding_kind')!='published':
+        return ['current release requires a published notebook binding']
+    return published_release_notebooks(root,policy)
 
 
 def release(root: Path, policy: dict) -> list[str]:
@@ -183,8 +121,22 @@ def release(root: Path, policy: dict) -> list[str]:
     for name in policy['configs']:
         try:
             config = json.loads((root / name).read_text(encoding='utf-8'))
-            if config.get('protocol') != 'state_clock_v1':
-                errors.append(f'{name}: unexpected baseline protocol')
+            if config.get('name') != 'grow_video_reference_v1' or config.get('fixed_denominator') != policy['fixed_denominator']:
+                errors.append(f'{name}: unexpected reference identity or denominator')
         except (OSError, ValueError) as exc:
             errors.append(f'{name}: {exc}')
+    if policy.get('release_manifest'):
+        import hashlib
+        try:
+            manifest=json.loads((root/policy['release_manifest']).read_text())
+            files=manifest['files']
+            for name,digest in files.items():
+                path=(root/name).resolve()
+                if not path.is_relative_to(root.resolve()) or not path.is_file():
+                    errors.append(f'manifest path missing/outside release: {name}')
+                elif hashlib.sha256(path.read_bytes()).hexdigest()!=digest:
+                    errors.append(f'manifest content mismatch: {name}')
+            actual=hashlib.sha256(json.dumps(files,sort_keys=True,separators=(',',':')).encode()).hexdigest()
+            if manifest['content_sha256']!=actual:errors.append('manifest identity mismatch')
+        except (OSError,ValueError,KeyError,TypeError) as exc:errors.append(f'release manifest: {exc}')
     return errors

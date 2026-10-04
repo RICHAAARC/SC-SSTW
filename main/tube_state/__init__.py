@@ -1,1 +1,1 @@
-"""NumPy-only tube projection and state/clock inference."""
+"""Pure local GROW payload construction; no runtime or experiment imports."""

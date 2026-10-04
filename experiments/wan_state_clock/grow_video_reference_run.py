@@ -15,6 +15,7 @@ import traceback
 
 from main.tube_state import grow_video_reference as method
 from runtime.wan import grow_video_reference as backend
+from runtime.wan.provenance import source_identity
 
 ROOT=Path(__file__).resolve().parents[2]
 CONFIG=Path(__file__).parent/"configs/grow_video_reference_v1.json"
@@ -59,14 +60,10 @@ def load_config():
 def initial_result(output):
     rows={f"{a}/{l}/{k}":dict(status="PENDING",arm=a,layer=l,key_id=k,decoded_bits=None,truth_used=False)
           for a in method.ARMS for l in method.LAYERS for k in KEY_IDS}
-    sources=("main/tube_state/grow_video_reference.py","runtime/wan/grow_video_reference.py",
-        "runtime/wan/generation.py","runtime/wan/trajectory.py","runtime/wan/vae.py","runtime/wan/io.py",
-        "experiments/wan_state_clock/grow_video_reference_run.py",
-        "experiments/wan_state_clock/configs/grow_video_reference_v1.json",
-        "experiments/wan_state_clock/requirements-grow-video-reference.txt")
+    provenance=source_identity(ROOT)
     return dict(status="RUNNING",stage="INITIALIZE",fixed_denominator=DENOMINATOR,
-        source_sha=subprocess.check_output(["git","rev-parse","HEAD"],cwd=ROOT,text=True).strip(),
-        source_files={p:backend.file_sha256(ROOT/p) for p in sources},
+        source_sha=provenance["git_commit"],source_provenance=provenance,
+        source_files=provenance["files"],
         config_sha256=backend.file_sha256(CONFIG),environment=environment(),output=str(output),
         generation={a:dict(status="PENDING",steps=[],terminal_path=str(output/a/"terminal.pt")) for a in method.ARMS},
         videos={a:dict(status="PENDING",path=str(output/a/(a+".mp4"))) for a in method.ARMS},

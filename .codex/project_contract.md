@@ -1,34 +1,25 @@
-# SC-SSTW main project contract
+# SC-SSTW release contract
 
-## Authorization and status
+main is the sole authoritative release branch. Its current tree contains only
+the complete, independently copyable GROW video reference chain and the shared
+components required by that successful fixed-source mechanism. Unclosed
+research combinations remain outside main; immutable history provides reproduction.
 
-`main` is the sole authoritative implementation branch. Historical branches
-remain reproducibility records and must not be imported into main. Method
-execution authority remains scope-specific. Implementation completion and
-evidence completion are separate: architecture/test PASS cannot turn recorded
-diagnostics into FPR, generalization, paper, or Flow-writing PASS.
+The established scope is native MULTI writing, real VAE/media persistence and
+independent full-video blind repeated-payload reading. Temporal synchronization,
+time-dependent segment payload, aggregation/rejection, robustness and population
+FPR are not established by this release.
 
-## Method safeguards
+Keep main/tube_state independent of runtime, experiments and governance.
+runtime/wan must not import experiments or governance. The detector receives
+only the saved video, public protocol/key and frozen VAE; writer states and
+truth are reporting-only. Preserve all fixed rows, including failures.
 
-- Use the fixed state-clock arm denominator and persist every success, failure,
-  and missing observation.
-- Keep receiver search blind to message truth and writer evidence; join truth
-  only for post-search reporting.
-- Message 0 and message 1 use the same condition-specific persisted
-  save/readback chain and candidate budget. NORMAL has one lossy save; RESAVED,
-  DELETE, and REPEAT each have a matched second lossy save before readback.
-  Record calls, seed, config, source, and output paths.
-- A future notebook must mount Drive in cell zero using the exact two lines,
-  bind a published immutable GitHub source SHA, and persist progress during its
-  authorized run.
+The flow must initialize and operate from a copied directory or source ZIP
+without .git, parent workspaces or historical branches. Record actual source
+content and bundled manifest identity; use a Git SHA only when genuinely available.
 
-## Architecture
-
-- `main/tube_state` is pure method code and imports no runtime, experiments, or
-  governance modules.
-- `runtime/wan` contains shared VAE/generation/media adapters and may not
-  import `experiments.wan_state_clock` or any historical runner.
-- `experiments/wan_state_clock` is the only formal orchestration layer. The
-  legacy `run.py` and integrated `integrated_payload_run.py` are separate,
-  explicit entrypoints; neither imports a historical experiment runner.
-- Governance is a local check layer, never a method-runtime dependency.
+A new Colab notebook begins with the independent two-line Drive mount, binds
+published immutable source, and retains progress/failures. Publish source before
+binding the notebook. CPU/fixture release checks are engineering evidence,
+not a new real model run or completion of the full research proposal.

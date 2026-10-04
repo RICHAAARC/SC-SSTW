@@ -156,7 +156,8 @@ normalization,geometry rejection,per-key/layer failure retention,separate
 quality failure,device/dtype selection,optional loader arguments and notebook
 setup persistence. The CPU fixture VAE does not validate real VAE survival.
 Test commands/results and package versions are saved in
-`diagnostics/grow_video_reference_v1/local_validation.json`. No real-model
+the project audit records. Current checks use the standalone release profile.
+No real-model
 or GPU evidence is produced by these tests.
 
 The notebook starts with the exact2-line Drive mount. It uses the current
@@ -206,3 +207,22 @@ frames; PSNR is diagnostic, not an imperceptibility pass.
 The original notebook's preview exception happened after persisted execution
 completed. The positional Video path and guarded preview are retained in the
 imported builder. No experimental result is replaced by that repair.
+
+## Standalone current release
+
+The current main executable tree contains only this reference flow and required
+shared components. Historical terminal/44-46 combinations are indexed in
+[historical entries](historical_entries.md), not imported at runtime.
+
+Source ZIPs include release_manifest.json. The runner records actual source
+hashes and its content identity; without .git, source_sha is null and
+source_provenance reports the manifest match. A parent repository is never used
+as the package identity. Modified or absent manifests are explicitly recorded,
+not silently attributed to a released Git commit. Detection semantics and fixed
+scientific parameters are unchanged by this metadata repair.
+
+The release profile creates a genuine detached directory, initializes all
+3/3/24/48 slots there and runs native-scheduler, local-write, fixture-VAE,
+actual FFmpeg save/read, blind extraction, evaluation and failure-path tests.
+CPU fixture completeness is packaging/engineering evidence; the real mechanism
+evidence remains the retained fixed run above. No new GPU/Colab run is implied.

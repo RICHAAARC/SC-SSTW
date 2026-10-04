@@ -1,10 +1,12 @@
-implementation_status: formal_candidate_complete_locally
-evidence_status: gpu_and_scientific_validation_not_rerun
-current_local_scope: formal_candidate_packaging_and_cpu_validation
+implementation_status: standalone_reference_release
+evidence_status: fixed_real_MP4_repeated_payload_recovery_verified
+active_method: grow_video_reference_v1
 new_gpu_execution: false
-active_method: wan_terminal_projection_state_clock
 claims_not_established:
-  - fixed_fpr
+  - blind_temporal_synchronization
+  - time_dependent_segment_payload
+  - segment_sequence_aggregation_and_rejection
+  - temporal_edit_robustness
+  - calibrated_population_fpr
+  - imperceptibility
   - generalization
-  - paper_ready
-  - flow_time_write_completed

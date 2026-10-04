@@ -1,7 +1,8 @@
 # Bounded development evidence index
 
 Updated 2026-10-04. This is an index of construction-specific outcomes, not an
-import of development implementations. Source links are immutable.
+import of development implementations. Source links are immutable. Removed old executable entrypoints are listed in
+[the historical entry index](historical_entries.md).
 Large original results and media remain in the user's Video-WM Drive archive.
 The project-local audit paths below are provenance pointers, not files shipped
 in this repository.

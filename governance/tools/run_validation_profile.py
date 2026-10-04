@@ -17,7 +17,7 @@ def run_profile(root: Path, name: str) -> dict:
         'method': (True, ('dependencies',)),
         'notebook': (False, ('notebook_binding',)),
         'governance': (False, ('dependencies',)),
-        'release': (True, ('dependencies', 'notebook_binding', 'release')),
+        'release': (False, ('dependencies', 'notebook_binding', 'release')),
     }
     project_tests, selected = profiles[name]
     errors = []
@@ -29,6 +29,7 @@ def run_profile(root: Path, name: str) -> dict:
         result = subprocess.run([sys.executable, '-m', 'unittest', 'discover', '-s', 'governance/tests', '-q'], cwd=root, check=False)
         if result.returncode:
             errors.append(f'harness tests exited {result.returncode}')
+    # The release closure runs the full project suite in the no-Git copy.
     if name == 'release':
         result = subprocess.run([sys.executable, 'governance/tools/check_candidate_closure.py'], cwd=root, check=False)
         if result.returncode:

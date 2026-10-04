@@ -1,11 +1,11 @@
-# SC-SSTW main contract
+# SC-SSTW main release contract
 
-Read `.codex/project_contract.md` before changing main. Keep
-`main/tube_state` independent of runtime, experiments, and governance.
-`runtime/wan` is a shared adapter and must not import
-`experiments.wan_state_clock`. Detection must not receive writer evidence or
-truth labels; truth joins are reporting-only after search.
+Read .codex/project_contract.md before changing main. main is the sole release
+branch; unclosed candidate combinations stay outside its current executable tree.
+Keep main/tube_state independent of runtime, experiments and governance.
+runtime/wan must not import experiments. Blind reception must not receive
+writer states or truth. Preserve the fixed GROW denominator and all failures.
 
-Preserve fixed denominators, missing observations, and failures in persisted
-results. Record code/config/seed/call counts/output paths for a real run.
-Local PASS is an engineering implementation check, not a scientific PASS.
+The complete limited GROW chain must work from a standalone no-.git copy.
+Record actual source content/manifest identity; never fabricate a Git SHA.
+CPU/fixture checks verify release engineering, not full research completion.
