@@ -1,5 +1,9 @@
 # SC-SSTW Core Integration V1
 
+> Historical engineering integration / reproduction record. Its 4-bit payload,
+> 44/46 controller and receiver are retained; they are not a verified closure
+> of the current video watermark method. See [current status](current_method.md).
+
 ## Dependency selection
 
 The candidate starts from formal main `3f0a5fafa7c2aa56fbc69bed17649accf49ae152`.

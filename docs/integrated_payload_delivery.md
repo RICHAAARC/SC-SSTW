@@ -1,5 +1,9 @@
 # Integrated Payload V1 delivery card
 
+> Historical engineering integration / reproduction record. Its 4-bit payload,
+> 44/46 controller and receiver are retained; they are not a verified closure
+> of the current video watermark method. See [current status](current_method.md).
+
 - Candidate branch: `dev/sc-sstw-core-integration`
 - Canonical-protocol source S4: `7ad4d9425bfb246b1cd5e4f95aab0c08de521df2`
 - Source-bound notebook N5: `7cfe2e73807486700b6d62728fdb6cfccddbaf11`

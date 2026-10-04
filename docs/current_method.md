@@ -1,90 +1,59 @@
-# Current integrated method
+# Current method status
 
-The adopted historical method remains available through
-`experiments.wan_state_clock.run`. The integrated method uses fresh
-prompt/seed noise, runs the native Wan trajectory to state 44, and forks OFF,
-SINGLE46, and MULTI44_46 paths. SINGLE46 receives the complete fixed native
-response budget `0.042943312697648145`; MULTI44_46 receives half at each step.
-Every second control recomputes velocity and a temperature-one clean-leaf
-gradient from its controlled live state and full scheduler history. Steps
-47--49 remain uncontrolled.
+Updated 2026-10-04. The research mainline is **local tube carriers + state-space
+temporal synchronization**, written through multiple genuine generation steps.
+Generation sampling time and output-video time are distinct axes.
 
-The payload is one arbitrary nibble, not an A/B alias. RM(1,3) maps four net
-bits to eight data windows with physical hard-window distance four; three keyed
-pilot windows use a separate loss term with fixed weight `0.25`. The bounded
-decoder guarantees only unique recovery when `2*hard_errors+erasures<4`.
-It makes no frame-error or soft-channel claim. The 16-way target uses the mean
-of all rivals; with two templates this expression is exactly the historical
-`codes[m]-codes[1-m]` tanh objective.
+## What main currently provides
 
-The receiver maps every message to eleven keyed base phases, negating data
-states according to its RM word and leaving the three pilots common. It reuses
-the legacy fixed-gain `state_clock.observe` update and bounded clock paths, but
-its 16-code score is a new receiver and is not described as the previously
-validated A/B `local_state` result. The legacy A/B code and tests remain intact.
-The receiver accepts only four phase observations and a public codebook; prompt,
-truth, original latent, writer evidence, and edit truth are absent. Truth joins
-happen after ranking and existence decisions.
+- Shared Wan runtime and the independent GROW fixed reference entrypoint.
+- The retained early four-bit / 44-46 engineering integration and terminal
+  state-clock entrypoint for reproduction.
+- No imports of the unclosed local-state development experiments.
 
-The current receiver protocol adds the frozen historical three-group emission:
-four groups retain the original calculation; exactly three sum only observed
-slot projections and clip once; fewer groups erase the window. Full and partial
-blocks are separate, and scores and aggregate evidence use observed-component
-weights. This changes the statistic and requires a threshold bound to
-`SC-SSTW-Payload-RM13-Partial3-V2` and the receiver key identifier.
+The verified GROW run demonstrates native MULTI generation control, real
+VAE/media persistence and saved-MP4 blind repeated-payload recovery for one fixed
+source. MULTI and LAST each recovered all 32 bits. MULTI includes the last step;
+necessity or superiority of MULTI is not claimed and is not a prerequisite for
+the proposal. This full-video geometry-specific receiver provides no temporal
+alignment. [Run details and evidence](grow_video_reference_v1.md).
 
-Two independent OFF sources are generated and fully received before the
-threshold is frozen. Each source statistic is the maximum over all 16 messages,
-clock paths, seven saved views, and the fixed three-crop aggregate. Any missing
-view makes calibration `UNCALIBRATED`; evaluation cannot return a payload in
-that state. The fixed evaluation generation and attack collection still runs so
-the denominator and engineering failures remain observable, but all existence
-decisions stay `UNCALIBRATED` and return no payload. The two calibration OFF
-sources receive the same per-view, crop-aggregate, and source decisions after
-threshold construction; they are labeled construction samples and are not
-held-out FPR evidence. Two calibration sources give empirical rank resolution
-1/3 and do not support a low-FPR claim.
+## What remains open
 
-A raw receiver ranking remains persisted even when only some phase encodes are
-available. Protocol eligibility is stricter: a view can enter calibration,
-aggregation, source maximization, or existence decisions only when the view is
-`SCORED` and all four phase rows are `COMPLETE`. Partial raw rankings therefore
-cannot freeze a threshold or return a payload.
+| Mechanism | Current boundary |
+|---|---|
+| Local spatiotemporal support | OLD8 has a defined local construction in dev; GROW's global repeated carrier does not replace it. |
+| MULTI + local time states | OLD8 has same-version terminal and DIRECT positive path evidence. |
+| MP4 blind time correspondence | Unclosed: OLD8 correct-key ABS/DIFF ranks terminal 1/1, DIRECT 1/1, RAW420 3/2, MP4 22/30. |
+| State-space synchronization | Historical finite-path/observer results are carrier-specific; a general same-chain receiver with declared edit bounds, ambiguity and rejection remains open. |
+| Time-dependent segment payload | Repeated payload does not establish that synchronization helps attribution. |
+| Segment/sequence aggregation | Missing support, overlapping evidence, message conflict and rejection require same-chain validation. |
+| Temporal edits | Crop, deletion, repetition and declared speed changes need current-version evidence; arbitrary inserted content and interpolation are separate models. |
+| Affine-invariant synchronization | Optional extension when justified by observations; not a mandatory prerequisite. |
 
-Reusable entrypoints live in `runtime.wan.integrated_core`, with CLI
-`python -m runtime.wan.integrated_cli`. The writer accepts prompt, seed, any
-nibble, key, and a public protocol file and produces an MP4 through the same
-44/46 control. The independent receiver accepts an MP4, key, explicit protocol,
-and optional calibration; it does not read writer terminals, trajectories,
-truth, or saved codebooks. The fixed experiment imports these entrypoints while
-retaining its `[0x5,0xa]` roster and fixed denominators.
-The explicit protocol must exactly equal the canonical public JSON; the same ID
-does not authorize changed model, generation, method, or media fields.
+The two-spatial-copy candidate did not fix this gap: terminal 10/3, DIRECT
+19/7, RAW420 27/40 and MP4 34/30. Its negative begins before media saving.
+DWELL4 has only CPU construction checks: 174 ideal paths distinguishable, but
+minimum template separation is one third of OLD8; no media result exists.
+These candidates stay in development, with no success assembled across branches.
 
-The fixed roster is two calibration OFF contents and two evaluation contents
-carrying payloads `0x5` and `0xa`. Evaluation generates OFF, SINGLE46, and
-MULTI44_46 for each content. Every arm persists FULL, three actual 129-frame
-crop MP4s, DELETE90, SPEED5_4, and a second-generation REENCODE. Every saved
-view receives four independent VAE phase encodes. The denominator is four fresh
-cases, eight arms, 56 saved views, and 224 receiver encodes; failures and
-missing rows remain in place.
+## Early integration retained as engineering history
 
-The three-crop aggregate stores compact evidence for each payload's own best
-path. It selects the aggregate payload first, then combines that payload's
-matched-path window evidence and runs RM decoding, so different view winners
-cannot substitute unrelated hard evidence.
+The four-bit RM payload, 44/46 trajectory controller, saved edits, four-phase
+VAE receiver and calibration/aggregation code are retained at their existing
+entrypoints. Their local/fake tests check implementation and interfaces. The
+historical two-message writer/receiver positives do not validate that complete
+four-bit integrated chain. See [technical record](integrated_payload_v1.md)
+and [immutable delivery record](integrated_payload_delivery.md).
 
-This complete engineering integration is the method accepted for publication
-to `main`. It contains no GPU/model result for the new integrated method. CPU/fake
-tests establish code, call accounting, lifecycle, blindness, and denominator
-behavior only. They do not establish payload recovery after real generation,
-quality, generalization, FPR, or paper readiness.
+## Completion criterion
 
-The accepted immutable binding is source S4
-`7ad4d9425bfb246b1cd5e4f95aab0c08de521df2` and notebook N5
-`7cfe2e73807486700b6d62728fdb6cfccddbaf11`. The fixed user-run notebook is
-https://colab.research.google.com/github/RICHAAARC/SC-SSTW/blob/7cfe2e73807486700b6d62728fdb6cfccddbaf11/notebooks/integrated_payload_v1_colab.ipynb
-and writes under
-`/content/drive/MyDrive/Video-WM/SC-SSTW-Core-Integration/integrated_payload_v1_<UTC timestamp>`.
-Remote publication and byte verification are reported separately by the release
-publisher.
+The same real version must connect multi-step generation writing → VAE/media
+survival → independent blind reception → local state/path inference →
+time-dependent segment evidence → payload attribution, sequence aggregation and
+necessary rejection. Local peaks, path ranks, payload recovery and execution
+counts are reported separately. A calibrated population FPR, broader quality
+claims and generalization require evidence beyond these fixed mechanism examples.
+
+This main integration adds no GPU/Colab run, new threshold or new candidate.
+[Development evidence index](development_evidence_index.md).
