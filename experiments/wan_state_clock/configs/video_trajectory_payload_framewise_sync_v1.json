@@ -1,0 +1,110 @@
+{
+  "name": "video_trajectory_payload_framewise_sync_v1",
+  "method_version": "trajectory-payload-framewise-sync-v1",
+  "key": "watermark",
+  "wrong_key": "watermark-wrong",
+  "message": "OKOK",
+  "wrong_message": "NOPE",
+  "conditions": ["P0_ORIGINAL_RGB", "P1_FRAMEWISE_RECON", "P2_FRAMEWISE_SYNC"],
+  "views": {
+    "FULL": {"length": 181, "public_offsets": [0], "geometry_only": true},
+    "CROP": {"length": 177, "truth_start_posthoc_only": 1, "truth_stop_posthoc_only": 178, "public_offsets": [0,1,2,3,4]}
+  },
+  "source": {
+    "path": "/content/drive/MyDrive/Video-WM/Video-Local-Fourier-RM-OLD8-Two-State-V1/20261004T113331670462Z/fixed_reference/PAYLOAD_MULTI/source.rgb8",
+    "sha256": "a43b0e65747e8e0d08bc475f5c89f562c356de5f0bfb2471d8f621c151f01a0d",
+    "bytes": 88965120,
+    "shape": [181,320,512,3],
+    "dtype": "uint8",
+    "fps": 8,
+    "seed": 2026092501,
+    "origin": "same saved PAYLOAD_MULTI Wan RGB batch; no generation in this experiment"
+  },
+  "model": {
+    "id": "Wan-AI/Wan2.1-T2V-1.3B-Diffusers",
+    "revision": "0fad780a534b6463e45facd96134c9f345acfa5b",
+    "role": "original payload receiver VAE only; no generation"
+  },
+  "framewise_vae": {
+    "id": "stabilityai/sd-vae-ft-mse",
+    "revision": "31f26fdeee1355a5c34592e401dd41e45d25a493",
+    "role": "2D deterministic per-frame reconstruction only",
+    "scaled_latent_factor": 0.18215,
+    "method_dtype": "float32",
+    "compute_dtype": "float32",
+    "batch_frames": 8,
+    "replaces_wan_native_decoder": false
+  },
+  "writer": {
+    "tubelet_length": 4,
+    "latent_patch": [4,4],
+    "projection_margin": 1.0,
+    "margin_is_projection_target_not_cap": true,
+    "strength_scan": false,
+    "writer_encode_calls": 1,
+    "writer_decode_calls": 2,
+    "P0_framewise_decoder_calls": 0,
+    "P1_P2_share_same_encoded_latent": true
+  },
+  "receiver": {
+    "R": 44,
+    "keys": ["K0","K1"],
+    "candidate_rule": "range(181-received_frames+1)",
+    "score": "sum signed local dot / sum visible direction energy",
+    "threshold": null,
+    "sync_accepted": false,
+    "payload_accepted": false,
+    "blind_inputs": "received video, key, fixed public protocol"
+  },
+  "fixed_denominator": {
+    "source_cases": 1,
+    "conditions": 3,
+    "observations": 6,
+    "keys": 2,
+    "sync_readouts": 12,
+    "sync_candidate_scores": 36,
+    "sync_candidate_tubelet_rows": 1626,
+    "payload_reads": 12,
+    "sync_posthoc": 12,
+    "payload_posthoc": 12,
+    "quality": 9,
+    "rasters": 3,
+    "mp4_save": 3,
+    "mp4_read": 3
+  },
+  "planned_calls": {
+    "generation": 0,
+    "source_read": 1,
+    "framewise_vae_load": 1,
+    "wan_vae_load": 1,
+    "framewise_writer_encode": 1,
+    "framewise_writer_decode": 2,
+    "writer_sync": 1,
+    "raster_save": 3,
+    "mp4_save": 3,
+    "mp4_probe": 3,
+    "mp4_readback": 3,
+    "framewise_receiver_encode": 6,
+    "sync_score": 12,
+    "wan_receiver_encode": 6,
+    "payload_read": 12,
+    "quality_compute": 9
+  },
+  "source_files": [
+    "main/tube_state/video_trajectory_payload_framewise_sync_v1.py",
+    "main/tube_state/video_local_fourier_rm_control.py",
+    "main/tube_state/grow_video_reference.py",
+    "runtime/wan/framewise_autoencoder_kl.py",
+    "runtime/wan/video_trajectory_payload_framewise_sync_v1.py",
+    "runtime/wan/rgb8_source.py",
+    "runtime/wan/video_local_fourier_rm_same_raster.py",
+    "runtime/wan/vae.py",
+    "runtime/wan/generation.py",
+    "runtime/wan/quality.py",
+    "experiments/wan_state_clock/video_trajectory_payload_framewise_sync_v1_run.py",
+    "experiments/wan_state_clock/configs/video_trajectory_payload_framewise_sync_v1.json"
+  ],
+  "source_sha": null,
+  "science_status": "LOCAL_ENGINEERING_CANDIDATE_NO_AUTOMATIC_PASS",
+  "evidence_ceiling": "One fixed development source and fixed nonzero crop. P1 payload compatibility, P2 incremental payload/quality effects, and crop synchronization scores are reported separately with every candidate, tie, erasure, nonfinite value, missing read, and failure retained. FULL has a singleton public offset and is not synchronization evidence. Repeated payload recovery cannot establish synchronization gain. No calibrated threshold, scientific PASS, model or source generalization, temporal-edit robustness, codec robustness beyond the single fixed MP4 chain, or real-run result is claimed."
+}
