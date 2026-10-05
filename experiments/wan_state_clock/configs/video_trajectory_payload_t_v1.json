@@ -1,0 +1,195 @@
+{
+  "name": "video_trajectory_payload_t_v1",
+  "method_version": "trajectory-payload-framewise-sync-v1",
+  "key": "watermark",
+  "wrong_key": "watermark-wrong",
+  "message": "OKOK",
+  "wrong_message": "NOPE",
+  "conditions": [
+    "P0_ORIGINAL_RGB",
+    "P1_FRAMEWISE_RECON",
+    "M05_FRAMEWISE_SYNC",
+    "T05_TEMPORAL_CONSTRAINT"
+  ],
+  "views": {
+    "FULL181": {
+      "length": 181,
+      "truth_start_posthoc_only": 0,
+      "truth_stop_posthoc_only": 181,
+      "public_offsets": [
+        0
+      ],
+      "geometry_only": true,
+      "payload_R": 44
+    },
+    "CROP177": {
+      "length": 177,
+      "truth_start_posthoc_only": 1,
+      "truth_stop_posthoc_only": 178,
+      "public_offsets": [
+        0,
+        1,
+        2,
+        3,
+        4
+      ],
+      "geometry_only": false,
+      "payload_R": 44
+    }
+  },
+  "source": {
+    "path": "/content/drive/MyDrive/Video-WM/Video-Local-Fourier-RM-OLD8-Two-State-V1/20261004T113331670462Z/fixed_reference/PAYLOAD_MULTI/source.rgb8",
+    "sha256": "a43b0e65747e8e0d08bc475f5c89f562c356de5f0bfb2471d8f621c151f01a0d",
+    "bytes": 88965120,
+    "shape": [
+      181,
+      320,
+      512,
+      3
+    ],
+    "dtype": "uint8",
+    "fps": 8,
+    "seed": 2026092501,
+    "origin": "same saved PAYLOAD_MULTI Wan RGB batch; no generation in this experiment"
+  },
+  "model": {
+    "id": "Wan-AI/Wan2.1-T2V-1.3B-Diffusers",
+    "revision": "0fad780a534b6463e45facd96134c9f345acfa5b",
+    "role": "original payload receiver VAE only; no generation"
+  },
+  "framewise_vae": {
+    "id": "stabilityai/sd-vae-ft-mse",
+    "revision": "31f26fdeee1355a5c34592e401dd41e45d25a493",
+    "role": "2D deterministic per-frame reconstruction only",
+    "scaled_latent_factor": 0.18215,
+    "method_dtype": "float32",
+    "compute_dtype": "float32",
+    "batch_frames": 8,
+    "replaces_wan_native_decoder": false
+  },
+  "writer": {
+    "conditions": [
+      "M05_FRAMEWISE_SYNC",
+      "T05_TEMPORAL_CONSTRAINT"
+    ],
+    "independent_source_copies": true,
+    "projection_targets": {
+      "M05_FRAMEWISE_SYNC": 0.5,
+      "T05_TEMPORAL_CONSTRAINT": 0.5
+    },
+    "temporal_lambda": 1.0,
+    "framewise_encode_write_decode": [
+      1,
+      2,
+      3
+    ],
+    "D_t": "unscaled 180 adjacent noncyclic edges;45cross135internal"
+  },
+  "receiver": {
+    "keys": [
+      "K0",
+      "K1"
+    ],
+    "candidate_rule": "range(181-received_frames+1)",
+    "score": "sum signed local dot / sum visible direction energy",
+    "threshold": null,
+    "sync_accepted": false,
+    "payload_accepted": false,
+    "blind_inputs": "received video, key, fixed public protocol",
+    "support_rule": "R_eff=min(44,T_latent-1); received-frame/latent lengths must match; exclude first latent"
+  },
+  "fixed_denominator": {
+    "source_cases": 1,
+    "conditions": 4,
+    "observations": 8,
+    "keys": 2,
+    "sync_readouts": 16,
+    "sync_candidate_scores": 48,
+    "sync_candidate_tubelet_rows": 2168,
+    "payload_reads": 16,
+    "sync_posthoc": 16,
+    "payload_posthoc": 16,
+    "quality": 18,
+    "rasters": 4,
+    "mp4_save": 4,
+    "mp4_read": 4
+  },
+  "planned_calls": {
+    "generation": 0,
+    "source_read": 1,
+    "framewise_vae_load": 1,
+    "wan_vae_load": 1,
+    "framewise_writer_encode": 1,
+    "framewise_writer_decode": 3,
+    "writer_sync": 2,
+    "raster_save": 4,
+    "mp4_save": 4,
+    "mp4_probe": 4,
+    "mp4_readback": 4,
+    "framewise_receiver_encode": 8,
+    "sync_score": 16,
+    "wan_receiver_encode": 8,
+    "payload_read": 16,
+    "quality_compute": 18
+  },
+  "source_files": [
+    "main/tube_state/video_trajectory_payload_framewise_sync_v1.py",
+    "main/tube_state/video_local_fourier_rm_control.py",
+    "main/tube_state/grow_video_reference.py",
+    "runtime/wan/framewise_autoencoder_kl.py",
+    "runtime/wan/video_trajectory_payload_framewise_sync_v1.py",
+    "runtime/wan/rgb8_source.py",
+    "runtime/wan/video_local_fourier_rm_same_raster.py",
+    "runtime/wan/vae.py",
+    "runtime/wan/generation.py",
+    "runtime/wan/quality.py",
+    "main/tube_state/video_trajectory_payload_temporal_constraint_v1.py",
+    "main/tube_state/video_trajectory_payload_gt_v1.py",
+    "runtime/wan/video_trajectory_payload_gt_v1.py",
+    "experiments/wan_state_clock/video_trajectory_payload_gt_v1_run.py",
+    "experiments/wan_state_clock/video_trajectory_payload_t_v1_run.py",
+    "experiments/wan_state_clock/configs/video_trajectory_payload_t_v1.json"
+  ],
+  "source_sha": null,
+  "science_status": "LOCAL_ENGINEERING_CANDIDATE_NO_AUTOMATIC_PASS",
+  "evidence_ceiling": "Fixed prespecified G/T user-run experiment, no threshold/FPR/generalization/science PASS. FULL singleton is geometry only. Residual condition-P1 temporal metrics are not video self-difference ratios or perceptual flicker. All failures remain.",
+  "profile": "T",
+  "quality_spaces": {
+    "PRECODEC": {
+      "source_start": 0
+    },
+    "FULL181_MP4": {
+      "source_start": 0
+    },
+    "CROP177_MP4": {
+      "source_start": 1
+    }
+  },
+  "quality_pairs": [
+    [
+      "P1_FRAMEWISE_RECON",
+      "P0_ORIGINAL_RGB"
+    ],
+    [
+      "M05_FRAMEWISE_SYNC",
+      "P0_ORIGINAL_RGB"
+    ],
+    [
+      "M05_FRAMEWISE_SYNC",
+      "P1_FRAMEWISE_RECON"
+    ],
+    [
+      "T05_TEMPORAL_CONSTRAINT",
+      "P0_ORIGINAL_RGB"
+    ],
+    [
+      "T05_TEMPORAL_CONSTRAINT",
+      "P1_FRAMEWISE_RECON"
+    ],
+    [
+      "T05_TEMPORAL_CONSTRAINT",
+      "M05_FRAMEWISE_SYNC"
+    ]
+  ],
+  "source_preparation_planned_calls": {}
+}
