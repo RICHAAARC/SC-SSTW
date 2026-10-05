@@ -1,0 +1,90 @@
+{
+  "inputs": {
+    "P0_ORIGINAL_RGB": {
+      "path": "/content/drive/MyDrive/Video-WM/Trajectory-Payload-G-V1/20261005T140121854219Z/fixed_reference/P0_ORIGINAL_RGB/received.rgb8",
+      "sha256": "127aec31b5f595e046e05e1190dc77a571a01dfa333522da5421c1049be23e9d",
+      "shape": [
+        181,
+        320,
+        512,
+        3
+      ],
+      "bytes": 88965120,
+      "dtype": "uint8",
+      "start1_sha256": "4e5297b2f64844c2b368fd143b2d3eddc6bf0bfd48a3c863ec1c84d5b76b84a0",
+      "historical_observation_id": "obs_684ca7a063657125"
+    },
+    "P1_FRAMEWISE_RECON": {
+      "path": "/content/drive/MyDrive/Video-WM/Trajectory-Payload-G-V1/20261005T140121854219Z/fixed_reference/P1_FRAMEWISE_RECON/received.rgb8",
+      "sha256": "a7e062fffb8fef46d92c2559a5bda49b4e5c7a822f1630b94eb8e2dc773e61dd",
+      "shape": [
+        181,
+        320,
+        512,
+        3
+      ],
+      "bytes": 88965120,
+      "dtype": "uint8",
+      "start1_sha256": "04c688b81d1037f9bc8d69727556eba93882231bf653f5072ae18966a39aee5f",
+      "historical_observation_id": "obs_08576a804a96efeb"
+    }
+  },
+  "fixed_denominator": {
+    "observations": 4,
+    "wan_receiver_encode": 4,
+    "payload_reads": 8,
+    "keys": 2,
+    "bits_per_read": 32,
+    "R": 44,
+    "frequency_positions_per_bit": 30,
+    "votes_per_bit": 1320,
+    "votes_per_key_read": 42240,
+    "detailed_votes": 337920,
+    "time_bit_rows": 11264,
+    "final_bit_rows": 256
+  },
+  "environment_pins": {
+    "torch": "2.11.0",
+    "diffusers": "0.39.0",
+    "transformers": "4.57.6",
+    "numpy": "2.1.3",
+    "accelerate": "1.15.0",
+    "safetensors": "0.8.0",
+    "huggingface-hub": "0.36.2",
+    "tokenizers": "0.22.2"
+  },
+  "historical_result": {
+    "path": "/content/drive/MyDrive/Video-WM/Trajectory-Payload-G-V1/20261005T140121854219Z/fixed_reference/result.json",
+    "sha256": "76f50d045a903ecd0cb71df7c56afa9585a0aa4745b57a3effe5c20ebe393482",
+    "use": "load only after blind seal; compare start1 payload without retry/selection"
+  },
+  "evidence_ceiling": "Receiver-origin compatibility diagnostic, no unique phase/content causality or scientific PASS.",
+  "name": "video_trajectory_receiver_origin_v1",
+  "method_version": "trajectory-payload-framewise-sync-v1",
+  "key": "watermark",
+  "wrong_key": "watermark-wrong",
+  "message": "OKOK",
+  "model": {
+    "id": "Wan-AI/Wan2.1-T2V-1.3B-Diffusers",
+    "revision": "0fad780a534b6463e45facd96134c9f345acfa5b",
+    "role": "original Wan payload receiver VAE only; float32 posterior mode; no decode"
+  },
+  "planned_calls": {
+    "source_read": 2,
+    "wan_vae_load": 1,
+    "wan_receiver_encode": 4,
+    "payload_read": 8
+  },
+  "source_files": [
+    "main/tube_state/grow_video_reference.py",
+    "main/tube_state/video_local_fourier_rm_control.py",
+    "main/tube_state/video_local_fourier_rm_state.py",
+    "main/tube_state/video_trajectory_receiver_origin_v1.py",
+    "runtime/wan/generation.py",
+    "runtime/wan/vae.py",
+    "runtime/wan/rgb8_source.py",
+    "runtime/wan/video_trajectory_receiver_origin_v1.py",
+    "experiments/wan_state_clock/video_trajectory_receiver_origin_v1_run.py",
+    "experiments/wan_state_clock/configs/video_trajectory_receiver_origin_v1.json"
+  ]
+}
