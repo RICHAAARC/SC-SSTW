@@ -278,9 +278,14 @@ def apply_projection_margin(
     latent: np.ndarray,
     key: str,
     public: PublicProtocol = PUBLIC,
+    *,
+    target_margin: float = 1.0,
 ) -> tuple[np.ndarray, dict[str, Any]]:
-    """Apply the fixed projection target and measure the returned float32 delta."""
+    """Apply one adopted writer-only projection target and measure float32 delta."""
 
+    target_margin = float(target_margin)
+    if target_margin not in (0.5, 1.0):
+        raise ValueError("target_margin must be one of the two adopted fixed targets")
     source = validate_source_latent(latent, public)
     output = source.copy()
     rows: list[dict[str, Any]] = []
@@ -302,7 +307,7 @@ def apply_projection_margin(
             ]
             before = target.copy()
             _, signed_before = _projection(before, direction, sign)
-            raw_delta = max(0.0, public.embedding_margin - signed_before)
+            raw_delta = max(0.0, target_margin - signed_before)
             if raw_delta:
                 target[...] = target + np.float32(raw_delta * sign) * direction
             raw_after, signed_after = _projection(target, direction, sign)
@@ -323,7 +328,7 @@ def apply_projection_margin(
                     "signed_projection_after": signed_after,
                     "raw_target_delta_l2": raw_delta,
                     "applied_float32_delta_l2": applied_l2,
-                    "target_margin": public.embedding_margin,
+                    "target_margin": target_margin,
                 }
             )
     receipt = {
@@ -338,7 +343,9 @@ def apply_projection_margin(
         "active_projection_rows": sum(row["raw_target_delta_l2"] > 0.0 for row in rows),
         "raw_target_delta_l2": math.sqrt(raw_energy),
         "applied_float32_delta_l2": math.sqrt(applied_energy),
+        "target_margin": target_margin,
         "embedding_margin_is_projection_target_not_cap": True,
+        "target_is_writer_only_not_receiver_protocol": True,
         "rows": rows,
         "truth_used": False,
         "message_used": False,

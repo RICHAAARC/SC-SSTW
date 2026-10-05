@@ -28,31 +28,62 @@ from runtime.wan import video_trajectory_payload_framewise_sync_v1 as backend
 ROOT = Path(__file__).resolve().parents[2]
 CONFIG = ROOT / "experiments/wan_state_clock/configs/video_trajectory_payload_framewise_sync_v1.json"
 MODULE = "experiments.wan_state_clock.video_trajectory_payload_framewise_sync_v1_run"
-CONDITIONS = ("P0_ORIGINAL_RGB", "P1_FRAMEWISE_RECON", "P2_FRAMEWISE_SYNC")
+CONDITIONS = ("P0_ORIGINAL_RGB", "P1_FRAMEWISE_RECON", "M1_FRAMEWISE_SYNC", "M05_FRAMEWISE_SYNC")
+SYNC_CONDITIONS = ("M1_FRAMEWISE_SYNC", "M05_FRAMEWISE_SYNC")
 VIEWS = ("FULL", "CROP")
 KEY_IDS = ("K0", "K1")
 QUALITY_SPACES = ("PRECODEC", "FULL_MP4", "CROP_MP4")
 QUALITY_PAIRS = (
     ("P1_FRAMEWISE_RECON", "P0_ORIGINAL_RGB"),
-    ("P2_FRAMEWISE_SYNC", "P0_ORIGINAL_RGB"),
-    ("P2_FRAMEWISE_SYNC", "P1_FRAMEWISE_RECON"),
+    ("M1_FRAMEWISE_SYNC", "P0_ORIGINAL_RGB"),
+    ("M1_FRAMEWISE_SYNC", "P1_FRAMEWISE_RECON"),
+    ("M05_FRAMEWISE_SYNC", "P0_ORIGINAL_RGB"),
+    ("M05_FRAMEWISE_SYNC", "P1_FRAMEWISE_RECON"),
+    ("M05_FRAMEWISE_SYNC", "M1_FRAMEWISE_SYNC"),
 )
 FIXED = {
     "source_cases": 1,
-    "conditions": 3,
-    "observations": 6,
+    "conditions": 4,
+    "observations": 8,
     "keys": 2,
-    "sync_readouts": 12,
-    "sync_candidate_scores": 36,
-    "sync_candidate_tubelet_rows": 1626,
-    "payload_reads": 12,
-    "sync_posthoc": 12,
-    "payload_posthoc": 12,
-    "quality": 9,
-    "rasters": 3,
-    "mp4_save": 3,
-    "mp4_read": 3,
+    "sync_readouts": 16,
+    "sync_candidate_scores": 48,
+    "sync_candidate_tubelet_rows": 2168,
+    "payload_reads": 16,
+    "sync_posthoc": 16,
+    "payload_posthoc": 16,
+    "quality": 18,
+    "rasters": 4,
+    "mp4_save": 4,
+    "mp4_read": 4,
 }
+
+IN_PROGRESS_EVIDENCE_CEILING = (
+    "This execution record is in progress. Fixed rosters retain every missing read and "
+    "failure. No calibrated threshold or FPR measurement, scientific PASS, model or "
+    "source generalization, temporal-edit robustness, or broader codec robustness is "
+    "established."
+)
+
+
+def execution_evidence_ceiling(done: bool) -> str:
+    if done:
+        return (
+            "One fixed development source and fixed nonzero crop completed through the "
+            "single fixed MP4 chain. P1-P0 payload compatibility, same-run M1-P1 and M05-P1 "
+            "effects, direct M05-M1 effects, and crop synchronization scores are reported "
+            "with the fixed rosters retained. FULL has a singleton public offset and is "
+            "not synchronization evidence; repeated payload recovery does not establish "
+            "synchronization gain. No calibrated threshold or FPR measurement, scientific "
+            "PASS, model or source generalization, temporal-edit robustness, or broader "
+            "codec robustness is established."
+        )
+    return (
+        "This fixed execution did not complete. The fixed rosters retain every saved read, "
+        "missing read, and failure. No calibrated threshold or FPR measurement, scientific "
+        "PASS, model or source generalization, temporal-edit robustness, or broader codec "
+        "robustness is established."
+    )
 
 
 def sha256_file(path: str | Path) -> str:
@@ -168,11 +199,17 @@ class Store:
             "calls": {},
             "workers": {},
             "failures": [],
-            "writer": {"status": "PENDING"},
+            "writers": {
+                condition: {"status": "PENDING"}
+                for condition in SYNC_CONDITIONS
+            },
             "environment": environment_receipt(),
             "actual_generation_calls": False,
             "science_status": cfg["science_status"],
-            "evidence_ceiling": cfg["evidence_ceiling"],
+            "evidence_provenance": {
+                "candidate_pre_run_template": cfg["evidence_ceiling"],
+            },
+            "evidence_ceiling": IN_PROGRESS_EVIDENCE_CEILING,
         }
         for condition in CONDITIONS:
             folder = self.output / condition
@@ -218,19 +255,21 @@ class Store:
 
     def save(self) -> None:
         expected_sizes = {
-            "conditions": 3,
-            "rasters": 3,
-            "transport": 3,
-            "observations": 6,
-            "sync_reads": 12,
-            "payload_reads": 12,
-            "sync_posthoc": 12,
-            "payload_posthoc": 12,
-            "quality": 9,
+            "conditions": 4,
+            "rasters": 4,
+            "transport": 4,
+            "observations": 8,
+            "sync_reads": 16,
+            "payload_reads": 16,
+            "sync_posthoc": 16,
+            "payload_posthoc": 16,
+            "quality": 18,
         }
         for group, size in expected_sizes.items():
             if len(self.data[group]) != size:
                 raise ValueError(f"fixed roster changed: {group}")
+        if tuple(self.data["writers"]) != SYNC_CONDITIONS:
+            raise ValueError("fixed writer slot roster changed")
         self.data["counts"] = {
             "rasters": sum(row["status"] == "SAVED" for row in self.data["rasters"].values()),
             "mp4_save": sum(
@@ -383,45 +422,68 @@ def media_worker(store: Store, cfg: dict[str, Any]) -> None:
         ),
     )
     p1_latent = encoded.clone()
-    p2_numpy, writer_receipt = store.call(
-        "writer_sync",
-        lambda: sync_method.apply_projection_margin(
-            encoded.numpy().copy(), cfg["key"], sync_method.PUBLIC
-        ),
-    )
-    writer_path = store.output / "writer_receipt.json.gz"
-    dump_gzip_json(writer_path, writer_receipt)
-    store.data["writer"] = {
-        key: value for key, value in writer_receipt.items() if key != "rows"
-    }
-    store.data["writer"].update(
-        status="SAVED",
-        path=str(writer_path),
-        sha256=sha256_file(writer_path),
-        row_count=len(writer_receipt["rows"]),
-    )
+    writer_source = encoded.numpy().copy()
+    writer_source_sha256 = hashlib.sha256(writer_source.tobytes()).hexdigest()
+    written_latents: dict[str, np.ndarray] = {}
+    for condition in SYNC_CONDITIONS:
+        target_margin = float(cfg["writer"]["projection_targets"][condition])
+        written, writer_receipt = store.call(
+            "writer_sync",
+            lambda target=target_margin: sync_method.apply_projection_margin(
+                writer_source.copy(),
+                cfg["key"],
+                sync_method.PUBLIC,
+                target_margin=target,
+            ),
+        )
+        if hashlib.sha256(writer_source.tobytes()).hexdigest() != writer_source_sha256:
+            raise ValueError("shared encoded writer source changed")
+        writer_path = store.output / ("writer_receipt." + condition + ".json.gz")
+        dump_gzip_json(writer_path, writer_receipt)
+        store.data["writers"][condition] = {
+            key: value for key, value in writer_receipt.items() if key != "rows"
+        }
+        store.data["writers"][condition].update(
+            status="SAVED",
+            path=str(writer_path),
+            sha256=sha256_file(writer_path),
+            row_count=len(writer_receipt["rows"]),
+            input_scaled_latent_sha256=writer_source_sha256,
+            independent_copy=True,
+        )
+        written_latents[condition] = written
+        store.save()
     p1_rgb = store.call(
         "framewise_writer_decode",
         lambda: framewise.decode_rgb_frames(
             frame_vae, p1_latent, batch_frames=cfg["framewise_vae"]["batch_frames"]
         ),
     )
-    p2_rgb = store.call(
+    m1_rgb = store.call(
         "framewise_writer_decode",
         lambda: framewise.decode_rgb_frames(
             frame_vae,
-            torch.from_numpy(p2_numpy.copy()),
+            torch.from_numpy(written_latents["M1_FRAMEWISE_SYNC"].copy()),
+            batch_frames=cfg["framewise_vae"]["batch_frames"],
+        ),
+    )
+    m05_rgb = store.call(
+        "framewise_writer_decode",
+        lambda: framewise.decode_rgb_frames(
+            frame_vae,
+            torch.from_numpy(written_latents["M05_FRAMEWISE_SYNC"].copy()),
             batch_frames=cfg["framewise_vae"]["batch_frames"],
         ),
     )
     raster_tensors = {
         "P0_ORIGINAL_RGB": source,
         "P1_FRAMEWISE_RECON": wan_adapter.quantize_rgb8_no_codec(p1_rgb),
-        "P2_FRAMEWISE_SYNC": wan_adapter.quantize_rgb8_no_codec(p2_rgb),
+        "M1_FRAMEWISE_SYNC": wan_adapter.quantize_rgb8_no_codec(m1_rgb),
+        "M05_FRAMEWISE_SYNC": wan_adapter.quantize_rgb8_no_codec(m05_rgb),
     }
     if not torch.equal(source, raster_tensors["P0_ORIGINAL_RGB"]):
         raise ValueError("P0 source changed")
-    del encoded, p1_latent, p2_numpy, p1_rgb, p2_rgb
+    del encoded, p1_latent, writer_source, written_latents, p1_rgb, m1_rgb, m05_rgb
     full_received: dict[str, Any] = {}
     crop_received: dict[str, Any] = {}
     for condition in CONDITIONS:
@@ -595,8 +657,9 @@ def settle(store: Store, reason: str) -> None:
         for row in store.data[group].values():
             if row["status"] in ("PENDING", "RUNNING"):
                 row.update(status="NOT_COMPLETED", error=reason)
-    if store.data["writer"]["status"] in ("PENDING", "RUNNING"):
-        store.data["writer"].update(status="NOT_COMPLETED", error=reason)
+    for row in store.data["writers"].values():
+        if row["status"] in ("PENDING", "RUNNING"):
+            row.update(status="NOT_COMPLETED", error=reason)
     store.save()
     store.blind_snapshot()
 
@@ -629,6 +692,7 @@ def evaluate(store: Store, cfg: dict[str, Any]) -> None:
                 for offset, value in scores.items()
                 if offset != true_offset
             )
+        output.pop("error", None)
         output.update(
             status="EVALUATED_TRUTH" if key_id == "K0" else "EVALUATED_WRONG_KEY_CONTROL",
             condition=condition,
@@ -640,7 +704,7 @@ def evaluate(store: Store, cfg: dict[str, Any]) -> None:
             truth_in_top=true_offset in readout["summary"]["top_offsets"],
             unique_truth=readout["summary"]["top_offsets"] == [true_offset],
             full_singleton_geometry_only=view == "FULL",
-            expected_sync_condition=condition == "P2_FRAMEWISE_SYNC",
+            expected_sync_condition=condition in SYNC_CONDITIONS,
             sync_accepted=False,
         )
     truth_bits = payload_method.message_bits(cfg["message"])
@@ -649,6 +713,10 @@ def evaluate(store: Store, cfg: dict[str, Any]) -> None:
         oid, key_id = sid.split("/")
         truth = store.data["observations"][oid]
         bits = blind_row.get("decoded_bits")
+        if blind_row["status"] == "READ":
+            output.pop("error", None)
+        else:
+            output["error"] = blind_row.get("error")
         output.update(
             status=(
                 "EVALUATED_TRUTH"
@@ -703,6 +771,7 @@ def finish(store: Store, cfg: dict[str, Any]) -> bool:
         status="EXECUTION_COMPLETE" if done else "INCOMPLETE",
         stage="FINISHED",
         science_status=cfg["science_status"],
+        evidence_ceiling=execution_evidence_ceiling(done),
     )
     store.save()
     print(json.dumps({"status": store.data["status"], "counts": store.data["counts"]}))
@@ -775,11 +844,11 @@ def run_worker_phase(store: Store) -> tuple[Store, bool]:
         "elapsed_seconds": time.perf_counter() - start,
     }
     if not ok:
-        store.failure(
-            "WORKER_MEDIA",
-            RuntimeError(error or cleanup_error or f"child exit {returncode}"),
-        )
-    settle(store, error or "media worker did not complete")
+        failure_reason = error or cleanup_error or f"media worker child exit {returncode}"
+        store.failure("WORKER_MEDIA", RuntimeError(failure_reason))
+        settle(store, failure_reason)
+    else:
+        store.save()
     return store, interrupted
 
 
