@@ -1,0 +1,26 @@
+{
+  "message": "OKOK",
+  "truth": {
+    "obs_83bd426a52f36e63": {
+      "condition": "M05_FRAMEWISE_SYNC",
+      "view": "FULL181",
+      "source_start": 0
+    },
+    "obs_9d4a3f27ce933f70": {
+      "condition": "M05_FRAMEWISE_SYNC",
+      "view": "CROP177",
+      "source_start": 1
+    },
+    "obs_30cdbf6917442b0c": {
+      "condition": "M05_FRAMEWISE_SYNC",
+      "view": "SHORT89",
+      "source_start": 37
+    }
+  },
+  "history": {
+    "result_path": "/content/drive/MyDrive/Video-WM/Trajectory-Payload-G-V1/20261005T140121854219Z/fixed_reference/result.json",
+    "result_sha256": "76f50d045a903ecd0cb71df7c56afa9585a0aa4745b57a3effe5c20ebe393482",
+    "blind_path": "/content/drive/MyDrive/Video-WM/Trajectory-Payload-G-V1/20261005T140121854219Z/fixed_reference/blind_receiver_readouts.json",
+    "blind_sha256": "29bcd30d25d381ac3b7721d9bfded5af82005dd0ab452761249607d4763cb4eb"
+  }
+}

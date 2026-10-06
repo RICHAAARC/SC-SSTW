@@ -1,0 +1,110 @@
+{
+  "name": "video_trajectory_receiver_estimated_align_v1",
+  "method_version": "trajectory-payload-framewise-sync-v1",
+  "key": "watermark",
+  "wrong_key": "watermark-wrong",
+  "inputs": {
+    "obs_83bd426a52f36e63": {
+      "path": "/content/drive/MyDrive/Video-WM/Trajectory-Payload-G-V1/20261005T140121854219Z/fixed_reference/M05_FRAMEWISE_SYNC/received.rgb8",
+      "sha256": "ce1c6346ddfeb852d57f21d82d6f4452bc491d7d1a73a688108f4aff13683295",
+      "shape": [
+        181,
+        320,
+        512,
+        3
+      ],
+      "frames": 181,
+      "bytes": 88965120,
+      "dtype": "uint8"
+    },
+    "obs_9d4a3f27ce933f70": {
+      "path": "/content/drive/MyDrive/Video-WM/Trajectory-Payload-G-V1/20261005T140121854219Z/fixed_reference/M05_FRAMEWISE_SYNC/received.CROP177.rgb8",
+      "sha256": "5b03066d2e4555dd74d59843ed78971762758d422703153c824be9c1a92f0984",
+      "shape": [
+        177,
+        320,
+        512,
+        3
+      ],
+      "frames": 177,
+      "bytes": 86999040,
+      "dtype": "uint8"
+    },
+    "obs_30cdbf6917442b0c": {
+      "path": "/content/drive/MyDrive/Video-WM/Trajectory-Payload-G-V1/20261005T140121854219Z/fixed_reference/M05_FRAMEWISE_SYNC/received.SHORT89.rgb8",
+      "sha256": "1cff184d33b9b18e2d5d612a0792e6564a1c201a39d676483e5d050031845531",
+      "shape": [
+        89,
+        320,
+        512,
+        3
+      ],
+      "frames": 89,
+      "bytes": 43745280,
+      "dtype": "uint8"
+    }
+  },
+  "model": {
+    "id": "Wan-AI/Wan2.1-T2V-1.3B-Diffusers",
+    "revision": "0fad780a534b6463e45facd96134c9f345acfa5b",
+    "role": "original Wan payload receiver VAE only; float32 posterior mode; no decode"
+  },
+  "framewise_model": {
+    "id": "stabilityai/sd-vae-ft-mse",
+    "revision": "31f26fdeee1355a5c34592e401dd41e45d25a493",
+    "batch_frames": 8,
+    "compute_dtype": "float32",
+    "scaled_latent_factor": 0.18215
+  },
+  "environment_pins": {
+    "torch": "2.11.0",
+    "diffusers": "0.39.0",
+    "transformers": "4.57.6",
+    "numpy": "2.1.3",
+    "accelerate": "1.15.0",
+    "safetensors": "0.8.0",
+    "huggingface-hub": "0.36.2",
+    "tokenizers": "0.22.2"
+  },
+  "fixed_denominator": {
+    "observations": 3,
+    "sync_reads": 6,
+    "sync_candidate_scores": 198,
+    "sync_candidate_tubelet_rows": 4820,
+    "logical_payload_reads": 12,
+    "logical_detailed_votes": 422400,
+    "logical_time_bit_rows": 14080,
+    "logical_final_bit_rows": 384
+  },
+  "planned_calls": {
+    "source_read": 3,
+    "framewise_vae_load": 1,
+    "framewise_receiver_encode": 3,
+    "sync_score": 6,
+    "wan_vae_load": 1
+  },
+  "physical_upper_bounds": {
+    "wan_receiver_encode": 7,
+    "payload_read": 10
+  },
+  "posthoc_config_sha256": "4bc6f7ec91e09a42b405b0993974014babd1baaad560f01c28eae2ee37f934e3",
+  "evidence_ceiling": "Fresh estimated-offset-to-payload development chain on three fixed saved observations; no FPR, generalization, unique phase causality or scientific PASS. FULL singleton is geometry only.",
+  "source_files": [
+    "experiments/wan_state_clock/configs/video_trajectory_receiver_estimated_align_v1.json",
+    "experiments/wan_state_clock/video_trajectory_receiver_estimated_align_v1_run.py",
+    "main/tube_state/grow_video_reference.py",
+    "main/tube_state/video_local_fourier_rm_control.py",
+    "main/tube_state/video_local_fourier_rm_state.py",
+    "main/tube_state/video_trajectory_payload_framewise_sync_v1.py",
+    "main/tube_state/video_trajectory_receiver_estimated_align_v1.py",
+    "main/tube_state/video_trajectory_receiver_origin_v1.py",
+    "runtime/wan/framewise_autoencoder_kl.py",
+    "runtime/wan/generation.py",
+    "runtime/wan/rgb8_source.py",
+    "runtime/wan/vae.py",
+    "runtime/wan/video_trajectory_payload_framewise_sync_v1.py",
+    "runtime/wan/video_trajectory_payload_gt_v1.py",
+    "runtime/wan/video_trajectory_receiver_estimated_align_v1.py",
+    "runtime/wan/video_trajectory_receiver_origin_v1.py"
+  ]
+}
