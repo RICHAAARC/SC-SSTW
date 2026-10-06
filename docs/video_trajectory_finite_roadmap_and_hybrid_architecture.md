@@ -18,10 +18,12 @@ Sync在Wan native decode之后经2D VAE写入，使用4帧（源末块1帧）×4
 
 | 有限里程碑 | 范围与次序 | 完成标准 / 当前状态 |
 |---|---|---|
-| ① 当前1A；随后必要1B | 四窗正确key p2/p3开发兼容性；规则稳定后预固定新源小复核。1B exact prompt/seed未采纳，不阻1A | 1A交付完整四窗结果；仅声明窗offset/phase与payload均成立才称该范围兼容，否则保留具体负结果，不调参求通过。当前工程待发布实测。1B先冻规则，再新源一次完整报告 |
+| ① 1A已完成；1B工程待实测 | 1A固定四窗正确key p2/p3开发兼容性已审计；1B已采纳蓝色玩具车固定prompt与seed 2026100601，一次新源小复核 | 1A固定四窗offset/phase与最终payload成立，接受仅该声明范围；负结果仍保留、不调参求通过。1B规则预固定，待用户一次真实运行完整报告，不预称独立泛化成功 |
 | ② 并行架构/贡献整理 | 按上述混合架构限缩论文；不新增local payload或重做trajectory sync | 载体、时序、贡献与证据准确对应即完成，不强迫新消融；本文已整理 |
 | ③ 最小动态路径 | 先内部删帧的路径与payload链；重复/变速仅在保留相应论文主张时增加预固定有限验证 | 预先冻结最小删帧与路径评价，盲路径解释跳变并联合核payload；整段offset对照、真值路径诊断与正式结果分列，结论依实测；未实施 |
 | ④ 盲存在拒绝/擦除 | 开发规则与独立留出；不提前扩为极低FPR试验 | 冻结存在、拒绝、擦除规则后，独立留出正负完整判决；全拒绝不能称成功，无极低FPR前置；未实施 |
 | ⑤ 同版联合验证 | 冻结有限声明范围与机制后，再做独立论文主实验 | 同一最终版在有限预声明名单联合交定位/路径、payload、质量、成本完整包后转主实验；未测范围仍未完成；未实施 |
 
-精确offset、phase、最终bit与receiver时间位置的聚合余量须分别评价。FULL singleton和alias不增加独立证据，K1是描述性对照，sync_accepted=False。任何阶段均不把原说明的全部时域编辑、局部payload和泛化目标悄然记为完成；也不无限新增方法模块。当前1A代码没有实现③④或1B。
+精确offset、phase、最终bit与receiver时间位置的聚合余量须分别评价。FULL singleton和alias不增加独立证据，K1是描述性对照，sync_accepted=False。任何阶段均不把原说明的全部时域编辑、局部payload和泛化目标悄然记为完成；也不无限新增方法模块。当前1A及新1B入口均没有实现③④；1B实测尚未执行，不能称独立泛化成功。
+
+1A当前证据：/home/richar/projects/Video-WM/diagnostics/trajectory-receiver-phase23-milestone1a-real-run-audit-20261006/report.md。1B固定入口与预算见 video_trajectory_receiver_independent_source_v1.md；本次只新增一个来源、一个M05 condition和四窗接收，不新增其他控制臂。

@@ -1,6 +1,6 @@
 # 固定开发源 phase2/3 长短裁剪（Milestone1A）
 
-本入口仅实现已采纳 1A：验证保存 G M05 FULL181 RGB 的 SHA 后读一次，CPU clone [2:179]、[3:180]、[38:127]、[39:128]，接收长度177/177/89/89不变。不运行 FULL/phase1 对照，不新增 codec、生成、writer 或质量测量。
+本入口实现已采纳 1A：验证保存 G M05 FULL181 RGB 的 SHA 后读一次，CPU clone [2:179]、[3:180]、[38:127]、[39:128]，接收长度177/177/89/89不变。不运行 FULL/phase1 对照，不新增 codec、生成、writer 或质量测量。
 
 输入构造和接收选择分开：preparation JSON仅供构造四个fixture，记录source-start、四份CPU输入SHA和源帧图；接收公开config仅含opaque IDs、长度/形状及身份占位。构造后传入四份RGB，不把start/真phase/消息传给score、estimate或alignment。单独posthoc JSON只在最终payload seal后读取。CPU切片保留内存，不另存/编码四份媒体；可由固定FULL与准备receipt复现。
 
@@ -18,7 +18,11 @@ Wan load一次，framewise load一次；公共R44/R22、latent1…R、32bits/4ch
 
 四窗没有旧同窗history；代码不加载历史同步/载荷记录，也不以历史缺项阻断当前run。精确offset、phase、最终bit错误和全部time/channel余量分开报告；全time-bit正不是新PASS门槛。新短窗与旧start37高度重叠，既不是独立源，也不能唯一归因phase。
 
-五代码单元Notebook沿成功安装/probe/subprocess清理/失败持久化路径，首cell精确mount；SOURCE_SHA=None在输出目录创建前守卫。当前仅CPU/fake/static检查；发布后由用户手动Run-all。1B确切prompt/seed、新生成、动态删除、其他攻击和拒绝阈值均不在本入口中。
+五代码单元Notebook沿成功安装/probe/subprocess清理/失败持久化路径，首cell精确mount；未发布模板的SOURCE_SHA=None在输出目录创建前守卫，已发布Notebook绑定不可变源码。
+
+1A 已保存实测审计被接受：固定四窗 K0 的 offset/phase 均正确，最终错误数11/1/11/1→0；全部 time-bit 正是描述性结果而非新增门槛。证据：/home/richar/projects/Video-WM/diagnostics/trajectory-receiver-phase23-milestone1a-real-run-audit-20261006/report.md。结论限于同一开发源的高重叠四窗，不是 heldout、FPR、唯一phase因果或科学PASS。
+
+1B 已另行采纳蓝色玩具车固定 prompt 与 seed 2026100601，见 video_trajectory_receiver_independent_source_v1.md；当前1B仅工程待实测，不改变本1A入口。新生成、动态删除、其他攻击和拒绝阈值不在本入口中。
 
 入口：experiments.wan_state_clock.video_trajectory_receiver_phase23_v1_run
 Builder：scripts/build_video_trajectory_receiver_phase23_notebook.py

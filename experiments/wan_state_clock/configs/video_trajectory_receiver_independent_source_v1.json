@@ -1,0 +1,151 @@
+{
+  "name": "video_trajectory_receiver_independent_source_v1",
+  "method_version": "trajectory-payload-framewise-sync-v1",
+  "key": "watermark",
+  "wrong_key": "watermark-wrong",
+  "model": {
+    "id": "Wan-AI/Wan2.1-T2V-1.3B-Diffusers",
+    "revision": "0fad780a534b6463e45facd96134c9f345acfa5b",
+    "role": "Wan payload receiver only; generation/native decode occur in separate source process using the same model revision"
+  },
+  "framewise_model": {
+    "id": "stabilityai/sd-vae-ft-mse",
+    "revision": "31f26fdeee1355a5c34592e401dd41e45d25a493",
+    "batch_frames": 8,
+    "compute_dtype": "float32",
+    "scaled_latent_factor": 0.18215
+  },
+  "environment_pins": {
+    "torch": "2.11.0",
+    "diffusers": "0.39.0",
+    "transformers": "4.57.6",
+    "numpy": "2.1.3",
+    "accelerate": "1.15.0",
+    "safetensors": "0.8.0",
+    "huggingface-hub": "0.36.2",
+    "tokenizers": "0.22.2"
+  },
+  "fixed_denominator": {
+    "observations": 4,
+    "sync_reads": 8,
+    "sync_candidate_scores": 392,
+    "sync_candidate_tubelet_rows": 9456,
+    "logical_payload_reads": 16,
+    "logical_detailed_votes": 506880,
+    "logical_time_bit_rows": 16896,
+    "logical_final_bit_rows": 512
+  },
+  "planned_calls": {
+    "source_read": 1,
+    "source_slice": 4,
+    "framewise_vae_load": 1,
+    "framewise_receiver_encode": 4,
+    "sync_score": 8,
+    "wan_vae_load": 1
+  },
+  "physical_upper_bounds": {
+    "wan_receiver_encode": 12,
+    "payload_read": 16
+  },
+  "evidence_ceiling": "One predeclared new prompt and seed after receiver freezing; prospective independent-source mechanism check, not broad source/model generalization, FPR or scientific PASS. Fresh output identity is recorded after generation; conclusions must be derived from all saved fixed-window outcomes. All16 logical slots retained; all-time-bit-positive is descriptive; no auto scientific PASS. Aliases are not independent observations.",
+  "inputs": {
+    "obs_f6d486f8e496d1ce": {
+      "frames": 177,
+      "shape": [
+        177,
+        320,
+        512,
+        3
+      ],
+      "bytes": 86999040,
+      "dtype": "uint8",
+      "sha256": null,
+      "storage": "CPU crop from this run single saved M05 full MP4 readback; hash filled before scoring"
+    },
+    "obs_62e2e9941285e568": {
+      "frames": 177,
+      "shape": [
+        177,
+        320,
+        512,
+        3
+      ],
+      "bytes": 86999040,
+      "dtype": "uint8",
+      "sha256": null,
+      "storage": "CPU crop from this run single saved M05 full MP4 readback; hash filled before scoring"
+    },
+    "obs_80183f871bd972c6": {
+      "frames": 89,
+      "shape": [
+        89,
+        320,
+        512,
+        3
+      ],
+      "bytes": 43745280,
+      "dtype": "uint8",
+      "sha256": null,
+      "storage": "CPU crop from this run single saved M05 full MP4 readback; hash filled before scoring"
+    },
+    "obs_dff9eb878f3fd97e": {
+      "frames": 89,
+      "shape": [
+        89,
+        320,
+        512,
+        3
+      ],
+      "bytes": 43745280,
+      "dtype": "uint8",
+      "sha256": null,
+      "storage": "CPU crop from this run single saved M05 full MP4 readback; hash filled before scoring"
+    }
+  },
+  "preparation_config_sha256": "f19ace02c9a316323c7c1907ff3cf06532412af9238b4afe3bb523383d70d36e",
+  "posthoc_config_sha256": "f8ad2f26155bed26195737ff16c667f9648036c6757dbae98fc3c57075025f6e",
+  "source_files": [
+    "experiments/wan_state_clock/configs/video_local_fourier_rm_v1.json",
+    "experiments/wan_state_clock/configs/video_trajectory_payload_g_v1.json",
+    "experiments/wan_state_clock/configs/video_trajectory_receiver_estimated_align_v1.json",
+    "experiments/wan_state_clock/configs/video_trajectory_receiver_independent_source_v1.json",
+    "experiments/wan_state_clock/configs/video_trajectory_receiver_independent_source_v1_preparation.json",
+    "experiments/wan_state_clock/configs/video_trajectory_receiver_phase23_v1.json",
+    "experiments/wan_state_clock/configs/video_trajectory_receiver_phase23_v1_preparation.json",
+    "experiments/wan_state_clock/video_trajectory_payload_g_v1_run.py",
+    "experiments/wan_state_clock/video_trajectory_payload_gt_v1_run.py",
+    "experiments/wan_state_clock/video_trajectory_receiver_estimated_align_v1_run.py",
+    "experiments/wan_state_clock/video_trajectory_receiver_independent_source_v1_prepare.py",
+    "experiments/wan_state_clock/video_trajectory_receiver_independent_source_v1_run.py",
+    "experiments/wan_state_clock/video_trajectory_receiver_phase23_v1_run.py",
+    "main/tube_state/grow_video_reference.py",
+    "main/tube_state/video_local_fourier_rm_control.py",
+    "main/tube_state/video_local_fourier_rm_old8_two_state_v1.py",
+    "main/tube_state/video_local_fourier_rm_old8_two_state_v1_control.py",
+    "main/tube_state/video_local_fourier_rm_state.py",
+    "main/tube_state/video_trajectory_payload_framewise_sync_v1.py",
+    "main/tube_state/video_trajectory_payload_gt_v1.py",
+    "main/tube_state/video_trajectory_payload_temporal_constraint_v1.py",
+    "main/tube_state/video_trajectory_receiver_estimated_align_v1.py",
+    "main/tube_state/video_trajectory_receiver_origin_v1.py",
+    "runtime/wan/framewise_autoencoder_kl.py",
+    "runtime/wan/generation.py",
+    "runtime/wan/io.py",
+    "runtime/wan/quality.py",
+    "runtime/wan/rgb8_source.py",
+    "runtime/wan/trajectory.py",
+    "runtime/wan/vae.py",
+    "runtime/wan/video_local_fourier_rm_old8_two_state_v1.py",
+    "runtime/wan/video_local_fourier_rm_same_raster.py",
+    "runtime/wan/video_temporal_sync_bridge.py",
+    "runtime/wan/video_trajectory_payload_framewise_sync_v1.py",
+    "runtime/wan/video_trajectory_payload_gt_v1.py",
+    "runtime/wan/video_trajectory_receiver_estimated_align_v1.py",
+    "runtime/wan/video_trajectory_receiver_origin_v1.py",
+    "runtime/wan/zero_mean_c1_yuv420_no_h264.py"
+  ],
+  "generation_dependency_pins": {
+    "sentencepiece": "0.2.2",
+    "ftfy": "6.3.1"
+  }
+}

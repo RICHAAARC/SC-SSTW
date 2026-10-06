@@ -1,0 +1,142 @@
+{
+  "method_version": "trajectory-payload-framewise-sync-v1",
+  "model": {
+    "id": "Wan-AI/Wan2.1-T2V-1.3B-Diffusers",
+    "revision": "0fad780a534b6463e45facd96134c9f345acfa5b",
+    "role": "fixed PAYLOAD_MULTI source generation and one native decode, then original payload receiver VAE"
+  },
+  "source": {
+    "path": null,
+    "sha256": null,
+    "bytes": 88965120,
+    "shape": [
+      181,
+      320,
+      512,
+      3
+    ],
+    "dtype": "uint8",
+    "fps": 8,
+    "seed": 2026100601,
+    "origin": "One prospectively fixed new prompt and seed after receiver freeze; identity is saved before M05 and receiver; no selection/retry"
+  },
+  "framewise_vae": {
+    "id": "stabilityai/sd-vae-ft-mse",
+    "revision": "31f26fdeee1355a5c34592e401dd41e45d25a493",
+    "role": "2D deterministic per-frame reconstruction only",
+    "scaled_latent_factor": 0.18215,
+    "method_dtype": "float32",
+    "compute_dtype": "float32",
+    "batch_frames": 8,
+    "replaces_wan_native_decoder": false
+  },
+  "generation": {
+    "height": 320,
+    "width": 512,
+    "frames": 181,
+    "fps": 8,
+    "steps": 50,
+    "guidance_scale": 5.0,
+    "max_sequence_length": 512,
+    "negative_prompt": "text, watermark, logo, camera motion, cuts, multiple objects, flicker",
+    "prompt": "locked camera, a small blue toy car slowly rolling left to right across a wooden tabletop, steady soft daylight, no people, no cuts",
+    "seed": 2026100601
+  },
+  "control": {
+    "steps": [
+      25,
+      26,
+      27,
+      28,
+      29,
+      30,
+      31,
+      32,
+      33,
+      34,
+      35,
+      36,
+      37,
+      38,
+      39,
+      40,
+      41,
+      42,
+      43,
+      44,
+      45,
+      46,
+      47,
+      48,
+      49
+    ],
+    "initial_identity_index": 25,
+    "payload_mask_count": 44160,
+    "payload_eta": 5520,
+    "pilot_active_coefficients": 5568,
+    "pilot_eta": 696.0,
+    "pilot_delta_cap": 1.0,
+    "target_l2": 1.0,
+    "total_budget_matched": false
+  },
+  "key": "watermark",
+  "message": "OKOK",
+  "name": "video_trajectory_receiver_independent_source_v1_preparation",
+  "condition": "M05_FRAMEWISE_SYNC",
+  "projection_target": 0.5,
+  "crops": {
+    "obs_f6d486f8e496d1ce": {
+      "length": 177,
+      "start": 2
+    },
+    "obs_62e2e9941285e568": {
+      "length": 177,
+      "start": 3
+    },
+    "obs_80183f871bd972c6": {
+      "length": 89,
+      "start": 38
+    },
+    "obs_dff9eb878f3fd97e": {
+      "length": 89,
+      "start": 39
+    }
+  },
+  "source_preparation_planned_calls": {
+    "generation_load": 1,
+    "trajectory": 1,
+    "transformer_conditional": 50,
+    "transformer_unconditional": 50,
+    "native_step": 50,
+    "local_control": 25,
+    "payload_gradient": 25,
+    "pilot_gradient": 0,
+    "wan_vae_load": 1,
+    "wan_decode": 1,
+    "raster_save": 1
+  },
+  "m05_planned_calls": {
+    "source_read": 1,
+    "framewise_vae_load": 1,
+    "framewise_writer_encode": 1,
+    "writer_sync": 1,
+    "framewise_writer_decode": 1,
+    "raster_save": 1,
+    "mp4_save": 1,
+    "mp4_probe": 1,
+    "mp4_readback": 1
+  },
+  "scope": "Writer legally uses fixed message/key/prompt; preparation uses crop starts. No writer evidence or crop truth enters receiver selection.",
+  "environment_pins": {
+    "torch": "2.11.0",
+    "diffusers": "0.39.0",
+    "transformers": "4.57.6",
+    "numpy": "2.1.3",
+    "accelerate": "1.15.0",
+    "safetensors": "0.8.0",
+    "huggingface-hub": "0.36.2",
+    "tokenizers": "0.22.2",
+    "sentencepiece": "0.2.2",
+    "ftfy": "6.3.1"
+  }
+}
