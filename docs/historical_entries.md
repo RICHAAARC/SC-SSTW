@@ -1,7 +1,8 @@
 # Historical entrypoints outside the current release
 
-The current main tree contains only the verified limited GROW chain and its
-required shared components. No branch was deleted and no Git history was
+The current main tree keeps GROW and the explicitly whitelisted M05/temporal
+receiver mechanisms described in current_method.md. The older entries below
+remain outside that scope. No branch was deleted and no Git history was
 rewritten. The entries below remain exactly reproducible from immutable
 source [3bee8f6d4cd55784f69c766cf9397774848bba73](https://github.com/RICHAAARC/SC-SSTW/tree/3bee8f6d4cd55784f69c766cf9397774848bba73).
 

@@ -1,0 +1,89 @@
+{
+  "method_version": "trajectory-payload-framewise-sync-v1",
+  "key": "watermark",
+  "wrong_key": "watermark-wrong",
+  "model": {
+    "id": "Wan-AI/Wan2.1-T2V-1.3B-Diffusers",
+    "revision": "0fad780a534b6463e45facd96134c9f345acfa5b",
+    "role": "original Wan payload receiver VAE only; float32 posterior mode; no decode"
+  },
+  "framewise_model": {
+    "id": "stabilityai/sd-vae-ft-mse",
+    "revision": "31f26fdeee1355a5c34592e401dd41e45d25a493",
+    "batch_frames": 8,
+    "compute_dtype": "float32",
+    "scaled_latent_factor": 0.18215
+  },
+  "environment_pins": {
+    "torch": "2.11.0",
+    "diffusers": "0.39.0",
+    "transformers": "4.57.6",
+    "numpy": "2.1.3",
+    "accelerate": "1.15.0",
+    "safetensors": "0.8.0",
+    "huggingface-hub": "0.36.2",
+    "tokenizers": "0.22.2"
+  },
+  "name": "video_trajectory_internal_single_deletion_v1",
+  "diagnostic_version": "internal-single-deletion-v1",
+  "inputs": {
+    "obs_5c17a830": {
+      "frames": 177,
+      "shape": [
+        177,
+        320,
+        512,
+        3
+      ],
+      "bytes": 86999040,
+      "dtype": "uint8",
+      "sha256": null
+    },
+    "obs_9a2fe146": {
+      "frames": 177,
+      "shape": [
+        177,
+        320,
+        512,
+        3
+      ],
+      "bytes": 86999040,
+      "dtype": "uint8",
+      "sha256": null
+    }
+  },
+  "fixed_denominator": {
+    "observations": 2,
+    "sync_reads": 4,
+    "frame_displacement_cells": 3540,
+    "path_candidates": 2836,
+    "local_grid_cells": 900,
+    "blind_logical_reads": 12,
+    "oracle_logical_reads": 4,
+    "logical_payload_reads": 16,
+    "logical_detailed_votes": 675840,
+    "logical_time_bit_rows": 22528,
+    "logical_final_bits": 512
+  },
+  "planned_calls": {
+    "source_read": 1,
+    "source_slice": 2,
+    "framewise_vae_load": 1,
+    "framewise_receiver_encode": 2,
+    "sync_score": 4,
+    "wan_vae_load": 1
+  },
+  "physical_upper_bounds": {
+    "wan_receiver_encode": 12,
+    "payload_read": 16
+  },
+  "evidence_ceiling": "One development source, one fixed internal deletion plus equal-length tail control. H1 has greater complexity; joint argmax is not presence detection. Path, exact k and payload are separate; oracle is postblind only. No FPR/generalization/scientific PASS.",
+  "preparation_config_sha256": "386033911447b6fb5e4d20ca0ddb925d8ce1527469786530ebe01a2b97341bb2",
+  "oracle_config_sha256": "40c1825d87b33467b315f2537f45a1abb4753b3f3bc4c96a1e5085deb733ce71",
+  "posthoc_config_sha256": "175cebaf0a6428476b4272a4650bf3369591e0343d61449020fbd83f20dba97e",
+  "source_files": [],
+  "config_role": "portable explicit-input template; engineering interface, not new real-run evidence",
+  "preparation_config": "video_trajectory_internal_single_deletion_v1_preparation.json",
+  "oracle_config": "video_trajectory_internal_single_deletion_v1_oracle.json",
+  "posthoc_config": "video_trajectory_internal_single_deletion_v1_posthoc.json"
+}

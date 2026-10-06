@@ -22,3 +22,5 @@ The same-source local-state comparisons are dependent. Repeated-payload 9/9
 recovery across marked arms and media layers is not nine independent videos,
 nor evidence that synchronization aided recovery. Any future shared-component
 extraction requires a separately bounded interface and validation.
+
+The later accepted M05/global-alignment/fixed-deletion whitelist and its original-version evidence are indexed separately in [mechanism evidence](mechanism_evidence_index.md). The historical negatives above are not imported as current method dependencies.

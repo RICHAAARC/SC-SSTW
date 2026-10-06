@@ -1,0 +1,15 @@
+{
+  "paths": {
+    "obs_5c17a830": {
+      "family": "H0",
+      "b": 2,
+      "k": null
+    },
+    "obs_9a2fe146": {
+      "family": "H1",
+      "b": 2,
+      "k": 88
+    }
+  },
+  "use": "Oracle-only construction after blind payload seal; no message"
+}

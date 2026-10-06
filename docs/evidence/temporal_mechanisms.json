@@ -1,0 +1,47 @@
+{
+  "scope": "original-version records; not one newly executed main experiment",
+  "records": [
+    {
+      "mechanism": "M05",
+      "source_sha": "e87af1c55e102b8f5cc7d9caff18ae56d0463aac",
+      "report_path": "/home/richar/projects/Video-WM/diagnostics/trajectory-framewise-m05-real-run-audit-20261005/report.md",
+      "report_sha256": "51c32d5a46cd12d3913a592ba5a8980feb9f8ae2a3be773621417678bc5cabbb"
+    },
+    {
+      "mechanism": "Stage2",
+      "source_sha": "079c766ac910961492c5e50c8386adbf3e2eb55f",
+      "report_path": "/home/richar/projects/Video-WM/diagnostics/trajectory-receiver-estimated-align-stage2-real-run-audit-20261006/report.md",
+      "report_sha256": "4a9dcc876f9ac18dda75631ffacdc8a69c561dc2632cc951f360758143dc1f91"
+    },
+    {
+      "mechanism": "1A",
+      "source_sha": "f5e4725724a88fd4e4eafa516688873c50577b91",
+      "report_path": "/home/richar/projects/Video-WM/diagnostics/trajectory-receiver-phase23-milestone1a-real-run-audit-20261006/report.md",
+      "report_sha256": "20c290e5dbcce4893a244625274f7d9d847dd6c905794153ac20d931fd26a874"
+    },
+    {
+      "mechanism": "1B",
+      "source_sha": "b30583f5a8965847a01b29b7ef22ea1956673c00",
+      "report_path": "/home/richar/projects/Video-WM/diagnostics/trajectory-receiver-independent-source-milestone1b-real-run-audit-20261006/report.md",
+      "report_sha256": "ca2b9d3f66fc8f1167e22dca43d8bd27a06f5cd4592b755df98f555f68c1e9c4"
+    },
+    {
+      "mechanism": "fixed_single_deletion",
+      "source_sha": "33f1671f417069c791db5d6e3366f2fc497fe09d",
+      "evidence": [
+        {
+          "path": "/home/richar/projects/Video-WM/diagnostics/trajectory-internal-single-deletion-real-run-audit-20261006/audit.json",
+          "sha256": "c6d19a472f8c34aa30bce97299cf3e4b13b3b8869f340221cabfd4eb46048292"
+        },
+        {
+          "path": "/home/richar/projects/Video-WM/diagnostics/trajectory-internal-single-deletion-real-run-audit-20261006/numeric_audit.json",
+          "sha256": "b159aa1a012c739710967d6393772659272f364f78ff553f04bb703926b37e55"
+        },
+        {
+          "path": "/home/richar/projects/Video-WM/diagnostics/trajectory-internal-single-deletion-real-run-audit-20261006/result.json",
+          "sha256": "be509d41d6d91c4dc4603842bde481d79e4ddbcd27b9eaf5d0c3ccf5ccdf0a77"
+        }
+      ]
+    }
+  ]
+}

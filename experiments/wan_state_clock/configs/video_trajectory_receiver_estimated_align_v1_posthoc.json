@@ -1,0 +1,20 @@
+{
+  "message": "OKOK",
+  "truth": {
+    "obs_83bd426a52f36e63": {
+      "condition": "M05_FRAMEWISE_SYNC",
+      "view": "FULL181",
+      "source_start": 0
+    },
+    "obs_9d4a3f27ce933f70": {
+      "condition": "M05_FRAMEWISE_SYNC",
+      "view": "CROP177",
+      "source_start": 1
+    },
+    "obs_30cdbf6917442b0c": {
+      "condition": "M05_FRAMEWISE_SYNC",
+      "view": "SHORT89",
+      "source_start": 37
+    }
+  }
+}

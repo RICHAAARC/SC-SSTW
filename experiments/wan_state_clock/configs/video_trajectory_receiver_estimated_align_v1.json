@@ -1,0 +1,95 @@
+{
+  "name": "video_trajectory_receiver_estimated_align_v1",
+  "method_version": "trajectory-payload-framewise-sync-v1",
+  "key": "watermark",
+  "wrong_key": "watermark-wrong",
+  "inputs": {
+    "obs_83bd426a52f36e63": {
+      "path": null,
+      "sha256": null,
+      "shape": [
+        181,
+        320,
+        512,
+        3
+      ],
+      "frames": 181,
+      "bytes": 88965120,
+      "dtype": "uint8"
+    },
+    "obs_9d4a3f27ce933f70": {
+      "path": null,
+      "sha256": null,
+      "shape": [
+        177,
+        320,
+        512,
+        3
+      ],
+      "frames": 177,
+      "bytes": 86999040,
+      "dtype": "uint8"
+    },
+    "obs_30cdbf6917442b0c": {
+      "path": null,
+      "sha256": null,
+      "shape": [
+        89,
+        320,
+        512,
+        3
+      ],
+      "frames": 89,
+      "bytes": 43745280,
+      "dtype": "uint8"
+    }
+  },
+  "model": {
+    "id": "Wan-AI/Wan2.1-T2V-1.3B-Diffusers",
+    "revision": "0fad780a534b6463e45facd96134c9f345acfa5b",
+    "role": "original Wan payload receiver VAE only; float32 posterior mode; no decode"
+  },
+  "framewise_model": {
+    "id": "stabilityai/sd-vae-ft-mse",
+    "revision": "31f26fdeee1355a5c34592e401dd41e45d25a493",
+    "batch_frames": 8,
+    "compute_dtype": "float32",
+    "scaled_latent_factor": 0.18215
+  },
+  "environment_pins": {
+    "torch": "2.11.0",
+    "diffusers": "0.39.0",
+    "transformers": "4.57.6",
+    "numpy": "2.1.3",
+    "accelerate": "1.15.0",
+    "safetensors": "0.8.0",
+    "huggingface-hub": "0.36.2",
+    "tokenizers": "0.22.2"
+  },
+  "fixed_denominator": {
+    "observations": 3,
+    "sync_reads": 6,
+    "sync_candidate_scores": 198,
+    "sync_candidate_tubelet_rows": 4820,
+    "logical_payload_reads": 12,
+    "logical_detailed_votes": 422400,
+    "logical_time_bit_rows": 14080,
+    "logical_final_bit_rows": 384
+  },
+  "planned_calls": {
+    "source_read": 3,
+    "framewise_vae_load": 1,
+    "framewise_receiver_encode": 3,
+    "sync_score": 6,
+    "wan_vae_load": 1
+  },
+  "physical_upper_bounds": {
+    "wan_receiver_encode": 7,
+    "payload_read": 10
+  },
+  "posthoc_config_sha256": "bf8ffb9811ab307b105c1663b4a675903d847dd98cf8d441bddd47ebede6efc5",
+  "evidence_ceiling": "Fresh estimated-offset-to-payload development chain on three fixed saved observations; no FPR, generalization, unique phase causality or scientific PASS. FULL singleton is geometry only.",
+  "source_files": [],
+  "config_role": "portable explicit-input template; engineering interface, not new real-run evidence",
+  "posthoc_config": "video_trajectory_receiver_estimated_align_v1_posthoc.json"
+}

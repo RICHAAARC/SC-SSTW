@@ -1,25 +1,31 @@
 # SC-SSTW release contract
 
-main is the sole authoritative release branch. Its current tree contains only
-the complete, independently copyable GROW video reference chain and the shared
-components required by that successful fixed-source mechanism. Unclosed
-research combinations remain outside main; immutable history provides reproduction.
+Main is the authoritative release branch. Retain complete GROW and only the
+adopted M05 terminal framewise synchronization, fixed-geometry blind offset/phase
+and fixed internal single-deletion receiver mechanisms. OLD8/DWELL4/T05 and
+unclosed historical backprop/combined paths remain on development history.
 
-The established scope is native MULTI writing, real VAE/media persistence and
-independent full-video blind repeated-payload reading. Temporal synchronization,
-time-dependent segment payload, aggregation/rejection, robustness and population
-FPR are not established by this release.
+Do not replace existing generation/vae/GROW mathematics wholesale. Core has no
+runtime/experiments/governance dependency; runtime has no outer-layer import.
+The new stable repeated-payload reader preserves original R44/R22 extraction,
+FFT real/ortho, time-major bit::8 order, strict zero and Counter encounter ties.
+GROW's own all46-time reader and full native50-step chain remain separate.
 
-Keep main/tube_state independent of runtime, experiments and governance.
-runtime/wan must not import experiments or governance. The detector receives
-only the saved video, public protocol/key and frozen VAE; writer states and
-truth are reporting-only. Preserve all fixed rows, including failures.
+Receiver arguments contain received RGB, public protocol and the current key.
+Preparation can know fixture indices, but blind estimators/plans/corrections
+cannot consume truth. Identity hashing may precede seals; oracle-map semantic
+parsing follows blind payload sealing, and message parsing follows final oracle
+sealing. Preserve fixed failure slots and aliases; oracle cannot retry cached
+failures or fill blind unresolved slots. No new thresholds or scientific PASS.
 
-The flow must initialize and operate from a copied directory or source ZIP
-without .git, parent workspaces or historical branches. Record actual source
-content and bundled manifest identity; use a Git SHA only when genuinely available.
+Default CLIs require explicit input configs within frozen 181/177/89 geometry;
+historical exact configs are separately labeled. External config bytes and the
+complete runtime source closure are recorded. A standalone no-.git copy must
+work, including under an unrelated parent Git repository. Git identity is used
+only when root/.git exists; otherwise use the bundled content manifest.
 
-A new Colab notebook begins with the independent two-line Drive mount, binds
-published immutable source, and retains progress/failures. Publish source before
-binding the notebook. CPU/fixture release checks are engineering evidence,
-not a new real model run or completion of the full research proposal.
+Notebooks begin with the two-line mount. Publish reviewed source S, then bind
+all formal notebooks to S and publish N. Source drafts remain None; the strict
+published-binding gate stays pending until N. Schema/CPU/full portability
+checks must actually run; they do not execute real models. Real evidence stays
+at its original version and source. No automatic paper-experiment preparation.

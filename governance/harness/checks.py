@@ -84,9 +84,10 @@ def published_release_notebooks(root: Path, policy: dict) -> list[str]:
                 errors.append(f'{name}: missing fixed published SOURCE_SHA')
             elif nb.metadata.get('candidate_binding',{}).get('source_sha')!=bindings[0]:
                 errors.append(f'{name}: metadata/source binding mismatch')
-            for text in ('https://github.com/RICHAAARC/SC-SSTW.git','/content/drive/MyDrive/',
-                         'experiments.wan_state_clock.grow_video_reference_run',
-                         'experiments/wan_state_clock/requirements-grow-video-reference.txt'):
+            entry=policy.get('notebook_entries',{}).get(name,dict(module='experiments.wan_state_clock.grow_video_reference_run',requirements='experiments/wan_state_clock/requirements-grow-video-reference.txt'))
+            required=['https://github.com/RICHAAARC/SC-SSTW.git','/content/drive/MyDrive/',entry['module']]
+            required += [entry['requirements']] if entry.get('requirements') else ['--config','CONFIG_PATH']
+            for text in required:
                 if text not in combined:errors.append(f'{name}: missing current reference entry {text}')
         except (OSError,ValueError,SyntaxError,nbformat.ValidationError) as exc:
             errors.append(f'{name}: {exc}')
@@ -121,7 +122,8 @@ def release(root: Path, policy: dict) -> list[str]:
     for name in policy['configs']:
         try:
             config = json.loads((root / name).read_text(encoding='utf-8'))
-            if config.get('name') != 'grow_video_reference_v1' or config.get('fixed_denominator') != policy['fixed_denominator']:
+            expected=policy.get('config_expectations',{}).get(name,dict(name='grow_video_reference_v1',fixed_denominator=policy.get('fixed_denominator')))
+            if config.get('name') != expected['name'] or config.get('fixed_denominator') != expected['fixed_denominator']:
                 errors.append(f'{name}: unexpected reference identity or denominator')
         except (OSError, ValueError) as exc:
             errors.append(f'{name}: {exc}')

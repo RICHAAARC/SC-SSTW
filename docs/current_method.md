@@ -1,66 +1,21 @@
-# Current released method and remaining research
+# Current mechanisms and evidence limits
 
-Updated 2026-10-04. **main is the only authoritative release branch.**
-Its executable scope is the complete GROW fixed video reference, independently
-usable from a clone or extracted source ZIP.
+Updated 2026-10-07. Main contains a bounded hybrid: generation-trajectory frequency payload, terminal framewise-VAE tubelet synchronization, blind offset/phase reception, and a fixed single-jump receiver diagnostic. Main retains GROW's complete original native sampler/decoder/media path unchanged.
 
-## Established limited mechanism
+| Mechanism | Supported evidence at its original version | Limits |
+|---|---|---|
+| GROW | Native MULTI25–49 and LAST fixed-source payload recovery through real VAE/MP4; 3 videos / 24 reads / 48 evaluations | Same 32 bits repeat in time; MULTI superiority/necessity unproven |
+| M05 terminal sync | Target .5 with original full tubelet directions and float32 writing, real framewise/MP4 survival; source e87af1c… | Terminal sync is not trajectory sync; latent local support is not independent RGB support |
+| Blind offset/phase | Stage2 CROP/SHORT final errors 13/14→0; 1A p2/p3 four windows 11/1/11/1→0 | Fixed overlapping development windows; offset, phase, final bits and time-bit margin remain separate metrics |
+| Fixed new-source check | 1B four windows correctly localized and aligned payload read; final errors 0→0, weakest margin rises | Not final-bit correction or proof alignment is necessary; one source does not establish population generalization |
+| Fixed internal deletion | Correct-key C=H0 b2 and D=H1 b2 k88, each 177/177 correspondence; D H0 only 88/177. RAW/GLOBAL/PATH final errors all 0; D minimum margin .4/.5696969697/.6272727273 | Fixed developed source and one deletion, not BER benefit, existence detection, FPR or unknown-edit robustness |
 
-The retained run 20260929T124706736859Z demonstrates native Wan MULTI25–49
-generation-time control, real frozen VAE decode, RGB8/H.264 MP4 save and blind
-reading after independently reopening that MP4 and posterior-mode reencoding.
-MULTI and LAST recover the fixed 32-bit payload exactly. All 3 videos,
-24 readouts and 48 post-read evaluations remain recorded.
+The reports and immutable source identities are linked in [the evidence index](mechanism_evidence_index.md). These are separate original-version executions, not one newly executed main version. This integration has CPU arithmetic/interface equivalence and portable engineering checks; it does not silently inherit a new combined real-run claim.
 
-The payload is repeated across latent time. The receiver uses full fixed
-geometry; it does not recover temporal alignment. MULTI includes the successful
-last step, so its superiority/necessity is unproven and is not required for
-publishing this limited closed chain. Quality remains diagnostic.
-See [construction and real-run evidence](grow_video_reference_v1.md).
+Payload uses keyed FFT coordinates over the full 40×64 latent spatial extent, not spatial patch-local payload. GROW keeps its full 46-time reader. The stable temporal receiver uses unchanged FFT2 real/ortho, t1:R+1, channels0..3, time-major bit::8 and Counter first-encounter ties; strict zero maps to a negative vote. The inherited `video_trajectory_payload_gt_v1` runtime filename now exposes only this length adapter, not GT or temporal smoothing methods.
 
-## Components in the released tree
+Sync uses 4-frame × 4×4 spatial patches and original age slices (including the final source180 normalization). The H0/H1 receiver uses 885 frame/displacement cells and 709 paths per read. H1 wins are not detections; adjacent k paths differ at one frame. Previous-frame insertion restores a nominal index grid, not missing RGB. C/D truth is allowed in preparation, but never enters the blind selector/correction. Oracle maps are parsed after blind payload sealing; message semantics only after oracle sealing. Source/config byte hashes may be read early for identity. Complete-map aliases and failed cache entries remain recorded without retry.
 
-- Pure FFT-real payload construction, keyed coordinate assignment, local
-  mean-MSE control and truth-free bit extraction.
-- Frozen Wan model/VAE loaders, native scheduler stepping and tensor identity.
-- Wan normalization/cache handling, RGB8/H.264 save and independent RGB24 read.
-- Fixed OFF/MULTI/LAST experiment with separate generation/media workers,
-  blind readout sealing, post-read message evaluation and diagnostic quality.
-- Git-or-manifest source records, reproducible notebook and standalone checks.
+Presence/no-watermark, wrong-key rejection, uncertainty/erasure, broader dynamic edits and population FPR remain unfinished. Spatial-local payload and state-dependent segment encoding are gaps relative to original goals, not automatically adopted new work. Same-version joint mechanisms, quality, edit cost and applicability still need their explicitly necessary evidence. Mechanism closure is reported to the user before discussing paper experiments; paper scripts/test sets/chart templates/large comparisons are not being prepared.
 
-The old terminal state-clock, four-bit RM/44–46 combined execution chain, their
-CLI/configs/notebooks and exclusive tests are removed from the current tree.
-They are unnecessary dependencies for GROW. Historical standalone mechanisms
-are not thereby declared false; their actual evidence stays at its original
-scope. [Immutable historical entry index](historical_entries.md).
-
-## Development work outside main
-
-The proposal remains local tube carriers + state-space synchronization written
-through real multi-step generation control. Sampling-step time and video time
-are distinct. The open same-version chain includes:
-
-1. Local time-state observations surviving the actual VAE/media channel.
-2. Blind temporal paths, declared equivalence/ambiguity and support rejection.
-3. Time-dependent segment payload whose recovery benefits from alignment.
-4. Segment/sequence aggregation with overlap, erasures and conflicts handled.
-5. Declared crop/delete/repeat/speed edits and corresponding negative inputs.
-
-OLD8 has terminal/DIRECT path evidence but fails current MP4 path recovery.
-Difference, LOWBAND16, CONTRAST and double spatial replicas do not close that
-gap. DWELL4 is CPU construction only, with reduced path separation and no new
-media result. None of their executables is included in this release.
-[Bounded development evidence index](development_evidence_index.md).
-
-Affine-invariant synchronization remains optional when observations justify
-it. Arbitrary insertions and interpolated frames require separately declared
-models. Repeated payload, local peaks, path correctness and method completion
-are distinct claims.
-
-## Release evidence
-
-Source content is tracked by release_manifest.json even without Git.
-The release checks target this GROW chain and run its CPU/fixture tests from a
-temporary no-.git copy, including save/read/evaluate and failure paths.
-External ordinary dependencies and model assets are not bundled.
-Engineering release completeness does not imply full research completion.
+Main core has no runtime/experiment/governance imports; runtime has no experiment imports. Three explicit-input CLIs work without notebooks/scripts. Source provenance uses the actual runtime manifest in a no-Git directory and only inspects Git if root/.git exists, never an unrelated parent. Config and manifest identities are evidence, not model inputs or method thresholds.
