@@ -1,0 +1,26 @@
+{
+  "message": "OKOK",
+  "truth": {
+    "obs_f6d486f8e496d1ce": {
+      "condition": "M05_FRAMEWISE_SYNC",
+      "view": "LONG177_START2",
+      "source_start": 2
+    },
+    "obs_62e2e9941285e568": {
+      "condition": "M05_FRAMEWISE_SYNC",
+      "view": "LONG177_START3",
+      "source_start": 3
+    },
+    "obs_80183f871bd972c6": {
+      "condition": "M05_FRAMEWISE_SYNC",
+      "view": "SHORT89_START38",
+      "source_start": 38
+    },
+    "obs_dff9eb878f3fd97e": {
+      "condition": "M05_FRAMEWISE_SYNC",
+      "view": "SHORT89_START39",
+      "source_start": 39
+    }
+  },
+  "history": "No same-window history exists or is required; old FULL/Stage2 are background only"
+}

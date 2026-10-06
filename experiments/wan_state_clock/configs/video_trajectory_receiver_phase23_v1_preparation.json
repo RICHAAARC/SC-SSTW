@@ -1,0 +1,34 @@
+{
+  "source": {
+    "path": "/content/drive/MyDrive/Video-WM/Trajectory-Payload-G-V1/20261005T140121854219Z/fixed_reference/M05_FRAMEWISE_SYNC/received.rgb8",
+    "sha256": "ce1c6346ddfeb852d57f21d82d6f4452bc491d7d1a73a688108f4aff13683295",
+    "shape": [
+      181,
+      320,
+      512,
+      3
+    ],
+    "frames": 181,
+    "bytes": 88965120,
+    "dtype": "uint8"
+  },
+  "crops": {
+    "obs_f6d486f8e496d1ce": {
+      "length": 177,
+      "start": 2
+    },
+    "obs_62e2e9941285e568": {
+      "length": 177,
+      "start": 3
+    },
+    "obs_80183f871bd972c6": {
+      "length": 89,
+      "start": 38
+    },
+    "obs_dff9eb878f3fd97e": {
+      "length": 89,
+      "start": 39
+    }
+  },
+  "scope": "Input fixture preparation only; start is excluded from receiver inputs; no codec"
+}

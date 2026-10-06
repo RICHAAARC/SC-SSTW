@@ -1,0 +1,128 @@
+{
+  "name": "video_trajectory_receiver_phase23_v1",
+  "method_version": "trajectory-payload-framewise-sync-v1",
+  "key": "watermark",
+  "wrong_key": "watermark-wrong",
+  "model": {
+    "id": "Wan-AI/Wan2.1-T2V-1.3B-Diffusers",
+    "revision": "0fad780a534b6463e45facd96134c9f345acfa5b",
+    "role": "original Wan payload receiver VAE only; float32 posterior mode; no decode"
+  },
+  "framewise_model": {
+    "id": "stabilityai/sd-vae-ft-mse",
+    "revision": "31f26fdeee1355a5c34592e401dd41e45d25a493",
+    "batch_frames": 8,
+    "compute_dtype": "float32",
+    "scaled_latent_factor": 0.18215
+  },
+  "environment_pins": {
+    "torch": "2.11.0",
+    "diffusers": "0.39.0",
+    "transformers": "4.57.6",
+    "numpy": "2.1.3",
+    "accelerate": "1.15.0",
+    "safetensors": "0.8.0",
+    "huggingface-hub": "0.36.2",
+    "tokenizers": "0.22.2"
+  },
+  "fixed_denominator": {
+    "observations": 4,
+    "sync_reads": 8,
+    "sync_candidate_scores": 392,
+    "sync_candidate_tubelet_rows": 9456,
+    "logical_payload_reads": 16,
+    "logical_detailed_votes": 506880,
+    "logical_time_bit_rows": 16896,
+    "logical_final_bit_rows": 512
+  },
+  "planned_calls": {
+    "source_read": 1,
+    "source_slice": 4,
+    "framewise_vae_load": 1,
+    "framewise_receiver_encode": 4,
+    "sync_score": 8,
+    "wan_vae_load": 1
+  },
+  "physical_upper_bounds": {
+    "wan_receiver_encode": 12,
+    "payload_read": 16
+  },
+  "evidence_ceiling": "Fixed four overlapping crops from one development source; offset, phase, final bits and time-bit margins reported separately. No scientific PASS/threshold/FPR/generalization, no 1B or dynamic-path experiment. Aliases are not independent evidence.",
+  "inputs": {
+    "obs_f6d486f8e496d1ce": {
+      "frames": 177,
+      "shape": [
+        177,
+        320,
+        512,
+        3
+      ],
+      "bytes": 86999040,
+      "dtype": "uint8",
+      "sha256": null,
+      "storage": "prepared CPU clip; hash filled before fresh scoring"
+    },
+    "obs_62e2e9941285e568": {
+      "frames": 177,
+      "shape": [
+        177,
+        320,
+        512,
+        3
+      ],
+      "bytes": 86999040,
+      "dtype": "uint8",
+      "sha256": null,
+      "storage": "prepared CPU clip; hash filled before fresh scoring"
+    },
+    "obs_80183f871bd972c6": {
+      "frames": 89,
+      "shape": [
+        89,
+        320,
+        512,
+        3
+      ],
+      "bytes": 43745280,
+      "dtype": "uint8",
+      "sha256": null,
+      "storage": "prepared CPU clip; hash filled before fresh scoring"
+    },
+    "obs_dff9eb878f3fd97e": {
+      "frames": 89,
+      "shape": [
+        89,
+        320,
+        512,
+        3
+      ],
+      "bytes": 43745280,
+      "dtype": "uint8",
+      "sha256": null,
+      "storage": "prepared CPU clip; hash filled before fresh scoring"
+    }
+  },
+  "preparation_config_sha256": "5cdf4d921e32c6be6aabc006714d2e110a26a5fbce600b39755af3464d366521",
+  "posthoc_config_sha256": "60aeecce16c53c42dc332f9bbd9e6d26b1920f6a529084ce17efa6105037fb38",
+  "source_files": [
+    "experiments/wan_state_clock/configs/video_trajectory_receiver_estimated_align_v1.json",
+    "experiments/wan_state_clock/configs/video_trajectory_receiver_phase23_v1.json",
+    "experiments/wan_state_clock/configs/video_trajectory_receiver_phase23_v1_preparation.json",
+    "experiments/wan_state_clock/video_trajectory_receiver_estimated_align_v1_run.py",
+    "experiments/wan_state_clock/video_trajectory_receiver_phase23_v1_run.py",
+    "main/tube_state/grow_video_reference.py",
+    "main/tube_state/video_local_fourier_rm_control.py",
+    "main/tube_state/video_local_fourier_rm_state.py",
+    "main/tube_state/video_trajectory_payload_framewise_sync_v1.py",
+    "main/tube_state/video_trajectory_receiver_estimated_align_v1.py",
+    "main/tube_state/video_trajectory_receiver_origin_v1.py",
+    "runtime/wan/framewise_autoencoder_kl.py",
+    "runtime/wan/generation.py",
+    "runtime/wan/rgb8_source.py",
+    "runtime/wan/vae.py",
+    "runtime/wan/video_trajectory_payload_framewise_sync_v1.py",
+    "runtime/wan/video_trajectory_payload_gt_v1.py",
+    "runtime/wan/video_trajectory_receiver_estimated_align_v1.py",
+    "runtime/wan/video_trajectory_receiver_origin_v1.py"
+  ]
+}
