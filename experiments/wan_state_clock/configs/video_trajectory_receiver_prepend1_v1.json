@@ -1,0 +1,127 @@
+{
+  "inputs": {
+    "P0_ORIGINAL_RGB": {
+      "path": "/content/drive/MyDrive/Video-WM/Trajectory-Payload-G-V1/20261005T140121854219Z/fixed_reference/P0_ORIGINAL_RGB/received.rgb8",
+      "sha256": "127aec31b5f595e046e05e1190dc77a571a01dfa333522da5421c1049be23e9d",
+      "shape": [
+        181,
+        320,
+        512,
+        3
+      ],
+      "bytes": 88965120,
+      "dtype": "uint8",
+      "start1_sha256": "4e5297b2f64844c2b368fd143b2d3eddc6bf0bfd48a3c863ec1c84d5b76b84a0",
+      "historical_observation_ids": {
+        "S0_IDENTITY": "obs_00",
+        "S1_ORIGINAL": "obs_01"
+      }
+    },
+    "P1_FRAMEWISE_RECON": {
+      "path": "/content/drive/MyDrive/Video-WM/Trajectory-Payload-G-V1/20261005T140121854219Z/fixed_reference/P1_FRAMEWISE_RECON/received.rgb8",
+      "sha256": "a7e062fffb8fef46d92c2559a5bda49b4e5c7a822f1630b94eb8e2dc773e61dd",
+      "shape": [
+        181,
+        320,
+        512,
+        3
+      ],
+      "bytes": 88965120,
+      "dtype": "uint8",
+      "start1_sha256": "04c688b81d1037f9bc8d69727556eba93882231bf653f5072ae18966a39aee5f",
+      "historical_observation_ids": {
+        "S0_IDENTITY": "obs_02",
+        "S1_ORIGINAL": "obs_03"
+      }
+    }
+  },
+  "fixed_denominator": {
+    "observations": 8,
+    "wan_receiver_encode": 8,
+    "payload_reads": 16,
+    "keys": 2,
+    "bits_per_read": 32,
+    "R": 44,
+    "frequency_positions_per_bit": 30,
+    "votes_per_bit": 1320,
+    "votes_per_key_read": 42240,
+    "detailed_votes": 675840,
+    "time_bit_rows": 22528,
+    "final_bit_rows": 512
+  },
+  "environment_pins": {
+    "torch": "2.11.0",
+    "diffusers": "0.39.0",
+    "transformers": "4.57.6",
+    "numpy": "2.1.3",
+    "accelerate": "1.15.0",
+    "safetensors": "0.8.0",
+    "huggingface-hub": "0.36.2",
+    "tokenizers": "0.22.2"
+  },
+  "historical_result": {
+    "path": "/content/drive/MyDrive/Video-WM/Trajectory-Receiver-Origin-V1/20261005T163637906519Z/fixed_reference/result.json",
+    "sha256": "f37c73017d22d0b8ac26d9e9bc08364817626e56ce2922c33e74b6f5b4dcab33",
+    "use": "8 baseline key reads compared only after blind seal; decoded and per-bit aggregate only, no selection or retry"
+  },
+  "evidence_ceiling": "Known-start controlled Receiver-Prepend1-V1 Stage1 only, not blind synchronization, recovery of f0/cache, unique phase causality or scientific PASS. Stage2 is not implemented or executed in this Stage1 notebook; contingent on Stage1 result review.",
+  "name": "video_trajectory_receiver_prepend1_v1",
+  "method_version": "trajectory-payload-framewise-sync-v1",
+  "key": "watermark",
+  "wrong_key": "watermark-wrong",
+  "message": "OKOK",
+  "model": {
+    "id": "Wan-AI/Wan2.1-T2V-1.3B-Diffusers",
+    "revision": "0fad780a534b6463e45facd96134c9f345acfa5b",
+    "role": "original Wan payload receiver VAE only; float32 posterior mode; no decode"
+  },
+  "planned_calls": {
+    "source_read": 2,
+    "wan_vae_load": 1,
+    "wan_receiver_encode": 8,
+    "payload_read": 16
+  },
+  "source_files": [
+    "main/tube_state/grow_video_reference.py",
+    "main/tube_state/video_local_fourier_rm_control.py",
+    "main/tube_state/video_local_fourier_rm_state.py",
+    "main/tube_state/video_trajectory_receiver_origin_v1.py",
+    "runtime/wan/generation.py",
+    "runtime/wan/vae.py",
+    "runtime/wan/rgb8_source.py",
+    "runtime/wan/video_trajectory_receiver_origin_v1.py",
+    "main/tube_state/video_trajectory_receiver_prepend1_v1.py",
+    "runtime/wan/video_trajectory_receiver_prepend1_v1.py",
+    "experiments/wan_state_clock/video_trajectory_receiver_prepend1_v1_run.py",
+    "experiments/wan_state_clock/configs/video_trajectory_receiver_prepend1_v1.json"
+  ],
+  "arms": [
+    {
+      "name": "S0_IDENTITY",
+      "source_start": 0,
+      "operation": "IDENTITY",
+      "aliases": [
+        "OLD_RULE_START0",
+        "NEW_RULE_START0"
+      ]
+    },
+    {
+      "name": "S1_ORIGINAL",
+      "source_start": 1,
+      "operation": "IDENTITY",
+      "aliases": []
+    },
+    {
+      "name": "S1_PREPEND1_DROP1",
+      "source_start": 1,
+      "operation": "PREPEND1_DROP1",
+      "aliases": []
+    },
+    {
+      "name": "S1_TAIL_REPEAT",
+      "source_start": 1,
+      "operation": "TAIL_REPEAT",
+      "aliases": []
+    }
+  ]
+}
