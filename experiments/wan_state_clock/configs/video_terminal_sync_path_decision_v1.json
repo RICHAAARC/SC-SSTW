@@ -1,0 +1,284 @@
+{
+  "name": "video_terminal_sync_path_decision_v1",
+  "method_version": "terminal-sync-path-decision-v1",
+  "key": "watermark",
+  "wrong_key": "watermark-wrong",
+  "framewise_model": {
+    "id": "stabilityai/sd-vae-ft-mse",
+    "revision": "31f26fdeee1355a5c34592e401dd41e45d25a493",
+    "batch_frames": 8,
+    "compute_dtype": "float32",
+    "scaled_latent_factor": 0.18215
+  },
+  "environment_pins": {
+    "torch": "2.11.0",
+    "diffusers": "0.39.0",
+    "transformers": "4.57.6",
+    "numpy": "2.1.3",
+    "accelerate": "1.15.0",
+    "safetensors": "0.8.0",
+    "huggingface-hub": "0.36.2",
+    "tokenizers": "0.22.2"
+  },
+  "generation_dependency_pins": {
+    "sentencepiece": "0.2.2",
+    "ftfy": "6.3.1"
+  },
+  "development_inputs": {
+    "cal_01": {
+      "conf_observation": "obs_01",
+      "frames": 177,
+      "shape": [
+        177,
+        320,
+        512,
+        3
+      ],
+      "bytes": 86999040
+    },
+    "cal_02": {
+      "conf_observation": "obs_02",
+      "frames": 177,
+      "shape": [
+        177,
+        320,
+        512,
+        3
+      ],
+      "bytes": 86999040
+    },
+    "cal_03": {
+      "conf_observation": "obs_03",
+      "frames": 89,
+      "shape": [
+        89,
+        320,
+        512,
+        3
+      ],
+      "bytes": 43745280
+    },
+    "cal_04": {
+      "conf_observation": "obs_04",
+      "frames": 89,
+      "shape": [
+        89,
+        320,
+        512,
+        3
+      ],
+      "bytes": 43745280
+    },
+    "cal_05": {
+      "conf_observation": "obs_05",
+      "frames": 177,
+      "shape": [
+        177,
+        320,
+        512,
+        3
+      ],
+      "bytes": 86999040
+    },
+    "cal_06": {
+      "conf_observation": "obs_06",
+      "frames": 177,
+      "shape": [
+        177,
+        320,
+        512,
+        3
+      ],
+      "bytes": 86999040
+    },
+    "cal_07": {
+      "conf_observation": "obs_07",
+      "frames": 89,
+      "shape": [
+        89,
+        320,
+        512,
+        3
+      ],
+      "bytes": 43745280
+    },
+    "cal_08": {
+      "conf_observation": "obs_08",
+      "frames": 89,
+      "shape": [
+        89,
+        320,
+        512,
+        3
+      ],
+      "bytes": 43745280
+    }
+  },
+  "cached_development": {
+    "cal_09/K0": {
+      "path": "/content/drive/MyDrive/Video-WM/Trajectory-Internal-Single-Deletion-V1/20261006T143510451467Z/fixed_reference/sync/obs_5c17a830/K0.json.gz",
+      "sha256": "25d791e5156217deecd7d2229a45565a43d01a160e025117f94aa96585d4733c",
+      "frames": 177
+    },
+    "cal_09/K1": {
+      "path": "/content/drive/MyDrive/Video-WM/Trajectory-Internal-Single-Deletion-V1/20261006T143510451467Z/fixed_reference/sync/obs_5c17a830/K1.json.gz",
+      "sha256": "28206abd49a4eaa3e1ef654a1dc85fd5f67b3ba07987bc80bb1a9a2195ef76d1",
+      "frames": 177
+    },
+    "cal_10/K0": {
+      "path": "/content/drive/MyDrive/Video-WM/Trajectory-Internal-Single-Deletion-V1/20261006T143510451467Z/fixed_reference/sync/obs_9a2fe146/K0.json.gz",
+      "sha256": "a26c1271171cdf615397be89e04e8ef0b92becd912657a8c28eaf0276904587e",
+      "frames": 177
+    },
+    "cal_10/K1": {
+      "path": "/content/drive/MyDrive/Video-WM/Trajectory-Internal-Single-Deletion-V1/20261006T143510451467Z/fixed_reference/sync/obs_9a2fe146/K1.json.gz",
+      "sha256": "8a4bb7ec00aa0ba3aae4f33599423c17c6948e09f42bee49469458b2aebcc1ba",
+      "frames": 177
+    }
+  },
+  "confirmation_inputs": {
+    "obs_01": {
+      "frames": 177,
+      "shape": [
+        177,
+        320,
+        512,
+        3
+      ],
+      "bytes": 86999040
+    },
+    "obs_02": {
+      "frames": 177,
+      "shape": [
+        177,
+        320,
+        512,
+        3
+      ],
+      "bytes": 86999040
+    },
+    "obs_03": {
+      "frames": 89,
+      "shape": [
+        89,
+        320,
+        512,
+        3
+      ],
+      "bytes": 43745280
+    },
+    "obs_04": {
+      "frames": 89,
+      "shape": [
+        89,
+        320,
+        512,
+        3
+      ],
+      "bytes": 43745280
+    },
+    "obs_05": {
+      "frames": 177,
+      "shape": [
+        177,
+        320,
+        512,
+        3
+      ],
+      "bytes": 86999040
+    },
+    "obs_06": {
+      "frames": 177,
+      "shape": [
+        177,
+        320,
+        512,
+        3
+      ],
+      "bytes": 86999040
+    },
+    "obs_07": {
+      "frames": 89,
+      "shape": [
+        89,
+        320,
+        512,
+        3
+      ],
+      "bytes": 43745280
+    },
+    "obs_08": {
+      "frames": 89,
+      "shape": [
+        89,
+        320,
+        512,
+        3
+      ],
+      "bytes": 43745280
+    }
+  },
+  "fixed_denominator": {
+    "development_reads": 20,
+    "development_nulls": {
+      "177": 8,
+      "89": 6
+    },
+    "confirmation_decisions": 16,
+    "confirmation_nulls": 12,
+    "confirmation_positives": 4,
+    "fresh_per_stage": {
+      "observations": 8,
+      "encoded_frames": 1064,
+      "batch8_batches": 140,
+      "sync_reads": 16,
+      "candidates": 6416,
+      "frame_cache_cells": 7080,
+      "local_grid177": 1800,
+      "local_rows89": 17112
+    },
+    "receiver_wan_encodes": 0,
+    "payload_reads": 0
+  },
+  "source_files": [
+    "experiments/wan_state_clock/configs/video_terminal_sync_path_decision_v1.json",
+    "experiments/wan_state_clock/configs/video_terminal_sync_path_decision_v1_calibration_labels.json",
+    "experiments/wan_state_clock/configs/video_terminal_sync_path_decision_v1_posthoc.json",
+    "experiments/wan_state_clock/configs/video_terminal_sync_path_decision_v1_preparation.json",
+    "experiments/wan_state_clock/video_terminal_sync_path_decision_v1_prepare.py",
+    "experiments/wan_state_clock/video_terminal_sync_path_decision_v1_run.py",
+    "experiments/wan_state_clock/video_trajectory_payload_gt_v1_run.py",
+    "main/tube_state/grow_video_reference.py",
+    "main/tube_state/video_local_fourier_rm_control.py",
+    "main/tube_state/video_local_fourier_rm_old8_two_state_v1.py",
+    "main/tube_state/video_local_fourier_rm_old8_two_state_v1_control.py",
+    "main/tube_state/video_local_fourier_rm_state.py",
+    "main/tube_state/video_temporal_sync_bridge.py",
+    "main/tube_state/video_terminal_sync_path_decision_v1.py",
+    "main/tube_state/video_trajectory_internal_single_deletion_v1.py",
+    "main/tube_state/video_trajectory_payload_framewise_sync_v1.py",
+    "main/tube_state/video_trajectory_payload_gt_v1.py",
+    "main/tube_state/video_trajectory_payload_temporal_constraint_v1.py",
+    "main/tube_state/video_trajectory_receiver_estimated_align_v1.py",
+    "main/tube_state/video_trajectory_receiver_origin_v1.py",
+    "runtime/wan/framewise_autoencoder_kl.py",
+    "runtime/wan/generation.py",
+    "runtime/wan/io.py",
+    "runtime/wan/quality.py",
+    "runtime/wan/rgb8_source.py",
+    "runtime/wan/trajectory.py",
+    "runtime/wan/vae.py",
+    "runtime/wan/video_local_fourier_rm_old8_two_state_v1.py",
+    "runtime/wan/video_local_fourier_rm_same_raster.py",
+    "runtime/wan/video_temporal_sync_bridge.py",
+    "runtime/wan/video_terminal_sync_path_decision_v1.py",
+    "runtime/wan/video_trajectory_payload_framewise_sync_v1.py",
+    "runtime/wan/video_trajectory_payload_gt_v1.py",
+    "runtime/wan/video_trajectory_receiver_estimated_align_v1.py",
+    "runtime/wan/video_trajectory_receiver_origin_v1.py"
+  ],
+  "evidence_ceiling": "Fixed empirical same-source177/89 action authorization. No FPR/coverage/scientific PASS; zero receiver Wan/payload; aliases are not independent evidence.",
+  "preparation_sha256": "9e220b511656bf9a1c3d08c9435d849edc85a2704d7f0d8ef8cfc88caa30d7a7",
+  "calibration_labels_sha256": "ee8510379de5a3d997d738fc762b2edd5e6450906b64b925feae82c7c0e98fde",
+  "posthoc_sha256": "3e07ff82ece86c76c49a6e341b32b63ad250a1c9ef98a90d5842ad9f2f9545ff"
+}

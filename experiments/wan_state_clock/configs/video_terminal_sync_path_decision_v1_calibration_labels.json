@@ -1,0 +1,23 @@
+{
+  "null_rosters": {
+    "177": [
+      "cal_01/K0",
+      "cal_01/K1",
+      "cal_02/K0",
+      "cal_02/K1",
+      "cal_05/K1",
+      "cal_06/K1",
+      "cal_09/K1",
+      "cal_10/K1"
+    ],
+    "89": [
+      "cal_03/K0",
+      "cal_03/K1",
+      "cal_04/K0",
+      "cal_04/K1",
+      "cal_07/K1",
+      "cal_08/K1"
+    ]
+  },
+  "scope": "Parse only after all20 development scores sealed; no positive values select thresholds"
+}
