@@ -1,0 +1,185 @@
+{
+  "name": "video_trajectory_conditional_joint_v1",
+  "method_version": "trajectory-payload-framewise-sync-v1",
+  "model": {
+    "id": "Wan-AI/Wan2.1-T2V-1.3B-Diffusers",
+    "revision": "0fad780a534b6463e45facd96134c9f345acfa5b",
+    "role": "fixed PAYLOAD_MULTI source generation and one native decode, then original payload receiver VAE"
+  },
+  "framewise_model": {
+    "id": "stabilityai/sd-vae-ft-mse",
+    "revision": "31f26fdeee1355a5c34592e401dd41e45d25a493",
+    "role": "2D deterministic per-frame reconstruction only",
+    "scaled_latent_factor": 0.18215,
+    "method_dtype": "float32",
+    "compute_dtype": "float32",
+    "batch_frames": 8,
+    "replaces_wan_native_decoder": false
+  },
+  "environment_pins": {
+    "torch": "2.11.0",
+    "diffusers": "0.39.0",
+    "transformers": "4.57.6",
+    "numpy": "2.1.3",
+    "accelerate": "1.15.0",
+    "safetensors": "0.8.0",
+    "huggingface-hub": "0.36.2",
+    "tokenizers": "0.22.2",
+    "sentencepiece": "0.2.2",
+    "ftfy": "6.3.1"
+  },
+  "key": "watermark",
+  "wrong_key": "watermark-wrong",
+  "inputs": {
+    "input_00": {
+      "frames": 181,
+      "shape": [
+        181,
+        320,
+        512,
+        3
+      ]
+    },
+    "input_01": {
+      "frames": 177,
+      "shape": [
+        177,
+        320,
+        512,
+        3
+      ]
+    },
+    "input_02": {
+      "frames": 89,
+      "shape": [
+        89,
+        320,
+        512,
+        3
+      ]
+    },
+    "input_03": {
+      "frames": 177,
+      "shape": [
+        177,
+        320,
+        512,
+        3
+      ]
+    },
+    "input_04": {
+      "frames": 177,
+      "shape": [
+        177,
+        320,
+        512,
+        3
+      ]
+    },
+    "input_05": {
+      "frames": 89,
+      "shape": [
+        89,
+        320,
+        512,
+        3
+      ]
+    },
+    "input_06": {
+      "frames": 89,
+      "shape": [
+        89,
+        320,
+        512,
+        3
+      ]
+    },
+    "input_07": {
+      "frames": 177,
+      "shape": [
+        177,
+        320,
+        512,
+        3
+      ]
+    }
+  },
+  "views": {
+    "global_00": {
+      "input_id": "input_00",
+      "protocol": "GLOBAL"
+    },
+    "global_01": {
+      "input_id": "input_01",
+      "protocol": "GLOBAL"
+    },
+    "global_02": {
+      "input_id": "input_02",
+      "protocol": "GLOBAL"
+    },
+    "global_03": {
+      "input_id": "input_03",
+      "protocol": "GLOBAL"
+    },
+    "global_04": {
+      "input_id": "input_04",
+      "protocol": "GLOBAL"
+    },
+    "global_05": {
+      "input_id": "input_05",
+      "protocol": "GLOBAL"
+    },
+    "global_06": {
+      "input_id": "input_06",
+      "protocol": "GLOBAL"
+    },
+    "path_00": {
+      "input_id": "input_03",
+      "protocol": "SINGLE_JUMP"
+    },
+    "path_01": {
+      "input_id": "input_07",
+      "protocol": "SINGLE_JUMP"
+    }
+  },
+  "fixed_denominator": {
+    "logical_observations": 9,
+    "physical_inputs": 8,
+    "sync_reads": 18,
+    "sync_candidates": 3426,
+    "global_local_rows": 14276,
+    "frame_cache_cells": 3540,
+    "local_grid_cells": 900,
+    "framewise_frames": 1156,
+    "framewise_batches": 151,
+    "blind_payload_reads": 40,
+    "oracle_payload_reads": 4,
+    "logical_payload_reads": 44,
+    "logical_votes": 1605120,
+    "logical_time_bit_rows": 53504,
+    "logical_final_bits": 1408,
+    "quality_rows": 6
+  },
+  "physical_upper_bounds": {
+    "blind_wan_encodes": 28,
+    "blind_key_reads": 36,
+    "total_wan_encodes": 30,
+    "total_key_reads": 40
+  },
+  "planned_calls": {
+    "source_read": 1,
+    "source_construct": 8,
+    "framewise_vae_load": 1,
+    "framewise_receiver_encode": 8,
+    "sync_score": 18,
+    "wan_vae_load": 1,
+    "quality_compute": 6
+  },
+  "evidence_ceiling": "Conditional marked-source fixed development roster only; no presence/FPR, independence, generalization or scientific PASS.",
+  "preparation_config": "video_trajectory_conditional_joint_v1_preparation.json",
+  "preparation_config_sha256": "62f7ce7dc83ca3d7489c165f0c2e66c9a5c33d27b58daa87639bfa31751fe5d0",
+  "oracle_config": "video_trajectory_conditional_joint_v1_oracle.json",
+  "oracle_config_sha256": "bf92eb56fb6c409b464d36094dd5830ac644399877cf3ed095812fcd9050a1d7",
+  "posthoc_config": "video_trajectory_conditional_joint_v1_posthoc.json",
+  "posthoc_config_sha256": "fb3f596ccf3fe8afcf469a4a2541d0245ec860baa7755160de8977f18f9ddcd0"
+}
