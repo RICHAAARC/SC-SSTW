@@ -2,7 +2,7 @@
 
 Read .codex/project_contract.md before changing main. Main is the sole release
 branch. Keep the original GROW chain and the narrow M05 / global alignment /
-fixed single-deletion whitelist; no full development-tree merge.
+fixed single-deletion / conditional joint V1 whitelist; no full development-tree merge.
 main/tube_state must not import runtime, experiments or governance. Runtime must
 not import experiments/governance. Stable receiver extraction must preserve
 vote ordering, strict zero and Counter ties; GROW keeps its own 46-time reader.

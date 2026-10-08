@@ -1,4 +1,4 @@
-implementation_status: conditional_joint_v1_release_candidate
+implementation_status: standalone_conditional_joint_v1_release
 evidence_status: fixed_conditional_cases_verified_at_original_source
 active_method: grow_m05_conditional_joint_v1
 new_gpu_execution: false
@@ -12,4 +12,5 @@ claims_not_established:
   - calibrated_population_fpr
   - independent_source_generalization
   - payload_off_quality_cost
+  - imperceptibility
   - scientific_pass

@@ -1,8 +1,8 @@
 # SC-SSTW release contract
 
 Main is the authoritative release branch. Retain complete GROW and only the
-adopted M05 terminal framewise synchronization, fixed-geometry blind offset/phase
-and fixed internal single-deletion receiver mechanisms. OLD8/DWELL4/T05 and
+adopted M05 terminal framewise synchronization, fixed-geometry blind offset/phase,
+fixed internal single-deletion receiver mechanisms and conditional joint V1. OLD8/DWELL4/T05 and
 unclosed historical backprop/combined paths remain on development history.
 
 Do not replace existing generation/vae/GROW mathematics wholesale. Core has no
@@ -18,8 +18,9 @@ parsing follows blind payload sealing, and message parsing follows final oracle
 sealing. Preserve fixed failure slots and aliases; oracle cannot retry cached
 failures or fill blind unresolved slots. No new thresholds or scientific PASS.
 
-Default CLIs require explicit input configs within frozen 181/177/89 geometry;
-historical exact configs are separately labeled. External config bytes and the
+The saved-input CLIs require explicit input configs within frozen 181/177/89
+geometry; conditional joint V1 uses its fixed bundled config and source roster.
+Historical exact configs are separately labeled. External config bytes and the
 complete runtime source closure are recorded. A standalone no-.git copy must
 work, including under an unrelated parent Git repository. Git identity is used
 only when root/.git exists; otherwise use the bundled content manifest.
