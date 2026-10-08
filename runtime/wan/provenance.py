@@ -31,6 +31,7 @@ CONDITIONAL_FILES = (
 ATTRIBUTION_FILES = (
     "experiments/wan_state_clock/configs/video_trajectory_attribution_v1.json",
     "experiments/wan_state_clock/video_trajectory_attribution_v1_prepare.py",
+    "experiments/wan_state_clock/video_trajectory_attribution_v1_protocol.py",
     "experiments/wan_state_clock/video_trajectory_attribution_v1_run.py",
     "main/tube_state/video_trajectory_attribution_v1.py",
     "runtime/wan/video_trajectory_attribution_v1.py",

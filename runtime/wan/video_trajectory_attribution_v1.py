@@ -3,7 +3,6 @@ from __future__ import annotations
 import copy
 import hashlib
 from main.tube_state import grow_video_reference as layout
-from main.tube_state import video_trajectory_attribution_v1 as method
 from runtime.wan import video_trajectory_conditional_joint_v1 as joint
 
 Inputs=joint.Inputs
