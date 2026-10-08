@@ -1,6 +1,6 @@
 # Current mechanisms and evidence limits
 
-Updated 2026-10-08. Main contains a bounded hybrid: generation-trajectory frequency payload, terminal framewise-VAE tubelet synchronization, blind offset/phase reception, and a fixed single-jump receiver diagnostic. Main retains GROW's complete original native sampler/decoder/media path unchanged.
+Updated 2026-10-08. The research position is **基于轨迹采样嵌入思想的视频水印方法**. GROW remains a concrete implementation source rather than the umbrella method name: the [author repository](https://github.com/luopengchen/GROW), retained implementation commit `6aa69a9c5d4a9e75df457fcca8dfc71b64a6b870`, and the [CVPR 2026 paper](https://openaccess.thecvf.com/content/CVPR2026/papers/Luo_GROW_Watermark_Generation_with_Progressive_Guidance_for_Diffusion_Models_CVPR_2026_paper.pdf) remain attributed. The executable FFT-real construction and its distinction from the paper's DCT setup stay documented in [the fixed GROW reference](grow_video_reference_v1.md). Main contains a bounded hybrid: generation-trajectory frequency payload, terminal framewise-VAE tubelet synchronization, blind offset/phase reception, and a fixed single-jump receiver diagnostic. Main retains GROW's complete original native sampler/decoder/media path unchanged.
 
 | Mechanism | Supported evidence at its original version | Limits |
 |---|---|---|

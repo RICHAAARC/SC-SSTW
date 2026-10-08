@@ -1,6 +1,6 @@
 implementation_status: standalone_conditional_joint_v1_release
 evidence_status: fixed_conditional_cases_verified_at_original_source
-active_method: grow_m05_conditional_joint_v1
+active_method: trajectory_sampling_embedding_video_watermark
 new_gpu_execution: false
 claims_not_established:
   - arbitrary_video_presence_detection
