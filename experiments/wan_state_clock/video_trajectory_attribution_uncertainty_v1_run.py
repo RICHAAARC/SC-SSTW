@@ -96,12 +96,7 @@ def load_config(path=CONFIG):
     return cfg
 
 
-def load_frozen_rules(cfg, rules_override=None):
-    if rules_override is not None:
-        rules = json.loads(json.dumps(rules_override))
-        if rules.get("rule_sha256") != protocol.FROZEN_RULE_SHA256:
-            raise ValueError("fixed frozen rule identity")
-        return rules, None
+def load_frozen_rules(cfg):
     path = Path(cfg["frozen_rules"]["path"])
     raw = path.read_bytes()
     if digest_bytes(raw) != cfg["frozen_rules"]["file_sha256"]:
@@ -242,6 +237,16 @@ def _sync_eligible(sync, frames, rules):
 
 
 def seal_sync(store):
+    expected_observations = set(_rows_by_observation())
+    expected_queries = {row["query_id"] for row in protocol.query_roster()}
+    if set(store.observation_records) != expected_observations:
+        raise ValueError("complete 20-row opaque observation roster required")
+    if set(store.sync_records) != expected_queries:
+        raise ValueError("complete 22-row opaque sync roster required")
+    for query_id in expected_queries:
+        summary = store.sync_records[query_id].get("summary")
+        if summary is None or _query(store, query_id).get("sync") != summary:
+            raise ValueError("sync record/query mismatch")
     if "sync" in store.data["seals"]:
         return
     receipt = dump(
@@ -264,6 +269,13 @@ def collect_sync(store, rules, input_type=runtime.Inputs, framewise_type=runtime
             backend = framewise_type(store.cfg)
         except Exception as exc:
             store.failure("SYNC_BACKEND", exc)
+            for observation_id, rows in groups.items():
+                store.observation_records[observation_id] = {
+                    "observation_id": observation_id,
+                    "frames": rows[0]["frames"],
+                    "status": "TECHNICAL_INCOMPLETE",
+                    "error": str(exc),
+                }
             for row in protocol.query_roster():
                 summary = _technical_sync(exc)
                 _query(store, row["query_id"]).update(status="SYNC_FAILED", sync=summary)
@@ -332,7 +344,7 @@ def collect_sync(store, rules, input_type=runtime.Inputs, framewise_type=runtime
     finally:
         if backend is not None:
             backend.close()
-        if len(store.sync_records) == 22 and all(
+        if len(store.observation_records) == 20 and len(store.sync_records) == 22 and all(
             row.get("sync") is not None for row in store.data["queries"].values()
         ):
             seal_sync(store)
@@ -350,6 +362,13 @@ def _add_exact_vote_differences(identity, detail):
 
 
 def seal_payload(store):
+    expected_queries = {row["query_id"] for row in protocol.query_roster()}
+    if set(store.payload_records) != expected_queries:
+        raise ValueError("complete 22-row opaque payload roster required")
+    for query_id in expected_queries:
+        identity = store.payload_records[query_id].get("identity")
+        if identity is None or _query(store, query_id).get("identity") != identity:
+            raise ValueError("payload record/query mismatch")
     if "payload" in store.data["seals"]:
         return
     receipt = dump(
@@ -471,18 +490,35 @@ def settle_evidence(store, reason):
             }
     for row in protocol.query_roster():
         query = _query(store, row["query_id"])
-        if query.get("sync") is None:
+        sync_record = store.sync_records.get(row["query_id"])
+        if sync_record is not None and sync_record.get("summary") is not None:
+            query["sync"] = sync_record["summary"]
+            query["status"] = (
+                "SYNC_READ" if query["sync"].get("status") == "COMPLETE" else "SYNC_FAILED"
+            )
+        elif query.get("sync") is None:
             query["sync"] = _technical_sync(reason)
             query["status"] = "SYNC_FAILED"
+        if row["query_id"] not in store.sync_records:
             store.sync_records[row["query_id"]] = {
                 "query_id": row["query_id"],
                 "key_id": hashlib.sha256(store.cfg["keys"][row["key"]].encode()).hexdigest(),
                 "summary": query["sync"],
             }
-        if query.get("identity") is None:
+        payload_record = store.payload_records.get(row["query_id"])
+        if payload_record is not None and payload_record.get("identity") is not None:
+            query["identity"] = payload_record["identity"]
+            if query["identity"].get("status") == "COMPLETE":
+                query["status"] = "PAYLOAD_READ"
+            elif query["identity"].get("status") == "NOT_ELIGIBLE":
+                query["status"] = "PAYLOAD_NOT_ELIGIBLE"
+            else:
+                query["status"] = "PAYLOAD_FAILED"
+        elif query.get("identity") is None:
             query["identity"] = _technical_identity(reason, attempted=False)
             if query["status"] == "PENDING":
                 query["status"] = "PAYLOAD_FAILED"
+        if row["query_id"] not in store.payload_records:
             store.payload_records[row["query_id"]] = {
                 "query_id": row["query_id"],
                 "key_id": hashlib.sha256(store.cfg["keys"][row["key"]].encode()).hexdigest(),
@@ -734,7 +770,6 @@ def run(
     output,
     cfg=None,
     *,
-    rules_override=None,
     input_type=runtime.Inputs,
     framewise_type=runtime.FramewiseBackend,
     wan_type=runtime.WanBackend,
@@ -747,7 +782,7 @@ def run(
     try:
         store.data["stage"] = "RULE_AND_INPUT_CONTRACT"
         store.save()
-        rules, raw_rules = load_frozen_rules(cfg, rules_override)
+        rules, raw_rules = load_frozen_rules(cfg)
         store.data["rules"] = {
             "status": "FROZEN",
             "rule_sha256": rules["rule_sha256"],

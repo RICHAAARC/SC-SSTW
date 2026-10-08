@@ -4,6 +4,7 @@ import ast
 import copy
 import gzip
 import hashlib
+import inspect
 import json
 from pathlib import Path
 import shutil
@@ -125,6 +126,8 @@ def test_config_freezes_inputs_rules_slots_and_receiver_only_roles():
 
 
 def test_frozen_rule_loader_checks_file_bytes_and_internal_rule(tmp_path):
+    assert "rules_override" not in inspect.signature(runner.load_frozen_rules).parameters
+    assert "rules_override" not in inspect.signature(runner.run).parameters
     value = rules()
     raw = (json.dumps(value, indent=2) + "\n").encode()
     path = tmp_path / "rules.json"
@@ -139,7 +142,25 @@ def test_frozen_rule_loader_checks_file_bytes_and_internal_rule(tmp_path):
         runner.load_frozen_rules(cfg)
 
 
+def _patch_frozen_rules(monkeypatch, frozen=None):
+    value = rules() if frozen is None else frozen
+    monkeypatch.setattr(
+        runner,
+        "load_frozen_rules",
+        lambda cfg: (copy.deepcopy(value), None),
+    )
+
+
 def _fake_sync_collection(store, frozen, *args):
+    for observation_id, rows in runner._rows_by_observation().items():
+        store.observation_records[observation_id] = {
+            "observation_id": observation_id,
+            "frames": rows[0]["frames"],
+            "rgb_sha256": "f" * 64,
+            "rgb_shape": [rows[0]["frames"], 320, 512, 3],
+            "rgb_bytes": rows[0]["frames"] * 320 * 512 * 3,
+            "rgb_dtype": "uint8",
+        }
     for truth in protocol.query_roster():
         query = store.data["queries"][truth["query_id"]]
         sync = complete_sync(truth)
@@ -193,7 +214,8 @@ def _fake_payload_collection(store, frozen, *args):
 def test_fake_complete_chain_covers_scientific_branches_and_seal_order(tmp_path, monkeypatch):
     monkeypatch.setattr(runner, "collect_sync", _fake_sync_collection)
     monkeypatch.setattr(runner, "collect_payload", _fake_payload_collection)
-    result = runner.run(tmp_path / "run", runner.load_config(), rules_override=rules())
+    _patch_frozen_rules(monkeypatch)
+    result = runner.run(tmp_path / "run", runner.load_config())
     assert result["status"] == "COMPLETE"
     assert result["coverage"]["primary_denominator"] == 10
     assert result["coverage"]["sync_unreliable_action"] == {
@@ -351,6 +373,67 @@ def test_rule_read_failure_still_settles_all_22_and_reports_technical(tmp_path, 
             assert len(value["observations"]) == 20
 
 
+def test_backend_init_failure_seals_full_observation_sync_then_payload(tmp_path):
+    cfg = runner.load_config()
+    store = runner.Store(tmp_path / "backend-init", cfg)
+
+    class BrokenFramewise:
+        def __init__(self, cfg):
+            raise RuntimeError("fixture backend init failure")
+
+    class PayloadMustNotInitialize:
+        def __init__(self, cfg):
+            raise AssertionError("payload backend must not initialize without eligible sync")
+
+    runner.collect_sync(store, rules(), framewise_type=BrokenFramewise)
+    assert list(store.data["seals"]) == ["sync"]
+    sync_seal = json.loads((tmp_path / "backend-init/seals/blind_sync.json").read_text())
+    assert len(sync_seal["observations"]) == 20
+    assert len(sync_seal["queries"]) == 22
+    assert all(
+        row["sync"]["status"] == "TECHNICAL_INCOMPLETE"
+        for row in store.data["queries"].values()
+    )
+
+    runner.collect_payload(store, rules(), wan_type=PayloadMustNotInitialize)
+    assert list(store.data["seals"]) == ["sync", "payload"]
+    payload_seal = json.loads((tmp_path / "backend-init/seals/blind_payload.json").read_text())
+    assert len(payload_seal["queries"]) == 22
+
+
+def test_interruption_reconciles_both_half_commit_orders(tmp_path, monkeypatch):
+    def interrupted(store, frozen, *args):
+        first, second = protocol.query_roster()[:2]
+        first_sync = complete_sync(first)
+        second_sync = complete_sync(second)
+        store.sync_records[first["query_id"]] = {
+            "query_id": first["query_id"],
+            "key_id": "record-first",
+            "summary": first_sync,
+        }
+        store.data["queries"][second["query_id"]].update(
+            status="SYNC_READ",
+            sync=second_sync,
+        )
+        raise KeyboardInterrupt("fixture between record and query commits")
+
+    monkeypatch.setattr(runner, "collect_sync", interrupted)
+    _patch_frozen_rules(monkeypatch)
+    with pytest.raises(KeyboardInterrupt):
+        runner.run(tmp_path / "half-commit", runner.load_config())
+
+    result = json.loads((tmp_path / "half-commit/result.json").read_text())
+    sync_seal = json.loads((tmp_path / "half-commit/seals/blind_sync.json").read_text())
+    payload_seal = json.loads((tmp_path / "half-commit/seals/blind_payload.json").read_text())
+    assert len(sync_seal["observations"]) == 20
+    assert len(sync_seal["queries"]) == 22
+    assert len(payload_seal["queries"]) == 22
+    assert result["queries"]["UQ000"]["sync"]["status"] == "COMPLETE"
+    assert result["queries"]["UQ001"]["sync"]["status"] == "COMPLETE"
+    assert sync_seal["queries"]["UQ000"]["summary"] == result["queries"]["UQ000"]["sync"]
+    assert sync_seal["queries"]["UQ001"]["summary"] == result["queries"]["UQ001"]["sync"]
+
+
 def test_interruption_seal_is_completed_after_partial_records(tmp_path, monkeypatch):
     def interrupted(store, frozen, *args):
         truth = protocol.query_roster()[0]
@@ -364,12 +447,9 @@ def test_interruption_seal_is_completed_after_partial_records(tmp_path, monkeypa
         raise KeyboardInterrupt("fixture interruption")
 
     monkeypatch.setattr(runner, "collect_sync", interrupted)
+    _patch_frozen_rules(monkeypatch)
     with pytest.raises(KeyboardInterrupt):
-        runner.run(
-            tmp_path / "interrupted",
-            runner.load_config(),
-            rules_override=rules(),
-        )
+        runner.run(tmp_path / "interrupted", runner.load_config())
     result = json.loads((tmp_path / "interrupted/result.json").read_text())
     sealed = json.loads((tmp_path / "interrupted/seals/blind_sync.json").read_text())
     assert len(sealed["queries"]) == 22
@@ -410,7 +490,8 @@ def test_positive_regression_accept_wrong_action_is_not_capability_match(tmp_pat
 
     monkeypatch.setattr(runner, "collect_sync", sync_with_wrong_control)
     monkeypatch.setattr(runner, "collect_payload", _fake_payload_collection)
-    result = runner.run(tmp_path / "wrong-action", runner.load_config(), rules_override=rules())
+    _patch_frozen_rules(monkeypatch)
+    result = runner.run(tmp_path / "wrong-action", runner.load_config())
     assert result["controls"]["positive"]["matched"] == 0
     assert result["false_attribution"]["false_accept_queries"] == 2
     assert result["false_attribution"]["any_false_claim"] is True
