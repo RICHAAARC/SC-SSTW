@@ -1,0 +1,428 @@
+{
+  "name": "video_trajectory_attribution_uncertainty_v1",
+  "marker": "uncertainty-v1-followup-20261008",
+  "method_version": "trajectory-attribution-uncertainty-v1",
+  "formula_version": "trajectory-attribution-v1-action-folded-development-maxima",
+  "root_protocol_freeze_sha256": "6fa6cabd599104302ff5a019d749ea543816da3f47774905f3f3ac9d15fd5aeb",
+  "prior_run": {
+    "run_id": "20261008T085244020205Z",
+    "source_sha": "cd5e21221cb3c4bc95727a2a0ba15ea94b5aea83"
+  },
+  "frozen_rules": {
+    "path": "/content/drive/MyDrive/Video-WM/Trajectory-Attribution-V1/20261008T085244020205Z/fixed_reference/seals/frozen_rules.json",
+    "file_sha256": "9b4449569daabfee6d572fb849afa61d80175433b0585fbf3eaac4d27e84ed7c",
+    "rule_sha256": "4c0a14c1493ff642405d13111866b53d9373477668e572e964bb414239b796fa"
+  },
+  "model": {
+    "id": "Wan-AI/Wan2.1-T2V-1.3B-Diffusers",
+    "revision": "0fad780a534b6463e45facd96134c9f345acfa5b",
+    "role": "Original Wan VAE receiver encoding only"
+  },
+  "framewise_model": {
+    "id": "stabilityai/sd-vae-ft-mse",
+    "revision": "31f26fdeee1355a5c34592e401dd41e45d25a493",
+    "role": "2D deterministic per-frame receiver encoding only",
+    "scaled_latent_factor": 0.18215,
+    "method_dtype": "float32",
+    "compute_dtype": "float32",
+    "batch_frames": 8,
+    "replaces_wan_native_decoder": false
+  },
+  "environment_pins": {
+    "torch": "2.11.0",
+    "diffusers": "0.39.0",
+    "transformers": "4.57.6",
+    "numpy": "2.1.3",
+    "accelerate": "1.15.0",
+    "safetensors": "0.8.0",
+    "huggingface-hub": "0.36.2",
+    "tokenizers": "0.22.2",
+    "sentencepiece": "0.2.2",
+    "ftfy": "6.3.1"
+  },
+  "keys": {
+    "K0": "watermark",
+    "K1": "watermark-wrong"
+  },
+  "claim": {
+    "message": "OKOK",
+    "bits": [
+      0,
+      1,
+      0,
+      0,
+      1,
+      1,
+      1,
+      1,
+      0,
+      1,
+      0,
+      0,
+      1,
+      0,
+      1,
+      1,
+      0,
+      1,
+      0,
+      0,
+      1,
+      1,
+      1,
+      1,
+      0,
+      1,
+      0,
+      0,
+      1,
+      0,
+      1,
+      1
+    ]
+  },
+  "inputs": {
+    "C1": {
+      "A_M05": {
+        "path": "/content/drive/MyDrive/Video-WM/Trajectory-Attribution-V1/20261008T085244020205Z/fixed_reference/prepared/C1/A_M05/received.rgb8",
+        "sha256": "a3c013d09081c9b8dca1c4264e368a911a193eaae3a9f516b448d6b03a53a3de",
+        "shape": [
+          181,
+          320,
+          512,
+          3
+        ],
+        "bytes": 88965120
+      },
+      "OFF": {
+        "path": "/content/drive/MyDrive/Video-WM/Trajectory-Attribution-V1/20261008T085244020205Z/fixed_reference/prepared/C1/OFF/received.rgb8",
+        "sha256": "ad6dc651250d8297dac5b71a45508c3d357d5860d109669e023e02a00f7b9a62",
+        "shape": [
+          181,
+          320,
+          512,
+          3
+        ],
+        "bytes": 88965120
+      },
+      "B_M05": {
+        "path": "/content/drive/MyDrive/Video-WM/Trajectory-Attribution-V1/20261008T085244020205Z/fixed_reference/prepared/C1/B_M05/received.rgb8",
+        "sha256": "fc8907882feb270a11af8c42d36d1d3ceb794d7bf540e8fec906b774508ca3c9",
+        "shape": [
+          181,
+          320,
+          512,
+          3
+        ],
+        "bytes": 88965120
+      }
+    },
+    "C2": {
+      "A_M05": {
+        "path": "/content/drive/MyDrive/Video-WM/Trajectory-Attribution-V1/20261008T085244020205Z/fixed_reference/prepared/C2/A_M05/received.rgb8",
+        "sha256": "e19f8bc71bf5db4ee493fbea810beb7448c431378e2c6a742b4c86e561285653",
+        "shape": [
+          181,
+          320,
+          512,
+          3
+        ],
+        "bytes": 88965120
+      },
+      "OFF": {
+        "path": "/content/drive/MyDrive/Video-WM/Trajectory-Attribution-V1/20261008T085244020205Z/fixed_reference/prepared/C2/OFF/received.rgb8",
+        "sha256": "bff92b6796a64d6cb66dc3720d1bea752f98d4ccbf194610b700f1a0add137bf",
+        "shape": [
+          181,
+          320,
+          512,
+          3
+        ],
+        "bytes": 88965120
+      },
+      "B_M05": {
+        "path": "/content/drive/MyDrive/Video-WM/Trajectory-Attribution-V1/20261008T085244020205Z/fixed_reference/prepared/C2/B_M05/received.rgb8",
+        "sha256": "9b252576c30b4fefab3fe6d0d8f14a80ceddc9c8709026ba46b57384584503d6",
+        "shape": [
+          181,
+          320,
+          512,
+          3
+        ],
+        "bytes": 88965120
+      }
+    }
+  },
+  "slots": [
+    {
+      "source": "C1",
+      "condition": "A_M05",
+      "key": "K0",
+      "view": "SHORT89",
+      "parameters": {
+        "start": 0
+      },
+      "role": "PRIMARY_PROBE",
+      "focus": "IDENTITY_FOCUS"
+    },
+    {
+      "source": "C1",
+      "condition": "A_M05",
+      "key": "K0",
+      "view": "SHORT89",
+      "parameters": {
+        "start": 46
+      },
+      "role": "PRIMARY_PROBE",
+      "focus": "IDENTITY_FOCUS"
+    },
+    {
+      "source": "C1",
+      "condition": "A_M05",
+      "key": "K0",
+      "view": "SHORT89",
+      "parameters": {
+        "start": 92
+      },
+      "role": "PRIMARY_PROBE",
+      "focus": "IDENTITY_FOCUS"
+    },
+    {
+      "source": "C1",
+      "condition": "A_M05",
+      "key": "K0",
+      "view": "DELETE177",
+      "parameters": {
+        "b": 2,
+        "k": 1
+      },
+      "role": "ALIAS_CONTROL",
+      "focus": "ALIAS"
+    },
+    {
+      "source": "C1",
+      "condition": "A_M05",
+      "key": "K0",
+      "view": "DELETE177",
+      "parameters": {
+        "b": 2,
+        "k": 44
+      },
+      "role": "PRIMARY_PROBE",
+      "focus": "SYNC_FOCUS"
+    },
+    {
+      "source": "C1",
+      "condition": "A_M05",
+      "key": "K0",
+      "view": "DELETE177",
+      "parameters": {
+        "b": 2,
+        "k": 132
+      },
+      "role": "PRIMARY_PROBE",
+      "focus": "SYNC_FOCUS"
+    },
+    {
+      "source": "C1",
+      "condition": "A_M05",
+      "key": "K0",
+      "view": "DELETE177",
+      "parameters": {
+        "b": 2,
+        "k": 176
+      },
+      "role": "ALIAS_CONTROL",
+      "focus": "ALIAS"
+    },
+    {
+      "source": "C1",
+      "condition": "A_M05",
+      "key": "K0",
+      "view": "CROP177",
+      "parameters": {
+        "b": 2
+      },
+      "role": "REGRESSION_CONTROL"
+    },
+    {
+      "source": "C1",
+      "condition": "A_M05",
+      "key": "K1",
+      "view": "CROP177",
+      "parameters": {
+        "b": 2
+      },
+      "role": "REGRESSION_CONTROL"
+    },
+    {
+      "source": "C1",
+      "condition": "OFF",
+      "key": "K0",
+      "view": "CROP177",
+      "parameters": {
+        "b": 2
+      },
+      "role": "REGRESSION_CONTROL"
+    },
+    {
+      "source": "C1",
+      "condition": "B_M05",
+      "key": "K0",
+      "view": "CROP177",
+      "parameters": {
+        "b": 2
+      },
+      "role": "REGRESSION_CONTROL"
+    },
+    {
+      "source": "C2",
+      "condition": "A_M05",
+      "key": "K0",
+      "view": "SHORT89",
+      "parameters": {
+        "start": 0
+      },
+      "role": "PRIMARY_PROBE",
+      "focus": "IDENTITY_FOCUS"
+    },
+    {
+      "source": "C2",
+      "condition": "A_M05",
+      "key": "K0",
+      "view": "SHORT89",
+      "parameters": {
+        "start": 46
+      },
+      "role": "PRIMARY_PROBE",
+      "focus": "IDENTITY_FOCUS"
+    },
+    {
+      "source": "C2",
+      "condition": "A_M05",
+      "key": "K0",
+      "view": "SHORT89",
+      "parameters": {
+        "start": 92
+      },
+      "role": "PRIMARY_PROBE",
+      "focus": "IDENTITY_FOCUS"
+    },
+    {
+      "source": "C2",
+      "condition": "A_M05",
+      "key": "K0",
+      "view": "DELETE177",
+      "parameters": {
+        "b": 2,
+        "k": 1
+      },
+      "role": "ALIAS_CONTROL",
+      "focus": "ALIAS"
+    },
+    {
+      "source": "C2",
+      "condition": "A_M05",
+      "key": "K0",
+      "view": "DELETE177",
+      "parameters": {
+        "b": 2,
+        "k": 44
+      },
+      "role": "PRIMARY_PROBE",
+      "focus": "SYNC_FOCUS"
+    },
+    {
+      "source": "C2",
+      "condition": "A_M05",
+      "key": "K0",
+      "view": "DELETE177",
+      "parameters": {
+        "b": 2,
+        "k": 132
+      },
+      "role": "PRIMARY_PROBE",
+      "focus": "SYNC_FOCUS"
+    },
+    {
+      "source": "C2",
+      "condition": "A_M05",
+      "key": "K0",
+      "view": "DELETE177",
+      "parameters": {
+        "b": 2,
+        "k": 176
+      },
+      "role": "ALIAS_CONTROL",
+      "focus": "ALIAS"
+    },
+    {
+      "source": "C2",
+      "condition": "A_M05",
+      "key": "K0",
+      "view": "CROP177",
+      "parameters": {
+        "b": 2
+      },
+      "role": "REGRESSION_CONTROL"
+    },
+    {
+      "source": "C2",
+      "condition": "A_M05",
+      "key": "K1",
+      "view": "CROP177",
+      "parameters": {
+        "b": 2
+      },
+      "role": "REGRESSION_CONTROL"
+    },
+    {
+      "source": "C2",
+      "condition": "OFF",
+      "key": "K0",
+      "view": "CROP177",
+      "parameters": {
+        "b": 2
+      },
+      "role": "REGRESSION_CONTROL"
+    },
+    {
+      "source": "C2",
+      "condition": "B_M05",
+      "key": "K0",
+      "view": "CROP177",
+      "parameters": {
+        "b": 2
+      },
+      "role": "REGRESSION_CONTROL"
+    }
+  ],
+  "coverage": {
+    "primary_role": "PRIMARY_PROBE",
+    "sync_denominator": 10,
+    "weak_identity_denominator": 10,
+    "same_ten_primary_queries": true,
+    "alias_controls_excluded": 4,
+    "regression_controls_excluded": 8
+  },
+  "fixed_denominator": {
+    "sources": 2,
+    "queries": 22,
+    "observations": 20,
+    "primary_queries": 10,
+    "alias_controls": 4,
+    "regression_controls": 8,
+    "positive_queries": 16,
+    "negative_queries": 6,
+    "sync_candidates": 11902,
+    "framewise_frames": 3012,
+    "framewise_batch8": 394,
+    "max_payload_reads": 22,
+    "max_votes": 802560,
+    "max_time_bit_rows": 26752,
+    "max_bit_rows": 704,
+    "sync_coverage_denominator": 10,
+    "weak_identity_coverage_denominator": 10
+  },
+  "evidence_ceiling": "Two reused confirmation sources and fixed saved post-codec RGB only; zero new independent sources. Technical UNCERTAIN is not method coverage. No observed trigger means not covered; no threshold, sample, writer, strength, codec or attack replacement."
+}

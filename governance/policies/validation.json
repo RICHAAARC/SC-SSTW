@@ -11,7 +11,8 @@
     "notebooks/video_trajectory_receiver_estimated_align_v1_colab.ipynb",
     "notebooks/video_trajectory_internal_single_deletion_v1_colab.ipynb",
     "notebooks/video_trajectory_conditional_joint_v1_colab.ipynb",
-    "notebooks/video_trajectory_attribution_v1_colab.ipynb"
+    "notebooks/video_trajectory_attribution_v1_colab.ipynb",
+    "notebooks/video_trajectory_attribution_uncertainty_v1_colab.ipynb"
   ],
   "configs": [
     "experiments/wan_state_clock/configs/grow_video_reference_v1.json",
@@ -19,7 +20,8 @@
     "experiments/wan_state_clock/configs/video_trajectory_receiver_estimated_align_v1.json",
     "experiments/wan_state_clock/configs/video_trajectory_internal_single_deletion_v1.json",
     "experiments/wan_state_clock/configs/video_trajectory_conditional_joint_v1.json",
-    "experiments/wan_state_clock/configs/video_trajectory_attribution_v1.json"
+    "experiments/wan_state_clock/configs/video_trajectory_attribution_v1.json",
+    "experiments/wan_state_clock/configs/video_trajectory_attribution_uncertainty_v1.json"
   ],
   "fixed_denominator": {
     "sources": 1,
@@ -42,7 +44,8 @@
     "experiments/wan_state_clock/video_trajectory_receiver_estimated_align_v1_run.py",
     "experiments/wan_state_clock/video_trajectory_internal_single_deletion_v1_run.py",
     "experiments/wan_state_clock/video_trajectory_conditional_joint_v1_run.py",
-    "experiments/wan_state_clock/video_trajectory_attribution_v1_run.py"
+    "experiments/wan_state_clock/video_trajectory_attribution_v1_run.py",
+    "experiments/wan_state_clock/video_trajectory_attribution_uncertainty_v1_run.py"
   ],
   "required_files": [
     "README.md",
@@ -103,7 +106,14 @@
     "notebooks/video_trajectory_attribution_v1_colab.ipynb",
     "runtime/wan/video_trajectory_attribution_v1.py",
     "scripts/build_video_trajectory_attribution_notebook.py",
-    "tests/test_video_trajectory_attribution_v1.py"
+    "tests/test_video_trajectory_attribution_v1.py",
+    "docs/video_trajectory_attribution_uncertainty_v1.md",
+    "experiments/wan_state_clock/configs/video_trajectory_attribution_uncertainty_v1.json",
+    "experiments/wan_state_clock/video_trajectory_attribution_uncertainty_v1_protocol.py",
+    "experiments/wan_state_clock/video_trajectory_attribution_uncertainty_v1_run.py",
+    "notebooks/video_trajectory_attribution_uncertainty_v1_colab.ipynb",
+    "scripts/build_video_trajectory_attribution_uncertainty_notebook.py",
+    "tests/test_video_trajectory_attribution_uncertainty_v1.py"
   ],
   "release_manifest": "release_manifest.json",
   "notebook_entries": {
@@ -121,6 +131,9 @@
     },
     "notebooks/video_trajectory_attribution_v1_colab.ipynb": {
       "module": "experiments.wan_state_clock.video_trajectory_attribution_v1_run"
+    },
+    "notebooks/video_trajectory_attribution_uncertainty_v1_colab.ipynb": {
+      "module": "experiments.wan_state_clock.video_trajectory_attribution_uncertainty_v1_run"
     }
   },
   "config_expectations": {
@@ -199,6 +212,28 @@
         "logical_payload_votes": 6589440,
         "logical_time_bit_rows": 219648,
         "logical_final_bits": 6144
+      }
+    },
+    "experiments/wan_state_clock/configs/video_trajectory_attribution_uncertainty_v1.json": {
+      "name": "video_trajectory_attribution_uncertainty_v1",
+      "fixed_denominator": {
+        "sources": 2,
+        "queries": 22,
+        "observations": 20,
+        "primary_queries": 10,
+        "alias_controls": 4,
+        "regression_controls": 8,
+        "positive_queries": 16,
+        "negative_queries": 6,
+        "sync_candidates": 11902,
+        "framewise_frames": 3012,
+        "framewise_batch8": 394,
+        "max_payload_reads": 22,
+        "max_votes": 802560,
+        "max_time_bit_rows": 26752,
+        "max_bit_rows": 704,
+        "sync_coverage_denominator": 10,
+        "weak_identity_coverage_denominator": 10
       }
     }
   }

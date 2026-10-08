@@ -36,7 +36,17 @@ ATTRIBUTION_FILES = (
     "main/tube_state/video_trajectory_attribution_v1.py",
     "runtime/wan/video_trajectory_attribution_v1.py",
 )
-SOURCE_FILES = tuple(sorted((*SOURCE_FILES, *CONDITIONAL_FILES, *ATTRIBUTION_FILES)))
+ATTRIBUTION_UNCERTAINTY_FILES = (
+    "experiments/wan_state_clock/configs/video_trajectory_attribution_uncertainty_v1.json",
+    "experiments/wan_state_clock/video_trajectory_attribution_uncertainty_v1_protocol.py",
+    "experiments/wan_state_clock/video_trajectory_attribution_uncertainty_v1_run.py",
+)
+SOURCE_FILES = tuple(sorted((
+    *SOURCE_FILES,
+    *CONDITIONAL_FILES,
+    *ATTRIBUTION_FILES,
+    *ATTRIBUTION_UNCERTAINTY_FILES,
+)))
 
 
 

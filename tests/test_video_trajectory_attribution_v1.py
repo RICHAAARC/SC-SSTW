@@ -393,8 +393,8 @@ def test_config_and_notebook_draft_schema():
     )
     assert nb["metadata"]["candidate_binding"] == {
         "candidate": "trajectory-attribution-v1",
-        "source_sha": None,
-        "status": "UNPUBLISHED_DRAFT",
+        "source_sha": "cd5e21221cb3c4bc95727a2a0ba15ea94b5aea83",
+        "status": "PUBLISHED_SHA_BOUND",
     }
     code = [cell for cell in nb["cells"] if cell["cell_type"] == "code"]
     assert "".join(code[0]["source"]) == (
