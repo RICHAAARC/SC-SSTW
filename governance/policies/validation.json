@@ -9,13 +9,15 @@
     "notebooks/grow_video_reference_v1_colab.ipynb",
     "notebooks/video_trajectory_payload_framewise_sync_m05_v1_colab.ipynb",
     "notebooks/video_trajectory_receiver_estimated_align_v1_colab.ipynb",
-    "notebooks/video_trajectory_internal_single_deletion_v1_colab.ipynb"
+    "notebooks/video_trajectory_internal_single_deletion_v1_colab.ipynb",
+    "notebooks/video_trajectory_conditional_joint_v1_colab.ipynb"
   ],
   "configs": [
     "experiments/wan_state_clock/configs/grow_video_reference_v1.json",
     "experiments/wan_state_clock/configs/video_trajectory_payload_framewise_sync_m05_v1.json",
     "experiments/wan_state_clock/configs/video_trajectory_receiver_estimated_align_v1.json",
-    "experiments/wan_state_clock/configs/video_trajectory_internal_single_deletion_v1.json"
+    "experiments/wan_state_clock/configs/video_trajectory_internal_single_deletion_v1.json",
+    "experiments/wan_state_clock/configs/video_trajectory_conditional_joint_v1.json"
   ],
   "fixed_denominator": {
     "sources": 1,
@@ -36,7 +38,8 @@
     "experiments/wan_state_clock/grow_video_reference_run.py",
     "experiments/wan_state_clock/video_trajectory_payload_framewise_sync_m05_v1_run.py",
     "experiments/wan_state_clock/video_trajectory_receiver_estimated_align_v1_run.py",
-    "experiments/wan_state_clock/video_trajectory_internal_single_deletion_v1_run.py"
+    "experiments/wan_state_clock/video_trajectory_internal_single_deletion_v1_run.py",
+    "experiments/wan_state_clock/video_trajectory_conditional_joint_v1_run.py"
   ],
   "required_files": [
     "README.md",
@@ -69,7 +72,25 @@
     "scripts/build_release_manifest.py",
     "scripts/notebook_common.py",
     "tests/test_grow_video_reference.py",
-    "tests/test_release_portability.py"
+    "tests/test_release_portability.py",
+    "docs/video_trajectory_conditional_joint_v1.md",
+    "experiments/wan_state_clock/configs/video_trajectory_conditional_joint_v1.json",
+    "experiments/wan_state_clock/configs/video_trajectory_conditional_joint_v1_oracle.json",
+    "experiments/wan_state_clock/configs/video_trajectory_conditional_joint_v1_posthoc.json",
+    "experiments/wan_state_clock/configs/video_trajectory_conditional_joint_v1_preparation.json",
+    "experiments/wan_state_clock/video_trajectory_conditional_joint_v1_prepare.py",
+    "experiments/wan_state_clock/video_trajectory_conditional_joint_v1_run.py",
+    "main/tube_state/video_trajectory_conditional_joint_v1.py",
+    "notebooks/video_trajectory_conditional_joint_v1_colab.ipynb",
+    "runtime/wan/conditional_joint/__init__.py",
+    "runtime/wan/conditional_joint/fixed_rgb_media.py",
+    "runtime/wan/conditional_joint/generation.py",
+    "runtime/wan/conditional_joint/quality.py",
+    "runtime/wan/conditional_joint/trajectory.py",
+    "runtime/wan/conditional_joint/vae.py",
+    "runtime/wan/video_trajectory_conditional_joint_v1.py",
+    "scripts/build_video_trajectory_conditional_joint_notebook.py",
+    "tests/test_trajectory_conditional_joint_v1.py"
   ],
   "release_manifest": "release_manifest.json",
   "notebook_entries": {
@@ -81,6 +102,9 @@
     },
     "notebooks/video_trajectory_internal_single_deletion_v1_colab.ipynb": {
       "module": "experiments.wan_state_clock.video_trajectory_internal_single_deletion_v1_run"
+    },
+    "notebooks/video_trajectory_conditional_joint_v1_colab.ipynb": {
+      "module": "experiments.wan_state_clock.video_trajectory_conditional_joint_v1_run"
     }
   },
   "config_expectations": {
@@ -121,6 +145,27 @@
         "logical_detailed_votes": 675840,
         "logical_time_bit_rows": 22528,
         "logical_final_bits": 512
+      }
+    },
+    "experiments/wan_state_clock/configs/video_trajectory_conditional_joint_v1.json": {
+      "name": "video_trajectory_conditional_joint_v1",
+      "fixed_denominator": {
+        "logical_observations": 9,
+        "physical_inputs": 8,
+        "sync_reads": 18,
+        "sync_candidates": 3426,
+        "global_local_rows": 14276,
+        "frame_cache_cells": 3540,
+        "local_grid_cells": 900,
+        "framewise_frames": 1156,
+        "framewise_batches": 151,
+        "blind_payload_reads": 40,
+        "oracle_payload_reads": 4,
+        "logical_payload_reads": 44,
+        "logical_votes": 1605120,
+        "logical_time_bit_rows": 53504,
+        "logical_final_bits": 1408,
+        "quality_rows": 6
       }
     }
   }

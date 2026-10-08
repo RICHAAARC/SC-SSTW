@@ -1,6 +1,6 @@
 # SC-SSTW limited hybrid mechanisms
 
-`main` is the release branch. This tree keeps the complete GROW payload chain and a narrow whitelist of measured terminal synchronization/receiver mechanisms. It does not merge the development branch or claim a new joint real-model experiment.
+`main` is the release branch. This tree keeps the complete GROW payload chain and a narrow whitelist of measured terminal synchronization/receiver mechanisms. Conditional joint V1 is integrated from its audited source closure; this release integration does not merge the development branch or claim a new main-version real-model execution.
 
 | Entry | Fixed scope |
 |---|---|
@@ -8,6 +8,7 @@
 | `video_trajectory_payload_framewise_sync_m05_v1_run` | Explicit FULL181 source RGB; fixed M05 target .5, framewise encode/write/decode, single 8fps CRF18 H.264 roundtrip, fresh FULL sync and payload reads |
 | `video_trajectory_receiver_estimated_align_v1_run` | Explicit saved FULL181/CROP177/SHORT89; new blind per-key offset/phase then unchanged R44/R44/R22 payload reading |
 | `video_trajectory_internal_single_deletion_v1_run` | Fixed C/D 177-frame construction, 709 H0/H1 paths/key, complete-map caching, blind modes sealed before oracle; message evaluated last |
+| `video_trajectory_conditional_joint_v1_run` | Fixed self-generating conditional chain: PAYLOAD_MULTI → M05 → two MP4s → 18 blind sync reads → 40 blind payload slots → 4 post-seal oracle slots; one seen development source |
 
 Run from the project root of a clone or extracted ZIP. External weights and standard runtime dependencies are not bundled. First install a compatible Torch/Torchvision pair for your platform, then:
 
@@ -54,7 +55,7 @@ Use `python -m experiments.wan_state_clock.<module suffix> --config /absolute/pu
 
 Geometry, models, public denominators and method parameters remain fixed. Input configuration SHA and full runtime content identity are recorded. Templates have no implicit historical Drive source. Exact old configuration bytes live under `experiments/wan_state_clock/configs/historical`; their original-version records are historical, not new main measurements. Use the original commit links in the mechanism index for exact historical execution. Failures stay in the fixed slots.
 
-Current user-run notebooks: [GROW](notebooks/grow_video_reference_v1_colab.ipynb), [M05](notebooks/video_trajectory_payload_framewise_sync_m05_v1_colab.ipynb), [offset/phase](notebooks/video_trajectory_receiver_estimated_align_v1_colab.ipynb), and [single deletion](notebooks/video_trajectory_internal_single_deletion_v1_colab.ipynb).
+Current user-run notebooks: [GROW](notebooks/grow_video_reference_v1_colab.ipynb), [M05](notebooks/video_trajectory_payload_framewise_sync_m05_v1_colab.ipynb), [offset/phase](notebooks/video_trajectory_receiver_estimated_align_v1_colab.ipynb), [single deletion](notebooks/video_trajectory_internal_single_deletion_v1_colab.ipynb), and [conditional joint V1](notebooks/video_trajectory_conditional_joint_v1_colab.ipynb). The conditional notebook uses its repository-bundled fixed configs and regenerates the fixed source; it does not require an external `CONFIG_PATH` before clone.
 
 Notebooks begin with the independent Drive mount and use a published immutable source. For the new notebooks, set `CONFIG_PATH` to the prepared input JSON before user Run-all. Source candidates use `SOURCE_SHA=None` and stop before output creation; after source publication all formal notebooks, including GROW, are bound to the same release S. Agents do not execute model notebooks.
 

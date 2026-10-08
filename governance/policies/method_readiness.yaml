@@ -1,12 +1,15 @@
-implementation_status: standalone_reference_release
-evidence_status: fixed_real_MP4_repeated_payload_recovery_verified
-active_method: grow_video_reference_v1
+implementation_status: conditional_joint_v1_release_candidate
+evidence_status: fixed_conditional_cases_verified_at_original_source
+active_method: grow_m05_conditional_joint_v1
 new_gpu_execution: false
 claims_not_established:
-  - blind_temporal_synchronization
+  - arbitrary_video_presence_detection
+  - wrong_key_rejection
+  - broad_blind_temporal_synchronization
   - time_dependent_segment_payload
   - segment_sequence_aggregation_and_rejection
-  - temporal_edit_robustness
+  - unknown_temporal_edit_robustness
   - calibrated_population_fpr
-  - imperceptibility
-  - generalization
+  - independent_source_generalization
+  - payload_off_quality_cost
+  - scientific_pass

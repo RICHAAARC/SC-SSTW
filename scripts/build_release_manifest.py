@@ -9,7 +9,7 @@ from runtime.wan.provenance import file_hashes, content_id
 def build(root=ROOT):
     root=Path(root)
     files=file_hashes(root)
-    manifest=dict(schema=1, release_id="grow-m05-temporal-receivers-v1-portable",
+    manifest=dict(schema=1, release_id="grow-m05-temporal-receivers-conditional-joint-v1-portable",
         content_sha256=content_id(files), files=files,
         identity="Content identity of the runtime closure; not a Git commit or signature.")
     path=root/"release_manifest.json"

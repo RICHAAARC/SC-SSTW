@@ -1,6 +1,6 @@
 # Bounded development evidence index
 
-Updated 2026-10-04. This is an index of construction-specific outcomes, not an
+Updated 2026-10-08. This is an index of construction-specific outcomes, not an
 import of development implementations. Source links are immutable. Removed old executable entrypoints are listed in
 [the historical entry index](historical_entries.md).
 Large original results and media remain in the user's Video-WM Drive archive.
@@ -17,6 +17,7 @@ in this repository.
 | DWELL4 | CPU-only proposal: ideal paths distinguishable, minimum separation reduced to 1/3; no new real media result. | Project-only diagnostics/old8-state-information-20261004; no published implementation imported |
 | Saved-terminal gradient / STE / direction-budget series | Objective improvement did not imply actual raw420/path improvement; retain exact tested negatives. | [Historical comparison](https://github.com/RICHAAARC/SC-SSTW/blob/794600e2717f18017e3f1ec057f003ae688a42fa/docs/video_local_fourier_rm_lowband_v1.md); diagnostics/raw420-forward-accept-real-run-audit-20261002 |
 | Older PN / fixed-key / affine paths | Carrier-specific partial evidence; algorithm/CPU correctness is not portability to current observations. | Historical branches remain unchanged; no receiver or DP dependency block copied into main |
+| Stage1 presence authorization counterexample | Source ab60d457c58eb6fb1ec3e5bd402f3dc86eded5bd, run 20261007T122708953536Z: 177 positives 2/2 but null 1/6 ACCEPT (4 REJECT, 1 UNCERTAIN); 89 positives 2/2 and null 0/6 ACCEPT, but all six nulls UNCERTAIN. | diagnostics/terminal-sync-path-decision-real-run-audit-20261007; retained as negative evidence, not a conditional-joint dependency or gate |
 
 The same-source local-state comparisons are dependent. Repeated-payload 9/9
 recovery across marked arms and media layers is not nine independent videos,
