@@ -28,7 +28,14 @@ CONDITIONAL_FILES = (
     "runtime/wan/conditional_joint/vae.py",
     "runtime/wan/video_trajectory_conditional_joint_v1.py",
 )
-SOURCE_FILES = tuple(sorted((*SOURCE_FILES, *CONDITIONAL_FILES)))
+ATTRIBUTION_FILES = (
+    "experiments/wan_state_clock/configs/video_trajectory_attribution_v1.json",
+    "experiments/wan_state_clock/video_trajectory_attribution_v1_prepare.py",
+    "experiments/wan_state_clock/video_trajectory_attribution_v1_run.py",
+    "main/tube_state/video_trajectory_attribution_v1.py",
+    "runtime/wan/video_trajectory_attribution_v1.py",
+)
+SOURCE_FILES = tuple(sorted((*SOURCE_FILES, *CONDITIONAL_FILES, *ATTRIBUTION_FILES)))
 
 
 

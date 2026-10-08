@@ -10,14 +10,16 @@
     "notebooks/video_trajectory_payload_framewise_sync_m05_v1_colab.ipynb",
     "notebooks/video_trajectory_receiver_estimated_align_v1_colab.ipynb",
     "notebooks/video_trajectory_internal_single_deletion_v1_colab.ipynb",
-    "notebooks/video_trajectory_conditional_joint_v1_colab.ipynb"
+    "notebooks/video_trajectory_conditional_joint_v1_colab.ipynb",
+    "notebooks/video_trajectory_attribution_v1_colab.ipynb"
   ],
   "configs": [
     "experiments/wan_state_clock/configs/grow_video_reference_v1.json",
     "experiments/wan_state_clock/configs/video_trajectory_payload_framewise_sync_m05_v1.json",
     "experiments/wan_state_clock/configs/video_trajectory_receiver_estimated_align_v1.json",
     "experiments/wan_state_clock/configs/video_trajectory_internal_single_deletion_v1.json",
-    "experiments/wan_state_clock/configs/video_trajectory_conditional_joint_v1.json"
+    "experiments/wan_state_clock/configs/video_trajectory_conditional_joint_v1.json",
+    "experiments/wan_state_clock/configs/video_trajectory_attribution_v1.json"
   ],
   "fixed_denominator": {
     "sources": 1,
@@ -39,7 +41,8 @@
     "experiments/wan_state_clock/video_trajectory_payload_framewise_sync_m05_v1_run.py",
     "experiments/wan_state_clock/video_trajectory_receiver_estimated_align_v1_run.py",
     "experiments/wan_state_clock/video_trajectory_internal_single_deletion_v1_run.py",
-    "experiments/wan_state_clock/video_trajectory_conditional_joint_v1_run.py"
+    "experiments/wan_state_clock/video_trajectory_conditional_joint_v1_run.py",
+    "experiments/wan_state_clock/video_trajectory_attribution_v1_run.py"
   ],
   "required_files": [
     "README.md",
@@ -90,7 +93,16 @@
     "runtime/wan/conditional_joint/vae.py",
     "runtime/wan/video_trajectory_conditional_joint_v1.py",
     "scripts/build_video_trajectory_conditional_joint_notebook.py",
-    "tests/test_trajectory_conditional_joint_v1.py"
+    "tests/test_trajectory_conditional_joint_v1.py",
+    "docs/video_trajectory_attribution_v1.md",
+    "experiments/wan_state_clock/configs/video_trajectory_attribution_v1.json",
+    "experiments/wan_state_clock/video_trajectory_attribution_v1_prepare.py",
+    "experiments/wan_state_clock/video_trajectory_attribution_v1_run.py",
+    "main/tube_state/video_trajectory_attribution_v1.py",
+    "notebooks/video_trajectory_attribution_v1_colab.ipynb",
+    "runtime/wan/video_trajectory_attribution_v1.py",
+    "scripts/build_video_trajectory_attribution_notebook.py",
+    "tests/test_video_trajectory_attribution_v1.py"
   ],
   "release_manifest": "release_manifest.json",
   "notebook_entries": {
@@ -105,6 +117,9 @@
     },
     "notebooks/video_trajectory_conditional_joint_v1_colab.ipynb": {
       "module": "experiments.wan_state_clock.video_trajectory_conditional_joint_v1_run"
+    },
+    "notebooks/video_trajectory_attribution_v1_colab.ipynb": {
+      "module": "experiments.wan_state_clock.video_trajectory_attribution_v1_run"
     }
   },
   "config_expectations": {
@@ -166,6 +181,23 @@
         "logical_time_bit_rows": 53504,
         "logical_final_bits": 1408,
         "quality_rows": 6
+      }
+    },
+    "experiments/wan_state_clock/configs/video_trajectory_attribution_v1.json": {
+      "name": "video_trajectory_attribution_v1",
+      "fixed_denominator": {
+        "sources": 3,
+        "native_trajectories": 9,
+        "received_conditions": 12,
+        "physical_observations": 96,
+        "logical_queries": 192,
+        "sync_candidates": 74784,
+        "framewise_frames": 13872,
+        "framewise_batches": 1812,
+        "max_payload_reads": 192,
+        "logical_payload_votes": 6589440,
+        "logical_time_bit_rows": 219648,
+        "logical_final_bits": 6144
       }
     }
   }
