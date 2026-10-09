@@ -132,3 +132,9 @@ FULL 诊断先枚举所有 8-frame 起点相位 0..7，并显式保存有限帧�
 - `git diff --check`：通过。
 
 这些只证明公共接口、CPU tensor 接线、默认 GROW 旧路径回归和静态语法，不证明候选 carrier、媒体存留、盲路径、四分片恢复、资源可行性或任何科学 PASS。
+
+## 审查收据
+
+受审代码版本为 `1e9219182d265533a3c657c744dcd14ea6e34c8c`。初版 `f3cacf7` 随后修正了 nominal provider operand、FP32 realized clean/CFG delta 与 native step total-update 的记录语义，删除了未经核验的 component decomposition 声称，并补清确定性构造和历史 delta 边界。A2 方法审查与 A3 实现审查均接受该同一版本且无必修 finding；A3 独立复跑两个受影响的定向 CPU 测试为 `2 passed in 0.97s`，它们是上述 7 项接口测试的子集，不另加到验证分母。A4 综合与 A5 阶段审计均接受，A5 未重复全量测试。
+
+这些审查只支持把当前工程接口与 `PROPOSED_NOT_ADOPTED` 提案交给用户决定，不代表方法已采纳、真实运行获授权或得到科学 PASS。DWELL4 的真实局部正证据与媒体失败边界继续同时保留。本节为审查后的 docs-only 收据；审查覆盖的代码版本仍为 `1e9219182d265533a3c657c744dcd14ea6e34c8c`。
