@@ -125,3 +125,5 @@ posthoc 在 seal 后还会从 `result.json` 重建同样的去 key manifest，�
 runner 冻结代码、CPU 工程分母与 A2/A3/A4/A5 同版审查结果绑定在[主提案的第三阶段收据](local_joint_state_payload_v1_proposal.md#第三阶段-runner-版本绑定与审查收据)；这些历史收据不表示本阶段后评实现已经过同一审查，也不改变真实执行边界。
 
 主提案同节的 constructor 补充收据把当时受影响代码绑定到 `ac822e6`；“不实现 wrong-key/reducer”是该历史版本的边界。当前新增实现仍只形成 fixed known-grid 描述结果与归因状态，不能自动回答 blind recovery、FPR 或科学 PASS；真实执行仍须单独授权。
+
+固定配置、双 key 原始目录与独立 posthoc 的最终受审版本、17 项工程验证及 A2/A3 同版 ACCEPT 记录见[主提案的最终同版审查收据](local_joint_state_payload_v1_proposal.md#最终同版审查收据)。该收据确认方法实现闭合，不改变本文件的 `EXECUTION_NOT_AUTHORIZED` 边界，也不提供真实媒体结果。

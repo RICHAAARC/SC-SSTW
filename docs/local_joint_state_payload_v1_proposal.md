@@ -190,13 +190,13 @@ A1 定向验证为 `3 passed in 2.96s`，包含 1 个新增 constructor 回归�
 
 以上句子记录的是 constructor 修复版本的历史边界。随后用户已经采纳固定参数、OFF/JOINT 名单、wrong key 与 known-grid 描述性后评公式；本阶段在同一 runner 中增加双 key 原始目录，并以独立只读 posthoc 实现 seal 后真值后评。它仍不能自动回答 blind recovery、FPR 或科学 PASS，也不授权真实资源执行。
 
-### 已采纳后评实现（待同版审查）
+### 已采纳后评实现（已完成同版受影响审查）
 
 固定配置保存于 `experiments/wan_state_clock/configs/local_joint_state_payload_v1.json`。runner 对 OFF/JOINT 的 float RGB、RGB8、MP4 分别保存 correct/wrong key 两套 768 行 received-only 目录；每套独立失败，已保存的另一套不被覆盖，并同步写不含 key/message 的 `raw_observation_manifest.json`。`main/tube_state/local_joint_state_payload_posthoc_v1.py` 实现固定 phase 1、slot 0..21 的 22 个 state 循环相关值与 32 个 payload signed mean，保留严格并列和 24/24/20/20 固定 evidence 数。`experiments/wan_state_clock/local_joint_state_payload_posthoc_v1_run.py` 在读取含配置的 `result.json` 前，先依据 manifest 重读并哈希封存 12 份 raw 目录，再加载固定 truth；wrong key 只作辅助观察。
 
 后评不删除或重权缺失项：完整有限但不满足条件记为 `VALID_FINITE_NEGATIVE`；完整帧/样本支持下有限 `E+=E-=0` 的项记为 `CONSTRUCTION_SUPPORT_GAP` 且对应 metric 仍缺失；nonfinite、帧/样本缺失、失败或读取错误记为 `ENGINEERING_FAILURE`。JOINT 满足而 OFF 缺失时记为归因未决，不冒称已有 OFF contrast。所有输出继续声明 `scientific_pass=false`，不实现 blind path、decoded message 或 FPR。
 
-本阶段冻结前的受影响 CPU 合并验证为 `24 passed in 24.80s`：16 项 runner/lifecycle/media/no-git 检查与 8 项固定后评/双 key/seal/no-git 检查。测试使用 `/home/richar/projects/CEG-WM/alive/CEG-WM/.venv/bin/python`，设置 `PYTHONDONTWRITEBYTECODE=1`、`CUDA_VISIBLE_DEVICES=''`，没有安装依赖或调用真实模型、GPU、VAE、codec、媒体、Colab 或 Drive。该工程分母不能证明显存可行性、真实 25 次驻留往返、媒体共同存留或科学 PASS；同版独立审查尚未开始。
+初版 `a8de425e8beca85551a9060f2b1474f78b311692` 的受影响 CPU 合并验证为 `24 passed in 24.80s`：16 项 runner/lifecycle/media/no-git 检查与 8 项固定后评/双 key/seal/no-git 检查。测试使用 `/home/richar/projects/CEG-WM/alive/CEG-WM/.venv/bin/python`，设置 `PYTHONDONTWRITEBYTECODE=1`、`CUDA_VISIBLE_DEVICES=''`，没有安装依赖或调用真实模型、GPU、VAE、codec、媒体、Colab 或 Drive。该工程分母随后接受 A2/A3 同版审查并引出下列六项修复，不能单独作为最终审查收据。
 
 #### `a8de425` 同版审查后的记录修复
 
@@ -205,3 +205,11 @@ A2/A3 对初版 `a8de425e8beca85551a9060f2b1474f78b311692` 的方法公式和固
 修复后 `posthoc_result.json` 保留 run SHA、run status/stage/execution/source identity 与两臂 status/initial/terminal identity。若 run 未完整执行，顶层为 `INCOMPLETE`；任一 correct-key 层发生工程失败时顶层为 `ENGINEERING_FAILURE`，同时独立保存 `mp4_attribution` 和全部局部有限证据。wrong-key 失败仍只作辅助记录。manifest/run 不一致则在已经写出 truth-free seal 后失败关闭，不生成混合 run 的后评结果。
 
 冻结前受影响范围合并验证为 `17 passed in 54.23s`：15 项 posthoc 覆盖 run/manifest 错配、run incomplete、wrong-key 辅助失败、55 项分母，以及持久化 q/energy 的 NaN/Infinity；另有 2 项 runner 覆盖双 key 单次失败记账与 50-step fake 路径 manifest。它们不与初版 24 项简单相加，也未重跑未受影响的旧 carrier 测试。
+
+#### 最终同版审查收据
+
+最终受审代码为 `e6392525b595a4cfb16c7d9371b3effe856c427e`。从本阶段基线 `89e380634498bcbecb3e07fa5efac7e80735a063` 到该版本共 9 个文件：固定配置、posthoc core/CLI、runner/runtime 接线、两份测试和两份文档。固定配置路径是 `experiments/wan_state_clock/configs/local_joint_state_payload_v1.json`，独立后评入口是 `experiments/wan_state_clock/local_joint_state_payload_posthoc_v1_run.py`；每次完整 run 的原始目录固定为 OFF/JOINT × float RGB/RGB8/MP4 × correct/wrong key，即 12 份、每份 768 行。
+
+A2 与 A3 对 `e639252` 的受影响范围同版审查均为 ACCEPT，六项 finding 全部关闭且无剩余必修。A2 未重复测试；A3 独立复跑 7 个不重复子项：manifest/incomplete/wrong-key auxiliary 为 `3 passed in 13.32s`，energy Infinity/55 项计数/双 key 单记为 `3 passed in 7.81s`，持久化 q NaN CLI 为 `1 passed in 5.73s`，合计 `7 passed in 26.86s`。这 7 项是 A1 最终 `17 passed in 54.23s` 的子集，不另加到分母。相关 `py_compile` 与 `git diff --check` 通过。
+
+方法状态为 **METHOD_ADOPTED / EXECUTION_NOT_AUTHORIZED**。fixture 与 synthetic raw 目录只验证工程数学、固定分母、文件绑定和持久化；没有执行真实模型、权重、GPU、VAE、codec、媒体、Colab 或 Drive，也不证明真实 JOINT 的 25 次资源往返、state 与四 fragment 的媒体共同存留、blind path、message 重组、FPR 或科学 PASS。A4/A5 的历史结论仍只绑定旧代码 `cb81e1f71c1bd1467dd1daf18f6ca79174487e69`；本阶段按指令只完成 A2/A3 受影响范围独立审查，没有新的 A4/A5 审查。
