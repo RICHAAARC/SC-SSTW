@@ -169,3 +169,13 @@ A2/A3 对 `1f9b2f0f56d07f8e225d407f279ba21c91901b37` 的 finding 只引出记录
 该版本提供可选 carrier 与显式注入 provider，不包含 model-residency loader 或独立实验 runner。20 项 CPU 只支持工程实现与记录语义，不是 scientific PASS；`rho/cap` 数值仍待决定，真实问题仍是多步写入后的局部 state 与不同 payload fragment 能否共同穿过 MP4。
 
 上述“不包含 model-residency loader 或独立实验 runner”只描述受审版本 `8f664a3` 的历史状态。后续入口、显式配置 schema、资源成本和仍待用户裁定的最小真实机制名单见 [独立真实实验提案](local_joint_state_payload_v1_real_experiment_proposal.md)；新增 runner 不改变本文件中 carrier 数学、参数待决定状态或历史审查结论，也不表示真实执行获授权。
+
+### 第三阶段 runner 版本绑定与审查收据
+
+本阶段从 `6590c5cf5a92e9bbf92aaabf3c07152841f082bd` 开始。初版 runner `f9363074b74017a55ebfad3f15ecae0c553e6d44` 的 27 项 CPU 检查没有证明完整 runner 闭合；同版审查发现的 raw observation `as_dict`/`to_dict` 调用错误、terminal dtype/geometry/finite 验证顺序、persisted RGB8 lineage、相同像素积但错误宽高的媒体几何、cleanup 覆盖主异常、execution 标签和 CLI 配置 schema 问题，均在最终受审代码 `cb81e1f71c1bd1467dd1daf18f6ca79174487e69` 中修复。
+
+A1 最终合并验证为 `34 passed in 14.72s`，由 14 项 runner/异常/media/no-git 工程检查与既有 20 项 carrier/provider/seam 检查组成；相关 Python `py_compile` 与 `git diff --check` 通过。A3 独立复跑 `7 passed in 7.75s`，是上述 34 项的子集，不另加到分母。A2 与 A3 对 `cb81e1f` 同版均为 ACCEPT 且无必修 finding，A4 综合为 ACCEPT，A5 独立里程碑审计亦为 ACCEPT 且未重复测试。
+
+完整 non-preflight fake 成功集成只运行 OFF arm，使用 181×8×32 的小空间 RGB、fake residency/codec 与小 latent，真实经过同一 `run_trajectory` 的 50 steps，并为 float RGB、RGB8、MP4 各保存固定 768 行目录。JOINT binding 与 steps 25..49 的 25 次启用行为由组件和既有 CPU 测试覆盖；没有运行真实权重、模型、GPU、VAE、codec 或媒体。因此这些检查不构成完整真实 JOINT 验证，也不证明显存可行性、25 次驻留往返、27 次 VAE load 或媒体存留。
+
+真实实验的参数、arm 名单、后评 reducer 与描述性进展条件仍为 PROPOSED；wrong-key 后评与 reducer 尚未实现。本线审查 ACCEPT 只接受该冻结版本的工程接线、记录和提案边界，不是主审计结论、真实执行授权或发布授权。

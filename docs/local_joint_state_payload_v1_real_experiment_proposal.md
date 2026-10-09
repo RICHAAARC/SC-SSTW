@@ -46,7 +46,7 @@ runner 应逐步流式保存 50 行、模型驻留 attempt/completion/failure、
 
 ### 可执行入口与精确配置 schema
 
-入口只接受包含下列 **8 个且仅有这些** 顶层 section 的 JSON；所有字段必填，代码不补默认值。以下数值仍是本提案建议，只有用户采纳并另行授权真实执行后才可保存为运行配置：
+入口只接受包含下列 **8 个且仅有这些** 顶层 section 的 JSON；所有字段必填，代码不补默认值。以下 JSON 是待采纳方案示例；保存配置草案不表示方法参数已采纳，普通命令的真实执行范围仍须另行明确：
 
 ```json
 {
@@ -107,3 +107,5 @@ PYTHONPATH=. python -B -m experiments.wan_state_clock.local_joint_state_payload_
 wrong key 和本文件给出的 state/payload 描述性 reducer 不属于这 8-section runner 输入，也不被生产 runner 消费；它们属于原始 768 行封存后的独立后评，须随后单独实现、冻结并审查，不能把 routing 当作恢复。
 
 请用户一次裁定：是否采纳上述 `1 source × {OFF,JOINT}` 名单、`rho=0.5/cap=1`、source/seed/prompts/key/message/codec、描述性后评公式与进展条件，并另行授权真实执行。若不采纳，请指出要替换的具体字段；代码不会把本提案推荐值变成默认。
+
+runner 冻结代码、CPU 工程分母与 A2/A3/A4/A5 同版审查结果绑定在[主提案的第三阶段收据](local_joint_state_payload_v1_proposal.md#第三阶段-runner-版本绑定与审查收据)；该收据不改变本文件的 PROPOSED 状态或真实执行边界。
