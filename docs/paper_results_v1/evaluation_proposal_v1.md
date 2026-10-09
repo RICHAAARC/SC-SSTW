@@ -90,7 +90,8 @@ sources, the eight non-FULL views give 64 paired rows per external method; the
 eight FULL rows remain a separate control table. All 160 receiver rows per
 source remain in the package as wrong-key controls, arm ablations, RAW
 controls, and synchronization-effect evidence. The 72 source-by-logical-view
-rows, including FULL, are repeated within eight sources and are not 72
+rows are exactly eight sources times nine views: 64 non-FULL comparison rows
+plus eight FULL controls. They are clustered by source and are not 72
 independent samples.
 
 ## External baselines and 32-bit task mapping
@@ -166,7 +167,16 @@ The native-tie recommendation and the stricter implemented candidate are both
 still unadopted. If the user selects the native-tie recommendation, the runner
 needs a small explicit evaluation option plus focused review before any real
 execution. Existing code does not silently switch semantics, and this document
-does not claim that the recommended option has run.
+does not claim that the recommended option has run. Main recovery continues to
+use its existing Counter tie decision. Applying strict zero-tie rejection only
+to the baselines would therefore reduce the number of evaluable external rows
+and change exact-success counts, including rows whose native bit decision would
+otherwise be correct. Retaining every fixed-manifest row makes that loss
+visible, but does not make the two decision rules fair. The strict candidate's
+rationale is that exact zero supplies no signed soft evidence; it should be
+reported only as an unadopted sensitivity analysis. The primary recommendation
+keeps each method's native bit decision and reports `tie_count`, avoiding that
+additional baseline-only rejection.
 
 Main embeds each bit across 46 latent times and repeated spatial coordinates;
 the receiver reads 44 or 22 latent times with 30 frequency votes per bit/time.
