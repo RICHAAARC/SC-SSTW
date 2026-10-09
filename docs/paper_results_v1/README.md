@@ -1,10 +1,10 @@
 # Paper Results V1
 
-This package turns an explicit predeclared slot manifest plus saved experiment
-outputs into deterministic JSON, CSV, and Markdown reports. It is an outer
-evaluation layer. It does not import or change generation, receiver, runtime,
-or core mathematics. A second manifest-driven workflow calls only explicitly
-injected generation, framewise, codec, and native-baseline backends.
+The original `cli` entry turns an explicit predeclared slot manifest plus saved
+experiment outputs into deterministic JSON, CSV, and Markdown reports. That
+reporting entry does not import or change generation, receiver, runtime, or
+core mathematics. The older manifest-driven `workflow_cli` calls only
+explicitly injected generation, framewise, codec, and native-baseline backends.
 
 ## Run
 
@@ -53,10 +53,12 @@ python -m experiments.paper_results_v1.workflow_cli \
   --output-dir /absolute/new/workflow-output
 ```
 
-The factory returns exactly `operations` and `native_adapters` mappings.
+For that older workflow entry, the factory returns exactly `operations` and
+`native_adapters` mappings.
 `--backend-factory` and `--fixture-backends` are mutually exclusive. Loading a
-factory is an explicit caller action; the checked package does not contain a
-weight loader or a default real-model factory.
+factory is an explicit caller action. Its callback path contains no default
+real-model factory; the separate staged `real_cli` below now provides explicit
+local-only loaders.
 
 The fixture uses the production plan expansion, dependency handling, artifact
 registry, codec callback, native adapter, quality, cost, and strict-main-report
@@ -106,6 +108,10 @@ phase is a separate invocation with `--case-id`: `generate`, `decode`,
 case ID. Separate processes allow each model family to release memory before
 the next phase. Failures update the fixed `run_state.json`; they do not remove
 planned artifacts, receiver slots, or cost rows.
+Each cost-bearing phase/case can enter `RUNNING` only once in a run; a failed,
+complete, or already-running phase requires a new explicit output run rather
+than overwriting its evidence. The report-only `evaluate` phase may be
+regenerated and carries prior phase failures into the report.
 
 Wan and framewise entries require complete local snapshot directories. Wan is
 passed to the existing diffusers loader by local directory path; framewise uses
@@ -281,23 +287,17 @@ added to the default minimal comparison set.
 
 ## Concrete recommendation pending adoption
 
-For a first engineering confirmation batch, the recommendation is eight unseen
-sources fixed before running. Per source, plan two native trajectories (OFF and
-P0), one shared framewise encode, two framewise decodes (P1 and M05), and the
-same explicit codec on all four main POST artifacts. That is 16 native
-trajectories, 8 framewise encodes, 16 framewise decodes, and 32 main codec
-roundtrips. VideoSeal and RivaGAN would each embed the same OFF native video and
-then traverse the shared codec, adding 16 baseline codec roundtrips: 48 total.
-The count does not apply when RivaGAN path encode silently adds mp4v/20fps.
-These are interface-call counts, not GPU time estimates or execution approval;
-eight sources cannot support low-FPR or population-level guarantees.
+The earlier inventory stage identified eight confirmation sources and 48
+shared-codec roundtrips as a possible engineering batch, while leaving the
+capacity mapping unresolved. It remains historical planning context, not an
+active default.
 
-Report VideoSeal first at its complete native capacity in a separate table,
-with no prefix presented as equivalent 32-bit capacity. Report RivaGAN's full
-per-frame logits/bits separately. If a sequence result is later adopted, the
-specific recommendation is an equal-weight mean of each bit's logits across
-all decoded frames followed by the native `>=0` bit decision. That reducer is
-not executed or defaulted here. Cross-method equivalent-32 mapping, the exact
-eight-source roster and seeds, execution budget, additional attacks, and all
-numerical thresholds remain user decisions. No publication notebook or real
-model run is produced by this package.
+The current, still unadopted recommendation is specified in
+[`evaluation_proposal_v1.md`](evaluation_proposal_v1.md): two excluded pilots,
+eight separately summarized confirmation candidates, VideoSeal effective-32
+`j mod 32` channel repetition as the primary 32-information-bit comparison,
+RivaGAN all-frame soft means, and an optional separate VideoSeal native-K
+table. Both reducers preserve their native zero-bit convention but mark an
+exact reduced zero as `UNEVALUABLE_ZERO_TIE`. The proposal does not select a
+roster, mapping, reducer, budget, threshold, or execution by default, and no
+real model run or publication notebook is produced by this package.

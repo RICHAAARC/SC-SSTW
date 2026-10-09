@@ -153,3 +153,28 @@ or OmegaConf, and proposal local snapshots/source/checkpoints are placeholders.
 No dependency was installed, no model or checkpoint was imported or
 deserialized, and no generation, VAE, baseline, media codec, GPU, Colab, or
 Drive operation ran. `ffmpeg`/`ffprobe` path discovery is static evidence only.
+
+## Same-version staged-runner review repair
+
+Targeted command:
+
+```bash
+PYTHONHOME=/home/richar/projects/Video-WM/framework/.conda \
+PYTHONDONTWRITEBYTECODE=1 \
+/lib64/ld-linux-x86-64.so.2 \
+/home/richar/projects/Video-WM/framework/.conda/bin/python3.13 \
+  -m pytest -q --capture=sys -p no:cacheprovider \
+  tests/test_paper_results_v1_real_eval.py
+```
+
+Result: `16 passed in 0.69s`.
+
+The repair isolates invalid receiver receipts, baseline receipts, and native
+sidecars to their fixed rows so evaluation still writes the full JSON and CSV
+reports. VideoSeal now requires the detector's leading frame dimension to
+match each declared edit. Expensive case phases accept exactly one attempt per
+run, while the report-only evaluation phase can be regenerated and includes
+the retained phase history. The proposed effective-32 reducers preserve the
+VideoSeal `>0` and RivaGAN `>=0` native decisions, but an exact reduced zero is
+reported as `UNEVALUABLE_ZERO_TIE` and never as exact recovery. These tests use
+synthetic receipts and fake arrays only; no model, media, or codec ran.

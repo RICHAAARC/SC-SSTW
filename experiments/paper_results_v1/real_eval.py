@@ -25,6 +25,7 @@ from experiments.paper_results_v1.real_backends import (
     load_rivagan_adapter,
     load_videoseal_adapter,
 )
+from experiments.paper_results_v1.report import read_json
 
 
 SCHEMA_VERSION = "paper-real-eval-v1"
@@ -225,9 +226,9 @@ def validate_real_config(config):
         _require(rules[name], ("status", "rule"), f"evaluation_rules.{name}")
         if rules[name]["status"] not in ("PENDING_USER_ADOPTION", "ADOPTED_FOR_EXECUTION"):
             raise RealEvalConfigError(f"evaluation_rules.{name}.status is invalid")
-    if rules["videoseal_32"]["rule"] != "CHANNEL_J_MOD_32_REPEAT_MEAN_STRICT_GT_ZERO":
+    if rules["videoseal_32"]["rule"] != "CHANNEL_J_MOD_32_REPEAT_MEAN_STRICT_GT_ZERO_ZERO_TIE_UNEVALUABLE":
         raise RealEvalConfigError("unrecognized VideoSeal 32-task rule")
-    if rules["rivagan_sequence"]["rule"] != "ALL_DECLARED_FRAMES_EQUAL_LOGIT_MEAN_GE_ZERO":
+    if rules["rivagan_sequence"]["rule"] != "ALL_DECLARED_FRAMES_EQUAL_LOGIT_MEAN_GE_ZERO_ZERO_TIE_UNEVALUABLE":
         raise RealEvalConfigError("unrecognized RivaGAN sequence rule")
     if rules["videoseal_32"]["status"] == "ADOPTED_FOR_EXECUTION":
         length = vs["native_message_length"]
@@ -454,6 +455,11 @@ class RunStore:
     def phase_start(self, phase, case_id=None):
         row = self.data["phases"][phase]
         target = row if case_id is None else row["cases"][case_id]
+        if phase != "evaluate" and target["status"] != "PLANNED":
+            raise RealEvalConfigError(
+                f"{phase}/{case_id} already attempted with status {target['status']}; "
+                "start a new explicit run for another attempt"
+            )
         target.update(status="RUNNING", started_at_unix=time.time())
         row["status"] = "RUNNING"
         self.save()
@@ -1266,12 +1272,48 @@ def phase_receiver_read(store, config, case_id):
 
 
 def _load_json_receipt(receipt):
+    if not isinstance(receipt, dict) or not isinstance(receipt.get("path"), str) or not isinstance(receipt.get("sha256"), str):
+        raise ValueError("saved record receipt must contain string path and sha256")
     if file_sha256(receipt["path"]) != receipt["sha256"]:
         raise ValueError(f"saved record changed: {receipt['path']}")
-    return json.loads(Path(receipt["path"]).read_text(encoding="utf-8"))
+    value = read_json(receipt["path"])
+    if not isinstance(value, dict):
+        raise ValueError("saved record root must be an object")
+    return value
 
 
-def _videoseal_32_result(record, expected, native_length):
+def _effective32_decision(soft, expected, *, rule, zero_decodes_one):
+    values = [float(value) for value in soft]
+    if len(values) != 32 or any(not math.isfinite(value) for value in values):
+        return {"status": "FAILED", "reason": "effective soft output must be 32 finite values"}
+    native_bits = [int(value >= 0.0) if zero_decodes_one else int(value > 0.0) for value in values]
+    ties = sum(value == 0.0 for value in values)
+    base = {
+        "rule": rule,
+        "native_decoded_bits": native_bits,
+        "native_bit_errors": sum(a != b for a, b in zip(native_bits, expected)),
+        "tie_count": ties,
+        "effective_soft": values,
+    }
+    if ties:
+        return {
+            **base,
+            "status": "UNEVALUABLE_ZERO_TIE",
+            "decoded_bits": None,
+            "bit_errors": None,
+            "exact_recovery": False,
+            "reason": "at least one reduced effective bit is exactly zero",
+        }
+    return {
+        **base,
+        "status": "EVALUATED",
+        "decoded_bits": native_bits,
+        "bit_errors": base["native_bit_errors"],
+        "exact_recovery": native_bits == expected,
+    }
+
+
+def _videoseal_32_result(record, expected, native_length, expected_frames):
     if native_length % 32:
         return {"status": "FAILED", "reason": "native K is not divisible by 32"}
     sidecar = record.get("lossless_native_output")
@@ -1287,7 +1329,12 @@ def _videoseal_32_result(record, expected, native_length):
         if len(candidates) != 1:
             return {"status": "FAILED", "reason": "VideoSeal preds array is not uniquely identified"}
         preds = candidates[0]
-    if preds.ndim < 2 or int(preds.shape[1]) != native_length + 1 or not np.isfinite(preds).all():
+    if (
+        preds.ndim < 2
+        or int(preds.shape[0]) != expected_frames
+        or int(preds.shape[1]) != native_length + 1
+        or not np.isfinite(preds).all()
+    ):
         return {"status": "FAILED", "reason": "VideoSeal preds shape/nonfinite mismatch"}
     native_soft = preds[:, 1:]
     reduce_axes = tuple(index for index in range(native_soft.ndim) if index != 1)
@@ -1296,16 +1343,15 @@ def _videoseal_32_result(record, expected, native_length):
         channel_soft[list(range(bit, native_length, 32))].mean(dtype=np.float64)
         for bit in range(32)
     ])
-    decoded = (task_soft > 0.0).astype(int).tolist()
     return {
-        "status": "EVALUATED",
-        "rule": "CHANNEL_J_MOD_32_REPEAT_MEAN_STRICT_GT_ZERO",
-        "decoded_bits": decoded,
-        "bit_errors": sum(a != b for a, b in zip(decoded, expected)),
-        "exact_recovery": decoded == expected,
-        "tie_count": int((task_soft == 0.0).sum()),
+        **_effective32_decision(
+            task_soft.tolist(), expected,
+            rule="CHANNEL_J_MOD_32_REPEAT_MEAN_STRICT_GT_ZERO_ZERO_TIE_UNEVALUABLE",
+            zero_decodes_one=False,
+        ),
         "effective_bits": 32,
         "native_channels": native_length,
+        "expected_frames": expected_frames,
         "rate": f"32/{native_length}",
     }
 
@@ -1319,14 +1365,12 @@ def _rivagan_sequence_result(record, expected, expected_frames):
     if any(not math.isfinite(float(value)) for frame in frames for value in frame):
         return {"status": "FAILED", "reason": "RivaGAN frame logits contain nonfinite values"}
     means = [sum(float(frame[bit]) for frame in frames) / len(frames) for bit in range(32)]
-    decoded = [int(value >= 0.0) for value in means]
     return {
-        "status": "EVALUATED",
-        "rule": "ALL_DECLARED_FRAMES_EQUAL_LOGIT_MEAN_GE_ZERO",
-        "decoded_bits": decoded,
-        "bit_errors": sum(a != b for a, b in zip(decoded, expected)),
-        "exact_recovery": decoded == expected,
-        "tie_count": sum(value == 0.0 for value in means),
+        **_effective32_decision(
+            means, expected,
+            rule="ALL_DECLARED_FRAMES_EQUAL_LOGIT_MEAN_GE_ZERO_ZERO_TIE_UNEVALUABLE",
+            zero_decodes_one=True,
+        ),
         "expected_frames": expected_frames,
     }
 
@@ -1338,11 +1382,45 @@ def phase_evaluate(store, config):
         expected = config["payload_bits"]
         receiver_rows = []
         baseline_rows = []
+        receiver_evidence = {}
+        for case in config["cases"]:
+            case_id = case["case_id"]
+            receipt = store.data["records"].get(case_id, {}).get("blind_reads")
+            if not receipt:
+                receiver_evidence[case_id] = {
+                    "slots_error": "blind read receipt missing",
+                    "physical_error": "blind read receipt missing",
+                }
+                continue
+            try:
+                saved = _load_json_receipt(receipt)
+                evidence = {}
+                if isinstance(saved.get("slots"), dict):
+                    evidence["slots"] = saved["slots"]
+                else:
+                    evidence["slots_error"] = "blind read record slots must be an object"
+                if isinstance(saved.get("physical_encodes"), dict):
+                    evidence["physical_encodes"] = saved["physical_encodes"]
+                else:
+                    evidence["physical_error"] = "blind read record physical_encodes must be an object"
+                receiver_evidence[case_id] = evidence
+            except Exception as exc:
+                reason = f"{type(exc).__name__}: {exc}"
+                receiver_evidence[case_id] = {
+                    "slots_error": reason, "physical_error": reason,
+                }
         for slot in store.data["receiver_slots"]:
-            case_records = store.data["records"].get(slot["case_id"], {})
-            receipt = case_records.get("blind_reads")
-            observed = _load_json_receipt(receipt)["slots"].get(slot["slot_id"], {}) if receipt else {}
             row = {**slot}
+            evidence = receiver_evidence[slot["case_id"]]
+            if "slots_error" in evidence:
+                row.update(status="FAILED", reason=evidence["slots_error"])
+                receiver_rows.append(row)
+                continue
+            observed = evidence["slots"].get(slot["slot_id"], {})
+            if not isinstance(observed, dict):
+                row.update(status="FAILED", reason="blind read slot must be an object")
+                receiver_rows.append(row)
+                continue
             if observed.get("status") == "READ":
                 bits = observed.get("decoded_bits")
                 if isinstance(bits, list) and len(bits) == 32 and all(type(bit) is int and bit in (0, 1) for bit in bits):
@@ -1368,13 +1446,17 @@ def phase_evaluate(store, config):
             if not receipt:
                 baseline_rows.append({**base, "status": "FAILED", "reason": slot.get("reason", "extract record missing")})
                 continue
-            record = _load_json_receipt(receipt)
-            if slot["method"] == "videoseal":
-                result = _videoseal_32_result(
-                    record, expected, config["models"]["videoseal"]["native_message_length"],
-                )
-            else:
-                result = _rivagan_sequence_result(record, expected, slot["frames"])
+            try:
+                record = _load_json_receipt(receipt)
+                if slot["method"] == "videoseal":
+                    result = _videoseal_32_result(
+                        record, expected, config["models"]["videoseal"]["native_message_length"],
+                        slot["frames"],
+                    )
+                else:
+                    result = _rivagan_sequence_result(record, expected, slot["frames"])
+            except Exception as exc:
+                result = {"status": "FAILED", "reason": f"{type(exc).__name__}: {exc}"}
             baseline_rows.append({**base, **result})
         counts = Counter(row["status"] for row in receiver_rows)
         artifact_counts = Counter(row["status"] for row in store.data["artifacts"])
@@ -1411,9 +1493,16 @@ def phase_evaluate(store, config):
             }
         actual_physical_encodes = {}
         for case in config["cases"]:
-            receipt = store.data["records"].get(case["case_id"], {}).get("blind_reads")
-            if receipt:
-                actual_physical_encodes[case["case_id"]] = len(_load_json_receipt(receipt).get("physical_encodes", {}))
+            evidence = receiver_evidence[case["case_id"]]
+            if "physical_error" in evidence:
+                actual_physical_encodes[case["case_id"]] = {
+                    "status": "FAILED", "reason": evidence["physical_error"], "count": None,
+                }
+            else:
+                actual_physical_encodes[case["case_id"]] = {
+                    "status": "COUNTED",
+                    "count": len(evidence["physical_encodes"]),
+                }
         report = {
             "schema_version": SCHEMA_VERSION,
             "study_id": config["study_id"],
@@ -1448,7 +1537,6 @@ def phase_evaluate(store, config):
             "cost_records": store.data["costs"],
             "claim_guard": "Saved execution and exact recovery are fixed-manifest evidence only; no threshold, FPR, independence, or population guarantee is inferred.",
         }
-        report_path = _json_dump(store.output / "evaluation_report.json", report)
         with (store.output / "receiver_rows.csv").open("w", newline="", encoding="utf-8") as stream:
             fields = ("slot_id", "case_id", "cohort", "observation_id", "arm", "protocol", "analysis_role", "frames", "key_label", "mode", "planned_bits", "status", "bit_errors", "exact_recovery", "reason")
             writer = csv.DictWriter(stream, fieldnames=fields, lineterminator="\n", extrasaction="ignore")
@@ -1464,10 +1552,12 @@ def phase_evaluate(store, config):
             writer = csv.DictWriter(stream, fieldnames=fields, lineterminator="\n", extrasaction="ignore")
             writer.writeheader()
             writer.writerows(store.data["quality_rows"])
-        store.data["records"]["evaluation_report"] = report_path
-        store.data["status"] = report["status"]
         elapsed = time.perf_counter() - started
         store.data["phases"]["evaluate"].update(status="COMPLETE", finished_at_unix=time.time(), seconds=elapsed)
+        report["phase_records"] = copy.deepcopy(store.data["phases"])
+        report_path = _json_dump(store.output / "evaluation_report.json", report)
+        store.data["records"]["evaluation_report"] = report_path
+        store.data["status"] = report["status"]
         store.save()
         return report
     except BaseException as exc:

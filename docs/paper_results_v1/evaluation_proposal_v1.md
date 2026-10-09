@@ -101,8 +101,13 @@ bit `j mod 32`, giving eight native channels per information bit and rate 1/8.
 After removing the presence channel, average every received frame/spatial soft
 value for each native channel, then average the eight channels belonging to
 each effective bit. A value `>0` decodes as one; `<=0` decodes as zero. Exact
-zero is recorded as a tie and never resolved using truth or confidence-based
-frame selection. If native `K` is not divisible by 32, this mapping fails
+zero therefore retains the native zero-bit decision, but the proposed
+effective-32 row is marked `UNEVALUABLE_ZERO_TIE`; it cannot count as exact
+recovery and is never resolved using truth or confidence-based frame
+selection. This tie treatment is a recommendation in this unadopted proposal,
+not an adopted threshold. The explicit proposal rule name is
+`CHANNEL_J_MOD_32_REPEAT_MEAN_STRICT_GT_ZERO_ZERO_TIE_UNEVALUABLE`. If native
+`K` is not divisible by 32, this mapping fails
 closed; no prefix, truncation, or filler is inferred.
 
 That mapping changes the 256-channel codeword distribution and adds channel
@@ -122,7 +127,10 @@ tensor backend bypasses upstream's hidden mp4v/20-fps path, follows BGR uint8,
 `value/127.5-1`, `[1,3,1,H,W]`, encoder clamp, and uint8 truncation, then uses
 the shared codec. Its proposed sequence rule is an equal-weight soft-logit mean
 for each bit over every predeclared received frame, followed by native `>=0`.
-Mean zero therefore decodes as one and is also counted as a tie. Empty video,
+Mean zero therefore retains native bit one but marks the proposed effective-32
+row `UNEVALUABLE_ZERO_TIE`; it cannot count as exact recovery. This tie
+treatment remains unadopted; its explicit proposal rule name is
+`ALL_DECLARED_FRAMES_EQUAL_LOGIT_MEAN_GE_ZERO_ZERO_TIE_UNEVALUABLE`. Empty video,
 missing or extra frames, non-finite logits, or any frame shape other than
 `[32]` fails the whole row; frames are never skipped to improve a result.
 

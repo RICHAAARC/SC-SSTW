@@ -4580,11 +4580,11 @@
   "evaluation_rules": {
     "videoseal_32": {
       "status": "PENDING_USER_ADOPTION",
-      "rule": "CHANNEL_J_MOD_32_REPEAT_MEAN_STRICT_GT_ZERO"
+      "rule": "CHANNEL_J_MOD_32_REPEAT_MEAN_STRICT_GT_ZERO_ZERO_TIE_UNEVALUABLE"
     },
     "rivagan_sequence": {
       "status": "PENDING_USER_ADOPTION",
-      "rule": "ALL_DECLARED_FRAMES_EQUAL_LOGIT_MEAN_GE_ZERO"
+      "rule": "ALL_DECLARED_FRAMES_EQUAL_LOGIT_MEAN_GE_ZERO_ZERO_TIE_UNEVALUABLE"
     }
   },
   "proposal_only": true

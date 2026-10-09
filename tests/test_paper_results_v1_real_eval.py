@@ -357,7 +357,8 @@ def test_receiver_sync_expands_declared_map_and_persists_every_observation(monke
 @pytest.mark.parametrize(
     ("frames", "expected_status", "expected_bit", "expected_ties"),
     [
-        ([[0.0] * 32, [0.0] * 32], "EVALUATED", 1, 32),
+        ([[0.0] * 32, [0.0] * 32], "UNEVALUABLE_ZERO_TIE", 1, 32),
+        ([[1.0] * 32, [1.0] * 32], "EVALUATED", 1, 0),
         ([[1.0] * 32], "FAILED", None, None),
         ([[float("nan")] + [1.0] * 31] * 2, "FAILED", None, None),
     ],
@@ -367,8 +368,137 @@ def test_rivagan_sequence_rule_keeps_zero_and_failure_semantics(frames, expected
         {"frame_soft_outputs": frames}, [1] * 32, expected_frames=2,
     )
     assert result["status"] == expected_status
-    if expected_status == "EVALUATED":
-        assert result["decoded_bits"] == [expected_bit] * 32
+    if expected_status in ("EVALUATED", "UNEVALUABLE_ZERO_TIE"):
+        assert result["native_decoded_bits"] == [expected_bit] * 32
         assert result["tie_count"] == expected_ties
+        if expected_status == "UNEVALUABLE_ZERO_TIE":
+            assert result["decoded_bits"] is None
+            assert result["exact_recovery"] is False
     else:
         assert "reason" in result
+
+
+def test_effective32_zero_tie_preserves_each_native_zero_rule_but_is_not_exact():
+    videoseal = real_eval._effective32_decision(
+        [0.0] * 32, [0] * 32, rule="vs", zero_decodes_one=False,
+    )
+    rivagan = real_eval._effective32_decision(
+        [0.0] * 32, [1] * 32, rule="riva", zero_decodes_one=True,
+    )
+    assert videoseal["native_decoded_bits"] == [0] * 32
+    assert rivagan["native_decoded_bits"] == [1] * 32
+    assert videoseal["status"] == rivagan["status"] == "UNEVALUABLE_ZERO_TIE"
+    assert videoseal["exact_recovery"] is rivagan["exact_recovery"] is False
+
+
+@pytest.mark.parametrize("frames", [180, 182])
+def test_videoseal_reducer_rejects_missing_or_extra_frames(monkeypatch, tmp_path, frames):
+    sidecar = tmp_path / "preds.npz"
+    sidecar.write_bytes(b"synthetic-sidecar")
+
+    class Preds:
+        ndim = 2
+        shape = (frames, 257)
+
+    class Values:
+        files = ["preds"]
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *args):
+            return False
+
+        def __getitem__(self, key):
+            assert key == "preds"
+            return Preds()
+
+    fake_numpy = types.SimpleNamespace(
+        load=lambda path, allow_pickle: Values(),
+        isfinite=lambda value: types.SimpleNamespace(all=lambda: True),
+    )
+    monkeypatch.setitem(sys.modules, "numpy", fake_numpy)
+    monkeypatch.setattr(real_eval, "file_sha256", lambda path: "fixture-sha")
+    result = real_eval._videoseal_32_result(
+        {
+            "storage": "LOSSLESS_SIDECAR",
+            "lossless_native_output": {"uri": str(sidecar), "sha256": "fixture-sha"},
+        },
+        [0] * 32,
+        native_length=256,
+        expected_frames=181,
+    )
+    assert result["status"] == "FAILED"
+    assert "shape" in result["reason"]
+
+
+def test_expensive_phase_is_single_attempt_but_evaluate_can_regenerate(tmp_path):
+    config = one_case_config()
+    store = real_eval.RunStore(tmp_path / "run", config, create=True)
+    store.phase_start("generate", "pilot_01")
+    store.phase_failure("generate", RuntimeError("synthetic first attempt"), "pilot_01")
+    with pytest.raises(real_eval.RealEvalConfigError, match="already attempted"):
+        store.phase_start("generate", "pilot_01")
+    assert store.data["phases"]["generate"]["cases"]["pilot_01"]["failures"] == [
+        "RuntimeError: synthetic first attempt"
+    ]
+
+    store.phase_start("evaluate")
+    store.phase_failure("evaluate", RuntimeError("synthetic report failure"))
+    store.phase_start("evaluate")
+    assert store.data["phases"]["evaluate"]["status"] == "RUNNING"
+    assert store.data["phases"]["evaluate"]["failures"] == [
+        "RuntimeError: synthetic report failure"
+    ]
+
+
+def test_evaluate_isolates_bad_receiver_baseline_and_sidecar_receipts(tmp_path):
+    config = one_case_config()
+    config["evaluation_rules"]["videoseal_32"]["status"] = "ADOPTED_FOR_EXECUTION"
+    config["evaluation_rules"]["rivagan_sequence"]["status"] = "ADOPTED_FOR_EXECUTION"
+    store = real_eval.RunStore(tmp_path / "run", config, create=True)
+    case_records = store.data["records"].setdefault("pilot_01", {})
+    first_receiver = store.data["receiver_slots"][0]["slot_id"]
+    second_receiver = store.data["receiver_slots"][1]["slot_id"]
+    case_records["blind_reads"] = real_eval._json_dump(
+        tmp_path / "bad_receiver.json",
+        {
+            "slots": {
+                first_receiver: {"status": "READ", "decoded_bits": config["payload_bits"]},
+                second_receiver: [],
+            },
+            "physical_encodes": [],
+        },
+    )
+
+    vs_slot = next(row for row in store.data["baseline_slots"] if row["method"] == "videoseal")
+    vs_slot["record"] = real_eval._json_dump(
+        tmp_path / "bad_sidecar_record.json",
+        {
+            "storage": "LOSSLESS_SIDECAR",
+            "lossless_native_output": {
+                "uri": str(tmp_path / "missing.npz"), "sha256": "missing",
+            },
+        },
+    )
+    riva_slot = next(row for row in store.data["baseline_slots"] if row["method"] == "rivagan")
+    riva_slot["record"] = real_eval._json_dump(tmp_path / "bad_baseline.json", [])
+    store.phase_start("generate", "pilot_01")
+    store.phase_failure("generate", RuntimeError("retained before report"), "pilot_01")
+    store.save()
+
+    report_value = real_eval.phase_evaluate(store, config)
+    assert report_value["status"] == "COMPLETE_WITH_RETAINED_ISSUES"
+    assert len(report_value["receiver_rows"]) == 160
+    assert report_value["receiver_rows"][0]["status"] == "EVALUATED_TRUTH"
+    assert report_value["receiver_rows"][1]["status"] == "FAILED"
+    assert sum(row["status"] == "FAILED" for row in report_value["receiver_rows"]) == 159
+    assert len(report_value["baseline_rows"]) == 18
+    assert all(row["status"] == "FAILED" for row in report_value["baseline_rows"])
+    assert report_value["receiver_resource_counts"]["actual_unique_physical_encodes_by_case"]["pilot_01"]["status"] == "FAILED"
+    assert report_value["phase_records"]["generate"]["cases"]["pilot_01"]["failures"] == [
+        "RuntimeError: retained before report"
+    ]
+    assert (store.output / "evaluation_report.json").is_file()
+    assert (store.output / "receiver_rows.csv").is_file()
+    assert (store.output / "baseline_rows.csv").is_file()
