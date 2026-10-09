@@ -452,6 +452,36 @@ def test_expensive_phase_is_single_attempt_but_evaluate_can_regenerate(tmp_path)
     ]
 
 
+def test_multicase_phase_status_is_derived_after_each_case_transition(tmp_path):
+    config = proposal()
+    config["study_id"] = "synthetic_multicase_phase_state_fixture"
+    config["cases"] = copy.deepcopy(config["cases"][:2])
+    first, second = [case["case_id"] for case in config["cases"]]
+
+    failed_then_complete = real_eval.RunStore(tmp_path / "failed-then-complete", config, create=True)
+    assert failed_then_complete.data["phases"]["generate"]["status"] == "PLANNED"
+    failed_then_complete.phase_start("generate", first)
+    failed_then_complete.phase_failure("generate", RuntimeError("first failed"), first)
+    assert failed_then_complete.data["phases"]["generate"]["status"] == "FAILED"
+    failed_then_complete.phase_start("generate", second)
+    assert failed_then_complete.data["phases"]["generate"]["status"] == "RUNNING"
+    failed_then_complete.phase_finish("generate", second)
+    assert failed_then_complete.data["phases"]["generate"]["status"] == "FAILED"
+    assert failed_then_complete.data["phases"]["generate"]["cases"][first]["failures"] == [
+        "RuntimeError: first failed"
+    ]
+
+    complete_then_failed = real_eval.RunStore(tmp_path / "complete-then-failed", config, create=True)
+    complete_then_failed.phase_start("generate", first)
+    complete_then_failed.phase_finish("generate", first)
+    assert complete_then_failed.data["phases"]["generate"]["status"] == "PARTIAL"
+    assert complete_then_failed.data["phases"]["generate"]["cases"][second]["status"] == "PLANNED"
+    complete_then_failed.phase_start("generate", second)
+    assert complete_then_failed.data["phases"]["generate"]["status"] == "RUNNING"
+    complete_then_failed.phase_failure("generate", RuntimeError("second failed"), second)
+    assert complete_then_failed.data["phases"]["generate"]["status"] == "FAILED"
+
+
 def test_evaluate_isolates_bad_receiver_baseline_and_sidecar_receipts(tmp_path):
     config = one_case_config()
     config["evaluation_rules"]["videoseal_32"]["status"] = "ADOPTED_FOR_EXECUTION"

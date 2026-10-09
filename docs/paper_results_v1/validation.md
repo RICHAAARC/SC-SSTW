@@ -167,7 +167,7 @@ PYTHONDONTWRITEBYTECODE=1 \
   tests/test_paper_results_v1_real_eval.py
 ```
 
-Result: `16 passed in 0.69s`.
+Result: `17 passed in 0.73s`.
 
 The repair isolates invalid receiver receipts, baseline receipts, and native
 sidecars to their fixed rows so evaluation still writes the full JSON and CSV
@@ -178,3 +178,7 @@ the retained phase history. The proposed effective-32 reducers preserve the
 VideoSeal `>0` and RivaGAN `>=0` native decisions, but an exact reduced zero is
 reported as `UNEVALUABLE_ZERO_TIE` and never as exact recovery. These tests use
 synthetic receipts and fake arrays only; no model, media, or codec ran.
+The final focused case also derives each multi-case phase summary after every
+transition: active work takes `RUNNING`, any terminal failure takes `FAILED`, a
+completed subset with remaining planned cases takes `PARTIAL`, and per-case
+failure histories remain unchanged.

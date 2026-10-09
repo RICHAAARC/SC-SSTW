@@ -452,6 +452,20 @@ class RunStore:
         self.save()
         return row
 
+    @staticmethod
+    def _refresh_case_phase_status(row):
+        states = [item["status"] for item in row["cases"].values()]
+        if "RUNNING" in states:
+            row["status"] = "RUNNING"
+        elif "FAILED" in states:
+            row["status"] = "FAILED"
+        elif states and all(state == "COMPLETE" for state in states):
+            row["status"] = "COMPLETE"
+        elif "COMPLETE" in states:
+            row["status"] = "PARTIAL"
+        else:
+            row["status"] = "PLANNED"
+
     def phase_start(self, phase, case_id=None):
         row = self.data["phases"][phase]
         target = row if case_id is None else row["cases"][case_id]
@@ -461,15 +475,20 @@ class RunStore:
                 "start a new explicit run for another attempt"
             )
         target.update(status="RUNNING", started_at_unix=time.time())
-        row["status"] = "RUNNING"
+        if case_id is None:
+            row["status"] = "RUNNING"
+        else:
+            self._refresh_case_phase_status(row)
         self.save()
 
     def phase_finish(self, phase, case_id=None):
         row = self.data["phases"][phase]
         target = row if case_id is None else row["cases"][case_id]
         target.update(status="COMPLETE", finished_at_unix=time.time())
-        if case_id is None or all(item["status"] == "COMPLETE" for item in row["cases"].values()):
+        if case_id is None:
             row["status"] = "COMPLETE"
+        else:
+            self._refresh_case_phase_status(row)
         self.save()
 
     def phase_failure(self, phase, exc, case_id=None):
@@ -478,7 +497,10 @@ class RunStore:
         target = row if case_id is None else row["cases"][case_id]
         target.update(status="FAILED", finished_at_unix=time.time())
         target["failures"].append(reason)
-        row["status"] = "FAILED"
+        if case_id is None:
+            row["status"] = "FAILED"
+        else:
+            self._refresh_case_phase_status(row)
         if case_id is not None:
             for artifact_id in self._phase_artifacts(phase, case_id):
                 artifact = next(item for item in self.data["artifacts"] if item["artifact_id"] == artifact_id)
