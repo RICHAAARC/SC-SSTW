@@ -1,10 +1,10 @@
 # Local Joint State + Payload V1 单一候选
 
-状态：**PROPOSED_NOT_ADOPTED**
+状态：**CONSTRUCTION_AUTHORIZED_PARAMETERS_PENDING**
 
 日期：2026-10-09
 
-边界：本文只把一个可否决候选具体化，未实现候选数学，未冻结实验输入，也不授权模型、GPU、VAE、codec、Drive 或媒体执行。即使用户采纳方法语义，也不自动产生真实执行授权。
+边界：用户已授权在本地分支实现本文的单一 carrier、四分片时间组织和 posterior-difference 联合构造；`rho` 与联合 L2 cap 的具体数值仍待单独决定。当前授权不冻结实验输入，也不授权模型、GPU、真实 VAE、codec、Drive 或媒体执行。
 
 ## 机制假设与贡献上限
 
@@ -12,7 +12,7 @@ OLD8、LOWBAND16、CONTRAST、DWELL4 直接约束 Wan 局部 latent 中有符号
 
 RGB-DCT 的 RGB 直接读取、`E(X+A)-E(X)` VAE lift 与 RGB 引导已有历史先例。本候选只把“局部成对能量比、局部 state、不同 payload 分片、同一局部支持、生成时联合控制”作为新的待验证组合，不声称首次使用 RGB 或 RGB-DCT 引导。
 
-## 待采纳的固定构造
+## 已授权实现的固定构造
 
 ### 视频、窗口与局部支持
 
@@ -46,7 +46,7 @@ E_minus = sum c_minus^2
 
 求和跨该 segment 的 8 帧和 ROI 内全部 tile。若 `E_plus+E_minus=0`，记录缺支持；不得加新能量或用真值补值。每窗保留原始 `E_plus/E_minus`、完整 q 向量、几何支持及可用计数，不提前压成单个分数。
 
-state 每个 ROI 有 8 chip，四 ROI 共 32 chip。balanced RM 词的候选整数为 `a=0..63` 且 `(a&31)!=0`。按 `(H('LJSP1/STATE_WORD',key,a),a)` 无放回取前 22 个作为 `a_j`。再把列 `x=0..31` 按 `(H('LJSP1/STATE_CHIP',key,x),x)` 排为 `p_i`，定义 `S[j,i]=(-1)^((a_j>>5)+popcount((a_j&31)&p_i))`。它保留 OLD8 balanced RM(1,5) 码族以便区分载体变化；整套顺序仍是待采纳候选，不是当前 runtime 默认协议。
+state 每个 ROI 有 8 chip，四 ROI 共 32 chip。balanced RM 词的候选整数为 `a=0..63` 且 `(a&31)!=0`。按 `(H('LJSP1/STATE_WORD',key,a),a)` 无放回取前 22 个作为 `a_j`。再把列 `x=0..31` 按 `(H('LJSP1/STATE_CHIP',key,x),x)` 排为 `p_i`，定义 `S[j,i]=(-1)^((a_j>>5)+popcount((a_j&31)&p_i))`。它保留 OLD8 balanced RM(1,5) 码族以便区分载体变化；本构造已有独立显式 API，但不替换既有 runtime 默认协议。
 
 message 必须严格为 4 bytes，不接受字符串自动编码。按 byte 顺序、每 byte MSB→LSB 展开为 32 bits `m`，令 `F_r[i]=m[8r+i]`，写入目标符号为 `t=2*bit-1`。segment `j` 只承载 `F[j mod 4]`：该 segment 内每个 ROI 的 8 个 payload 对各对应一个 fragment bit，四 ROI 仅作冗余。22 个 segment 对四个 fragment 的重复数为 6/6/5/5；有效信息仍是 32 bits，不是 22 条独立消息，也不是 704-bit 容量。这里没有 time mask，也不得按结果挑选 message。
 
@@ -60,18 +60,20 @@ message 必须严格为 4 bytes，不接受字符串自动编码。按 byte 顺�
 2. DCT、系数修改与逆 DCT 使用 FP64；逆 DCT 差同量加到 RGB 三通道后转 FP32，再 clip 到 `[0,1]` 得 `X'`。该数值口径不承诺跨硬件 bitwise 一致。
 3. VAE 坐标严格复用 `runtime/wan/vae.py`：decode 前把 normalized `x0` 转为 raw `x0*latents_std+latents_mean`；RGB 输入使用 `[-1,1]`；posterior mode 得 raw `r` 后，以 `E_norm(X)=(r.float()-mean)/std` 回到 normalized 坐标。冻结 VAE 使用 FP32、`no_grad` 并在调用边界 clear cache。
 4. joint raw 定义为 `M*(E_norm(X')-E_norm(X))`，以 FP32 形成后先施加 hard mask：all channels、`T[1,45)`、四个半开 latent 8×8 ROI `(8,16,12,20)`、`(8,16,44,52)`、`(28,36,12,20)`、`(28,36,44,52)`。该 mask 只是 control support，不声称精确等于 VAE 感受野。
-5. 对 masked raw 以 FP64 跨全部 `B,C,T,H,W` reduce 得 L2 norm，令 `d=raw*min(1,1/norm)`，再以 FP32 送入 Flow；`norm=0` 时 `d=0`。`rho=0.5` 与每步 cap=1 都是新的科学选择，只有整体候选被采纳后才成为固定语义。cap=1 是 normalized conditional-clean 坐标的联合 L2 cap；25 步理想口径只有 `sum ||d||²<=25`，实际 realized delta 另存。state/payload 共享 cap，不假定 50/50 能量，不自动扩幅；该 cap 不是旧 `R*`、native response、终态质量或 CFG 后预算。
+5. 对 masked raw 以 FP64 跨全部 `B,C,T,H,W` reduce 得 L2 norm，令 `d=raw*min(1,cap/norm)`，再以 FP32 送入 Flow；`norm=0` 时 `d=0`。生产 API 要求调用者显式传入 `rho` 与 cap，不提供默认值或正式配置；只作 `0<=rho<=1`、`cap>=0` 的有限数学校验。历史提案中的 `rho=0.5`、每步 cap=1 尚未被用户采纳。state/payload 共享 cap，不假定 50/50 能量，不自动扩幅；该 cap 是 normalized conditional-clean 坐标的联合 L2 cap，不是旧 `R*`、native response、终态质量或 CFG 后预算。`rho=0` 会把有支持的 pair 改为等能量，一般不是 identity/OFF；`cap=0` 才使最终 latent operand 为零，但仍会执行已启用步的 decode/encode。
 6. Flow 映射为 `c'=c-d/sigma`，继续同一完整 scheduler；不做 terminal 像素添加，不对 denoiser 或 tail 回放反传，不强制扩幅、不回退、不扫描。
 
-每步分别保留 provider 给出的 nominal joint operand、FP32 实际 realized conditional-clean delta、FP32 realized CFG velocity delta，以及 scheduler 从本步输入到输出的 total native state update。最后一项不是控制的 counterfactual effect，也不是终态预算。后评另记 RGB clip、ROI 外改变、终端层差异和质量；没有质量阈值。本轮公共 adapter 只应用外部 provider 给出的最终 `joint_delta`；可选 state/payload delta 只是诊断，adapter 不计算或声称二者构成 joint 分解。
+每步分别保留 provider 给出的 nominal joint operand、FP32 实际 realized conditional-clean delta、FP32 realized CFG velocity delta，以及 scheduler 从本步输入到输出的 total native state update。最后一项不是控制的 counterfactual effect，也不是终态预算。posterior backend 分开累计 decode/encode 的 attempted 与 completed；失败时保留 sampling step、具体 stage 和异常原因并原样抛出，不重试或回退。后评另记 RGB clip、ROI 外改变、终端层差异和质量；没有质量阈值。本轮公共 adapter 只应用外部 provider 给出的最终 `joint_delta`；可选 state/payload delta 只是诊断，adapter 不计算或声称二者构成 joint 分解。
 
-单个新 joint 臂的候选成本是 25 次完整 181 帧 clean decode 和 50 次 posterior encode，另加最终 terminal/float RGB 层解码；这不包括 baseline 臂。内存与端到端时延未经验证，因此资源或接线失败只能记为工程不足。
+单个新 joint 臂的候选成本是 25 次完整 181 帧 clean decode 和 50 次 posterior encode，另加最终 terminal/float RGB 层解码；这不包括 baseline 臂。当前 provider 只接收外部 backend，不加载模型、不选择 CUDA，也不管理模型驻留。既有 `generation.prepare_generation(load_vae=False)` 的成功方式只说明 transformer worker 不持有 VAE；`load_vae=True` 会让二者共存，旧离线 VAE 成功不能证明生成中交替 VAE 的资源可行性。
+
+未来若另获真实执行授权，runner 应采用显式串行生命周期：每步完成 conditional/unconditional 后仅保留必要 state，按阶段管理 transformer/VAE 驻留，对完整 181 帧依次执行一次 decode 与两次 posterior encode，并及时释放临时 RGB、encoded tensor 和 cache，再回到下一生成步。25 个 VAE 阶段对应 25 次 transformer↔VAE 往返，按方向约 50 次驻留切换；初始化和最终解码另计。当前没有显存峰值或时延保证；资源失败保留为工程失败，不自动重跑、换 dtype 或切小时间 chunk。这是未来 runner 的资源计划，不是当前 provider 已实现的驻留能力。
 
 ## 公开接收、路径和等价类边界
 
 receiver 只接 received RGB、key 与 public protocol，直接从 RGB 窗口提取 state q 和 payload 软证据，不经 Wan VAE 重编码。state 用于候选路径；payload 不参与路径选择。逐窗独立保留 state/payload 的 `SCORED/MISSING/FAILED` 状态，使局部 partial observation 不被整窗抹掉。
 
-FULL 诊断先枚举所有 8-frame 起点相位 0..7，并显式保存有限帧边界；公共支持应使所有相位保有固定分母。state-only 相关分数可作为后续盲定位输入，但本轮不要求每窗唯一峰，也未采用窗口边界、路径接受阈值或完整盲 decoder。任何 oracle 后评必须和 blind path 分开，不能以真码相关方向替代盲恢复。
+FULL 原始目录机械枚举 `phase g=0..7`、`slot j=-1..22`，每行请求帧 `g+8*j+[0..7]`，每个 phase 固定 24×4 ROI，共 768 行。requested 坐标保留有符号值，实际 received 索引另存；短输入 `T<=181` 仍保留 768 行并逐窗标记 FULL/PARTIAL/MISSING，超过公开 T 的输入保留固定行并记录 FAILED。未攻击公共参考网格中的 writer segment 是 `phase=1,slot=0..21`，但 raw record 不写“正确 writer”标签，也不据此筛窗；额外边界行不是独立证据。state-only 相关分数可作为后续盲定位输入，但本轮不要求每窗唯一峰，也未采用窗口边界、路径接受阈值或完整盲 decoder。任何 oracle 后评必须和 blind path 分开，不能以真码相关方向替代盲恢复。
 
 未来有界 DP 所需的 crop/delete/repeat/speed 转移、接受阈值、candidate action 和 equivalence 规则须另行冻结。当前公共接口只预留 boundary/path/equivalence 容器，不实施 decoder。等价路径仍可恢复哪些 fragment、哪些槽必须擦除或拒绝，需由将来采用的协议明确。
 
@@ -108,13 +110,13 @@ FULL 诊断先枚举所有 8-frame 起点相位 0..7，并显式保存有限帧�
 - 资源、OOM、接线或 instrumentation 失败：工程证据不足，不是构造负结果。
 - 一个冻结候选得到有效负结果后停止该构造；不改 `rho`、cap、频率或支持后重跑。无实际数据前不预设科学 PASS 阈值。
 
-## 用户待决定
+## 参数待决定与执行边界
 
-是否采纳上述完整单一 **carrier + 四分片时间组织 + posterior-difference lift + `rho/cap` 口径**。这是方法语义决定，不是运行授权；若不采纳，需要给出要修改的具体构造点。
+carrier、四分片时间组织与 posterior-difference lift 已获本地实现授权。用户仍需单独决定具体 `rho` 与 cap 数值；API 中出现的 CPU fixture 数值不是实验冻结。任何 source/seed/key/message/codec、blind path、阈值、正式 arm 或真实执行范围仍需另行明确。
 
-## 本地交付与验证收据
+## 阶段 1 公共接口交付与验证收据（历史）
 
-基线为 `527c4800292c296222c2c0533809eccb82a29a65`，分支 `dev/local-joint-state-payload-v1`。候选数学未进入 runtime；runtime 只提供 carrier-agnostic 外部注入和 received-only 逐窗记录接口。
+基线为 `527c4800292c296222c2c0533809eccb82a29a65`，分支 `dev/local-joint-state-payload-v1`。该阶段尚未实现 carrier 数学；runtime 只提供 carrier-agnostic 外部注入和 received-only 逐窗记录接口。
 
 变更文件：
 
@@ -137,4 +139,17 @@ FULL 诊断先枚举所有 8-frame 起点相位 0..7，并显式保存有限帧�
 
 受审代码版本为 `1e9219182d265533a3c657c744dcd14ea6e34c8c`。初版 `f3cacf7` 随后修正了 nominal provider operand、FP32 realized clean/CFG delta 与 native step total-update 的记录语义，删除了未经核验的 component decomposition 声称，并补清确定性构造和历史 delta 边界。A2 方法审查与 A3 实现审查均接受该同一版本且无必修 finding；A3 独立复跑两个受影响的定向 CPU 测试为 `2 passed in 0.97s`，它们是上述 7 项接口测试的子集，不另加到验证分母。A4 综合与 A5 阶段审计均接受，A5 未重复全量测试。
 
-这些审查只支持把当前工程接口与 `PROPOSED_NOT_ADOPTED` 提案交给用户决定，不代表方法已采纳、真实运行获授权或得到科学 PASS。DWELL4 的真实局部正证据与媒体失败边界继续同时保留。本节为审查后的 docs-only 收据；审查覆盖的代码版本仍为 `1e9219182d265533a3c657c744dcd14ea6e34c8c`。
+这些审查当时只支持把工程接口与 `PROPOSED_NOT_ADOPTED` 提案交给用户决定，不代表真实运行获授权或得到科学 PASS。DWELL4 的真实局部正证据与媒体失败边界继续同时保留。本节是后续授权前的历史收据；审查覆盖的代码版本仍为 `1e9219182d265533a3c657c744dcd14ea6e34c8c`。
+
+## 当前构造实现与验证收据
+
+本轮在同一分支新增 `main/tube_state/local_joint_state_payload_carrier_v1.py` 与 `runtime/wan/local_joint_state_payload_provider_v1.py`，并新增两个对应的 CPU fixture 文件。carrier 模块实现确定性 key/pair/RM/四分片、FP64 DCT 局部能量改写、固定 768 行 raw window 目录、逐 chip 原始能量/q/support 记录和无聚合 fragment evidence routing。provider 要求显式 `rho/cap`，在 0..24 返回 zero operand，在 25..49 经外部 posterior backend 生成 mask-then-cap joint operand；factory 返回可直接传给既有 `run_trajectory(..., injected_control=...)` 的 callable。既有控制 adapter 与 GROW runtime 未改。
+
+验证环境仍为 `/home/richar/projects/CEG-WM/alive/CEG-WM/.venv/bin/python`，设置 `PYTHONDONTWRITEBYTECODE=1`、`CUDA_VISIBLE_DEVICES=''`，未安装依赖：
+
+- carrier/provider 新增 10 项 fixture，定向复跑为 `10 passed in 4.06s`；包括真实小 8×8 patch DCT 算术、pre-clipping pair 能量与目标 ratio、原 sign/zero-sign/zero-support、RGB 局部性与 clip/FP32 误差记录、key/RM/bit 顺序、短 T fixed-row/partial-chip、raw fragment routing/collision/erasure、fake posterior 坐标/mask/cap、50-step 25 decode/50 encode 调用顺序、`rho=0`/`cap=0` 区分及 backend attempted/completed 失败记录。
+- 既有 carrier-agnostic seam：`7 passed in 0.74s`。
+- 冻结前曾有一次 `9 passed, 1 failed in 4.01s`：一般随机样本中的小能量 pair 会放大 post-clip/FP32 ratio error，原断言 `<2e-6` 缺少数值保证，实际原始最大误差为 `2.5844881314240897e-05`。修复保留受控无 clip writer→reader q 容差检查，并增加从最终 FP32 RGB 独立复算全部 writer window 的 `E+/E-/pooled q` 与收据逐项一致检查；一般样本的误差继续原样保存且检查有限、非负。该单元测试容差不是媒体成功阈值，修复未改 carrier 数学。
+- 最终合并复跑以上不重复的 17 项：`17 passed in 4.12s`；四个相关 Python 模块 `py_compile` 与 `git diff --check` 通过。
+
+这些 fixture 使用小型 CPU tensor 和 fake posterior；没有执行完整 181 帧 carrier、真实模型/VAE、codec 或媒体。它们不证明资源可行性、blind path、fragment 聚合规则、真实多步存留或科学 PASS。下一项真实问题仍是：同一次多步写入后，局部 state 证据与不同 payload fragment 是否共同穿过 MP4；该问题不能由本轮 CPU 结果代答。
