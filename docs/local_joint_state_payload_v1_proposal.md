@@ -213,3 +213,11 @@ A2/A3 对初版 `a8de425e8beca85551a9060f2b1474f78b311692` 的方法公式和固
 A2 与 A3 对 `e639252` 的受影响范围同版审查均为 ACCEPT，六项 finding 全部关闭且无剩余必修。A2 未重复测试；A3 独立复跑 7 个不重复子项：manifest/incomplete/wrong-key auxiliary 为 `3 passed in 13.32s`，energy Infinity/55 项计数/双 key 单记为 `3 passed in 7.81s`，持久化 q NaN CLI 为 `1 passed in 5.73s`，合计 `7 passed in 26.86s`。这 7 项是 A1 最终 `17 passed in 54.23s` 的子集，不另加到分母。相关 `py_compile` 与 `git diff --check` 通过。
 
 方法状态为 **METHOD_ADOPTED / EXECUTION_NOT_AUTHORIZED**。fixture 与 synthetic raw 目录只验证工程数学、固定分母、文件绑定和持久化；没有执行真实模型、权重、GPU、VAE、codec、媒体、Colab 或 Drive，也不证明真实 JOINT 的 25 次资源往返、state 与四 fragment 的媒体共同存留、blind path、message 重组、FPR 或科学 PASS。A4/A5 的历史结论仍只绑定旧代码 `cb81e1f71c1bd1467dd1daf18f6ca79174487e69`；本阶段按指令只完成 A2/A3 受影响范围独立审查，没有新的 A4/A5 审查。
+
+#### 整份观察缺失目录补充收据
+
+上一受审代码 `e6392525b595a4cfb16c7d9371b3effe856c427e` 与交付文档 `2927c7f552d204da33174aa1a0f44675ab8b2ab1` 在整份 raw observation 不可用时只保留 observation failure，预定 metric 目录与 JOINT-OFF 55 项差值目录会消失。父主审的纯 synthetic 探针 `diagnostics/b-line-stage4-posthoc-audit-20261009.py` 及原始 JSON 保留，不被修复结果覆盖。
+
+最终受审代码 `7b285dfb2c88e11298ea96e97872b090a7f2671e` 只机械修改 posthoc core、CLI 与一个定向测试。无 truth placeholder 保留 22 个 state correlations、1 个 state gap、32 个 fragment/bit 位置、state 分母 704 和 payload 每 bit 的 24/24/20/20 预期 evidence 数；值为 `null`、`evidence=[]`、`observed_evidence_items=0` 并保存工程原因，不伪造 q、support 或 704 条实测。整份一侧不可用时 comparison 的 `expected_values=55`、`missing_values=55` 且 55 个位置全为 `null`，成功对侧和辅助 key 原样保留，顶层工程分类与 OFF unavailable 归因语义不变。
+
+A1 新增定向回归为 `1 passed in 4.89s`，相关 `py_compile` 与 `git diff --check` 通过；没有重跑旧 17、24 或 carrier 分母。A2/A3 对 `7b285df` 的受影响范围同版审查均为 ACCEPT 且无必修，A2 未运行测试；A3 独立复跑同一新增项为 `1 passed in 4.29s`，是 A1 同一项复核，不与旧 17 项或 A1 结果相加。父主审随后以同一纯 synthetic probe 核对 `comparison_fixed_55_preserved=true`、55 个位置全 `null` 且 `expected_values=missing_values=55`，修复证据见 `diagnostics/b-line-stage4-posthoc-fixed-20261009.json`。这些都是 synthetic 工程证据；没有新的 A4/A5 审查，不追溯旧 A4/A5，也不授权或声称已经执行真实资源实验。
