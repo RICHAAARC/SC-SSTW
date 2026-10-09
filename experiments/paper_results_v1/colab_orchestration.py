@@ -59,7 +59,8 @@ def build_scope_summary(state, report, *, pilot_ids, confirmation_ids):
         "pilot_comparison_cohort_summaries": (
             {
                 key: value for key, value in report.get("comparison_cohort_summaries", {}).items()
-                if key == "PILOT_EXCLUDED_FROM_CONFIRMATION"
+                if isinstance(value, dict)
+                and value.get("cohort") == "PILOT_EXCLUDED_FROM_CONFIRMATION"
             }
             if isinstance(report, dict) else {}
         ),

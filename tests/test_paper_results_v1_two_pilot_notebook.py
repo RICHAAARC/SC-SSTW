@@ -19,6 +19,7 @@ from experiments.paper_results_v1.colab_orchestration import (
     build_scope_summary,
     execute_fixed_sequence,
 )
+from experiments.paper_results_v1 import real_eval, report as report_io
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -266,3 +267,38 @@ def test_handoff_status_uses_final_report_and_separates_confirmation_projection(
     assert fallback["pilot_status_source"] == "run_state_fallback_not_evaluated"
     assert fallback["pilot_status_counts"]["receiver"] == {"PLANNED": 1}
     assert fallback["confirmation"]["report_projection_status_counts"] is None
+
+
+def test_actual_adopted_empty_evidence_report_keeps_both_pilot_method_cohorts(tmp_path):
+    config = report_io.read_json(
+        ROOT / "experiments/paper_results_v1/real_eval.adopted.json"
+    )
+    store = real_eval.RunStore(tmp_path / "empty-evidence-run", config, create=True)
+    evaluation = real_eval.phase_evaluate(store, config)
+    summary = build_scope_summary(
+        store.data, evaluation,
+        pilot_ids=("pilot_01", "pilot_02"),
+        confirmation_ids=tuple(f"confirm_{index:02d}" for index in range(1, 9)),
+    )
+    assert len(summary["pilot_comparison_source_summaries"]) == 4
+    assert {
+        row["source_summary_id"] for row in summary["pilot_comparison_source_summaries"]
+    } == {
+        "pilot_01/videoseal", "pilot_01/rivagan",
+        "pilot_02/videoseal", "pilot_02/rivagan",
+    }
+    assert set(summary["pilot_comparison_cohort_summaries"]) == {
+        "PILOT_EXCLUDED_FROM_CONFIRMATION|videoseal",
+        "PILOT_EXCLUDED_FROM_CONFIRMATION|rivagan",
+    }
+    assert all(
+        row["cohort"] == "PILOT_EXCLUDED_FROM_CONFIRMATION"
+        and row["fixed_source_denominator"] == 2
+        for row in summary["pilot_comparison_cohort_summaries"].values()
+    )
+    assert summary["pilot_status_counts"]["comparison"] == {
+        "UNEVALUABLE_PAIR": 36
+    }
+    assert summary["confirmation"]["immutable_plan_counts"] == {
+        "receiver": 1280, "baseline": 144, "comparison": 144, "quality": 56,
+    }

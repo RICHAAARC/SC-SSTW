@@ -9,7 +9,8 @@ The shortest user path is:
 1. download that local `.ipynb` and upload it to Google Colab;
 2. select a GPU runtime; a high-memory runtime is recommended, not required by
    a GPU-model whitelist, because peak VRAM has not been measured;
-3. choose **Runtime → Run all** without editing a mode switch;
+3. choose **Runtime → Run all** without editing a mode switch, and authorize
+   Google Drive when the first cell prompts;
 4. wait for the unique run directory under
    `MyDrive/Video-WM/Paper-Results-V1-Two-Pilot`;
 5. return that entire directory for audit.
@@ -94,9 +95,11 @@ Historical main-chain real evidence belongs to run
 `ac111d0fed253767651929d115c343fe1636c525`. It closed the trajectory, M05,
 MP4, blind correction, and Wan read within that old run. The current published
 conditional notebook is bound to a different CPU/fake source, so neither the
-old run nor that notebook proves this new handoff executed. The archived
-VideoSeal helper and baseline preparation code also have no matching real-run
-receipt. The notebook records these boundaries in `handoff_summary.json`.
+old run nor that notebook proves this new handoff executed. In the archive
+material inspected for this handoff, no matching real-success receipt was found
+for the VideoSeal helper or baseline preparation code; this is a bounded local
+search result, not proof that no external run exists. The notebook records
+these boundaries in `handoff_summary.json`.
 
 The local evidence paths used for that distinction are:
 
@@ -113,10 +116,6 @@ The local evidence paths used for that distinction are:
   `e87af1c55e102b8f5cc7d9caff18ae56d0463aac`, and notebook binding
   `a16927043bee571c91fd7d05903c44b0ba61ebdc`; its available receipt does not
   establish that this notebook binding launched that run.
-
-No matching real-success receipt for the archived VideoSeal/RivaGAN preparation
-helpers was found in the archive material inspected for this handoff. This is a
-bounded local-search statement, not proof that no external run exists.
 
 ## Fixed work and storage
 

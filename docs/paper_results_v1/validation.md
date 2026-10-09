@@ -276,8 +276,8 @@ PYTHONDONTWRITEBYTECODE=1 \
   tests/test_paper_results_v1_two_pilot_notebook.py
 ```
 
-Result after the same-version notebook orchestration repair: `6 passed in
-0.15s`.
+Result after the same-version notebook orchestration repair: `7 passed in
+0.25s`.
 
 The checks parse every notebook code cell with Python AST, require empty
 outputs and the exact two-line first Drive cell, and freeze the two attempted
@@ -301,6 +301,12 @@ comparison, and quality counts come from final `evaluation_report` rows when
 available; fallback state is explicitly labeled unevaluated. Confirmation plan
 counts and the report's missing-evidence projections are separate, and pilot
 source-level comparison summaries are carried into the handoff.
+The final regression constructs the actual adopted ten-case manifest, evaluates
+an empty-evidence RunStore using the real standard-library report path, and
+confirms four pilot source summaries plus both method-specific cohort summaries
+(`videoseal` and `rivagan`). It also verifies that all 36 pilot comparison rows
+are unevaluable and that the eight unexecuted confirmation cases retain their
+immutable 1,280/144/144/56 receiver/baseline/comparison/quality plan counts.
 
 The notebook was not executed top to bottom because this task forbids Colab,
 Drive, GPU, model, VAE, codec, and media execution. The unclosed validation gap
