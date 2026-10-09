@@ -311,9 +311,10 @@ immutable 1,280/144/144/56 receiver/baseline/comparison/quality plan counts.
 The generated notebook code cells were also executed in order under a fresh
 isolated `/usr/bin/python3 -I` kernel boundary stub, with an empty
 `PYTHONPATH`, a non-repository working directory, and fake Drive, network, pip,
-Hugging Face, model, and media boundaries. The real embedded-source digest
-checks, standard-library plan/init/evaluate path, and handoff summary ran. The
-test confirms that the verified portable root is activated in the live kernel,
+Hugging Face, model, and media boundaries. Embedded-source identity
+observations, the standard-library plan/init/evaluate path, and the handoff
+summary ran. The test confirms that the extracted portable root is activated
+in the live kernel,
 all portable CLI children execute from that root, exactly two pilot IDs reach
 the phase scheduler, and Torch is never imported by the stub run.
 
@@ -344,8 +345,13 @@ rebuild by `13 passed in 0.97s` for the notebook file plus the two affected
 native-adapter tests. Coverage includes changed/missing declared digests,
 unavailable digest observation, altered Wan/framewise revision metadata,
 config-hash difference on reopen, dirty cached source, absent portable
-manifest, corrupt/path-traversing ZIPs, native adapters with unknown source and
-weight identity, and safe receiver cache identity fallback. Every generated
+manifest, corrupt/path-traversing ZIPs, and direct native-adapter construction
+with unknown source and weight identity. Digest-observer failure and optional
+adapter metadata were tested separately; this is not a complete no-hash
+loader-to-adapter model-load test. Static code review confirms that receiver
+cache identity uses the observed content plus the actual edit map, with a
+source-specific fallback when digest observation is unavailable; the tests do
+not directly assert cross-source cache non-aliasing. Every generated
 `python -c` probe payload is compiled in the isolated ordered-cell boundary
 stub. No dependency installation, download, Drive access, codec, media, model,
 VAE, or GPU execution occurred.
