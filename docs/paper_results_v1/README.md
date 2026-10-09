@@ -35,10 +35,11 @@ python -m experiments.paper_results_v1.cli \
 the already-audited conditional-joint development result. It was declared from
 the frozen protocol layout, not generated from observed successful rows. It
 retains 40 blind and 4 oracle rows and separates correct-key, wrong-key, and
-oracle summaries. The historical run has one seen development source, eight
-logical primary synchronization cases, seven physical input files, 21 blind
-receiver encodes, and 32 physical key reads. Those counts are different objects
-and must not be pooled as independent sources.
+oracle summaries. The historical run as a whole has one seen development
+source, nine logical views over eight physical input files, 21 blind receiver
+encodes, and 32 unique physical key-read identities. The eight primary K0
+synchronization cases use seven of those physical inputs. These counts are
+different objects and must not be pooled as independent sources.
 
 The checked example outputs are under `historical_import_example/`. Its result
 binding checks the original source SHA, content identity, and config identity;

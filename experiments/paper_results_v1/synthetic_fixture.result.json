@@ -10,6 +10,7 @@
       "R": 45,
       "key_label": "K0",
       "mode": "BASELINE",
+      "planned_final_bits": 32,
       "oracle": false,
       "physical_read": "synthetic-raw"
     },
@@ -22,6 +23,7 @@
       "R": 45,
       "key_label": "K0",
       "mode": "EST_ALIGN",
+      "planned_final_bits": 32,
       "oracle": false,
       "physical_read": "synthetic-raw",
       "alias_of": "global_00/K0/BASELINE"
@@ -35,6 +37,7 @@
       "R": 44,
       "key_label": "K0",
       "mode": "PATH_ALIGN",
+      "planned_final_bits": 32,
       "oracle": false,
       "error": "SYNTHETIC_FIXTURE_FAILURE"
     }

@@ -28,7 +28,7 @@ These fields describe the planned comparison. They do not adopt a matching rule.
 | measurements | 16 |
 | pairs | 9 |
 | independent_source_labels | 1 |
-| observed_unique_physical_reads | 32 |
+| observed_unique_physical_key_read_identities | 32 |
 | slots `OBSERVED` | 44 |
 | slots `FAILED` | 0 |
 | slots `MISSING` | 0 |
@@ -42,11 +42,11 @@ These fields describe the planned comparison. They do not adopt a matching rule.
 | --- | --- | --- | --- | --- | --- | --- |
 | historical_joint | LOADED | COMPLETE | `ac111d0fed253767651929d115c343fe1636c525` | `01c720a60e572454f46f01938b1311e5e91e9e67071ab9fbf4bcc0b451524376` | `c7661974d625b115c4b814e04ffd064ebc2a6f38cc3a97f934de2d08ecde6ba6` | `/home/richar/projects/Video-WM/diagnostics/trajectory-conditional-joint-real-run-audit-20261008/raw/result.json` |
 
-Logical slots, unique physical reads, and independent source labels are separate counts.
+Logical slots, unique physical key-read identities, input media, actual calls, and independent source labels are separate counts.
 
 ## Conditional 32-bit recovery
 
-| Source | Arm | Receiver | Key role | Physical reads | Exact / full fixed | Exact / eligible | Exact / evaluable | Bit errors / evaluable bits | States |
+| Source | Arm | Receiver | Key role | Physical key-read IDs | Exact / full fixed | Exact / eligible | Exact / evaluable | Bit errors / evaluable bits | States |
 | --- | --- | --- | --- | ---: | ---: | ---: | ---: | ---: | --- |
 | historical_seen_dev_source_ac111d0 | HYBRID | GLOBAL | CORRECT_KEY | 8 | 9 / 9 | 9 / 9 | 9 / 9 | 0 / 288 | `{"OBSERVED":9}` |
 | historical_seen_dev_source_ac111d0 | HYBRID | GLOBAL | WRONG_KEY | 8 | 0 / 9 | 0 / 9 | 0 / 9 | 101 / 288 | `{"OBSERVED":9}` |

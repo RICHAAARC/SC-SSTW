@@ -8,6 +8,7 @@ from __future__ import annotations
 import csv
 import hashlib
 import json
+import math
 from collections import Counter, defaultdict
 from pathlib import Path
 
@@ -30,7 +31,11 @@ class ManifestError(ValueError):
 
 
 def read_json(path):
-    return json.loads(Path(path).read_text(encoding="utf-8"))
+    return json.loads(Path(path).read_text(encoding="utf-8"), parse_constant=_reject_nonfinite)
+
+
+def _reject_nonfinite(value):
+    raise ValueError(f"non-finite JSON constant {value}")
 
 
 def _require(row, fields, where):
@@ -56,6 +61,8 @@ def validate_manifest(manifest):
         ("message_length_bits", "redundancy", "codec", "auxiliary_inputs", "matching_rule_status"),
         "comparability",
     )
+    if type(manifest["comparability"]["message_length_bits"]) is not int or manifest["comparability"]["message_length_bits"] != 32:
+        raise ManifestError("comparability.message_length_bits must be integer 32")
     if manifest["comparability"]["matching_rule_status"] != "DESCRIPTIVE_ONLY_NOT_ADOPTED":
         raise ManifestError("matching_rule_status must remain DESCRIPTIVE_ONLY_NOT_ADOPTED")
     for index, slot in enumerate(manifest["slots"]):
@@ -65,7 +72,7 @@ def validate_manifest(manifest):
             slot,
             (
                 "slot_id", "source_id", "arm", "receiver_mode", "result_id", "adapter",
-                "locator", "planned_bits", "included", "supported",
+                "locator", "planned_bits", "key_label", "included", "supported",
             ),
             f"slots[{index}]",
         )
@@ -73,8 +80,10 @@ def validate_manifest(manifest):
             raise ManifestError(f"slots[{index}] unsupported adapter {slot['adapter']!r}")
         if slot["receiver_mode"] not in ("RAW", "GLOBAL", "PATH", "ORACLE"):
             raise ManifestError(f"slots[{index}] has invalid receiver_mode")
-        if not isinstance(slot["planned_bits"], int) or slot["planned_bits"] <= 0:
-            raise ManifestError(f"slots[{index}].planned_bits must be a positive integer")
+        if type(slot["planned_bits"]) is not int or slot["planned_bits"] != 32:
+            raise ManifestError(f"slots[{index}].planned_bits must be integer 32")
+        if slot["key_label"] not in ("K0", "K1"):
+            raise ManifestError(f"slots[{index}].key_label must be K0 or K1")
         if type(slot["included"]) is not bool or type(slot["supported"]) is not bool:
             raise ManifestError(f"slots[{index}] included/supported must be booleans")
         if slot["result_id"] not in manifest["result_bindings"]:
@@ -109,7 +118,9 @@ def load_inputs(entries):
         record = {"result_id": result_id, "path": str(Path(path).resolve())}
         try:
             raw = Path(path).read_bytes()
-            data = json.loads(raw)
+            data = json.loads(raw, parse_constant=_reject_nonfinite)
+            if not isinstance(data, dict):
+                raise ValueError("result top level must be an object")
             record.update(
                 status="LOADED", sha256=hashlib.sha256(raw).hexdigest(), data=data,
                 saved_status=data.get("status") if isinstance(data, dict) else None,
@@ -132,6 +143,7 @@ def _base_slot(slot, index):
         "receiver_mode": slot["receiver_mode"],
         "view": slot.get("view"),
         "key_role": slot.get("key_role"),
+        "key_label": slot["key_label"],
         "result_id": slot["result_id"],
         "adapter": slot["adapter"],
         "locator": slot["locator"],
@@ -147,12 +159,14 @@ def _safe_blind(payload):
     """Copy receiver-visible bookkeeping without posthoc truth fields."""
     allowed = (
         "status", "view_id", "input_id", "protocol", "frames", "R", "key_label", "mode",
-        "oracle", "physical_read", "alias_of", "operation_cost", "error",
+        "oracle", "physical_read", "alias_of", "operation_cost", "planned_final_bits", "error",
     )
     return {key: payload[key] for key in allowed if key in payload}
 
 
 def _binding_error(manifest, result_id, result):
+    if not isinstance(result, dict):
+        return "result top level is not an object"
     binding = manifest["result_bindings"][result_id]
     expected = binding.get("expected_top_level", {})
     if not isinstance(expected, dict):
@@ -173,15 +187,22 @@ def _conditional_slot(slot, result):
         return "MISSING", "planned locator absent from result", {}, {}
     if locator not in posthoc or locator not in payloads:
         return "CONFLICT", "posthoc and payload_reads disagree on locator", {}, {}
-    blind = _safe_blind(payloads[locator])
+    payload_row = payloads[locator]
+    if not isinstance(payload_row, dict):
+        return "CONFLICT", "payload_reads row is not an object", {}, {}
+    blind = _safe_blind(payload_row)
     truth_row = posthoc[locator]
     if not isinstance(truth_row, dict):
         return "CONFLICT", "posthoc row is not an object", blind, {}
-    actual_mode = MODE_MAP.get(payloads[locator].get("mode"))
+    actual_mode = MODE_MAP.get(payload_row.get("mode"))
     if actual_mode != slot["receiver_mode"]:
         return "CONFLICT", f"manifest receiver_mode {slot['receiver_mode']} != saved mode {actual_mode}", blind, {}
-    if slot.get("view") is not None and payloads[locator].get("view_id") != slot["view"]:
+    if slot.get("view") is not None and payload_row.get("view_id") != slot["view"]:
         return "CONFLICT", "manifest view does not match saved view_id", blind, {}
+    if payload_row.get("key_label") != slot["key_label"]:
+        return "CONFLICT", "manifest key_label does not match saved key_label", blind, {}
+    if type(payload_row.get("planned_final_bits")) is not int or payload_row["planned_final_bits"] != 32:
+        return "CONFLICT", "saved planned_final_bits must be integer 32", blind, {}
     truth = {
         key: truth_row[key]
         for key in (
@@ -197,7 +218,7 @@ def _conditional_slot(slot, result):
     if slot.get("key_role") is not None and truth_row.get("key_role") != slot["key_role"]:
         return "CONFLICT", "manifest key_role does not match posthoc key_role", blind, truth
     expected_oracle = slot["receiver_mode"] == "ORACLE"
-    if payloads[locator].get("oracle") is not expected_oracle or truth_row.get("oracle") is not expected_oracle:
+    if payload_row.get("oracle") is not expected_oracle or truth_row.get("oracle") is not expected_oracle:
         return "CONFLICT", "oracle status does not match receiver_mode", blind, truth
     errors = truth_row.get("bit_errors")
     if type(errors) is not int or not 0 <= errors <= slot["planned_bits"]:
@@ -293,6 +314,8 @@ def normalize_measurements(manifest, inputs):
                     value = _lookup(candidates[0]["data"], item["locator"])
                     if value is None:
                         row.update(state="MISSING", reason="saved measurement value is null")
+                    elif isinstance(value, float) and not math.isfinite(value):
+                        row.update(state="CONFLICT", reason="saved measurement value is non-finite")
                     else:
                         row.update(state="OBSERVED", value=value)
                 except KeyError:
@@ -319,9 +342,10 @@ def aggregate_slots(rows):
             "manifest_slots": len(members),
             "fixed_denominator_slots": len(members),
             "eligible_recovery_slots": len(eligible),
-            "unique_physical_reads": len(physical_reads),
+            "unique_physical_key_read_identities": len(physical_reads),
             "state_counts": dict(sorted(Counter(row["state"] for row in members).items())),
-            "planned_bit_denominator": sum(row["planned_bits"] for row in eligible),
+            "fixed_bit_denominator": sum(row["planned_bits"] for row in members),
+            "eligible_bit_denominator": sum(row["planned_bits"] for row in eligible),
             "evaluable_slots": len(evaluable),
             "evaluable_bit_denominator": sum(row["truth"]["bit_denominator"] for row in evaluable),
             "bit_errors": sum(row["truth"]["bit_errors"] for row in evaluable),
@@ -361,17 +385,24 @@ def paired_comparisons(manifest, rows):
                 base.update(raw_state=raw["state"], sync_state=sync["state"])
                 if raw["receiver_mode"] != "RAW" or sync["receiver_mode"] not in ("GLOBAL", "PATH"):
                     base["reason"] = "pair must reference RAW then GLOBAL/PATH slots"
-                elif raw["source_id"] != sync["source_id"] or raw["arm"] != sync["arm"] or raw.get("key_role") != sync.get("key_role"):
-                    base["reason"] = "pair source, arm, or key role mismatch"
+                elif any((
+                    raw["source_id"] != sync["source_id"], raw["arm"] != sync["arm"],
+                    raw.get("key_role") != sync.get("key_role"), raw["key_label"] != sync["key_label"],
+                    raw["result_id"] != sync["result_id"], raw.get("view") != sync.get("view"),
+                )):
+                    base["reason"] = "pair source, arm, key, result, or view mismatch"
                 elif raw["state"] == sync["state"] == "OBSERVED":
-                    raw_errors = raw["truth"]["bit_errors"]
-                    sync_errors = sync["truth"]["bit_errors"]
-                    delta = sync_errors - raw_errors
-                    interpretation = "BER_IMPROVEMENT_OBSERVED" if delta < 0 else "BER_WORSENING_OBSERVED" if delta > 0 else "NO_BER_GAIN_OBSERVED"
-                    base.update(
-                        state="EVALUABLE", raw_bit_errors=raw_errors, sync_bit_errors=sync_errors,
-                        sync_minus_raw_bit_errors=delta, interpretation=interpretation,
-                    )
+                    if raw["blind"].get("input_id") != sync["blind"].get("input_id") or raw["blind"].get("key_label") != sync["blind"].get("key_label"):
+                        base["reason"] = "pair saved input_id or key_label mismatch"
+                    else:
+                        raw_errors = raw["truth"]["bit_errors"]
+                        sync_errors = sync["truth"]["bit_errors"]
+                        delta = sync_errors - raw_errors
+                        interpretation = "BER_IMPROVEMENT_OBSERVED" if delta < 0 else "BER_WORSENING_OBSERVED" if delta > 0 else "NO_BER_GAIN_OBSERVED"
+                        base.update(
+                            state="EVALUABLE", raw_bit_errors=raw_errors, sync_bit_errors=sync_errors,
+                            sync_minus_raw_bit_errors=delta, interpretation=interpretation,
+                        )
                 else:
                     base["reason"] = "RAW or SYNC member is not evaluable"
         output.append(base)
@@ -387,17 +418,23 @@ def _unplanned_observations(manifest, inputs):
         for record_index, record in enumerate(records):
             if record["status"] != "LOADED":
                 continue
-            posthoc = record["data"].get("posthoc", {})
-            if not isinstance(posthoc, dict):
-                continue
-            for locator, value in posthoc.items():
+            data = record["data"]
+            payloads = data.get("payload_reads", {}) if isinstance(data, dict) else {}
+            posthoc = data.get("posthoc", {}) if isinstance(data, dict) else {}
+            payloads = payloads if isinstance(payloads, dict) else {}
+            posthoc = posthoc if isinstance(posthoc, dict) else {}
+            for locator in sorted(set(payloads) | set(posthoc)):
                 if locator not in planned[result_id]:
+                    payload_value, posthoc_value = payloads.get(locator), posthoc.get(locator)
                     out.append({
                         "result_id": result_id,
                         "record_index": record_index,
                         "locator": locator,
                         "state": "UNPLANNED",
-                        "saved_status": value.get("status") if isinstance(value, dict) else None,
+                        "payload_exists": locator in payloads,
+                        "payload_status": payload_value.get("status") if isinstance(payload_value, dict) else None,
+                        "posthoc_exists": locator in posthoc,
+                        "posthoc_status": posthoc_value.get("status") if isinstance(posthoc_value, dict) else None,
                     })
     return out
 
@@ -427,7 +464,7 @@ def build_report(manifest, inputs):
             "measurements": len(measurements),
             "pairs": len(pairs),
             "independent_source_labels": len(independent_sources),
-            "observed_unique_physical_reads": len(physical_reads),
+            "observed_unique_physical_key_read_identities": len(physical_reads),
             "slot_state_counts": state_counts,
             "pair_state_counts": pair_counts,
         },
@@ -486,7 +523,7 @@ def render_markdown(report):
     for field in ("message_length_bits", "redundancy", "codec", "auxiliary_inputs", "matching_rule_status"):
         lines.append(f"| {field} | `{_csv_value(report['comparability'].get(field))}` |")
     lines += ["", "## Fixed denominator", "", "| Item | Count |", "| --- | ---: |"]
-    for field in ("slots", "measurements", "pairs", "independent_source_labels", "observed_unique_physical_reads"):
+    for field in ("slots", "measurements", "pairs", "independent_source_labels", "observed_unique_physical_key_read_identities"):
         lines.append(f"| {field} | {denominator[field]} |")
     for state in TERMINAL_STATES:
         lines.append(f"| slots `{state}` | {denominator['slot_state_counts'].get(state, 0)} |")
@@ -500,15 +537,15 @@ def render_markdown(report):
     if not report["input_records"]:
         lines.append("| *(none supplied)* |  |  |  |  |  |  |")
     lines += [
-        "", "Logical slots, unique physical reads, and independent source labels are separate counts.",
+        "", "Logical slots, unique physical key-read identities, input media, actual calls, and independent source labels are separate counts.",
         "", "## Conditional 32-bit recovery", "",
-        "| Source | Arm | Receiver | Key role | Physical reads | Exact / full fixed | Exact / eligible | Exact / evaluable | Bit errors / evaluable bits | States |",
+        "| Source | Arm | Receiver | Key role | Physical key-read IDs | Exact / full fixed | Exact / eligible | Exact / evaluable | Bit errors / evaluable bits | States |",
         "| --- | --- | --- | --- | ---: | ---: | ---: | ---: | ---: | --- |",
     ]
     for row in report["conditional_recovery"]:
         lines.append(
             f"| {row['source_id']} | {row['arm']} | {row['receiver_mode']} | {row.get('key_role') or ''} | "
-            f"{row['unique_physical_reads']} | {row['exact_32bit_numerator']} / {row['exact_32bit_fixed_denominator']} | "
+            f"{row['unique_physical_key_read_identities']} | {row['exact_32bit_numerator']} / {row['exact_32bit_fixed_denominator']} | "
             f"{row['exact_32bit_numerator']} / {row['exact_32bit_eligible_denominator']} | "
             f"{row['exact_32bit_numerator']} / {row['exact_32bit_evaluable_denominator']} | "
             f"{row['bit_errors']} / {row['evaluable_bit_denominator']} | `{_csv_value(row['state_counts'])}` |"
@@ -541,9 +578,12 @@ def render_markdown(report):
         lines.append("| *(none planned)* |  |  |  |  |  |  |")
     lines += ["", "## Retained unplanned observations", ""]
     if report["unplanned_observations"]:
-        lines += ["| Result | Locator | Saved status |", "| --- | --- | --- |"]
+        lines += ["| Result | Locator | Payload exists/status | Posthoc exists/status |", "| --- | --- | --- | --- |"]
         for row in report["unplanned_observations"]:
-            lines.append(f"| {row['result_id']} | `{row['locator']}` | {row.get('saved_status') or ''} |")
+            lines.append(
+                f"| {row['result_id']} | `{row['locator']}` | {row['payload_exists']} / {row.get('payload_status') or ''} | "
+                f"{row['posthoc_exists']} / {row.get('posthoc_status') or ''} |"
+            )
     else:
         lines.append("None.")
     lines += ["", report["claim_guard"], ""]
@@ -558,11 +598,11 @@ def write_report(report, output_dir):
     )
     (output / "report.md").write_text(render_markdown(report), encoding="utf-8")
     blind_fields = (
-        "manifest_index", "slot_id", "source_id", "arm", "receiver_mode", "view", "key_role",
+        "manifest_index", "slot_id", "source_id", "arm", "receiver_mode", "view", "key_role", "key_label",
         "result_id", "locator", "planned_bits", "state", "reason", "blind",
     )
     truth_fields = (
-        "manifest_index", "slot_id", "source_id", "arm", "receiver_mode", "view", "key_role",
+        "manifest_index", "slot_id", "source_id", "arm", "receiver_mode", "view", "key_role", "key_label",
         "result_id", "locator", "planned_bits", "state", "reason", "truth",
     )
     _write_csv(output / "blind_rows.csv", report["blind_rows"], blind_fields)

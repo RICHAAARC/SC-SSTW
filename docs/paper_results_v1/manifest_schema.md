@@ -12,7 +12,10 @@ the input file path and SHA-256 remain in the report.
 
 Each `slots[]` row declares one logical payload read with a stable `slot_id`,
 source, arm, receiver mode (`RAW`, `GLOBAL`, `PATH`, or `ORACLE`), result input,
-adapter, exact result locator, and planned bit count. `included=false` and
+adapter, exact result locator, explicit `key_label`, and planned bit count. V1
+requires integer 32 for both `comparability.message_length_bits` and every
+`planned_bits`; the saved payload row must independently contain integer
+`planned_final_bits=32`. `included=false` and
 `supported=false` remain explicit rows. Duplicate IDs, duplicate locators, or
 multiple files for one `result_id` become `CONFLICT` rows.
 
@@ -29,4 +32,5 @@ The current concrete adapter is `conditional_joint_v1`. It reads the frozen
 runner's top-level `payload_reads` for blind bookkeeping and `posthoc` for
 truth-only recovery. A successful row requires `posthoc.status` equal to
 `EVALUATED_TRUTH`, a valid integer `bit_errors`, and a corresponding blind
-payload status of `READ`.
+payload status of `READ`. Unplanned records are retained from the union of
+`payload_reads` and `posthoc`, with presence and status recorded for both sides.
