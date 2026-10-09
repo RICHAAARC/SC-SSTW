@@ -149,16 +149,29 @@ class LocalJointPosteriorProvider:
         completed = f"{kind}_completed"
         self.calls[attempted] += 1
         function = getattr(self.backend, f"{kind}_normalized")
+        result = self._stage_call(stage, index, lambda: function(value))
+        self.calls[completed] += 1
+        return result
+
+    def _stage_call(self, stage: str, index: int, function: Any) -> Any:
         try:
-            result = function(value)
+            return function()
         except Exception as exc:
             self.failures.append(dict(
                 sampling_step=index, stage=stage,
                 reason=f"{type(exc).__name__}: {exc}", retry=False,
             ))
             raise
-        self.calls[completed] += 1
-        return result
+
+    @staticmethod
+    def _validate_posterior_outputs(baseline: Any, changed: Any, clean: Any) -> tuple[Any, Any]:
+        import torch
+
+        if not torch.is_tensor(baseline) or not torch.is_tensor(changed):
+            raise TypeError("posterior backend must return normalized latent tensors")
+        if baseline.shape != clean.shape or changed.shape != clean.shape:
+            raise ValueError("posterior backend output must match the clean latent shape")
+        return baseline, changed
 
     def __call__(self, request: interface.JointControlRequest, z: Any,
                  conditional: Any, unconditional: Any) -> interface.JointControlResult:
@@ -184,18 +197,27 @@ class LocalJointPosteriorProvider:
         clean = z.detach().float() - sigma * conditional.detach().float()
         with torch.inference_mode():
             decoded = self._backend_call("decode", "decode_clean", index, clean)
-            modified, carrier_receipt = carrier.apply_carrier_rgb(
-                decoded, key=self.key, message=self.message, rho=self.rho,
-                protocol=self.carrier_protocol,
+            modified, carrier_receipt = self._stage_call(
+                "carrier_apply", index,
+                lambda: carrier.apply_carrier_rgb(
+                    decoded, key=self.key, message=self.message, rho=self.rho,
+                    protocol=self.carrier_protocol,
+                ),
             )
             baseline = self._backend_call("encode", "encode_baseline", index, decoded)
             changed = self._backend_call("encode", "encode_modified", index, modified)
-        if not torch.is_tensor(baseline) or not torch.is_tensor(changed):
-            raise TypeError("posterior backend must return normalized latent tensors")
-        if baseline.shape != clean.shape or changed.shape != clean.shape:
-            raise ValueError("posterior backend output must match the clean latent shape")
-        raw = changed.float() - baseline.float()
-        joint, lift_receipt = mask_and_cap(raw, cap=self.cap, support=self.latent_support)
+        baseline, changed = self._stage_call(
+            "posterior_output_validation", index,
+            lambda: self._validate_posterior_outputs(baseline, changed, clean),
+        )
+        raw = self._stage_call(
+            "posterior_difference", index,
+            lambda: changed.float() - baseline.float(),
+        )
+        joint, lift_receipt = self._stage_call(
+            "mask_and_cap", index,
+            lambda: mask_and_cap(raw, cap=self.cap, support=self.latent_support),
+        )
         return interface.JointControlResult(
             joint_delta=joint,
             composition="local_paired_energy_posterior_difference",

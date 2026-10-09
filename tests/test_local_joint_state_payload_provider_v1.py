@@ -55,6 +55,19 @@ class FailingModifiedEncodeBackend(FakePosteriorBackend):
         return super().encode_normalized(rgb)
 
 
+class BadDecodedGeometryBackend(FakePosteriorBackend):
+    def decode_normalized(self, normalized):
+        value = super().decode_normalized(normalized)
+        return value[:, :-1]
+
+
+class BadPosteriorShapeBackend(FakePosteriorBackend):
+    def encode_normalized(self, rgb):
+        self.encode_count += 1
+        self.events.append(("encode", tuple(rgb.shape), rgb.dtype, rgb.device.type))
+        return torch.zeros((1, 2, 2, 4, 4), dtype=torch.float32)
+
+
 class FakeWanVAE(torch.nn.Module):
     def __init__(self):
         super().__init__()
@@ -221,3 +234,36 @@ def test_backend_failure_records_attempted_vs_completed_stage_without_retry():
         "retry": False,
     }]
     assert [event[0] for event in backend.events] == ["decode", "encode", "encode_failed"]
+
+
+@pytest.mark.parametrize(
+    ("backend", "support", "expected_stage", "expected_message"),
+    (
+        (BadDecodedGeometryBackend(), SMALL_SUPPORT, "carrier_apply", "carrier protocol"),
+        (BadPosteriorShapeBackend(), SMALL_SUPPORT, "posterior_output_validation", "clean latent shape"),
+        (
+            FakePosteriorBackend(),
+            provider_module.LatentSupport((0, 4), SMALL_SUPPORT.rois),
+            "mask_and_cap", "time support",
+        ),
+    ),
+)
+def test_nonbackend_provider_stage_failures_are_recorded_once(
+    backend, support, expected_stage, expected_message
+):
+    provider = provider_module.LocalJointPosteriorProvider(
+        backend, "stage-failure", b"ABCD", 0.2, 0.5,
+        carrier_protocol=SMALL_CARRIER, latent_support=support,
+    )
+    request = interface.JointControlRequest(
+        interface.SamplingStepCoord(25, 50, 1.0),
+        provider_module.nominal_video_windows(SMALL_CARRIER), {}, {},
+        {"rho": 0.2, "cap": 0.5},
+    )
+    shape = torch.zeros((1, 2, 3, 4, 4))
+    with pytest.raises((TypeError, ValueError), match=expected_message):
+        provider(request, shape, shape, shape)
+    assert len(provider.failures) == 1
+    assert provider.failures[0]["sampling_step"] == 25
+    assert provider.failures[0]["stage"] == expected_stage
+    assert provider.failures[0]["retry"] is False

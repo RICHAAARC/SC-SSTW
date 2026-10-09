@@ -128,6 +128,10 @@ def test_small_rgb_writer_is_local_and_reader_retains_raw_energy_q_and_support()
     key = "writer-reader-fixture"
     message = bytes((0x80, 0x01, 0xA5, 0x5A))
     original = _small_rgb()
+    with pytest.raises(TypeError, match="torch.float32"):
+        carrier.apply_carrier_rgb(
+            original.double(), key=key, message=message, rho=0.35, protocol=SMALL
+        )
     written, receipt = carrier.apply_carrier_rgb(
         original, key=key, message=message, rho=0.35, protocol=SMALL
     )
@@ -135,6 +139,8 @@ def test_small_rgb_writer_is_local_and_reader_retains_raw_energy_q_and_support()
     assert receipt["outside_declared_roi_written_values"] == 0
     assert receipt["clipped_low_values"] == receipt["clipped_high_values"] == 0
     assert receipt["pair_energy_constraint_stage"] == "pre_clipping_fp64_coefficients"
+    assert receipt["clipping_input_dtype"] == "torch.float32"
+    assert receipt["rounding_then_clipping"] is True
     assert receipt["clip_adjustment_l2"] == 0
     assert receipt["fp32_rounding_l2"] >= 0
     recorded_errors = [row["post_clip_abs_ratio_error_max"] for row in receipt["pair_totals"]]
@@ -183,6 +189,18 @@ def test_small_rgb_writer_is_local_and_reader_retains_raw_energy_q_and_support()
         )
         assert recorded_q == pytest.approx(pooled_q, rel=1e-12)
 
+    clip_source = torch.rand(
+        SMALL.video_shape, generator=torch.Generator().manual_seed(3), dtype=torch.float32
+    )
+    _, clip_receipt = carrier.apply_carrier_rgb(
+        clip_source, key="clip-order", message=b"ABCD", rho=1.0, protocol=SMALL
+    )
+    assert clip_receipt["rounding_then_clipping"] is True
+    assert clip_receipt["clipping_input_dtype"] == "torch.float32"
+    assert clip_receipt["clipped_low_values"] + clip_receipt["clipped_high_values"] > 0
+    assert clip_receipt["clip_adjustment_l2"] > 0
+    assert clip_receipt["fp32_rounding_l2"] > 0
+
 
 def test_fixed_phase_catalog_keeps_signed_boundaries_short_input_and_partial_chips():
     catalog = carrier.phase_window_catalog()
@@ -223,25 +241,67 @@ def test_fixed_phase_catalog_keeps_signed_boundaries_short_input_and_partial_chi
     assert len(failed) == 8 * 4 * 4
     assert all(row.state_status == row.payload_status == "FAILED" for row in failed)
 
+    requested = tuple(range(1, 9))
+    invalid_specs = (
+        carrier.RawWindowSpec("negative", 1, 0, 0, requested, (-1,), "PARTIAL"),
+        carrier.RawWindowSpec("duplicate", 1, 0, 0, requested, (1, 1), "PARTIAL"),
+        carrier.RawWindowSpec("not-requested", 1, 0, 0, requested, (9,), "PARTIAL"),
+    )
+    invalid_rows = carrier.observe_catalog(
+        _small_rgb(), "invalid-window-key", protocol=SMALL, catalog=invalid_specs
+    )
+    assert [row.spec.observation_id for row in invalid_rows] == [
+        "negative", "duplicate", "not-requested"
+    ]
+    assert all(row.state_status == row.payload_status == "FAILED" for row in invalid_rows)
+    assert all("distinct nonnegative requested" in row.state_chips[0].error for row in invalid_rows)
+
 
 def test_fragment_routes_preserve_raw_entries_collisions_erasures_and_declared_equivalence():
     key = "route-key"
     rgb = _small_rgb()
     first = carrier.observe_window(rgb, key, _spec(1, 0, 0), protocol=SMALL)
     second = carrier.observe_window(rgb, key, _spec(1, 0, 1), protocol=SMALL)
+    missing = carrier.observe_window(
+        torch.zeros_like(rgb), key, _spec(1, 0, 2), protocol=SMALL
+    )
+    partial = carrier.observe_window(
+        rgb[:5], key, _spec(1, 0, 3, received=5), protocol=SMALL
+    )
+    failed_spec = carrier.RawWindowSpec(
+        "failed-route", 1, 0, 3, tuple(range(1, 9)), (-1,), "PARTIAL"
+    )
+    failed = carrier.observe_catalog(
+        rgb, key, protocol=SMALL, catalog=(failed_spec,)
+    )[0]
     routes = (
         carrier.SourceSlotCorrespondence("m0", "candidate-a", first.spec.observation_id, 5, 1, "eq-a"),
         carrier.SourceSlotCorrespondence("m1", "candidate-a", first.spec.observation_id, 6, 2, "eq-a"),
         carrier.SourceSlotCorrespondence("m2", "candidate-a", second.spec.observation_id, 9, 1, "eq-a"),
         carrier.SourceSlotCorrespondence("m3", "candidate-b", second.spec.observation_id, 0, 3, "eq-b"),
+        carrier.SourceSlotCorrespondence("m4", "candidate-a", missing.spec.observation_id, 4, 0),
+        carrier.SourceSlotCorrespondence("m5", "candidate-b", partial.spec.observation_id, 4, 0),
+        carrier.SourceSlotCorrespondence("m6", "candidate-b", failed.spec.observation_id, 6, 2),
     )
-    result = carrier.route_fragment_evidence((first, second), routes)
+    result = carrier.route_fragment_evidence((first, second, missing, partial, failed), routes)
     first_entry = result["candidates"]["candidate-a"][1][0]
     assert first_entry["received_slot"] == 0 and first_entry["source_slot"] == 5
     assert first_entry["mod4_equivalent"] is True
     assert first_entry["aggregation"] == "none"
+    assert first_entry["observation_truth_used"] is False
+    assert first_entry["correspondence_truth_use"] == "unverified"
     assert len(first_entry["payload_chips"]) == 8
-    assert result["erasures"]["candidate-a"] == [0, 3]
+    assert result["unrouted_fragment_slots"]["candidate-a"] == [3]
+    assert result["unrouted_fragment_slots"]["candidate-b"] == [1]
+    assert result["payload_status_counts"]["candidate-a"][0] == {
+        "SCORED": 0, "PARTIAL": 0, "MISSING": 1, "FAILED": 0,
+    }
+    assert result["payload_status_counts"]["candidate-a"][1]["SCORED"] == 2
+    assert result["payload_status_counts"]["candidate-b"][0]["PARTIAL"] == 1
+    assert result["payload_status_counts"]["candidate-b"][2]["FAILED"] == 1
+    assert result["all_evidence_missing_or_failed_slots"] == {
+        "candidate-a": [0], "candidate-b": [2],
+    }
     assert result["conflicts"] == [{
         "candidate_id": "candidate-a", "observation_id": first.spec.observation_id,
         "fragment_slots": [1, 2],
@@ -250,6 +310,7 @@ def test_fragment_routes_preserve_raw_entries_collisions_erasures_and_declared_e
     assert result["many_to_one_routes"][0]["source_slots"] == [5, 9]
     assert result["caller_declared_equivalence_classes"]["eq-a"] == ["m0", "m1", "m2"]
     assert result["equivalence_verified"] is False
+    assert result["correspondence_truth_use"] == "unverified"
     assert result["decoded_message"] is None and result["accepted"] is None
-    assert result["truth_used"] is False
+    assert result["truth_used"] is None
     json.dumps(result, allow_nan=False)

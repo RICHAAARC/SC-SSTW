@@ -269,13 +269,15 @@ def apply_carrier_rgb(
 
     if not torch.is_tensor(rgb) or tuple(rgb.shape) != protocol.video_shape:
         raise ValueError("RGB input does not match the declared carrier protocol")
-    if not rgb.is_floating_point() or not bool(torch.isfinite(rgb).all()):
-        raise FloatingPointError("carrier input must be finite floating RGB")
+    if rgb.dtype != torch.float32:
+        raise TypeError("carrier input must be torch.float32 RGB")
+    if not bool(torch.isfinite(rgb).all()):
+        raise FloatingPointError("carrier input must be finite torch.float32 RGB")
     if bool(((rgb < 0) | (rgb > 1)).any()):
         raise ValueError("carrier input must already be in [0,1]")
     if not math.isfinite(float(rho)) or not 0 <= float(rho) <= 1:
         raise ValueError("rho must be explicit, finite, and in [0,1]")
-    output = rgb.detach().to(dtype=torch.float32).clone()
+    output = rgb.detach().clone()
     pair_totals = [dict(
         energy_before=0.0, energy_after=0.0, zero_support_tiles=0,
         post_clip_energy_plus=0.0, post_clip_energy_minus=0.0,
@@ -309,12 +311,12 @@ def apply_carrier_rgb(
                     0, 2, 1, 3
                 ).reshape(y1 - y0, x1 - x0)
                 candidate = original + (modified_y - original_y).unsqueeze(-1)
-                clipped_low += int((candidate < 0).sum())
-                clipped_high += int((candidate > 1).sum())
-                clipped = candidate.clamp(0, 1)
-                stored = clipped.to(dtype=torch.float32)
-                clip_adjustment_sq += float((clipped - candidate).square().sum())
-                fp32_rounding_sq += float((stored.double() - clipped).square().sum())
+                candidate_fp32 = candidate.to(dtype=torch.float32)
+                clipped_low += int((candidate_fp32 < 0).sum())
+                clipped_high += int((candidate_fp32 > 1).sum())
+                stored = candidate_fp32.clamp(0, 1)
+                fp32_rounding_sq += float((candidate_fp32.double() - candidate).square().sum())
+                clip_adjustment_sq += float((stored.double() - candidate_fp32.double()).square().sum())
                 output[frame, y0:y1, x0:x1] = stored
                 post_tiles, _, _ = _roi_tiles(stored.double())
                 post_coefficients = dct2_ortho(post_tiles)
@@ -356,6 +358,8 @@ def apply_carrier_rgb(
         frames_written=protocol.segment_frames * protocol.segment_count,
         roi_count=len(protocol.rois), tile_instances=tile_count,
         clipped_low_values=clipped_low, clipped_high_values=clipped_high,
+        clipping_input_dtype="torch.float32",
+        rounding_then_clipping=True,
         clip_adjustment_l2=math.sqrt(clip_adjustment_sq),
         fp32_rounding_l2=math.sqrt(fp32_rounding_sq),
         outside_declared_roi_written_values=0,
@@ -484,6 +488,10 @@ def observe_window(
             tuple(received_rgb.shape[1:]) != protocol.video_shape[1:] or
             not 0 <= received_rgb.shape[0] <= protocol.video_shape[0]):
         raise ValueError("received RGB must keep public H,W,3 with supported T<=public T")
+    if (any(type(value) is not int or value < 0 for value in spec.received_frames) or
+            len(set(spec.received_frames)) != len(spec.received_frames) or
+            any(value not in spec.requested_frames for value in spec.received_frames)):
+        raise ValueError("received frame indices must be distinct nonnegative requested coordinates")
     if any(value >= received_rgb.shape[0] for value in spec.received_frames):
         raise ValueError("window availability exceeds the supplied received RGB")
     if not spec.received_frames:
@@ -631,6 +639,8 @@ def route_fragment_evidence(
             mod4_equivalent=(route.source_slot % 4 == route.fragment_slot),
             equivalence_id=route.equivalence_id,
             payload_status=row.payload_status,
+            observation_truth_used=row.truth_used,
+            correspondence_truth_use="unverified",
             payload_chips=[asdict(chip) for chip in row.payload_chips],
             aggregation="none",
         )
@@ -648,10 +658,22 @@ def route_fragment_evidence(
         dict(candidate_id=candidate, observation_id=observation, route_count=len(slots))
         for (candidate, observation), slots in used.items() if len(slots) > 1
     ]
-    erasures = {
+    unrouted = {
         candidate: [slot for slot, entries in slots.items() if not entries]
         for candidate, slots in buckets.items()
     }
+    status_counts = {}
+    all_missing_or_failed = {}
+    for candidate, slots in buckets.items():
+        status_counts[candidate] = {}
+        all_missing_or_failed[candidate] = []
+        for fragment_slot, entries in slots.items():
+            counts = {status: 0 for status in COMPONENT_STATUSES}
+            for entry in entries:
+                counts[entry["payload_status"]] += 1
+            status_counts[candidate][fragment_slot] = counts
+            if entries and not counts["SCORED"] and not counts["PARTIAL"]:
+                all_missing_or_failed[candidate].append(fragment_slot)
     many_to_one = []
     for candidate, slots in buckets.items():
         for fragment_slot, entries in slots.items():
@@ -664,14 +686,17 @@ def route_fragment_evidence(
                 ))
     return dict(
         candidates=buckets,
-        erasures=erasures,
+        unrouted_fragment_slots=unrouted,
+        payload_status_counts=status_counts,
+        all_evidence_missing_or_failed_slots=all_missing_or_failed,
         conflicts=conflicts,
         reused_observations=reused,
         many_to_one_routes=many_to_one,
         caller_declared_equivalence_classes=equivalence,
         equivalence_verified=False,
+        correspondence_truth_use="unverified",
         aggregation="none",
         decoded_message=None,
         accepted=None,
-        truth_used=False,
+        truth_used=None,
     )
