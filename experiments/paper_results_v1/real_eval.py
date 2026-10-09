@@ -644,6 +644,10 @@ class RunStore:
                 for slot in self.data["baseline_slots"]:
                     if slot["case_id"] == case_id and slot["method"] == method and slot["status"] == "PLANNED":
                         slot.update(status="FAILED", reason=reason)
+            if phase == "receiver-sync":
+                for slot in self.data["receiver_slots"]:
+                    if slot["case_id"] == case_id and slot["status"] == "PLANNED":
+                        slot.update(status="FAILED", reason=reason)
             if phase == "quality":
                 for quality in self.data["quality_rows"]:
                     if quality["case_id"] == case_id and quality["status"] == "PLANNED":
@@ -651,8 +655,7 @@ class RunStore:
         self.save()
         return reason
 
-    @staticmethod
-    def _phase_artifacts(phase, case_id):
+    def _phase_artifacts(self, phase, case_id):
         if phase == "generate":
             return [_artifact_id(case_id, arm, "TERMINAL") for arm in ("OFF_NATIVE", "PAYLOAD_NATIVE")]
         if phase == "decode":

@@ -18,6 +18,7 @@ import pytest
 
 from experiments.paper_results_v1.colab_orchestration import (
     build_scope_summary,
+    ensure_baseline_interpreter,
     execute_fixed_sequence,
     prepare_baseline_environment,
 )
@@ -220,6 +221,8 @@ def test_notebook_freezes_identity_downloads_stage_order_and_failure_retention()
     assert "pip\", \"install\", \"-r" not in joined
     assert '"--no-deps"' not in joined
     assert '"--constraint", str(BASELINE_REPAIR_CONSTRAINTS)' in joined
+    assert 'PYTHON, "-m", "pip", "--python", str(vpython), "install"' in joined
+    assert 'str(vpython), "-m", "pip", "install"' not in joined
     assert "antlr4-python3-runtime==4.9.*" in joined
     assert "PyYAML>=5.1.0" in joined
     assert "from videoseal.utils.cfg import setup_model" in joined
@@ -435,6 +438,64 @@ def test_baseline_environment_receipts_separate_resolution_probe_and_model_statu
     assert probe_failure["model_compatibility_status"] == "NOT_VALIDATED_REQUIRES_REAL_EMBED_EXTRACT"
 
 
+@pytest.mark.parametrize("initial_probe_result", ("nonzero", "oserror"))
+def test_baseline_interpreter_rebuilds_partial_venv_without_ensurepip_and_validates_main_stack(
+    tmp_path, initial_probe_result,
+):
+    venv = tmp_path / "baseline-venv"
+    python = venv / "bin/python"
+    python.parent.mkdir(parents=True)
+    python.write_text("partial interpreter", encoding="utf-8")
+    stale = venv / "stale-marker"
+    stale.write_text("left by failed ensurepip", encoding="utf-8")
+    commands = []
+
+    def run(command, stage, **kwargs):
+        commands.append((stage, list(command), dict(kwargs)))
+        if stage.endswith("_VENV_CREATE_WITHOUT_PIP"):
+            created = Path(command[-1]) / "bin/python"
+            created.parent.mkdir(parents=True, exist_ok=True)
+            created.write_text("complete interpreter", encoding="utf-8")
+            return 0
+        if "-c" in command:
+            compile(command[command.index("-c") + 1], stage, "exec")
+            assert command[-1] == str(venv)
+            if stage.endswith("_VENV_REUSE_PROBE"):
+                if initial_probe_result == "oserror":
+                    raise OSError("partial interpreter cannot start")
+                return 1
+            return 0
+        raise AssertionError(command)
+
+    prepared, receipt = ensure_baseline_interpreter(
+        method="videoseal", venv=venv, main_python="/usr/bin/python3", run=run,
+    )
+    assert prepared == str(python)
+    assert receipt["status"] == "REBUILT_AND_VALIDATED"
+    assert receipt["initial_probe_returncode"] == (1 if initial_probe_result == "nonzero" else None)
+    assert receipt["initial_probe_error"] == (
+        None if initial_probe_result == "nonzero"
+        else "OSError: partial interpreter cannot start"
+    )
+    assert receipt["ensurepip_used"] is False
+    assert not stale.exists()
+    create = next(command for stage, command, _ in commands if stage.endswith("_VENV_CREATE_WITHOUT_PIP"))
+    assert create == [
+        "/usr/bin/python3", "-m", "venv", "--without-pip",
+        "--system-site-packages", str(venv),
+    ]
+
+    reuse_commands = []
+    reused, reuse_receipt = ensure_baseline_interpreter(
+        method="videoseal", venv=venv, main_python="/usr/bin/python3",
+        run=lambda command, stage, **kwargs: reuse_commands.append((stage, command)) or 0,
+    )
+    assert reused == str(python)
+    assert reuse_receipt["status"] == "REUSED_VALIDATED"
+    assert len(reuse_commands) == 1 and "-c" in reuse_commands[0][1]
+    assert reuse_commands[0][1][-1] == str(venv)
+
+
 def test_generated_code_cells_run_in_order_from_fresh_isolated_kernel_with_boundary_stubs(tmp_path):
     isolated_python = Path("/usr/bin/python3")
     assert isolated_python.is_file()
@@ -526,10 +587,19 @@ def test_generated_code_cells_run_in_order_from_fresh_isolated_kernel_with_bound
         original_logged = namespace["logged"]
         original_check_output = subprocess.check_output
         environment_commands = []
+        entry_probe_attempts = {{}}
         def environment_logged(command, stage, **kwargs):
             environment_commands.append((stage, list(command)))
+            if stage.endswith("_VENV_CREATE_WITHOUT_PIP"):
+                vpython = Path(command[-1]) / "bin/python"
+                vpython.parent.mkdir(parents=True, exist_ok=True)
+                vpython.write_text("stub interpreter")
             if "-c" in command:
                 compile(command[command.index("-c") + 1], stage, "exec")
+            if stage.endswith("_ENTRY_IMPORT_PROBE"):
+                entry_probe_attempts[stage] = entry_probe_attempts.get(stage, 0) + 1
+                if entry_probe_attempts[stage] == 1:
+                    raise subprocess.CalledProcessError(1, command)
             return 0
         def check_output_stub(command, *args, **kwargs):
             if "pip" in command and "freeze" in command:
@@ -544,12 +614,32 @@ def test_generated_code_cells_run_in_order_from_fresh_isolated_kernel_with_bound
             namespace["logged"] = original_logged
         assert len(snapshot_calls) == 2
         assert all(
-            row["dependency_install_status"] == "NOT_NEEDED_IMPORT_READY"
+            row["dependency_install_status"] == "COMPLETE_AFTER_IMPORT_FAILURE"
             and row["entry_import_probe_status"] == "IMPORT_READY_NO_MODEL_OR_WEIGHT_LOADED"
             for row in namespace["baseline_setup"].values()
         )
-        assert not any("--constraint" in command for _stage, command in environment_commands)
         assert not any("--no-deps" in command for _stage, command in environment_commands)
+        create_commands = [
+            command for stage, command in environment_commands
+            if stage.endswith("_VENV_CREATE_WITHOUT_PIP")
+        ]
+        assert len(create_commands) == 2
+        assert all("--without-pip" in command and "--system-site-packages" in command for command in create_commands)
+        install_commands = [
+            command for stage, command in environment_commands
+            if stage.endswith("_ISOLATED_DEPENDENCIES")
+        ]
+        assert len(install_commands) == 2
+        assert all(
+            command[:4] == [namespace["PYTHON"], "-m", "pip", "--python"]
+            and "install" in command and "--constraint" in command
+            for command in install_commands
+        )
+        assert not any(
+            command[0] in namespace["baseline_pythons"].values()
+            and command[1:4] == ["-m", "pip", "install"]
+            for command in install_commands
+        )
 
         phase_commands = []
         def phase_logged(command, stage, **kwargs):

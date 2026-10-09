@@ -94,12 +94,20 @@ blocking a usable source. Baseline source and weights being present is only
 preparation evidence; successful model/API compatibility requires later
 embed/extract receipts. VideoSeal's official dependency set and RivaGAN's
 legacy dependency pins are not installed over the main stack. Each baseline
-gets a separate `--system-site-packages` virtual environment. Recorded main
-versions are recommendations and are never compared as a prerequisite. Each
-entry is probed first; only a real import failure triggers the historical
-known-stack repair specifications and constraints in its dedicated venv.
-VideoSeal's OmegaConf, ANTLR, and PyYAML closure is explicit. The obsolete
-RivaGAN requirements file is never installed.
+gets a separate `--without-pip --system-site-packages` virtual environment, so
+creation does not depend on `ensurepip`. A leftover `bin/python` is never
+accepted by existence alone: that interpreter must have a distinct venv prefix
+and actually import NumPy and Torch from the working main stack. A failed
+partial venv is removed and rebuilt once. Recorded main versions are
+recommendations and are never compared as a prerequisite. Each entry is then
+probed; only a real import failure triggers the historical known-stack repair
+specifications and constraints. Repair uses the working main interpreter's
+`pip --python <dedicated-python>` support to target the venv without installing
+into or downgrading the main environment. VideoSeal's OmegaConf, ANTLR, and
+PyYAML closure is explicit. The obsolete RivaGAN requirements file is never
+installed. This follows pip's documented
+[`--python` workflow](https://pip.pypa.io/en/stable/topics/python-option/) for
+managing a venv created without pip.
 
 After resolution, each venv runs an import-only entry probe. VideoSeal imports
 `OmegaConf` and `videoseal.utils.cfg.setup_model`; RivaGAN imports the pinned

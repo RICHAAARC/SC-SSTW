@@ -360,6 +360,40 @@ An already-running Colab job continues under the exact notebook/source version
 with which it started. This repair is for later runs and does not mutate,
 restart, or reinterpret that existing run directory.
 
+## Same-run environment and failure-retention repair
+
+The read-only audit at
+`diagnostics/a-line-20261009T123350716100Z-f5e1f880-audit/` records two concrete
+engineering faults in the completed user run. Both default
+`python -m venv --system-site-packages` commands failed inside `ensurepip` but
+left a `bin/python`; later baseline processes reported `No module named numpy`.
+Both baseline-extract phases then reported `NameError: name 'self' is not
+defined`, while the saved RunStore left those phases `RUNNING` and their costs
+`PLANNED`. The original run is not changed or retried by this repair.
+
+The generated notebook now creates a dedicated interpreter with
+`--without-pip --system-site-packages`, verifies that its resolved prefix is
+the requested dedicated venv and that it can actually import NumPy and Torch,
+and rebuilds a stale partial venv when that probe fails or cannot start.
+Dependency repair remains conditional on entry-import
+failure and is targeted with the working main interpreter's
+`pip --python <dedicated-python>` command; it does not fall back to running a
+baseline under the main interpreter. `RunStore._phase_artifacts` is now an
+instance method. A root phase error passes through `_run_timed`, preserving the
+original exception while marking the phase, cost, every nine-row baseline
+extract denominator, or all 160 receiver slots plus the 36 planned observation
+artifacts as failed without deleting rows.
+
+Focused CPU/stub validation produced `15 passed in 1.02s` for the generated
+notebook tests plus both parameterized failure-chain cases, and the complete
+`tests/test_paper_results_v1_real_eval.py` file produced `32 passed in 0.83s`.
+The venv stub starts with a misleading partial `bin/python`, forces its runtime
+probe to fail, verifies removal and a single `--without-pip` plus
+`--system-site-packages` rebuild, compiles the actual NumPy/Torch probe, and
+checks validated reuse. The ordered notebook boundary stub verifies both final
+creation commands and compiles every generated `python -c` payload. No venv,
+package, model, codec, media, GPU, or Drive operation was executed locally.
+
 The real Colab/model workflow was not executed because this task forbids Drive,
 GPU, model, VAE, codec, media, package installation, and network execution. The
 ordered code-cell boundary stub above is engineering evidence only; it does not

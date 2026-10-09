@@ -465,7 +465,10 @@ def build_notebook():
 
     prepare_environment = textwrap.dedent('''\
         ## Prepare the recorded main environment and isolated baseline dependencies
-        from experiments.paper_results_v1.colab_orchestration import prepare_baseline_environment
+        from experiments.paper_results_v1.colab_orchestration import (
+            ensure_baseline_interpreter,
+            prepare_baseline_environment,
+        )
 
         # The historical non-zero pip check is retained as a diagnostic and is not a blanket hard failure.
         MAIN_RECOMMENDED_VERSIONS = {
@@ -548,24 +551,44 @@ def build_notebook():
             baseline_pythons[method] = str(vpython)
             baseline_setup[method]["environment_python"] = str(vpython)
 
-            def install_baseline_dependencies():
+            def ensure_method_interpreter():
                 if baseline_setup[method]["status"] != "READY":
                     raise RuntimeError(method + " source/checkpoint preparation failed")
-                if not vpython.exists():
-                    logged([PYTHON, "-m", "venv", "--system-site-packages", str(venv)], method.upper() + "_VENV_CREATE")
+                prepared_python, receipt = ensure_baseline_interpreter(
+                    method=method,
+                    venv=venv,
+                    main_python=PYTHON,
+                    run=logged,
+                )
+                if prepared_python != str(vpython):
+                    raise RuntimeError(method + " dedicated interpreter path changed")
+                baseline_setup[method]["interpreter_preparation"] = receipt
+                baseline_setup[method].setdefault("interpreter_preparation_history", []).append(receipt)
+                return prepared_python
+
+            def install_baseline_dependencies():
                 # Resolve only after the actual entry import fails. The repair then
                 # constrains the known historical main stack; those versions are
                 # never a prerequisite when the existing imports already work.
                 # The obsolete official RivaGAN requirements file is never installed.
                 logged([
-                    str(vpython), "-m", "pip", "install",
+                    PYTHON, "-m", "pip", "--python", str(vpython), "install",
                     "--constraint", str(BASELINE_REPAIR_CONSTRAINTS),
                     *baseline_dependencies[method],
                 ], method.upper() + "_ISOLATED_DEPENDENCIES")
                 baseline_setup[method]["environment_freeze_path"] = str(OUTPUT_ROOT / (method + "_environment_freeze.txt"))
-                (OUTPUT_ROOT / (method + "_environment_freeze.txt")).write_text(
-                    subprocess.check_output([str(vpython), "-m", "pip", "freeze"], text=True), encoding="utf-8",
-                )
+                try:
+                    freeze = subprocess.check_output(
+                        [PYTHON, "-m", "pip", "--python", str(vpython), "freeze"],
+                        text=True,
+                    )
+                    (OUTPUT_ROOT / (method + "_environment_freeze.txt")).write_text(
+                        freeze, encoding="utf-8",
+                    )
+                    baseline_setup[method]["environment_freeze_status"] = "RECORDED"
+                except Exception as exc:
+                    baseline_setup[method]["environment_freeze_status"] = "OBSERVATION_UNAVAILABLE"
+                    baseline_setup[method]["environment_freeze_reason"] = f"{type(exc).__name__}: {exc}"
 
             def probe_baseline_entry():
                 if method == "videoseal":
@@ -587,6 +610,20 @@ def build_notebook():
                     method.upper() + "_ENTRY_IMPORT_PROBE", env=portable_env,
                 )
 
+            try:
+                ensure_method_interpreter()
+            except Exception as exc:
+                baseline_setup[method].update(
+                    interpreter_preparation={
+                        "status": "FAILED",
+                        "reason": f"{type(exc).__name__}: {exc}",
+                        "ensurepip_used": False,
+                    },
+                    dependency_install_status="BLOCKED_INTERPRETER_PREPARATION_FAILED",
+                    entry_import_probe_status="BLOCKED_INTERPRETER_PREPARATION_FAILED",
+                    model_compatibility_status="NOT_VALIDATED_REQUIRES_REAL_EMBED_EXTRACT",
+                )
+                continue
             baseline_setup[method].update(prepare_baseline_environment(
                 install=install_baseline_dependencies,
                 probe=probe_baseline_entry,

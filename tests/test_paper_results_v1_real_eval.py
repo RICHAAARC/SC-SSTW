@@ -134,6 +134,63 @@ def test_run_store_failure_retains_all_planned_rows_and_per_case_phase_state(tmp
     assert sum(row["status"] == "PLANNED" for row in reopened.data["receiver_slots"]) == 160
 
 
+@pytest.mark.parametrize(
+    ("phase", "slot_key", "slot_filter", "expected_slots", "artifact_filter", "expected_artifacts"),
+    (
+        (
+            "baseline-extract-videoseal", "baseline_slots",
+            lambda row: row["case_id"] == "pilot_01" and row["method"] == "videoseal",
+            9,
+            lambda row: row["artifact_id"].startswith("pilot_01/videoseal/NATIVE_SOFT/"),
+            9,
+        ),
+        (
+            "receiver-sync", "receiver_slots",
+            lambda row: row["case_id"] == "pilot_01",
+            160,
+            lambda row: row["artifact_id"].startswith("pilot_01/observation/"),
+            36,
+        ),
+    ),
+)
+def test_timed_failure_retains_original_error_and_every_fixed_phase_row(
+    tmp_path, phase, slot_key, slot_filter, expected_slots, artifact_filter, expected_artifacts,
+):
+    config = one_case_config()
+    store = real_eval.RunStore(tmp_path / phase, config, create=True)
+    denominator = {
+        "artifacts": len(store.data["artifacts"]),
+        "baseline_slots": len(store.data["baseline_slots"]),
+        "receiver_slots": len(store.data["receiver_slots"]),
+        "costs": len(store.data["costs"]),
+    }
+
+    def fail_inside_phase():
+        raise RuntimeError("original phase root cause")
+
+    with pytest.raises(RuntimeError, match="original phase root cause"):
+        real_eval._run_timed(store, phase, "pilot_01", fail_inside_phase)
+
+    phase_case = store.data["phases"][phase]["cases"]["pilot_01"]
+    assert phase_case["status"] == "FAILED"
+    assert phase_case["failures"] == ["RuntimeError: original phase root cause"]
+    cost = next(row for row in store.data["costs"] if row["cost_id"] == f"pilot_01/{phase}")
+    assert cost["status"] == "FAILED"
+    assert cost["reason"] == "RuntimeError: original phase root cause"
+    slots = [row for row in store.data[slot_key] if slot_filter(row)]
+    assert len(slots) == expected_slots
+    assert all(row["status"] == "FAILED" and row["reason"] == cost["reason"] for row in slots)
+    artifacts = [row for row in store.data["artifacts"] if artifact_filter(row)]
+    assert len(artifacts) == expected_artifacts
+    assert all(row["status"] == "FAILED" and row["reason"] == cost["reason"] for row in artifacts)
+    assert denominator == {
+        "artifacts": len(store.data["artifacts"]),
+        "baseline_slots": len(store.data["baseline_slots"]),
+        "receiver_slots": len(store.data["receiver_slots"]),
+        "costs": len(store.data["costs"]),
+    }
+
+
 def test_identity_and_revision_differences_are_recorded_without_changing_the_plan(tmp_path):
     config = one_case_config()
     config["models"]["wan"]["revision"] = "different-local-wan-revision"

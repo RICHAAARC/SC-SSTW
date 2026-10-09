@@ -1,7 +1,9 @@
 """Small, standard-library helpers for the fixed two-pilot Colab handoff."""
 from __future__ import annotations
 
+import shutil
 from collections import Counter
+from pathlib import Path
 
 
 ROW_KEYS = {
@@ -16,6 +18,14 @@ STATE_KEYS = {
     "comparison": "comparison_slots",
     "quality": "quality_rows",
 }
+
+BASELINE_RUNTIME_PROBE = (
+    "import sys; from pathlib import Path; import numpy, torch; "
+    "actual = Path(sys.prefix).resolve(); expected = Path(sys.argv[1]).resolve(); "
+    "assert actual == expected, (actual, expected); "
+    "assert sys.prefix != sys.base_prefix, (sys.prefix, sys.base_prefix); "
+    "print('BASELINE_VENV_MAIN_STACK_READY', sys.prefix, numpy.__version__, torch.__version__)"
+)
 
 
 def _counts(rows):
@@ -55,6 +65,71 @@ def prepare_baseline_environment(*, install, probe):
             entry_import_probe_reason=f"{type(exc).__name__}: {exc}",
         )
     return receipt
+
+
+def ensure_baseline_interpreter(*, method, venv, main_python, run, remove_tree=shutil.rmtree):
+    """Create or recover a system-site venv without invoking ensurepip.
+
+    A leftover ``bin/python`` is not proof that ``venv`` creation completed:
+    CPython writes an initially isolated ``pyvenv.cfg`` before ensurepip and
+    only restores system-site visibility after ensurepip succeeds.  Probe the
+    dedicated interpreter by importing the main NumPy/Torch stack, rebuild a
+    stale partial directory with ``--without-pip``, then probe again.
+    """
+
+    method_label = str(method).upper()
+    root = Path(venv)
+    python = root / "bin/python"
+
+    def probe(stage):
+        if not python.is_file():
+            return None
+        return run(
+            [str(python), "-c", BASELINE_RUNTIME_PROBE, str(root)],
+            stage,
+            check=False,
+        )
+
+    initial_probe_attempted = python.is_file()
+    initial_probe_error = None
+    try:
+        initial_returncode = probe(method_label + "_VENV_REUSE_PROBE")
+    except OSError as exc:
+        initial_returncode = None
+        initial_probe_error = f"{type(exc).__name__}: {exc}"
+    if initial_returncode == 0:
+        return str(python), {
+            "status": "REUSED_VALIDATED",
+            "python": str(python),
+            "runtime_probe": "NUMPY_TORCH_IMPORTED_FROM_DEDICATED_INTERPRETER",
+            "ensurepip_used": False,
+        }
+
+    if root.exists():
+        remove_tree(root)
+    run(
+        [
+            str(main_python), "-m", "venv", "--without-pip",
+            "--system-site-packages", str(root),
+        ],
+        method_label + "_VENV_CREATE_WITHOUT_PIP",
+    )
+    if not python.is_file():
+        raise RuntimeError(f"{method} venv creation did not produce {python}")
+    created_returncode = probe(method_label + "_VENV_CREATED_RUNTIME_PROBE")
+    if created_returncode != 0:
+        raise RuntimeError(
+            f"{method} dedicated interpreter cannot import the main NumPy/Torch stack "
+            f"(returncode={created_returncode})"
+        )
+    return str(python), {
+        "status": "REBUILT_AND_VALIDATED" if initial_probe_attempted else "CREATED_AND_VALIDATED",
+        "python": str(python),
+        "initial_probe_returncode": initial_returncode,
+        "initial_probe_error": initial_probe_error,
+        "runtime_probe": "NUMPY_TORCH_IMPORTED_FROM_DEDICATED_INTERPRETER",
+        "ensurepip_used": False,
+    }
 
 
 def build_scope_summary(state, report, *, pilot_ids, confirmation_ids):
