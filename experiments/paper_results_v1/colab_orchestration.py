@@ -23,16 +23,22 @@ def _counts(rows):
 
 
 def prepare_baseline_environment(*, install, probe):
-    """Run dependency installation then an import-only probe with distinct receipts."""
+    """Probe first and install only when the actual entry import is unavailable."""
 
     receipt = {
-        "dependency_install_status": "NOT_ATTEMPTED",
+        "dependency_install_status": "NOT_NEEDED_IMPORT_READY",
         "entry_import_probe_status": "NOT_ATTEMPTED",
         "model_compatibility_status": "NOT_VALIDATED_REQUIRES_REAL_EMBED_EXTRACT",
     }
     try:
+        probe()
+        receipt["entry_import_probe_status"] = "IMPORT_READY_NO_MODEL_OR_WEIGHT_LOADED"
+        return receipt
+    except Exception as exc:
+        receipt["initial_entry_import_probe_reason"] = f"{type(exc).__name__}: {exc}"
+    try:
         install()
-        receipt["dependency_install_status"] = "COMPLETE"
+        receipt["dependency_install_status"] = "COMPLETE_AFTER_IMPORT_FAILURE"
     except Exception as exc:
         receipt.update(
             dependency_install_status="FAILED",

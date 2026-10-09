@@ -17,14 +17,18 @@ The shortest user path is:
 
 Run all attempts the two pilots once in the fixed order:
 
-1. extract and content-verify the embedded no-`.git` source closure;
+1. extract the embedded source closure, rejecting corrupt ZIPs and unsafe paths
+   while recording optional manifest/digest/`.git` observations;
 2. write the complete ten-case fixed plan and the two-pilot execution scope;
-3. fetch exact baseline source commits and named checkpoint objects, retaining
-   each preparation failure independently;
-4. bind actual local paths and downloaded file digests into one immutable
-   effective config and initialize the complete RunStore;
-5. prepare the recorded main environment, isolated baseline dependencies, and
-   fixed Hugging Face revisions;
+3. fetch the declared baseline sources and named checkpoint objects when a
+   usable cached copy is absent, retaining preparation failures independently
+   and recording actual commit/dirty/digest differences without rewriting an
+   existing cached tree;
+4. put usable local paths and recorded identity observations into the effective
+   config and initialize the complete RunStore;
+5. probe the current main and isolated baseline imports, repairing missing
+   dependencies only after an actual import failure, and prepare the declared
+   Hugging Face revisions;
 6. run `generate`, `decode`, `framewise`, both baseline embeds, the shared codec,
    quality, both edit-aware baseline extracts, receiver synchronization, and
    receiver reads in separate processes for each pilot;
@@ -64,9 +68,11 @@ to return.
 ## Source and model identities
 
 The notebook does not fetch the unpublished project branch. It embeds
-`experiments/paper_results_v1`, `runtime/wan`, and `main/tube_state` with a
-deterministic ZIP digest and per-file SHA-256 manifest. This content manifest,
-not the contextual build commit, is the execution source identity.
+`experiments/paper_results_v1`, `runtime/wan`, and `main/tube_state`. It records
+the ZIP digest, optional per-file manifest observations, and any embedded
+`.git` entries. Digest, manifest, and contextual build-commit differences are
+provenance observations rather than execution gates; corrupt ZIP structure and
+unsafe extraction paths still fail.
 
 The fixed external identities are:
 
@@ -82,19 +88,18 @@ The fixed external identities are:
   framewise VAE revision `31f26fdeee1355a5c34592e401dd41e45d25a493`.
 
 The notebook computes and records actual card/checkpoint SHA-256 values after
-download. It does not invent an unpublished checkpoint digest. Baseline source
-and weights being present is only preparation evidence; successful model/API
-compatibility requires the later embed/extract phase receipts. VideoSeal's
-official dependency set and RivaGAN's legacy dependency pins are not installed
-over the successful main stack. Each baseline gets a separate
-`--system-site-packages` virtual environment. Pip resolves dependencies there
-under a constraints file that fixes Torch, torchvision, diffusers,
-Transformers, NumPy, Accelerate, safetensors, Hugging Face Hub, tokenizers,
-sentencepiece, and ftfy to the recorded main versions. VideoSeal explicitly
-requests `omegaconf==2.3.0`, `antlr4-python3-runtime==4.9.*`, and
-`PyYAML>=5.1.0`, so OmegaConf's parser/YAML closure does not depend on packages
-that happen to be present in the Colab base image. The obsolete RivaGAN
-requirements file is never installed.
+download. It does not invent an unpublished checkpoint digest, and a declared
+digest/source-commit/dirty difference is retained without independently
+blocking a usable source. Baseline source and weights being present is only
+preparation evidence; successful model/API compatibility requires later
+embed/extract receipts. VideoSeal's official dependency set and RivaGAN's
+legacy dependency pins are not installed over the main stack. Each baseline
+gets a separate `--system-site-packages` virtual environment. Recorded main
+versions are recommendations and are never compared as a prerequisite. Each
+entry is probed first; only a real import failure triggers the historical
+known-stack repair specifications and constraints in its dedicated venv.
+VideoSeal's OmegaConf, ANTLR, and PyYAML closure is explicit. The obsolete
+RivaGAN requirements file is never installed.
 
 After resolution, each venv runs an import-only entry probe. VideoSeal imports
 `OmegaConf` and `videoseal.utils.cfg.setup_model`; RivaGAN imports the pinned
@@ -181,6 +186,10 @@ Return the entire unique Drive directory. The minimum review set is:
   lossless native `.npz` sidecar.
 
 This delivery was checked with standard-library notebook parsing, Python AST
-compilation, embedded-file digests, no-`.git` extraction, and a CPU-only plan
-expansion. It was not executed in Colab and did not load a model, weight, source
-video, VAE, codec, GPU, or Drive output.
+compilation, recorded embedded-file identity differences, path-safe extraction,
+and a CPU-only plan expansion. Generated code cells also ran in order under an
+isolated boundary stub. The real Colab/model chain was not executed locally and
+no model, weight, source video, VAE, codec, GPU, or Drive output was loaded.
+Any already-running Colab directory must be audited with the notebook version
+that started that same run; this later local repair does not rewrite or restart
+an existing run.

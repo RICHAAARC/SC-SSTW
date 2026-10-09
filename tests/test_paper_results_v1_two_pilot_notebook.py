@@ -122,6 +122,90 @@ def test_notebook_embeds_verified_no_git_source_closure_and_full_fixed_plan(tmp_
     ]
 
 
+def test_portable_identity_differences_are_recorded_but_bad_archives_still_fail(tmp_path):
+    setup = _code(_notebook())[1]
+    original = base64.b64decode(_assignment(setup, "PORTABLE_B64"))
+
+    def variant(*, drop_manifest=False, change_file=False, unsafe=False):
+        stream = io.BytesIO()
+        with zipfile.ZipFile(io.BytesIO(original)) as source, zipfile.ZipFile(stream, "w") as target:
+            for info in source.infolist():
+                if drop_manifest and info.filename == "portable_manifest.json":
+                    continue
+                payload = source.read(info.filename)
+                if change_file and info.filename == "experiments/__init__.py":
+                    payload += b"# recorded difference\n"
+                target.writestr(info, payload)
+            if unsafe:
+                target.writestr("../escape.txt", b"unsafe")
+        return stream.getvalue()
+
+    def extraction_namespace(root, raw):
+        source = setup.split("\ntry:\n    SOURCE_MANIFEST = extract_portable_source()", 1)[0]
+        content = root / "content"
+        drive = root / "drive" / "MyDrive" / "Video-WM"
+        source = source.replace("/content/drive/MyDrive/Video-WM", str(drive)).replace("/content", str(content))
+        namespace = {"__name__": "__main__"}
+        exec(compile(source, "portable-setup-prefix", "exec"), namespace)
+        namespace["PORTABLE_B64"] = base64.b64encode(raw).decode()
+        namespace["PORTABLE_ZIP_SHA256"] = "declared-different"
+        return namespace
+
+    changed = extraction_namespace(tmp_path / "changed", variant(change_file=True))
+    changed["extract_portable_source"]()
+    changed_receipt = json.loads((changed["OUTPUT_ROOT"] / "portable_source_receipt.json").read_text())
+    assert changed_receipt["zip_sha256_status"] == "RECORDED_DIFFERENCE"
+    assert changed_receipt["file_observations"]["experiments/__init__.py"]["status"] == "RECORDED_DIFFERENCE"
+    assert changed_receipt["identity_differences_are_blocking"] is False
+
+    absent = extraction_namespace(tmp_path / "absent", variant(drop_manifest=True))
+    assert absent["extract_portable_source"]() == {"files": {}}
+    absent_receipt = json.loads((absent["OUTPUT_ROOT"] / "portable_source_receipt.json").read_text())
+    assert absent_receipt["manifest_status"] == "ABSENT_OPTIONAL"
+
+    corrupt = extraction_namespace(tmp_path / "corrupt", b"not a zip archive")
+    with pytest.raises(zipfile.BadZipFile):
+        corrupt["extract_portable_source"]()
+
+    unsafe = extraction_namespace(tmp_path / "unsafe", variant(unsafe=True))
+    with pytest.raises(RuntimeError, match="unsafe portable archive member"):
+        unsafe["extract_portable_source"]()
+
+
+def test_cached_dirty_checkout_is_preserved_and_recorded(tmp_path):
+    identity_source = _code(_notebook())[2]
+    tree = ast.parse(identity_source)
+    function = next(
+        node for node in tree.body
+        if isinstance(node, ast.FunctionDef) and node.name == "prepared_checkout"
+    )
+    calls = []
+    namespace = {
+        "Path": Path,
+        "subprocess": subprocess,
+        "logged": lambda *args, **kwargs: calls.append((args, kwargs)),
+        "source_checkout_receipts": {},
+    }
+    exec(compile(ast.Module(body=[function], type_ignores=[]), "prepared-checkout", "exec"), namespace)
+
+    checkout = tmp_path / "cached-source"
+    subprocess.run(["git", "init", str(checkout)], check=True, capture_output=True)
+    (checkout / "source.py").write_text("value = 1\n", encoding="utf-8")
+    subprocess.run(["git", "-C", str(checkout), "add", "source.py"], check=True)
+    subprocess.run(
+        ["git", "-C", str(checkout), "-c", "user.name=Fixture", "-c", "user.email=fixture@example.invalid", "commit", "-m", "fixture"],
+        check=True, capture_output=True,
+    )
+    (checkout / "source.py").write_text("value = 2\n", encoding="utf-8")
+    namespace["prepared_checkout"]("SOURCE", "unused://remote", "different-commit", checkout)
+
+    receipt = namespace["source_checkout_receipts"]["SOURCE"]
+    assert calls == []
+    assert receipt["created_now"] is False
+    assert receipt["status"] == "RECORDED_DIFFERENCE"
+    assert receipt["dirty_paths"] == [" M source.py"]
+
+
 def test_notebook_freezes_identity_downloads_stage_order_and_failure_retention():
     notebook = _notebook()
     code = _code(notebook)
@@ -135,7 +219,7 @@ def test_notebook_freezes_identity_downloads_stage_order_and_failure_retention()
     assert "torch==1.0.1.post2" not in joined
     assert "pip\", \"install\", \"-r" not in joined
     assert '"--no-deps"' not in joined
-    assert '"--constraint", str(BASELINE_CORE_CONSTRAINTS)' in joined
+    assert '"--constraint", str(BASELINE_REPAIR_CONSTRAINTS)' in joined
     assert "antlr4-python3-runtime==4.9.*" in joined
     assert "PyYAML>=5.1.0" in joined
     assert "from videoseal.utils.cfg import setup_model" in joined
@@ -321,9 +405,9 @@ def test_baseline_environment_receipts_separate_resolution_probe_and_model_statu
         install=lambda: calls.append("install"),
         probe=lambda: calls.append("probe"),
     )
-    assert calls == ["install", "probe"]
+    assert calls == ["probe"]
     assert success == {
-        "dependency_install_status": "COMPLETE",
+        "dependency_install_status": "NOT_NEEDED_IMPORT_READY",
         "entry_import_probe_status": "IMPORT_READY_NO_MODEL_OR_WEIGHT_LOADED",
         "model_compatibility_status": "NOT_VALIDATED_REQUIRES_REAL_EMBED_EXTRACT",
     }
@@ -331,18 +415,21 @@ def test_baseline_environment_receipts_separate_resolution_probe_and_model_statu
     calls.clear()
     install_failure = prepare_baseline_environment(
         install=lambda: (_ for _ in ()).throw(OSError("resolver unavailable")),
-        probe=lambda: calls.append("probe must not run"),
+        probe=lambda: (_ for _ in ()).throw(ImportError("initial missing entry")),
     )
     assert calls == []
     assert install_failure["dependency_install_status"] == "FAILED"
     assert install_failure["entry_import_probe_status"] == "BLOCKED_DEPENDENCY_INSTALL_FAILED"
     assert install_failure["dependency_install_reason"] == "OSError: resolver unavailable"
+    assert install_failure["initial_entry_import_probe_reason"] == "ImportError: initial missing entry"
 
+    probe_calls = []
     probe_failure = prepare_baseline_environment(
         install=lambda: None,
-        probe=lambda: (_ for _ in ()).throw(ImportError("entry unavailable")),
+        probe=lambda: probe_calls.append("probe") or (_ for _ in ()).throw(ImportError("entry unavailable")),
     )
-    assert probe_failure["dependency_install_status"] == "COMPLETE"
+    assert probe_calls == ["probe", "probe"]
+    assert probe_failure["dependency_install_status"] == "COMPLETE_AFTER_IMPORT_FAILURE"
     assert probe_failure["entry_import_probe_status"] == "FAILED"
     assert probe_failure["entry_import_probe_reason"] == "ImportError: entry unavailable"
     assert probe_failure["model_compatibility_status"] == "NOT_VALIDATED_REQUIRES_REAL_EMBED_EXTRACT"
@@ -355,7 +442,7 @@ def test_generated_code_cells_run_in_order_from_fresh_isolated_kernel_with_bound
     isolated.mkdir()
     script = isolated / "run_notebook_boundary_stub.py"
     identity_injection = textwrap.dedent('''\
-        def verified_checkout(label, url, commit, destination):
+        def prepared_checkout(label, url, commit, destination):
             destination = Path(destination); destination.mkdir(parents=True, exist_ok=True)
             if label.startswith("VIDEOSEAL"):
                 (destination / "videoseal/cards").mkdir(parents=True, exist_ok=True)
@@ -432,12 +519,17 @@ def test_generated_code_cells_run_in_order_from_fresh_isolated_kernel_with_bound
         identity = identity.replace("baseline_setup = {{}}", injection + "\\nbaseline_setup = {{}}", 1)
         exec(compile(identity, "cell-2", "exec"), namespace)
         assert (namespace["RUN_OUTPUT"] / "run_state.json").is_file()
+        changed_config = json.loads(namespace["EFFECTIVE_CONFIG"].read_text())
+        changed_config["identity_observation_fixture"] = "different after init"
+        namespace["atomic_json"](namespace["EFFECTIVE_CONFIG"], changed_config)
 
         original_logged = namespace["logged"]
         original_check_output = subprocess.check_output
         environment_commands = []
         def environment_logged(command, stage, **kwargs):
             environment_commands.append((stage, list(command)))
+            if "-c" in command:
+                compile(command[command.index("-c") + 1], stage, "exec")
             return 0
         def check_output_stub(command, *args, **kwargs):
             if "pip" in command and "freeze" in command:
@@ -452,11 +544,11 @@ def test_generated_code_cells_run_in_order_from_fresh_isolated_kernel_with_bound
             namespace["logged"] = original_logged
         assert len(snapshot_calls) == 2
         assert all(
-            row["dependency_install_status"] == "COMPLETE"
+            row["dependency_install_status"] == "NOT_NEEDED_IMPORT_READY"
             and row["entry_import_probe_status"] == "IMPORT_READY_NO_MODEL_OR_WEIGHT_LOADED"
             for row in namespace["baseline_setup"].values()
         )
-        assert any("--constraint" in command for _stage, command in environment_commands)
+        assert not any("--constraint" in command for _stage, command in environment_commands)
         assert not any("--no-deps" in command for _stage, command in environment_commands)
 
         phase_commands = []
@@ -481,6 +573,11 @@ def test_generated_code_cells_run_in_order_from_fresh_isolated_kernel_with_bound
         assert handoff["execution_scope"]["attempted"] == ["pilot_01", "pilot_02"]
         assert handoff["confirmation"]["execution_scope_status"] == "NOT_EXECUTED_BY_NOTEBOOK"
         assert (namespace["RUN_OUTPUT"] / "evaluation_report.json").is_file()
+        stages = json.loads(namespace["STAGE_RECEIPTS"].read_text())
+        identity_stage = next(row for row in stages if row["stage"] == "EFFECTIVE_CONFIG_IDENTITY_OBSERVED")
+        assert identity_stage["status"] == "RECORDED_DIFFERENCE"
+        state = json.loads((namespace["RUN_OUTPUT"] / "run_state.json").read_text())
+        assert state["config_identity_observation"]["status"] == "RECORDED_DIFFERENCE"
         assert "torch" not in sys.modules
         print(json.dumps({{"status": "BOUNDARY_STUB_COMPLETE", "phases": len(phase_commands)}}))
     '''), encoding="utf-8")

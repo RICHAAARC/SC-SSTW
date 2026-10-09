@@ -10,6 +10,7 @@ import contextlib
 import hashlib
 import importlib
 import os
+import subprocess
 import sys
 from collections.abc import Mapping
 from pathlib import Path
@@ -37,10 +38,64 @@ def require_local_file(path, *, expected_sha256=None, label="file"):
     resolved = Path(path).expanduser().resolve()
     if not resolved.is_file():
         raise FileNotFoundError(f"{label} not found: {resolved}")
-    actual = file_sha256(resolved)
-    if expected_sha256 and actual != expected_sha256:
-        raise RealBackendError(f"{label} sha256 mismatch: expected {expected_sha256}, got {actual}")
+    try:
+        actual = file_sha256(resolved)
+    except OSError:
+        # Digest collection is provenance only. The actual parser/model loader
+        # below remains responsible for deciding whether the file is usable.
+        actual = None
     return resolved, actual
+
+
+def _digest_status(expected, actual):
+    if actual is None:
+        return "OBSERVATION_UNAVAILABLE"
+    if not expected:
+        return "UNDECLARED"
+    return "MATCH" if expected == actual else "RECORDED_DIFFERENCE"
+
+
+def observe_source_identity(root, expected_commit=None):
+    """Record an available source tree's Git identity without gating its use."""
+
+    observation = {
+        "expected_commit": expected_commit,
+        "actual_commit": None,
+        "dirty": None,
+        "status": "GIT_IDENTITY_UNAVAILABLE",
+    }
+    if not (Path(root) / ".git").exists():
+        return observation
+    try:
+        head = subprocess.run(
+            ["git", "-C", str(root), "rev-parse", "HEAD"],
+            text=True, capture_output=True, check=False,
+        )
+        dirty = subprocess.run(
+            ["git", "-C", str(root), "status", "--porcelain"],
+            text=True, capture_output=True, check=False,
+        )
+    except OSError as exc:
+        observation.update(status="GIT_IDENTITY_QUERY_FAILED", reason=f"{type(exc).__name__}: {exc}")
+        return observation
+    if head.returncode or dirty.returncode:
+        observation.update(
+            status="GIT_IDENTITY_QUERY_FAILED",
+            reason=(head.stderr or dirty.stderr).strip() or "git identity query failed",
+        )
+        return observation
+    actual = head.stdout.strip()
+    is_dirty = bool(dirty.stdout)
+    observation.update(
+        actual_commit=actual,
+        dirty=is_dirty,
+        status=(
+            "MATCH_CLEAN"
+            if expected_commit and actual == expected_commit and not is_dirty
+            else "RECORDED_DIFFERENCE"
+        ),
+    )
+    return observation
 
 
 def require_source_root(path, *, package_path, label):
@@ -209,11 +264,12 @@ def load_videoseal_adapter(config, *, native_output_store):
     source = require_source_root(
         config["source_root"], package_path="videoseal/__init__.py", label="VideoSeal",
     )
+    source_identity = observe_source_identity(source, config.get("source_commit"))
     card, card_sha = require_local_file(
         config["card_path"], expected_sha256=config.get("card_sha256"), label="VideoSeal card",
     )
     checkpoint, checkpoint_sha = require_local_file(
-        config["checkpoint_path"], expected_sha256=config["checkpoint_sha256"],
+        config["checkpoint_path"], expected_sha256=config.get("checkpoint_sha256"),
         label="VideoSeal checkpoint",
     )
     with _source_import(source, working_directory=source):
@@ -249,15 +305,20 @@ def load_videoseal_adapter(config, *, native_output_store):
         # addressable in JSON.
         inline_element_limit=1,
         backend_metadata={
-            "source_version": config["source_commit"],
+            "source_version": source_identity.get("actual_commit") or config.get("source_commit") or "UNDECLARED",
+            "source_identity_observation": source_identity,
             "model_version": config["model_card_name"],
             "weight_identity": checkpoint_sha,
             "detect_output_layout": config["detect_output_layout"],
             "card_path": str(card),
             "card_sha256": card_sha,
+            "card_declared_sha256": config.get("card_sha256"),
+            "card_sha256_status": _digest_status(config.get("card_sha256"), card_sha),
             "card_args_nbits": card_length,
             "model_msg_processor_nbits": model_length,
             "checkpoint_path": str(checkpoint),
+            "checkpoint_declared_sha256": config.get("checkpoint_sha256"),
+            "checkpoint_sha256_status": _digest_status(config.get("checkpoint_sha256"), checkpoint_sha),
             "loader": "videoseal.utils.cfg.setup_model(OmegaConf.load(card), local_checkpoint)",
         },
     )
@@ -284,8 +345,9 @@ def load_rivagan_adapter(config):
     source = require_source_root(
         config["source_root"], package_path="rivagan/rivagan.py", label="RivaGAN",
     )
+    source_identity = observe_source_identity(source, config.get("source_commit"))
     checkpoint, checkpoint_sha = require_local_file(
-        config["checkpoint_path"], expected_sha256=config["checkpoint_sha256"],
+        config["checkpoint_path"], expected_sha256=config.get("checkpoint_sha256"),
         label="RivaGAN checkpoint",
     )
     with _source_import(source):
@@ -293,7 +355,8 @@ def load_rivagan_adapter(config):
         numpy = importlib.import_module("numpy")
         _install_rivagan_pickle_classes()
         # This is an explicitly supplied local legacy pickle, never a URL.  The
-        # unsafe format is disclosed in metadata and its digest is mandatory.
+        # The unsafe format is disclosed in metadata. Its actual digest is
+        # recorded, while a declared digest difference is provenance only.
         model = torch.load(checkpoint, map_location=config["device"], weights_only=False)
     for name in ("encoder", "decoder"):
         module = getattr(model, name, None)
@@ -310,10 +373,13 @@ def load_rivagan_adapter(config):
     return RivaGANNativeAdapter(
         backend,
         backend_metadata={
-            "source_version": config["source_commit"],
+            "source_version": source_identity.get("actual_commit") or config.get("source_commit") or "UNDECLARED",
+            "source_identity_observation": source_identity,
             "model_version": config["model_name"],
             "weight_identity": checkpoint_sha,
             "checkpoint_path": str(checkpoint),
+            "checkpoint_declared_sha256": config.get("checkpoint_sha256"),
+            "checkpoint_sha256_status": _digest_status(config.get("checkpoint_sha256"), checkpoint_sha),
             "checkpoint_provenance": config["checkpoint_provenance"],
             "checkpoint_format": "LOCAL_LEGACY_TORCH_PICKLE_WEIGHTS_ONLY_FALSE",
             "loader": "torch.load(local_checkpoint,map_location=device,weights_only=False)",

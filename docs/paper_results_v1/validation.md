@@ -327,6 +327,33 @@ and require VideoSeal's explicit `antlr4-python3-runtime==4.9.*` and
 No pip resolver, package installation, import probe, model, or checkpoint was
 run locally; those operations occur only when the user runs the notebook.
 
+## Optional reproduction metadata repair
+
+This later local repair makes source commits, dirty state, manifests,
+file/config digests, model revisions, and installed-version differences
+best-effort observations throughout the two-pilot notebook and its real runner.
+Usable cached source is preserved. Existing imports are tried before any
+historical known-stack dependency repair. Corrupt ZIPs, unsafe extraction
+paths, missing/unreadable runtime inputs, actual import/model-load failures,
+invalid media/native-output shapes, and fixed method/roster/truth constraints
+remain blocking.
+
+Focused CPU/fake validation produced `30 passed in 0.80s` for
+`tests/test_paper_results_v1_real_eval.py`, followed after the final notebook
+rebuild by `13 passed in 0.97s` for the notebook file plus the two affected
+native-adapter tests. Coverage includes changed/missing declared digests,
+unavailable digest observation, altered Wan/framewise revision metadata,
+config-hash difference on reopen, dirty cached source, absent portable
+manifest, corrupt/path-traversing ZIPs, native adapters with unknown source and
+weight identity, and safe receiver cache identity fallback. Every generated
+`python -c` probe payload is compiled in the isolated ordered-cell boundary
+stub. No dependency installation, download, Drive access, codec, media, model,
+VAE, or GPU execution occurred.
+
+An already-running Colab job continues under the exact notebook/source version
+with which it started. This repair is for later runs and does not mutate,
+restart, or reinterpret that existing run directory.
+
 The real Colab/model workflow was not executed because this task forbids Drive,
 GPU, model, VAE, codec, media, package installation, and network execution. The
 ordered code-cell boundary stub above is engineering evidence only; it does not

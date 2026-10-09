@@ -85,6 +85,45 @@ def _strict_path(value, where):
         raise RealEvalConfigError(f"{where} must be a local path, not a URL")
 
 
+def _observe_file_identity(receipt, *, path_field="path", sha_field="sha256"):
+    """Record a file digest comparison without making provenance a data gate."""
+
+    if not isinstance(receipt, dict) or not isinstance(receipt.get(path_field), str):
+        raise ValueError(f"saved record receipt must contain string {path_field}")
+    hash_error = None
+    try:
+        actual = file_sha256(receipt[path_field])
+    except OSError as exc:
+        actual = None
+        hash_error = f"{type(exc).__name__}: {exc}"
+    expected = receipt.get(sha_field)
+    receipt[f"{sha_field}_observation"] = {
+        "expected": expected,
+        "actual": actual,
+        "status": (
+            "OBSERVATION_UNAVAILABLE" if hash_error
+            else "MATCH" if actual and expected == actual
+            else "UNDECLARED" if not isinstance(expected, str) or not expected
+            else "RECORDED_DIFFERENCE"
+        ),
+        "observation_error": hash_error,
+        "blocking": False,
+    }
+    return actual
+
+
+def _content_identity_token(receipt, actual_sha256):
+    if actual_sha256:
+        return actual_sha256
+    return "UNHASHED:" + hashlib.sha256(json.dumps(
+        [
+            receipt.get("artifact_id"), receipt.get("path"),
+            receipt.get("bytes"), receipt.get("shape"),
+        ],
+        sort_keys=True, separators=(",", ":"), allow_nan=False,
+    ).encode()).hexdigest()
+
+
 def _expand_edit_map(spec, where):
     if isinstance(spec, list):
         mapping = list(spec)
@@ -134,14 +173,13 @@ def validate_real_config(config):
 
     _require(config["models"], ("wan", "framewise", "videoseal", "rivagan"), "models")
     wan = config["models"]["wan"]
-    _require(wan, ("upstream_id", "revision", "local_snapshot_path"), "models.wan")
+    _require(wan, ("upstream_id", "local_snapshot_path"), "models.wan")
     _strict_path(wan["local_snapshot_path"], "models.wan.local_snapshot_path")
     framewise = config["models"]["framewise"]
-    _require(framewise, ("upstream_id", "revision", "local_snapshot_path", "batch_frames", "device"), "models.framewise")
+    _require(framewise, ("upstream_id", "local_snapshot_path", "batch_frames", "device"), "models.framewise")
     _strict_path(framewise["local_snapshot_path"], "models.framewise.local_snapshot_path")
     if (
         framewise["upstream_id"] != "stabilityai/sd-vae-ft-mse"
-        or framewise["revision"] != "31f26fdeee1355a5c34592e401dd41e45d25a493"
         or framewise["batch_frames"] != 8
     ):
         raise RealEvalConfigError("models.framewise must match the frozen runtime adapter")
@@ -149,8 +187,7 @@ def validate_real_config(config):
     _require(
         vs,
         (
-            "source_root", "source_commit", "card_path", "card_sha256",
-            "checkpoint_path", "checkpoint_sha256", "model_card_name", "device",
+            "source_root", "card_path", "checkpoint_path", "model_card_name", "device",
             "native_message_length", "native_message_bits", "lowres_attenuation",
             "detect_output_layout",
         ),
@@ -165,7 +202,7 @@ def validate_real_config(config):
     _require(
         riva,
         (
-            "source_root", "source_commit", "checkpoint_path", "checkpoint_sha256",
+            "source_root", "checkpoint_path",
             "checkpoint_provenance", "model_name", "device", "input_color_layout",
             "native_message_bits",
         ),
@@ -504,6 +541,12 @@ class RunStore:
                 "study_id": config["study_id"],
                 "status": "INITIALIZED",
                 "config_sha256": hashlib.sha256(config_bytes).hexdigest(),
+                "config_identity_observation": {
+                    "expected": hashlib.sha256(config_bytes).hexdigest(),
+                    "actual": hashlib.sha256(config_bytes).hexdigest(),
+                    "status": "MATCH",
+                    "blocking": False,
+                },
                 "method": config["method"],
                 "message_contract": {
                     "bits": config["payload_bits"],
@@ -523,8 +566,15 @@ class RunStore:
             self.save()
         else:
             self.data = json.loads(self.path.read_text(encoding="utf-8"))
-            if self.data["config_sha256"] != hashlib.sha256(config_bytes).hexdigest():
-                raise RealEvalConfigError("run_state config identity mismatch")
+            actual = hashlib.sha256(config_bytes).hexdigest()
+            expected = self.data.get("config_sha256")
+            self.data["config_identity_observation"] = {
+                "expected": expected,
+                "actual": actual,
+                "status": "MATCH" if expected == actual else "RECORDED_DIFFERENCE",
+                "blocking": False,
+            }
+            self.save()
 
     def save(self):
         _json_dump(self.path, self.data)
@@ -647,7 +697,10 @@ class ArtifactFiles:
         self.root = store.output / "artifacts" / case_id
 
     def _receipt(self, path, **extra):
-        return {"path": str(path), "sha256": file_sha256(path), "bytes": path.stat().st_size, **extra}
+        receipt = {"path": str(path), "bytes": path.stat().st_size, **extra}
+        _observe_file_identity(receipt)
+        receipt["sha256"] = receipt["sha256_observation"]["actual"]
+        return receipt
 
     def save_rgb8(self, artifact_id, value, name):
         import numpy as np
@@ -678,8 +731,7 @@ class ArtifactFiles:
         import torch
 
         path = Path(receipt["path"])
-        if file_sha256(path) != receipt["sha256"]:
-            raise ValueError("RGB8 artifact sha256 changed")
+        _observe_file_identity(receipt)
         shape = tuple(receipt["shape"])
         raw = path.read_bytes()
         if len(raw) != math.prod(shape):
@@ -725,11 +777,14 @@ class ArtifactFiles:
         path = self.root / "native" / f"{label}.npz"
         path.parent.mkdir(parents=True, exist_ok=True)
         np.savez_compressed(path, **arrays)
+        identity_receipt = {"path": str(path)}
+        actual_sha256 = _observe_file_identity(identity_receipt)
         return {
             "lossless": True,
             "uri": str(path),
             "format": "npz",
-            "sha256": file_sha256(path),
+            "sha256": actual_sha256,
+            "sha256_observation": identity_receipt["sha256_observation"],
             "bytes": path.stat().st_size,
             "arrays": {
                 key: {"shape": [int(part) for part in array.shape], "dtype": str(array.dtype)}
@@ -745,8 +800,19 @@ def static_preflight(config):
     validate_real_config(config)
     checks = []
 
-    def check(name, ok, detail):
-        checks.append({"name": name, "status": "READY" if ok else "BLOCKED", "detail": str(detail)})
+    def check(name, ok, detail, **fields):
+        checks.append({
+            "name": name,
+            "status": "READY" if ok else "BLOCKED",
+            "detail": str(detail),
+            **fields,
+        })
+
+    def observe_digest(path):
+        try:
+            return file_sha256(path), None
+        except OSError as exc:
+            return None, f"{type(exc).__name__}: {exc}"
 
     for executable in ("ffmpeg", "ffprobe"):
         found = shutil.which(executable)
@@ -776,11 +842,35 @@ def static_preflight(config):
         check(f"{method}:source", package.is_file(), package)
         for field in (("card_path", "card_sha256"),) if method == "videoseal" else ():
             path = Path(row[field[0]]).expanduser()
-            ok = path.is_file() and (not row[field[1]] or file_sha256(path) == row[field[1]])
-            check(f"{method}:{field[0]}", ok, path)
+            actual, hash_error = observe_digest(path) if path.is_file() else (None, None)
+            expected = row.get(field[1])
+            check(
+                f"{method}:{field[0]}", path.is_file(), path,
+                expected_sha256=expected, actual_sha256=actual,
+                sha256_status=(
+                    "MATCH" if expected == actual and actual
+                    else "UNDECLARED" if not expected
+                    else "RECORDED_DIFFERENCE" if actual
+                    else "UNAVAILABLE"
+                ),
+                sha256_observation_error=hash_error,
+                sha256_blocking=False,
+            )
         path = Path(row["checkpoint_path"]).expanduser()
-        ok = path.is_file() and file_sha256(path) == row["checkpoint_sha256"]
-        check(f"{method}:checkpoint", ok, path)
+        actual, hash_error = observe_digest(path) if path.is_file() else (None, None)
+        expected = row.get("checkpoint_sha256")
+        check(
+            f"{method}:checkpoint", path.is_file(), path,
+            expected_sha256=expected, actual_sha256=actual,
+            sha256_status=(
+                "MATCH" if expected == actual and actual
+                else "UNDECLARED" if not expected
+                else "RECORDED_DIFFERENCE" if actual
+                else "UNAVAILABLE"
+            ),
+            sha256_observation_error=hash_error,
+            sha256_blocking=False,
+        )
     return {
         "schema_version": SCHEMA_VERSION,
         "study_id": config["study_id"],
@@ -797,7 +887,7 @@ def _runtime_generation_config(config, case):
             "id": str(Path(config["models"]["wan"]["local_snapshot_path"]).expanduser().resolve()),
             "revision": None,
             "upstream_id": config["models"]["wan"]["upstream_id"],
-            "upstream_revision": config["models"]["wan"]["revision"],
+            "upstream_revision": config["models"]["wan"].get("revision"),
             "local_files_only_by_path": True,
         },
         "generation": {
@@ -913,9 +1003,13 @@ def phase_generate(store, config, case_id):
                 path.parent.mkdir(parents=True, exist_ok=True)
                 torch.save(terminal, path)
                 artifact_id = _artifact_id(case_id, arm, "TERMINAL")
+                file_receipt = {
+                    "path": str(path), "bytes": path.stat().st_size,
+                    "shape": list(terminal.shape), "dtype": str(terminal.dtype),
+                }
+                file_receipt["sha256"] = _observe_file_identity(file_receipt)
                 store.artifact(
-                    artifact_id, status="AVAILABLE", path=str(path), sha256=file_sha256(path),
-                    bytes=path.stat().st_size, shape=list(terminal.shape), dtype=str(terminal.dtype),
+                    artifact_id, status="AVAILABLE", **file_receipt,
                 )
                 records[arm] = {"receipt": receipt, "steps": steps}
                 del terminal
@@ -941,8 +1035,9 @@ def phase_decode(store, config, case_id):
         try:
             for arm in ("OFF_NATIVE", "PAYLOAD_NATIVE"):
                 terminal_row = _artifact(store, _artifact_id(case_id, arm, "TERMINAL"))
-                if terminal_row["status"] != "AVAILABLE" or file_sha256(terminal_row["path"]) != terminal_row["sha256"]:
-                    raise ValueError(f"{arm} terminal unavailable or changed")
+                if terminal_row["status"] != "AVAILABLE":
+                    raise ValueError(f"{arm} terminal unavailable")
+                _observe_file_identity(terminal_row)
                 terminal = torch.load(terminal_row["path"], map_location="cpu", weights_only=True)
                 rgb = runtime.vae.decode_normalized_latent(
                     vae, terminal.to(device=next(vae.parameters()).device, dtype=torch.float32),
@@ -1048,8 +1143,9 @@ def phase_codec(store, config, case_id):
             root = files.root / stage / "codec"
             started = time.perf_counter()
             try:
+                actual_raster_sha = _observe_file_identity(row)
                 fixed_rgb_media.mp4_roundtrip(
-                    row["path"], row["sha256"], root / "source.mp4", root / "received.rgb8",
+                    row["path"], actual_raster_sha, root / "source.mp4", root / "received.rgb8",
                     count=lambda name, done: calls.update([f"{name}:{'completed' if done else 'attempted'}"]),
                     event=lambda name, value: events.__setitem__(name, value),
                 )
@@ -1144,8 +1240,7 @@ def _quality_metrics(left, right, *, chunk_elements=4_000_000):
     if left.get("dtype") != "uint8":
         raise ValueError("quality inputs must be uint8")
     for row in (left, right):
-        if file_sha256(row["path"]) != row["sha256"]:
-            raise ValueError("quality input sha256 changed")
+        _observe_file_identity(row)
     count = math.prod(left["shape"])
     left_values = np.memmap(left["path"], dtype=np.uint8, mode="r", shape=(count,))
     right_values = np.memmap(right["path"], dtype=np.uint8, mode="r", shape=(count,))
@@ -1218,6 +1313,15 @@ def phase_receiver_sync(store, config, case_id):
                 try:
                     post = _artifact(store, _artifact_id(case_id, observation["arm"], "POST"))
                     full = files.load_rgb8(post)
+                    source_sha_observation = post.get("sha256_observation")
+                    if not isinstance(source_sha_observation, dict):
+                        source_sha_observation = {
+                            "expected": post.get("sha256"), "actual": None,
+                            "status": "OBSERVATION_UNAVAILABLE_NOT_RECORDED",
+                            "blocking": False,
+                        }
+                    actual_source_sha = source_sha_observation.get("actual")
+                    source_identity_token = _content_identity_token(post, actual_source_sha)
                     construction_map = _expand_edit_map(
                         config["edit_maps"][observation["map_id"]],
                         f"edit_maps.{observation['map_id']}",
@@ -1225,12 +1329,15 @@ def phase_receiver_sync(store, config, case_id):
                     received = runtime.Inputs.construct(full, construction_map)
                     map_sha = hashlib.sha256(json.dumps(construction_map, separators=(",", ":")).encode()).hexdigest()
                     virtual_identity = hashlib.sha256(
-                        json.dumps([post["sha256"], map_sha], separators=(",", ":")).encode()
+                        json.dumps([source_identity_token, map_sha], separators=(",", ":")).encode()
                     ).hexdigest()
                     receipt = {
                         "storage": "VIRTUAL_DETERMINISTIC_INDEX_VIEW",
                         "source_artifact_id": post["artifact_id"],
-                        "source_sha256": post["sha256"],
+                        "source_sha256": actual_source_sha,
+                        "source_identity_token": source_identity_token,
+                        "source_declared_sha256": post.get("sha256"),
+                        "source_sha256_observation": source_sha_observation,
                         "map_id": observation["map_id"],
                         "map_sha256": map_sha,
                         "virtual_identity_sha256": virtual_identity,
@@ -1296,8 +1403,7 @@ def phase_receiver_read(store, config, case_id):
         case = _case(config, case_id)
         files = ArtifactFiles(store, case_id)
         plan_receipt = store.data["records"][case_id]["blind_plan"]
-        if file_sha256(plan_receipt["path"]) != plan_receipt["sha256"]:
-            raise ValueError("blind plan changed")
+        _observe_file_identity(plan_receipt)
         plan = json.loads(Path(plan_receipt["path"]).read_text(encoding="utf-8"))
         model = runtime.WanBackend(_runtime_generation_config(config, case))
         reads = {"truth_inputs": False, "slots": {}, "physical_encodes": {}}
@@ -1329,28 +1435,51 @@ def phase_receiver_read(store, config, case_id):
                     )
                     source = _artifact(store, _artifact_id(case_id, declaration["arm"], "POST"))
                     full = files.load_rgb8(source)
+                    source_sha_observation = source.get("sha256_observation")
+                    if not isinstance(source_sha_observation, dict):
+                        source_sha_observation = {
+                            "expected": source.get("sha256"), "actual": None,
+                            "status": "OBSERVATION_UNAVAILABLE_NOT_RECORDED",
+                            "blocking": False,
+                        }
+                    actual_source_sha = source_sha_observation.get("actual")
+                    source_identity_token = _content_identity_token(source, actual_source_sha)
                     construction_map = _expand_edit_map(
                         config["edit_maps"][declaration["map_id"]],
                         f"edit_maps.{declaration['map_id']}",
                     )
                     received = runtime.Inputs.construct(full, construction_map)
-                    if observation["artifact"]["virtual_identity_sha256"] != hashlib.sha256(
+                    map_sha = hashlib.sha256(
+                        json.dumps(construction_map, separators=(",", ":")).encode()
+                    ).hexdigest()
+                    actual_virtual_identity = hashlib.sha256(
                         json.dumps(
-                            [source["sha256"], observation["artifact"]["map_sha256"]],
+                            [source_identity_token, map_sha],
                             separators=(",", ":"),
                         ).encode()
-                    ).hexdigest():
-                        raise ValueError("virtual observation identity mismatch")
+                    ).hexdigest()
+                    declared_virtual_identity = observation["artifact"].get("virtual_identity_sha256")
+                    observation["artifact"]["virtual_identity_observation"] = {
+                        "expected": declared_virtual_identity,
+                        "actual": actual_virtual_identity,
+                        "status": (
+                            "MATCH" if declared_virtual_identity == actual_virtual_identity
+                            else "UNDECLARED" if not declared_virtual_identity
+                            else "RECORDED_DIFFERENCE"
+                        ),
+                        "blocking": False,
+                    }
                     mapping = planned["operation"]["received_index_map"]
                     token = hashlib.sha256(json.dumps(
-                        [observation["artifact"]["virtual_identity_sha256"], mapping], separators=(",", ":"),
+                        [actual_virtual_identity, mapping], separators=(",", ":"),
                     ).encode()).hexdigest()
                     if token not in cache:
                         corrected = model.operate(received, mapping)
                         cache[token] = model.cache(model.encode(corrected))
                         reads["physical_encodes"][token] = {
                             "observation_id": slot["observation_id"],
-                            "received_virtual_identity_sha256": observation["artifact"]["virtual_identity_sha256"],
+                            "received_virtual_identity_sha256": actual_virtual_identity,
+                            "declared_virtual_identity_sha256": declared_virtual_identity,
                             "map_sha256": hashlib.sha256(json.dumps(mapping, separators=(",", ":")).encode()).hexdigest(),
                         }
                     normalized = model.restore(cache[token])
@@ -1377,10 +1506,7 @@ def phase_receiver_read(store, config, case_id):
 
 
 def _load_json_receipt(receipt):
-    if not isinstance(receipt, dict) or not isinstance(receipt.get("path"), str) or not isinstance(receipt.get("sha256"), str):
-        raise ValueError("saved record receipt must contain string path and sha256")
-    if file_sha256(receipt["path"]) != receipt["sha256"]:
-        raise ValueError(f"saved record changed: {receipt['path']}")
+    _observe_file_identity(receipt)
     value = read_json(receipt["path"])
     if not isinstance(value, dict):
         raise ValueError("saved record root must be an object")
@@ -1428,8 +1554,12 @@ def _videoseal_32_result(record, expected, native_length, expected_frames, rule)
     import numpy as np
 
     path = Path(sidecar["uri"])
-    if file_sha256(path) != sidecar["sha256"]:
-        return {"status": "FAILED", "reason": "VideoSeal sidecar identity mismatch"}
+    sidecar_receipt = {"path": str(path), "sha256": sidecar.get("sha256")}
+    try:
+        _observe_file_identity(sidecar_receipt)
+    except Exception as exc:
+        return {"status": "FAILED", "reason": f"VideoSeal sidecar unavailable: {type(exc).__name__}: {exc}"}
+    sidecar["sha256_observation"] = sidecar_receipt["sha256_observation"]
     with np.load(path, allow_pickle=False) as values:
         candidates = [values[key] for key in values.files if key.endswith("preds")]
         if len(candidates) != 1:
@@ -1460,6 +1590,7 @@ def _videoseal_32_result(record, expected, native_length, expected_frames, rule)
         "native_channels": native_length,
         "expected_frames": expected_frames,
         "rate": f"32/{native_length}",
+        "sidecar_sha256_observation": sidecar["sha256_observation"],
     }
 
 

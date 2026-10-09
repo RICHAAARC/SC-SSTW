@@ -12,3 +12,8 @@ Complete CLIs must work without notebook/scripts and from a no-.git source copy;
 record real manifest content identity, never invent a Git SHA or inherit parent
 Git. Model execution/Colab and Git publication require the current user scope.
 CPU/fixture and release checks are engineering evidence, not scientific PASS.
+For the explicitly authorized Paper Results V1 A-line notebook, source commits,
+dirty state, manifests, file/config digests, and dependency-version differences
+are recorded reproduction metadata rather than execution gates. Missing files,
+unsafe archives/paths, import or model-load failures, invalid shapes/non-finite
+data, truth-layer violations, and fixed-method/denominator violations still fail.

@@ -277,13 +277,13 @@ model, VAE, or codec was loaded while finalizing this local method definition.
 | pilot/confirmation roster | adopted as two excluded pilots plus eight fixed confirmation sources | bounded local search recorded no match but does not prove unseen; pilots cannot enter or repair confirmation |
 | 32-bit task message | adopted as `A6D39C5E` | historical arbitrary-message evidence remains unavailable |
 | receiver keys and codec | adopted as `watermark`, `watermark-wrong`, and 8-fps libx264/CRF18/yuv420p | real receipts must preserve these exact values |
-| VideoSeal source/weight identity | official commit `870ca7f`, 256-bit card, and named `y_256b_img.pth` object adopted | caller must supply local source/card/checkpoint paths and actual digests; nothing was downloaded here |
+| VideoSeal source/weight identity | official commit `870ca7f`, 256-bit card, and named `y_256b_img.pth` object adopted | caller supplies usable local source/card/checkpoint paths; actual commit, dirty state, and digests are recorded when available, while differences do not replace real import/load/output validation or block solely as provenance |
 | VideoSeal comparison | effective-32 `j mod 32` mapping and native `>0` tie decision adopted | rate 1/8 and different redundancy/strength remain disclosed; native-K is optional and unadopted |
-| RivaGAN source/weight identity | pin `efffa72a` and disclosed Peachypie98 community 32-bit checkpoint adopted | caller must supply the local source/checkpoint and actual digest; these are not official DAI-Lab weights |
+| RivaGAN source/weight identity | pin `efffa72a` and disclosed Peachypie98 community 32-bit checkpoint adopted | caller supplies a usable local source/checkpoint; actual commit, dirty state, and digest are recorded without a provenance-only gate, and these remain non-official DAI-Lab weights |
 | external main readout | M05/K0 with GLOBAL for non-FULL GLOBAL, PATH for SINGLE_JUMP, and RAW FULL separately adopted | 64 non-FULL pairs per method plus eight FULL controls; 160 rows/source remain controls and ablations |
 | RivaGAN sequence rule | all-declared-frame equal soft mean with native `>=0` and retained tie adopted | missing, non-finite, frame-count, or shape error fails the whole fixed row |
 | thresholds/FPR | outside this exact-recovery method | a larger independent calibration/evaluation roster is required before any presence/FPR claim |
-| execution paths and resource authorization | unresolved local paths/digests and real-run authorization remain external inputs | deterministic operation/storage counts are fixed; GPU peak and wall time are unknown |
+| execution paths and resource authorization | unresolved usable local paths and real-run authorization remain external inputs; identity metadata may be absent or differ and is recorded | deterministic operation/storage counts are fixed; GPU peak and wall time are unknown |
 
 This adoption does not authorize real execution. No strength/reducer scan,
 extra attack family, optional native-K run, additional baseline, threshold, or

@@ -37,10 +37,13 @@ def _portable_files():
 
 
 def _git_head():
-    completed = subprocess.run(
-        ["git", "rev-parse", "HEAD"], cwd=ROOT, text=True,
-        stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, check=False,
-    )
+    try:
+        completed = subprocess.run(
+            ["git", "rev-parse", "HEAD"], cwd=ROOT, text=True,
+            stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, check=False,
+        )
+    except OSError:
+        return None
     return completed.stdout.strip() if completed.returncode == 0 else None
 
 
@@ -140,6 +143,12 @@ def build_notebook():
                     digest.update(chunk)
             return digest.hexdigest()
 
+        def observe_sha256(path):
+            try:
+                return sha256_file(path), None
+            except OSError as exc:
+                return None, f"{{type(exc).__name__}}: {{exc}}"
+
         stage_receipts = []
         def record_stage(stage, status, **fields):
             row = {{"stage": stage, "status": status, "recorded_at_utc": datetime.datetime.now(datetime.timezone.utc).isoformat(), **fields}}
@@ -206,8 +215,7 @@ def build_notebook():
 
         def extract_portable_source():
             raw = base64.b64decode(PORTABLE_B64.encode())
-            if hashlib.sha256(raw).hexdigest() != PORTABLE_ZIP_SHA256:
-                raise RuntimeError("embedded portable source ZIP digest mismatch")
+            actual_zip_sha256 = hashlib.sha256(raw).hexdigest()
             archive_path = OUTPUT_ROOT / "portable_source.zip"
             archive_path.write_bytes(raw)
             PORTABLE_ROOT.mkdir(parents=True, exist_ok=False)
@@ -218,19 +226,65 @@ def build_notebook():
                         raise RuntimeError("unsafe portable archive member")
                     archive.extract(member, PORTABLE_ROOT)
             manifest_path = PORTABLE_ROOT / "portable_manifest.json"
-            source_manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
-            for name, receipt in source_manifest["files"].items():
-                path = PORTABLE_ROOT / name
-                if not path.is_file() or sha256_file(path) != receipt["sha256"]:
-                    raise RuntimeError("portable source file mismatch: " + name)
-            if any(".git" in path.parts for path in PORTABLE_ROOT.rglob("*")):
-                raise RuntimeError("portable source unexpectedly contains .git")
+            source_manifest = {{"files": {{}}}}
+            manifest_status = "ABSENT_OPTIONAL"
+            manifest_error = None
+            if manifest_path.is_file():
+                try:
+                    candidate = json.loads(manifest_path.read_text(encoding="utf-8"))
+                    if not isinstance(candidate, dict) or not isinstance(candidate.get("files"), dict):
+                        raise ValueError("portable manifest files must be an object")
+                    source_manifest = candidate
+                    manifest_status = "LOADED"
+                except Exception as exc:
+                    manifest_status = "INVALID_RECORDED"
+                    manifest_error = f"{{type(exc).__name__}}: {{exc}}"
+            file_observations = {{}}
+            root_resolved = PORTABLE_ROOT.resolve()
+            for name, receipt in source_manifest.get("files", {{}}).items():
+                expected = receipt.get("sha256") if isinstance(receipt, dict) else None
+                path = (PORTABLE_ROOT / name).resolve()
+                if root_resolved not in path.parents and path != root_resolved:
+                    file_observations[name] = {{"status": "INVALID_MANIFEST_PATH", "expected": expected}}
+                    continue
+                actual, hash_error = observe_sha256(path) if path.is_file() else (None, None)
+                file_observations[name] = {{
+                    "expected": expected,
+                    "actual": actual,
+                    "status": (
+                        "MATCH" if expected == actual and actual
+                        else "OBSERVATION_UNAVAILABLE" if hash_error
+                        else "MISSING_FILE_RECORDED" if actual is None
+                        else "UNDECLARED" if not expected
+                        else "RECORDED_DIFFERENCE"
+                    ),
+                    "observation_error": hash_error,
+                    "blocking": False,
+                }}
+            try:
+                git_entries = [str(path.relative_to(PORTABLE_ROOT)) for path in PORTABLE_ROOT.rglob("*") if ".git" in path.parts]
+                git_observation_error = None
+            except OSError as exc:
+                git_entries = None
+                git_observation_error = f"{{type(exc).__name__}}: {{exc}}"
+            manifest_sha256, manifest_hash_error = (
+                observe_sha256(manifest_path) if manifest_path.is_file() else (None, None)
+            )
             atomic_json(OUTPUT_ROOT / "portable_source_receipt.json", {{
-                "zip_sha256": PORTABLE_ZIP_SHA256,
-                "manifest_sha256": sha256_file(manifest_path),
+                "zip_sha256_expected": PORTABLE_ZIP_SHA256,
+                "zip_sha256_actual": actual_zip_sha256,
+                "zip_sha256_status": "MATCH" if actual_zip_sha256 == PORTABLE_ZIP_SHA256 else "RECORDED_DIFFERENCE",
+                "manifest_status": manifest_status,
+                "manifest_error": manifest_error,
+                "manifest_sha256": manifest_sha256,
+                "manifest_hash_observation_error": manifest_hash_error,
+                "file_observations": file_observations,
+                "git_entries": git_entries,
+                "git_observation_error": git_observation_error,
                 "built_from_git_head_context_only": PORTABLE_BASE_COMMIT_CONTEXT,
-                "execution_identity": "EMBEDDED_ZIP_AND_PER_FILE_CONTENT_DIGESTS",
-                "file_count": len(source_manifest["files"]),
+                "execution_identity": "SOURCE_BYTES_USED_WITH_OPTIONAL_PROVENANCE_OBSERVATIONS",
+                "file_count": len(source_manifest.get("files", {{}})),
+                "identity_differences_are_blocking": False,
             }})
             return source_manifest
 
@@ -263,7 +317,7 @@ def build_notebook():
     ''')
 
     prepare_identity = textwrap.dedent('''\
-        ## Prepare fixed source and checkpoint identities, then initialize the immutable run
+        ## Prepare fixed source/checkpoint declarations and record actual local identities
         # Baseline preparation failures are retained and do not prevent the main-method attempt.
         VIDEOSEAL_COMMIT = "870ca7fb33578b90f14c602016b6c2788096226e"
         VIDEOSEAL_REPO = "https://github.com/facebookresearch/videoseal.git"
@@ -273,21 +327,47 @@ def build_notebook():
         RIVAGAN_WEIGHT_COMMIT = "4d9928350509f808b6b57d48d2f958aef811d332"
         RIVAGAN_CHECKPOINT_URL = "https://raw.githubusercontent.com/Peachypie98/RivaGAN/4d9928350509f808b6b57d48d2f958aef811d332/model_weight/rivagan_32bit_model.pt"
 
-        def verified_checkout(label, url, commit, destination):
+        source_checkout_receipts = {}
+        def prepared_checkout(label, url, commit, destination):
             destination = Path(destination)
-            if not destination.exists():
+            created_now = not destination.exists()
+            if created_now:
                 logged(["git", "clone", "--filter=blob:none", url, str(destination)], label + "_CLONE")
-            has_commit = subprocess.run(
-                ["git", "-C", str(destination), "cat-file", "-e", commit + "^{commit}"],
-                stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, check=False,
-            ).returncode == 0
-            if not has_commit:
-                logged(["git", "-C", str(destination), "fetch", "origin", commit], label + "_FETCH")
-            logged(["git", "-C", str(destination), "checkout", "--detach", commit], label + "_CHECKOUT")
-            actual = subprocess.check_output(["git", "-C", str(destination), "rev-parse", "HEAD"], text=True).strip()
-            dirty = subprocess.check_output(["git", "-C", str(destination), "status", "--porcelain"], text=True)
-            if actual != commit or dirty:
-                raise RuntimeError(label + " source commit/clean check failed")
+                has_commit = subprocess.run(
+                    ["git", "-C", str(destination), "cat-file", "-e", commit + "^{commit}"],
+                    stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, check=False,
+                ).returncode == 0
+                if not has_commit:
+                    logged(["git", "-C", str(destination), "fetch", "origin", commit], label + "_FETCH", check=False)
+                logged(["git", "-C", str(destination), "checkout", "--detach", commit], label + "_CHECKOUT", check=False)
+            try:
+                head = subprocess.run(
+                    ["git", "-C", str(destination), "rev-parse", "HEAD"],
+                    text=True, capture_output=True, check=False,
+                )
+                status = subprocess.run(
+                    ["git", "-C", str(destination), "status", "--porcelain"],
+                    text=True, capture_output=True, check=False,
+                )
+                actual = head.stdout.strip() if head.returncode == 0 else None
+                dirty = status.stdout.splitlines() if status.returncode == 0 else None
+                git_error = (head.stderr or status.stderr).strip() or None
+            except OSError as exc:
+                actual = None; dirty = None
+                git_error = f"{type(exc).__name__}: {exc}"
+            source_checkout_receipts[label] = {
+                "requested_commit": commit,
+                "actual_commit": actual,
+                "dirty_paths": dirty,
+                "status": (
+                    "MATCH_CLEAN" if actual == commit and dirty == []
+                    else "RECORDED_DIFFERENCE" if actual is not None
+                    else "GIT_IDENTITY_UNAVAILABLE"
+                ),
+                "identity_difference_blocking": False,
+                "created_now": created_now,
+                "git_error": git_error,
+            }
             return destination
 
         def cached_download(label, url, destination):
@@ -297,36 +377,51 @@ def build_notebook():
                 if temporary.exists(): temporary.unlink()
                 urllib.request.urlretrieve(url, temporary)
                 os.replace(temporary, destination)
-            if destination.stat().st_size == 0:
-                raise RuntimeError(label + " downloaded an empty file")
-            return destination, sha256_file(destination)
+            digest, digest_error = observe_sha256(destination)
+            source_checkout_receipts[label + "_FILE"] = {
+                "actual_sha256": digest,
+                "digest_observation_error": digest_error,
+                "blocking": False,
+            }
+            return destination, digest
+
+        def optional_sha256(label, path):
+            digest, error = observe_sha256(path)
+            if error:
+                source_checkout_receipts[label] = {
+                    "actual_sha256": None,
+                    "digest_observation_error": error,
+                    "blocking": False,
+                }
+            return digest
 
         baseline_setup = {}
         VS_ROOT = CACHE_ROOT / "sources" / ("videoseal-" + VIDEOSEAL_COMMIT)
         VS_CARD = VS_ROOT / "videoseal/cards/videoseal_1.0.yaml"
         VS_WEIGHT = CACHE_ROOT / "checkpoints/videoseal/y_256b_img.pth"
         try:
-            verified_checkout("VIDEOSEAL_SOURCE", VIDEOSEAL_REPO, VIDEOSEAL_COMMIT, VS_ROOT)
+            prepared_checkout("VIDEOSEAL_SOURCE", VIDEOSEAL_REPO, VIDEOSEAL_COMMIT, VS_ROOT)
             VS_WEIGHT, vs_weight_sha = cached_download("VIDEOSEAL_CHECKPOINT", VIDEOSEAL_CHECKPOINT_URL, VS_WEIGHT)
-            vs_card_sha = sha256_file(VS_CARD)
-            baseline_setup["videoseal"] = {"status": "READY", "source_commit": VIDEOSEAL_COMMIT, "card_sha256": vs_card_sha, "checkpoint_sha256": vs_weight_sha}
+            vs_card_sha = optional_sha256("VIDEOSEAL_CARD", VS_CARD)
+            baseline_setup["videoseal"] = {"status": "READY", "source_commit": VIDEOSEAL_COMMIT, "source_identity": source_checkout_receipts.get("VIDEOSEAL_SOURCE"), "card_sha256": vs_card_sha, "checkpoint_sha256": vs_weight_sha}
         except Exception as exc:
-            vs_card_sha = "0" * 64; vs_weight_sha = "0" * 64
+            vs_card_sha = None; vs_weight_sha = None
             baseline_setup["videoseal"] = {"status": "FAILED", "reason": f"{type(exc).__name__}: {exc}", "source_commit": VIDEOSEAL_COMMIT}
 
         RIVA_ROOT = CACHE_ROOT / "sources" / ("rivagan-" + RIVAGAN_COMMIT)
         RIVA_WEIGHT = CACHE_ROOT / "checkpoints/rivagan/rivagan_32bit_model.pt"
         try:
-            verified_checkout("RIVAGAN_SOURCE", RIVAGAN_REPO, RIVAGAN_COMMIT, RIVA_ROOT)
+            prepared_checkout("RIVAGAN_SOURCE", RIVAGAN_REPO, RIVAGAN_COMMIT, RIVA_ROOT)
             RIVA_WEIGHT, riva_weight_sha = cached_download("RIVAGAN_CHECKPOINT", RIVAGAN_CHECKPOINT_URL, RIVA_WEIGHT)
             baseline_setup["rivagan"] = {
                 "status": "READY", "source_commit": RIVAGAN_COMMIT,
+                "source_identity": source_checkout_receipts.get("RIVAGAN_SOURCE"),
                 "checkpoint_source_commit": RIVAGAN_WEIGHT_COMMIT,
                 "checkpoint_sha256": riva_weight_sha,
                 "checkpoint_provenance": "Peachypie98 community 32-bit checkpoint; not DAI-Lab official weights",
             }
         except Exception as exc:
-            riva_weight_sha = "0" * 64
+            riva_weight_sha = None
             baseline_setup["rivagan"] = {"status": "FAILED", "reason": f"{type(exc).__name__}: {exc}", "source_commit": RIVAGAN_COMMIT, "checkpoint_source_commit": RIVAGAN_WEIGHT_COMMIT}
         atomic_json(OUTPUT_ROOT / "baseline_setup_receipts.json", baseline_setup)
 
@@ -339,25 +434,32 @@ def build_notebook():
         effective["models"]["framewise"]["local_snapshot_path"] = str(FRAMEWISE_SNAPSHOT)
         effective["models"]["videoseal"].update({
             "source_root": str(VS_ROOT), "source_commit": VIDEOSEAL_COMMIT,
+            "source_identity_observation": source_checkout_receipts.get("VIDEOSEAL_SOURCE"),
             "card_path": str(VS_CARD), "card_sha256": vs_card_sha,
             "checkpoint_path": str(VS_WEIGHT), "checkpoint_sha256": vs_weight_sha,
-            "checkpoint_download_status": "DOWNLOADED_OR_REUSED_AND_SHA256_BOUND_BY_NOTEBOOK" if baseline_setup["videoseal"]["status"] == "READY" else "FAILED_NOT_AVAILABLE",
+            "checkpoint_download_status": "DOWNLOADED_OR_REUSED_DIGEST_RECORDED" if baseline_setup["videoseal"]["status"] == "READY" else "FAILED_NOT_AVAILABLE",
         })
         effective["models"]["rivagan"].update({
             "source_root": str(RIVA_ROOT), "source_commit": RIVAGAN_COMMIT,
+            "source_identity_observation": source_checkout_receipts.get("RIVAGAN_SOURCE"),
             "checkpoint_path": str(RIVA_WEIGHT), "checkpoint_sha256": riva_weight_sha,
             "source_url": RIVAGAN_REPO,
             "checkpoint_source_url": RIVAGAN_CHECKPOINT_URL,
             "checkpoint_source_commit": RIVAGAN_WEIGHT_COMMIT,
-            "checkpoint_download_status": "DOWNLOADED_OR_REUSED_AND_SHA256_BOUND_BY_NOTEBOOK" if baseline_setup["rivagan"]["status"] == "READY" else "FAILED_NOT_AVAILABLE",
+            "checkpoint_download_status": "DOWNLOADED_OR_REUSED_DIGEST_RECORDED" if baseline_setup["rivagan"]["status"] == "READY" else "FAILED_NOT_AVAILABLE",
         })
         EFFECTIVE_CONFIG = OUTPUT_ROOT / "effective_config.json"
         atomic_json(EFFECTIVE_CONFIG, effective)
-        EFFECTIVE_CONFIG_SHA256 = sha256_file(EFFECTIVE_CONFIG)
+        EFFECTIVE_CONFIG_SHA256 = optional_sha256("EFFECTIVE_CONFIG_INITIAL", EFFECTIVE_CONFIG)
         portable_env = {**os.environ, "PYTHONPATH": str(PORTABLE_ROOT)}
         logged([PYTHON, "-u", "-m", "experiments.paper_results_v1.real_cli", "--config", str(EFFECTIVE_CONFIG), "--output", str(OUTPUT_ROOT / "fixed_plan"), "--phase", "plan"], "EFFECTIVE_FIXED_PLAN", cwd=PORTABLE_ROOT, env=portable_env)
         logged([PYTHON, "-u", "-m", "experiments.paper_results_v1.real_cli", "--config", str(EFFECTIVE_CONFIG), "--output", str(RUN_OUTPUT), "--phase", "init"], "RUN_STATE_INIT", cwd=PORTABLE_ROOT, env=portable_env)
-        record_stage("FIXED_IDENTITIES_AND_RUN_INIT", "SUCCEEDED", effective_config_sha256=EFFECTIVE_CONFIG_SHA256)
+        record_stage(
+            "FIXED_IDENTITIES_AND_RUN_INIT", "SUCCEEDED",
+            effective_config_sha256=EFFECTIVE_CONFIG_SHA256,
+            effective_config_hash_observation=source_checkout_receipts.get("EFFECTIVE_CONFIG_INITIAL"),
+            effective_config_hash_blocking=False,
+        )
         print("Initialized full 10-case denominator. Run all will attempt only:", PILOT_CASES)
     ''')
 
@@ -366,17 +468,50 @@ def build_notebook():
         from experiments.paper_results_v1.colab_orchestration import prepare_baseline_environment
 
         # The historical non-zero pip check is retained as a diagnostic and is not a blanket hard failure.
-        MAIN_PINS = {
+        MAIN_RECOMMENDED_VERSIONS = {
             "torch": "2.11.0", "torchvision": "0.26.0", "diffusers": "0.39.0", "transformers": "4.57.6",
             "numpy": "2.1.3", "accelerate": "1.15.0", "safetensors": "0.8.0",
             "huggingface-hub": "0.36.2", "tokenizers": "0.22.2",
             "sentencepiece": "0.2.2", "ftfy": "6.3.1",
         }
-        probe = "import importlib.metadata as m; pins=" + repr(MAIN_PINS) + "; actual={k:m.version(k) for k in pins}; assert all(actual[k].split('+')[0]==v for k,v in pins.items()),actual; from diffusers import AutoencoderKL,AutoencoderKLWan,WanPipeline; import torch,sentencepiece,ftfy; print(actual)"
+        distribution_modules = {
+            "torch": "torch", "torchvision": "torchvision", "diffusers": "diffusers",
+            "transformers": "transformers", "numpy": "numpy", "accelerate": "accelerate",
+            "safetensors": "safetensors", "huggingface-hub": "huggingface_hub",
+            "tokenizers": "tokenizers", "sentencepiece": "sentencepiece", "ftfy": "ftfy",
+        }
+        import importlib.metadata as package_metadata
+        version_observation = {}
+        for distribution, recommended in MAIN_RECOMMENDED_VERSIONS.items():
+            try:
+                actual = package_metadata.version(distribution)
+            except package_metadata.PackageNotFoundError:
+                actual = None
+            version_observation[distribution] = {
+                "recommended_historical_version": recommended,
+                "actual_version": actual,
+                "status": "MATCH" if actual and actual.split("+")[0] == recommended else "RECORDED_DIFFERENCE",
+                "blocking": False,
+            }
+        atomic_json(OUTPUT_ROOT / "main_environment_version_observation.json", version_observation)
+        probe = "from diffusers import AutoencoderKL,AutoencoderKLWan,WanPipeline; import torch,sentencepiece,ftfy; print('MAIN_IMPORT_READY')"
         main_environment_status = "READY"
         try:
             if logged([PYTHON, "-c", probe], "MAIN_DEPENDENCY_PROBE", check=False):
-                logged([PYTHON, "-m", "pip", "install", *[f"{name}=={version}" for name, version in MAIN_PINS.items()]], "MAIN_PINNED_REPAIR")
+                missing = [
+                    distribution for distribution, module in distribution_modules.items()
+                    if importlib.util.find_spec(module) is None
+                ]
+                logged(
+                    [
+                        PYTHON, "-m", "pip", "install",
+                        *[
+                            f"{name}=={MAIN_RECOMMENDED_VERSIONS[name]}"
+                            for name in (missing or list(distribution_modules))
+                        ],
+                    ],
+                    "MAIN_IMPORT_FAILURE_REPAIR",
+                )
                 logged([PYTHON, "-c", probe], "MAIN_DEPENDENCY_REPROBE")
             dependency_check_returncode = logged([PYTHON, "-m", "pip", "check"], "MAIN_PIP_CHECK_DIAGNOSTIC", check=False)
             (OUTPUT_ROOT / "environment_freeze.txt").write_text(subprocess.check_output([PYTHON, "-m", "pip", "freeze"], text=True), encoding="utf-8")
@@ -385,9 +520,15 @@ def build_notebook():
             dependency_check_returncode = None
             record_stage("MAIN_ENVIRONMENT_PREPARATION", "FAILED", reason=f"{type(exc).__name__}: {exc}")
 
-        BASELINE_CORE_CONSTRAINTS = OUTPUT_ROOT / "baseline_core_constraints.txt"
-        BASELINE_CORE_CONSTRAINTS.write_text(
-            "".join(f"{name}=={version}\\n" for name, version in MAIN_PINS.items()),
+        BASELINE_VERSION_RECOMMENDATIONS = OUTPUT_ROOT / "baseline_version_recommendations.json"
+        atomic_json(BASELINE_VERSION_RECOMMENDATIONS, {
+            "status": "HISTORICAL_RECOMMENDATIONS_NOT_CONSTRAINTS",
+            "main_versions": MAIN_RECOMMENDED_VERSIONS,
+            "version_differences_are_blocking": False,
+        })
+        BASELINE_REPAIR_CONSTRAINTS = OUTPUT_ROOT / "baseline_repair_constraints.txt"
+        BASELINE_REPAIR_CONSTRAINTS.write_text(
+            "".join(f"{name}=={version}\\n" for name, version in MAIN_RECOMMENDED_VERSIONS.items()),
             encoding="utf-8",
         )
         baseline_pythons = {}
@@ -412,12 +553,13 @@ def build_notebook():
                     raise RuntimeError(method + " source/checkpoint preparation failed")
                 if not vpython.exists():
                     logged([PYTHON, "-m", "venv", "--system-site-packages", str(venv)], method.upper() + "_VENV_CREATE")
-                # Resolve full transitive dependencies inside the dedicated venv while
-                # constraining the already-recorded main stack. Never install the
-                # obsolete official RivaGAN requirements file.
+                # Resolve only after the actual entry import fails. The repair then
+                # constrains the known historical main stack; those versions are
+                # never a prerequisite when the existing imports already work.
+                # The obsolete official RivaGAN requirements file is never installed.
                 logged([
                     str(vpython), "-m", "pip", "install",
-                    "--constraint", str(BASELINE_CORE_CONSTRAINTS),
+                    "--constraint", str(BASELINE_REPAIR_CONSTRAINTS),
                     *baseline_dependencies[method],
                 ], method.upper() + "_ISOLATED_DEPENDENCIES")
                 baseline_setup[method]["environment_freeze_path"] = str(OUTPUT_ROOT / (method + "_environment_freeze.txt"))
@@ -475,13 +617,20 @@ def build_notebook():
             record_stage("MODEL_SNAPSHOT_PREPARATION", "FAILED", reason=f"{type(exc).__name__}: {exc}")
         finally:
             hf_token = None
+        recommendation_sha = optional_sha256("BASELINE_VERSION_RECOMMENDATIONS", BASELINE_VERSION_RECOMMENDATIONS)
+        repair_constraints_sha = optional_sha256("BASELINE_REPAIR_CONSTRAINTS", BASELINE_REPAIR_CONSTRAINTS)
         atomic_json(OUTPUT_ROOT / "environment_setup_receipt.json", {
             "main_environment_status": main_environment_status,
             "main_pip_check_returncode_nonfatal_diagnostic": dependency_check_returncode,
             "model_snapshot_status": model_snapshot_status,
             "wan_revision": WAN_REVISION, "framewise_revision": FRAMEWISE_REVISION,
-            "baseline_core_constraints_path": str(BASELINE_CORE_CONSTRAINTS),
-            "baseline_core_constraints_sha256": sha256_file(BASELINE_CORE_CONSTRAINTS),
+            "baseline_version_recommendations_path": str(BASELINE_VERSION_RECOMMENDATIONS),
+            "baseline_version_recommendations_sha256": recommendation_sha,
+            "baseline_version_recommendations_hash_observation": source_checkout_receipts.get("BASELINE_VERSION_RECOMMENDATIONS"),
+            "baseline_repair_constraints_path": str(BASELINE_REPAIR_CONSTRAINTS),
+            "baseline_repair_constraints_sha256": repair_constraints_sha,
+            "baseline_repair_constraints_hash_observation": source_checkout_receipts.get("BASELINE_REPAIR_CONSTRAINTS"),
+            "receipt_hashes_blocking": False,
             "baseline_environments": baseline_setup,
             "note": "Model/backend compatibility is established only by later phase receipts, not by preparation status.",
         })
@@ -492,8 +641,22 @@ def build_notebook():
         ## Execute the fixed two pilots once, one model family per process
         from experiments.paper_results_v1.colab_orchestration import execute_fixed_sequence
 
-        if sha256_file(EFFECTIVE_CONFIG) != EFFECTIVE_CONFIG_SHA256:
-            raise RuntimeError("effective configuration changed after RunStore initialization")
+        try:
+            effective_config_actual_sha256 = sha256_file(EFFECTIVE_CONFIG)
+            effective_config_hash_error = None
+        except OSError as exc:
+            effective_config_actual_sha256 = None
+            effective_config_hash_error = f"{type(exc).__name__}: {exc}"
+        record_stage(
+            "EFFECTIVE_CONFIG_IDENTITY_OBSERVED",
+            "OBSERVATION_UNAVAILABLE" if effective_config_hash_error
+            else "MATCH" if effective_config_actual_sha256 == EFFECTIVE_CONFIG_SHA256
+            else "RECORDED_DIFFERENCE",
+            expected_sha256=EFFECTIVE_CONFIG_SHA256,
+            actual_sha256=effective_config_actual_sha256,
+            observation_error=effective_config_hash_error,
+            blocking=False,
+        )
         portable_env = {**os.environ, "PYTHONPATH": str(PORTABLE_ROOT)}
         cli_prefix = ["-u", "-m", "experiments.paper_results_v1.real_cli", "--config", str(EFFECTIVE_CONFIG), "--output", str(RUN_OUTPUT)]
         phase_interpreters = {
@@ -611,7 +774,7 @@ def build_notebook():
 
             This handoff attempts **pilot_01** and **pilot_02** once, in the frozen order below. The eight confirmation cases remain in the immutable ten-case manifest but are `NOT_EXECUTED_BY_NOTEBOOK`; full-denominator evaluation projects absent receiver/baseline/comparison evidence to disclosed FAILED/UNEVALUABLE rows while quality retains its recorded state. These are not attempted model failures, and pilots are never pooled into confirmation.
 
-            The notebook embeds the current evaluator and its runtime/main source closure, so the notebook is the only project file to upload. It downloads named model snapshots, exact baseline source commits, and named checkpoint objects when the user runs it. The notebook itself has not been run against real models in this delivery; local validation is static plus CPU/fake only.
+            The notebook embeds the current evaluator and its runtime/main source closure, so the notebook is the only project file to upload. On a fresh cache it requests the named baseline source commits; an existing usable cached checkout is preserved and its actual commit/dirty state is recorded. It also downloads named model snapshots and checkpoint objects when the user runs it. The notebook itself has not been run against real models in this delivery; local validation is static plus CPU/fake only.
 
             Historical real evidence remains bound to source `ac111d0fed253767651929d115c343fe1636c525` and run `20261008T003135066923Z/fixed_reference`. That evidence checks the main chain, not this notebook or either external baseline.
         '''), "goal"),
@@ -629,7 +792,7 @@ def build_notebook():
 
             Return the entire unique Drive run directory, especially `handoff_summary.json`, `effective_config.json`, `portable_source_receipt.json`, `execution.log`, `stage_receipts.json`, `run_state/run_state.json`, all CSV/JSON evaluation reports, both `run_state/artifacts/pilot_01` and `pilot_02` trees, and every native `.npz` sidecar. Do not rerun a failed phase in the same run directory; another attempt requires a new Run-all directory.
 
-            `pip check` is retained as a diagnostic. The historical successful main environment had a non-zero result from unrelated Gradio/Hub and Jedi conflicts, so a non-zero value alone is not used to erase model-phase evidence. Baseline dependencies are resolved inside separate system-site-package virtual environments under constraints that preserve the recorded main stack. VideoSeal explicitly includes OmegaConf's ANTLR and PyYAML closure. Each venv then runs an import-only entry probe; model compatibility remains unvalidated until its real embed/extract phase. The old RivaGAN requirements are not installed because they pin obsolete Torch/OpenCV/Pandas/NumPy versions.
+            `pip check` is retained as a diagnostic. The historical successful main environment had a non-zero result from unrelated Gradio/Hub and Jedi conflicts, so a non-zero value alone is not used to erase model-phase evidence. Recorded main versions are non-blocking historical recommendations. Main and baseline entries are import-probed first; only an actual import failure triggers dependency repair. Baseline repairs stay in separate system-site-package virtual environments and explicitly request VideoSeal's OmegaConf, ANTLR, and PyYAML closure without exact-version equality gates. Model compatibility remains unvalidated until its real embed/extract phase. The old RivaGAN requirements are not installed because they pin obsolete Torch/OpenCV/Pandas/NumPy versions.
         '''), "handoff"),
     ]
     notebook = {

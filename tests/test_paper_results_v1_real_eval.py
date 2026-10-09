@@ -134,6 +134,71 @@ def test_run_store_failure_retains_all_planned_rows_and_per_case_phase_state(tmp
     assert sum(row["status"] == "PLANNED" for row in reopened.data["receiver_slots"]) == 160
 
 
+def test_identity_and_revision_differences_are_recorded_without_changing_the_plan(tmp_path):
+    config = one_case_config()
+    config["models"]["wan"]["revision"] = "different-local-wan-revision"
+    config["models"]["framewise"]["revision"] = "different-local-framewise-revision"
+    for method in ("videoseal", "rivagan"):
+        config["models"][method].pop("source_commit", None)
+        config["models"][method].pop("checkpoint_sha256", None)
+    config["models"]["videoseal"].pop("card_sha256", None)
+    validated = real_eval.validate_real_config(config)
+    assert len(real_eval.build_plan(validated)["receiver_slots"]) == 160
+
+    output = tmp_path / "identity-observation"
+    real_eval.RunStore(output, config, create=True)
+    changed = copy.deepcopy(config)
+    changed["models"]["wan"]["revision"] = "another-recorded-revision"
+    reopened = real_eval.RunStore(output, changed)
+    assert reopened.data["config_identity_observation"]["status"] == "RECORDED_DIFFERENCE"
+    assert reopened.data["config_identity_observation"]["blocking"] is False
+    assert len(reopened.data["receiver_slots"]) == 160
+
+
+def test_file_digest_difference_or_observation_error_does_not_replace_real_file_use(monkeypatch, tmp_path):
+    path = tmp_path / "usable.bin"
+    path.write_bytes(b"usable bytes")
+    resolved, actual = real_backends.require_local_file(
+        path, expected_sha256="declared-different", label="fixture",
+    )
+    assert resolved == path.resolve()
+    assert actual == real_backends.file_sha256(path)
+
+    monkeypatch.setattr(
+        real_backends, "file_sha256",
+        lambda _path: (_ for _ in ()).throw(OSError("digest observer unavailable")),
+    )
+    resolved, actual = real_backends.require_local_file(
+        path, expected_sha256="declared", label="fixture",
+    )
+    assert resolved == path.resolve()
+    assert actual is None
+
+
+def test_preflight_keeps_existing_baseline_files_ready_when_only_digests_differ(tmp_path):
+    config = one_case_config()
+    for method, package in (("videoseal", "videoseal/__init__.py"), ("rivagan", "rivagan/rivagan.py")):
+        root = tmp_path / method
+        target = root / package
+        target.parent.mkdir(parents=True, exist_ok=True)
+        target.write_text("# fixture\n", encoding="utf-8")
+        checkpoint = root / "checkpoint.bin"
+        checkpoint.write_bytes(b"fixture checkpoint")
+        config["models"][method]["source_root"] = str(root)
+        config["models"][method]["checkpoint_path"] = str(checkpoint)
+        config["models"][method]["checkpoint_sha256"] = "declared-different"
+    card = tmp_path / "videoseal/card.yaml"
+    card.write_text("args: {nbits: 256}\n", encoding="utf-8")
+    config["models"]["videoseal"]["card_path"] = str(card)
+    config["models"]["videoseal"]["card_sha256"] = "declared-different"
+
+    checks = {row["name"]: row for row in real_eval.static_preflight(config)["checks"]}
+    for name in ("videoseal:card_path", "videoseal:checkpoint", "rivagan:checkpoint"):
+        assert checks[name]["status"] == "READY"
+        assert checks[name]["sha256_status"] == "RECORDED_DIFFERENCE"
+        assert checks[name]["sha256_blocking"] is False
+
+
 def test_real_cli_preflight_plan_and_init_work_from_no_git_copy(tmp_path):
     source = tmp_path / "source-copy"
     (source / "experiments").mkdir(parents=True)

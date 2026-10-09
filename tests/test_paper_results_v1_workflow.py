@@ -201,7 +201,7 @@ def test_videoseal_loaded_backend_uses_native_calls_without_truth_or_capacity_ma
         VideoSealLoadedBackend(Model(), lambda bits: [bits]),
         native_message_length=2,
         backend_metadata={
-            "source_version": "unit", "model_version": "unit", "weight_identity": "unit",
+            "source_version": None, "model_version": "unit", "weight_identity": None,
             "detect_output_layout": "T,1+K,H,W",
         },
     )
@@ -321,7 +321,7 @@ def test_rivagan_rejects_non_32_frame_logits_without_sequence_reducer():
     adapter = RivaGANNativeAdapter(
         backend,
         backend_metadata={
-            "source_version": "unit", "model_version": "unit", "weight_identity": "unit",
+            "source_version": None, "model_version": "unit", "weight_identity": None,
         },
     )
     with pytest.raises(NativeAdapterError, match=r"strict shape \[32\]"):

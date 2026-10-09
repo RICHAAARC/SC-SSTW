@@ -82,8 +82,9 @@ excluded pilots plus eight confirmation candidates.
 including the 2+8 roster, `A6D39C5E`, original `watermark`/`watermark-wrong`
 keys, native-tie reducers, and paper-facing M05/K0 comparison rows. Its
 `real_execution_authorized=false` field records that local method adoption is
-not permission to run models or media. Local paths and file digests remain
-explicit required execution inputs.
+not permission to run models or media. Usable local model/source paths remain
+required execution inputs; digests and source/version differences are optional
+recorded provenance and do not block solely because they differ or are absent.
 
 The standard-library-only phases are safe to run in a source copy without
 `.git` and do not import torch or load media:
@@ -119,12 +120,15 @@ complete, or already-running phase requires a new explicit output run rather
 than overwriting its evidence. The report-only `evaluate` phase may be
 regenerated and carries prior phase failures into the report.
 
-Wan and framewise entries require complete local snapshot directories. Wan is
+Wan and framewise entries require usable local snapshot directories. Wan is
 passed to the existing diffusers loader by local directory path; framewise uses
-`local_files_only=True`. VideoSeal requires an explicit local source tree,
-model card, checkpoint, and their digests. RivaGAN requires an explicit local
-source tree, the declared community checkpoint, and its digest. Preflight only
-checks module/path availability and never imports or deserializes them.
+`local_files_only=True`. VideoSeal requires an explicit usable local source
+tree, model card, and checkpoint; RivaGAN requires an explicit usable local
+source tree and the declared community-checkpoint object. Actual digests,
+declared digests, source commits, and dirty state are recorded when available,
+but differences or missing optional identity metadata do not block a usable
+source. Preflight checks module/path availability and records digest differences
+without importing or deserializing models.
 
 The real runner saves full RGB8 media with byte SHA-256, Wan/framewise latent
 receipts, codec commands and readbacks, seven fixed POST quality pairs, full
@@ -281,11 +285,13 @@ capacity, or 32-bit reduction. The interface references are pinned
 [`cfg.py`](https://github.com/facebookresearch/videoseal/blob/870ca7fb33578b90f14c602016b6c2788096226e/videoseal/utils/cfg.py),
 and the [256-bit card](https://github.com/facebookresearch/videoseal/blob/870ca7fb33578b90f14c602016b6c2788096226e/videoseal/cards/videoseal_1.0.yaml).
 The card names `y_256b_img.pth`, but this work did not download it or invent a
-digest; every real backend must bind the actual local file. VideoSeal's documented and
-code-comment layouts have varied; an output such as `T,1+K,H,W` is preserved
-rather than silently reduced. Construction requires explicit source version,
-model version, weight identity, and detected-output layout metadata; unknowns
-must be recorded as such rather than inferred from the adapter name.
+digest; every real backend records the actual local file digest when available.
+A declared digest difference is disclosed rather than used as a load gate.
+VideoSeal's documented and code-comment layouts have varied; an output such as
+`T,1+K,H,W` is preserved rather than silently reduced. Construction records
+source version, model version, weight identity, and detected-output layout
+metadata when available; unknowns stay explicit rather than being inferred
+from the adapter name.
 
 RivaGAN retains every decoded frame's soft logits and its native per-frame
 zero-threshold bits and requires each frame to have strict shape `[32]`. The

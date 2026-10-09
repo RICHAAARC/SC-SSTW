@@ -24,13 +24,16 @@ def _bits(value, expected_length):
     return list(value)
 
 
-def _backend_metadata(value, required, method):
+def _backend_metadata(value, required, method, *, optional=()):
     if not isinstance(value, Mapping):
         raise NativeAdapterError(f"{method} backend_metadata must be an object")
     missing = [field for field in required if not isinstance(value.get(field), str) or not value[field].strip()]
     if missing:
         raise NativeAdapterError(f"{method} backend_metadata missing explicit fields: {', '.join(missing)}")
-    return _json_value(dict(value))
+    result = dict(value)
+    for field in optional:
+        result.setdefault(field, None)
+    return _json_value(result)
 
 
 def _json_value(value):
@@ -347,8 +350,9 @@ class VideoSealNativeAdapter:
         self.native_message_length = native_message_length
         self.backend_metadata = _backend_metadata(
             backend_metadata,
-            ("source_version", "model_version", "weight_identity", "detect_output_layout"),
+            ("model_version", "detect_output_layout"),
             "VideoSeal",
+            optional=("source_version", "weight_identity"),
         )
         if native_output_store is not None and not callable(native_output_store):
             raise NativeAdapterError("native_output_store must be callable")
@@ -426,8 +430,9 @@ class RivaGANNativeAdapter:
             self.backend_metadata["transport"] = dict(transport)
         self.backend_metadata = _backend_metadata(
             self.backend_metadata,
-            ("source_version", "model_version", "weight_identity"),
+            ("model_version",),
             "RivaGAN",
+            optional=("source_version", "weight_identity"),
         )
         transport = self.backend_metadata.get("transport")
         required_transport = ("transport_mode", "color_layout", "decoder_normalization", "codec_comparability")
