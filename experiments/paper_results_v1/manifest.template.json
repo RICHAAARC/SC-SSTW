@@ -1,0 +1,50 @@
+{
+  "schema_version": "paper-results-v1",
+  "study_id": "PENDING_USER_ADOPTION",
+  "method": {
+    "name": "SC-SSTW current main frozen method",
+    "claim_scope": "Finite public offset/phase and single-deletion protocol; synchronization-conditioned 32-bit recovery, quality, and cost.",
+    "evidence_ceiling": "PENDING: evaluation roster, run budget, and any numerical decision rules require user adoption."
+  },
+  "comparability": {
+    "message_length_bits": 32,
+    "redundancy": "PENDING_DESCRIPTION",
+    "codec": "PENDING_DESCRIPTION",
+    "auxiliary_inputs": "PENDING_DESCRIPTION",
+    "matching_rule_status": "DESCRIPTIVE_ONLY_NOT_ADOPTED"
+  },
+  "arm_catalog": [
+    {
+      "arm": "OFF",
+      "description": "Reserved no-payload, no-M05 control; no roster or result is adopted by this template.",
+      "generation_payload": false,
+      "terminal_m05": false,
+      "extra_vae_passes": "PENDING"
+    },
+    {
+      "arm": "PAYLOAD_ONLY",
+      "description": "Reserved generation-payload-only arm.",
+      "generation_payload": true,
+      "terminal_m05": false,
+      "extra_vae_passes": "PENDING"
+    },
+    {
+      "arm": "HYBRID",
+      "description": "Reserved generation payload plus terminal framewise M05 arm.",
+      "generation_payload": true,
+      "terminal_m05": true,
+      "extra_vae_passes": "PENDING"
+    },
+    {
+      "arm": "EXTRA_VAE_M05_DECOMPOSITION",
+      "description": "Reserved decomposition row; definition and budget are pending.",
+      "generation_payload": "PENDING",
+      "terminal_m05": "PENDING",
+      "extra_vae_passes": "PENDING"
+    }
+  ],
+  "result_bindings": {},
+  "slots": [],
+  "pairs": [],
+  "measurements": []
+}

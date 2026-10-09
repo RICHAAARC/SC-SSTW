@@ -1,0 +1,10 @@
+pair_id,state,raw_slot_id,sync_slot_id,raw_state,sync_state,raw_bit_errors,sync_bit_errors,sync_minus_raw_bit_errors,interpretation,reason
+historical/global_00/K0/raw-v-global-geometry-only,EXCLUDED,historical/global_00/K0/BASELINE,historical/global_00/K0/EST_ALIGN,,,,,,,"FULL181 has one public offset and is a geometry/payload control, not a synchronization-success denominator."
+historical/global_01/K0/raw-v-global,EVALUABLE,historical/global_01/K0/BASELINE,historical/global_01/K0/EST_ALIGN,OBSERVED,OBSERVED,0,0,0,NO_BER_GAIN_OBSERVED,
+historical/global_02/K0/raw-v-global,EVALUABLE,historical/global_02/K0/BASELINE,historical/global_02/K0/EST_ALIGN,OBSERVED,OBSERVED,0,0,0,NO_BER_GAIN_OBSERVED,
+historical/global_03/K0/raw-v-global,EVALUABLE,historical/global_03/K0/BASELINE,historical/global_03/K0/EST_ALIGN,OBSERVED,OBSERVED,0,0,0,NO_BER_GAIN_OBSERVED,
+historical/global_04/K0/raw-v-global,EVALUABLE,historical/global_04/K0/BASELINE,historical/global_04/K0/EST_ALIGN,OBSERVED,OBSERVED,0,0,0,NO_BER_GAIN_OBSERVED,
+historical/global_05/K0/raw-v-global,EVALUABLE,historical/global_05/K0/BASELINE,historical/global_05/K0/EST_ALIGN,OBSERVED,OBSERVED,0,0,0,NO_BER_GAIN_OBSERVED,
+historical/global_06/K0/raw-v-global,EVALUABLE,historical/global_06/K0/BASELINE,historical/global_06/K0/EST_ALIGN,OBSERVED,OBSERVED,0,0,0,NO_BER_GAIN_OBSERVED,
+historical/path_00/K0/raw-v-path,EVALUABLE,historical/path_00/K0/RAW,historical/path_00/K0/PATH_ALIGN,OBSERVED,OBSERVED,0,0,0,NO_BER_GAIN_OBSERVED,
+historical/path_01/K0/raw-v-path,EVALUABLE,historical/path_01/K0/RAW,historical/path_01/K0/PATH_ALIGN,OBSERVED,OBSERVED,0,0,0,NO_BER_GAIN_OBSERVED,

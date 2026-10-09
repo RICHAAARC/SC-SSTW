@@ -1,0 +1,75 @@
+{
+  "status": "SYNTHETIC_FIXTURE_ONLY",
+  "payload_reads": {
+    "global_00/K0/BASELINE": {
+      "status": "READ",
+      "view_id": "global_00",
+      "input_id": "input_00",
+      "protocol": "GLOBAL",
+      "frames": 181,
+      "R": 45,
+      "key_label": "K0",
+      "mode": "BASELINE",
+      "oracle": false,
+      "physical_read": "synthetic-raw"
+    },
+    "global_00/K0/EST_ALIGN": {
+      "status": "READ",
+      "view_id": "global_00",
+      "input_id": "input_00",
+      "protocol": "GLOBAL",
+      "frames": 181,
+      "R": 45,
+      "key_label": "K0",
+      "mode": "EST_ALIGN",
+      "oracle": false,
+      "physical_read": "synthetic-raw",
+      "alias_of": "global_00/K0/BASELINE"
+    },
+    "path_00/K0/PATH_ALIGN": {
+      "status": "FAILED",
+      "view_id": "path_00",
+      "input_id": "input_03",
+      "protocol": "SINGLE_JUMP",
+      "frames": 177,
+      "R": 44,
+      "key_label": "K0",
+      "mode": "PATH_ALIGN",
+      "oracle": false,
+      "error": "SYNTHETIC_FIXTURE_FAILURE"
+    }
+  },
+  "posthoc": {
+    "global_00/K0/BASELINE": {
+      "status": "EVALUATED_TRUTH",
+      "key_role": "CORRECT_KEY",
+      "bit_errors": 0,
+      "oracle": false
+    },
+    "global_00/K0/EST_ALIGN": {
+      "status": "EVALUATED_TRUTH",
+      "key_role": "CORRECT_KEY",
+      "bit_errors": 0,
+      "phase_correct": true,
+      "oracle": false
+    },
+    "path_00/K0/PATH_ALIGN": {
+      "status": "FAILED",
+      "key_role": "CORRECT_KEY",
+      "error": "SYNTHETIC_FIXTURE_FAILURE",
+      "oracle": false
+    }
+  },
+  "quality": {
+    "POST/M05_P1": {
+      "status": "MEASURED",
+      "rgb_rmse": 0.0125
+    }
+  },
+  "calls": {
+    "wan_vae_load": {
+      "attempted": 1,
+      "completed": 1
+    }
+  }
+}
