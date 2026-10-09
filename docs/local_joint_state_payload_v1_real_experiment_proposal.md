@@ -143,3 +143,11 @@ runner 冻结代码、CPU 工程分母与 A2/A3/A4/A5 同版审查结果绑定�
 串行驻留依据另来自 [旧 multistep 审计](../../../diagnostics/receiver-first-20260923/rgb_dct_multistep_real_result_audit_20260924.md)及其 [Drive result](https://drive.google.com/file/d/16TX_EE8s1Zj5xA873WJzbn_wuoQdFLGA/view) 和 [setup log](https://drive.google.com/file/d/1LMz-TtvSCJEJshyV9Pu-sjZp2wRRR0eW/view)：精确 notebook source 为 `6850ee81454f538916bc228f2ecec521f9ac7511`，运行源码为 `d23fe4eeaca81395c57c98fc403e1d37b4dcd6e4`，run id 为 `20260924T121641567985Z`。该 N2/S2 run 使用 torch 2.11.0+cu128、diffusers 0.40.0、transformers 5.16.1、accelerate 1.14.0、huggingface-hub 1.29.0、numpy 2.1.3，在 L4 完成 8/8 media、14 decode/16 encode、0 backward、CFG restore max-abs 0，peak allocated `11652710912` bytes（约 11.65 GB，原审计十进口径）。这套旧环境没有与较新 conditional-joint 环境混写为同一个验证栈；它只证明较小的同 Wan 无梯度释放/重载路径曾真实成功，不能证明当前 27 decode、50 encode、27 次 VAE load、25 次 joint 往返的显存、时间或媒体存留。
 
 notebook 及 builder 的本地验证只执行 deterministic source packaging、代码单元语法和完全 stub 的编排；没有运行模型、权重、GPU、VAE、codec、媒体、Colab 或 Drive，也没有安装/下载依赖。Run all 是之后的真实外部执行动作，仍不能从这些本地检查推断 state 与四个 payload fragment 穿过 MP4。
+
+## Colab notebook 最终交付收据
+
+最终受审实现版本为 `d7fbe542045f49e6b736d2476b1c12416ed99181`。本收据之后的交付提交只追加本文档，不反向声称自身已经接受同版代码审查。交付 notebook SHA-256 为 `95e29a2a405f47740cbd390f5f8d42e063f081e2f38fcebb59d675ff616a73a6`；与 notebook 内嵌内容完全相同的 companion ZIP SHA-256 为 `8e79e5511c8ee51907987d1c8becbf59f782c35097252f1a268446764129108b`。
+
+A1 初版定向工程检查为 5 passed in 0.07s，覆盖确定性包/静态约束、stub Run all 成功、runner 非零仍进入 seal-first posthoc、dependency failure 固定槽与 primary exception、receipt failure 不覆盖 runner primary。A3 在同一受审初版独立复跑同 5 项，并补 no-`.git` fresh-child 对 20/23 文件 identity 的真实 import 核对；这些是同一测试范围，不另加分母。handoff 文案修复后，A1 定向 deterministic 检查为 1 passed in 0.04s；A3 独立核对所有 code cell、首单元、空 outputs、companion ZIP 未改变及交付清单。A2 与 A3 对 `d7fbe54` 同版 ACCEPT，A4 综合无分歧，A5 里程碑 ACCEPT，无新增必修。
+
+全部证据只支持 notebook/source packaging、身份、编排和失败持久化的工程交付。没有真实安装依赖，没有运行模型、权重、GPU、VAE、codec、媒体或 Colab，也没有写入 Drive；27 decode、50 encode、27 次 VAE load、25 次 joint 往返的资源可行性以及 state 与四个 payload fragment 的 MP4 存留仍未知。本分支没有 push 或 merge。
