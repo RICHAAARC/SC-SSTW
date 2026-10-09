@@ -177,7 +177,11 @@ The staged real evaluator additionally writes `comparison_rows.csv` and
 source/view/baseline row to the single selected M05/K0 main readout and retain
 missing or failed evidence. Confirmation summaries use eight sources as the
 independence denominator; their eight non-FULL view rows are clustered within
-each source. FULL is reported separately as a geometry control.
+each source. A partially observed pair contributes the strict range implied by
+the known side rather than a blanket plus/minus one; cohort bounds sum source
+bounds. FULL is reported separately as a geometry control. Main Counter-vote
+ties and external reduced-soft-zero ties have separate count, policy, evidence
+status, and semantics fields.
 
 The six slot states are `OBSERVED`, `FAILED`, `MISSING`, `EXCLUDED`,
 `UNSUPPORTED`, and `CONFLICT`. The full fixed denominator is every manifest

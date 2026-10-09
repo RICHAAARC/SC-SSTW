@@ -233,3 +233,32 @@ source-identity metadata parses with 9,971 enumerated plain-text files, 401 zip
 text entries, and `NO_MATCH_IN_SEARCHED_LOCAL_HISTORY`; its status remains
 unproven. No dependency was installed and no model, weight, source media, VAE,
 codec, GPU, Colab, or Drive operation ran.
+
+## Vote-tie evidence and partial-pair bound repair
+
+Affected command:
+
+```bash
+PYTHONHOME=/home/richar/projects/Video-WM/framework/.conda \
+PYTHONDONTWRITEBYTECODE=1 \
+/lib64/ld-linux-x86-64.so.2 \
+/home/richar/projects/Video-WM/framework/.conda/bin/python3.13 \
+  -m pytest -q --capture=sys -p no:cacheprovider \
+  tests/test_paper_results_v1_real_eval.py
+```
+
+Result: `27 passed in 0.83s`. These are the affected staged-runner tests; the
+older reporter/workflow 27-test suite was not rerun. Saved 32-row
+`original_readout.votes` now yields a separate main Counter vote-tie count in
+receiver and comparison JSON/CSV. Legacy missing or malformed vote evidence
+stays null with an explicit evidence status/reason and does not invalidate a
+valid decoded result. Baseline reduced-soft-zero ties remain separately named.
+
+Per-row exact-success difference bounds now use every observed side:
+`[m-b,m-b]` when both sides are known, `[m-1,m]` when only main is known,
+`[-b,1-b]` when only baseline is known, and `[-1,1]` when neither is known.
+Source bounds sum their eight fixed non-FULL rows and cohort bounds sum source
+bounds. The focused regression with one complete `+1`, one known-main failure,
+and six double-missing rows is `[-6,7]`, replacing the loose and incorrect
+`[-6,8]` result. No new inference, threshold, model, or media execution was
+introduced.

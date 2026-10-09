@@ -36,6 +36,8 @@ VIDEOSEAL_STRICT_RULE = "CHANNEL_J_MOD_32_REPEAT_MEAN_STRICT_GT_ZERO_ZERO_TIE_UN
 VIDEOSEAL_NATIVE_TIE_RULE = "CHANNEL_J_MOD_32_REPEAT_MEAN_STRICT_GT_ZERO_NATIVE_TIE_RETAINED"
 RIVAGAN_STRICT_RULE = "ALL_DECLARED_FRAMES_EQUAL_LOGIT_MEAN_GE_ZERO_ZERO_TIE_UNEVALUABLE"
 RIVAGAN_NATIVE_TIE_RULE = "ALL_DECLARED_FRAMES_EQUAL_LOGIT_MEAN_GE_ZERO_NATIVE_TIE_RETAINED"
+MAIN_VOTE_TIE_POLICY = "COUNTER_VOTE_COUNTS_ONES_EQUALS_ZEROS_DECODE_UNCHANGED"
+BASELINE_TIE_SEMANTICS = "REDUCED_EFFECTIVE_SOFT_EXACT_ZERO"
 PHASES = (
     "generate", "decode", "framewise", "baseline-embed-videoseal",
     "baseline-embed-rivagan", "codec", "quality", "baseline-extract-videoseal",
@@ -1481,6 +1483,113 @@ def _rivagan_sequence_result(record, expected, expected_frames, rule=RIVAGAN_STR
     }
 
 
+def _validated_vote_ties(rows, decoded_bits, *, require_bit_rows):
+    if not isinstance(rows, list) or len(rows) != 32:
+        raise ValueError("vote evidence must contain exactly 32 rows")
+    counts = []
+    for index, row in enumerate(rows):
+        if not isinstance(row, dict):
+            raise ValueError(f"vote evidence row {index} must be an object")
+        ones, zeros = row.get("ones"), row.get("zeros")
+        if any(type(value) is not int or value < 0 for value in (ones, zeros)):
+            raise ValueError(f"vote evidence row {index} has invalid ones/zeros")
+        if ones + zeros <= 0:
+            raise ValueError(f"vote evidence row {index} has no votes")
+        if "count" in row and (type(row["count"]) is not int or row["count"] != ones + zeros):
+            raise ValueError(f"vote evidence row {index} has inconsistent count")
+        if require_bit_rows:
+            if type(row.get("decoded")) is not int or row["decoded"] not in (0, 1):
+                raise ValueError(f"bit_rows row {index} has invalid decoded bit")
+            if row["decoded"] != decoded_bits[index]:
+                raise ValueError(f"bit_rows row {index} does not match saved decoded_bits")
+            if type(row.get("tie")) is not bool or row["tie"] != (ones == zeros):
+                raise ValueError(f"bit_rows row {index} has inconsistent tie marker")
+        counts.append((ones, zeros))
+    return counts
+
+
+def _main_vote_tie_evidence(observed):
+    base = {
+        "main_vote_tie_count": None,
+        "tie_count": None,
+        "tie_policy": MAIN_VOTE_TIE_POLICY,
+    }
+    if not isinstance(observed, dict):
+        return {
+            **base,
+            "tie_evidence_status": "UNAVAILABLE_INVALID",
+            "tie_evidence_reason": "blind read slot is not an object",
+        }
+    decoded_bits = observed.get("decoded_bits")
+    if (
+        not isinstance(decoded_bits, list)
+        or len(decoded_bits) != 32
+        or any(type(bit) is not int or bit not in (0, 1) for bit in decoded_bits)
+    ):
+        return {
+            **base,
+            "tie_evidence_status": "UNAVAILABLE_MISSING",
+            "tie_evidence_reason": "valid saved decoded_bits are unavailable for vote evidence",
+        }
+    detail = observed.get("detail")
+    if not isinstance(detail, dict):
+        return {
+            **base,
+            "tie_evidence_status": "UNAVAILABLE_MISSING",
+            "tie_evidence_reason": "saved receiver detail is missing",
+        }
+    original = detail.get("original_readout")
+    original_rows = original.get("votes") if isinstance(original, dict) else None
+    bit_rows = detail.get("bit_rows")
+    if original_rows is None and bit_rows is None:
+        return {
+            **base,
+            "tie_evidence_status": "UNAVAILABLE_MISSING",
+            "tie_evidence_reason": "saved receiver detail has no vote rows",
+        }
+    try:
+        original_counts = (
+            _validated_vote_ties(original_rows, decoded_bits, require_bit_rows=False)
+            if original_rows is not None else None
+        )
+        bit_counts = (
+            _validated_vote_ties(bit_rows, decoded_bits, require_bit_rows=True)
+            if bit_rows is not None else None
+        )
+        if original_counts is not None and bit_counts is not None and original_counts != bit_counts:
+            raise ValueError("original_readout.votes and bit_rows disagree")
+        selected = original_counts if original_counts is not None else bit_counts
+    except (TypeError, ValueError) as exc:
+        return {
+            **base,
+            "tie_evidence_status": "UNAVAILABLE_INVALID",
+            "tie_evidence_reason": str(exc),
+        }
+    count = sum(ones == zeros for ones, zeros in selected)
+    return {
+        **base,
+        "main_vote_tie_count": count,
+        "tie_count": count,
+        "tie_evidence_status": (
+            "AVAILABLE_ORIGINAL_READOUT_VOTES"
+            if original_counts is not None else "AVAILABLE_VERIFIED_BIT_ROWS"
+        ),
+        "tie_evidence_reason": None,
+    }
+
+
+def _exact_success_difference_bounds(main_exact, baseline_exact):
+    main = int(main_exact) if type(main_exact) is bool else None
+    baseline = int(baseline_exact) if type(baseline_exact) is bool else None
+    if main is not None and baseline is not None:
+        return main - baseline, main - baseline
+    if main is not None:
+        return main - 1, main
+    if baseline is not None:
+        return -baseline, 1 - baseline
+    return -1, 1
+
+
 def _evaluate_comparison_rows(comparison_slots, receiver_rows, baseline_rows):
     main_by_id = {row["slot_id"]: row for row in receiver_rows}
     baseline_by_id = {row["slot_id"]: row for row in baseline_rows}
@@ -1490,16 +1599,51 @@ def _evaluate_comparison_rows(comparison_slots, receiver_rows, baseline_rows):
         baseline = baseline_by_id.get(slot["baseline_slot_id"])
         main_status = main.get("status") if isinstance(main, dict) else "MISSING_ROW"
         baseline_status = baseline.get("status") if isinstance(baseline, dict) else "MISSING_ROW"
+        main_exact = (
+            main.get("exact_recovery")
+            if isinstance(main, dict) and main_status == "EVALUATED_TRUTH" else None
+        )
+        baseline_exact = (
+            baseline.get("exact_recovery")
+            if isinstance(baseline, dict) and baseline_status == "EVALUATED" else None
+        )
+        lower, upper = _exact_success_difference_bounds(main_exact, baseline_exact)
+        baseline_tie_count = baseline.get("tie_count") if isinstance(baseline, dict) else None
+        baseline_tie_available = type(baseline_tie_count) is int and baseline_tie_count >= 0
         row = {
             **slot,
             "main_status": main_status,
             "main_reason": main.get("reason") if isinstance(main, dict) else "main fixed row missing",
             "baseline_status": baseline_status,
             "baseline_reason": baseline.get("reason") if isinstance(baseline, dict) else "baseline fixed row missing",
-            "main_exact_recovery": main.get("exact_recovery") if isinstance(main, dict) else None,
-            "baseline_exact_recovery": baseline.get("exact_recovery") if isinstance(baseline, dict) else None,
+            "main_exact_recovery": main_exact,
+            "baseline_exact_recovery": baseline_exact,
             "main_bit_errors": main.get("bit_errors") if isinstance(main, dict) else None,
             "baseline_bit_errors": baseline.get("bit_errors") if isinstance(baseline, dict) else None,
+            "main_vote_tie_count": main.get("main_vote_tie_count") if isinstance(main, dict) else None,
+            "main_tie_policy": main.get("tie_policy", MAIN_VOTE_TIE_POLICY) if isinstance(main, dict) else MAIN_VOTE_TIE_POLICY,
+            "main_tie_evidence_status": (
+                main.get("tie_evidence_status", "UNAVAILABLE_NOT_REPORTED")
+                if isinstance(main, dict) else "UNAVAILABLE_MISSING_ROW"
+            ),
+            "main_tie_evidence_reason": (
+                main.get("tie_evidence_reason", "main tie evidence not reported")
+                if isinstance(main, dict) else "main fixed row missing"
+            ),
+            "main_tie_semantics": "FINAL_BIT_COUNTER_VOTE_EQUALITY",
+            "baseline_tie_count": baseline_tie_count if baseline_tie_available else None,
+            "baseline_tie_policy": baseline.get("tie_policy") if isinstance(baseline, dict) else None,
+            "baseline_tie_evidence_status": (
+                "AVAILABLE_REDUCED_SOFT" if baseline_tie_available else "UNAVAILABLE"
+            ),
+            "baseline_tie_evidence_reason": (
+                None if baseline_tie_available
+                else baseline.get("reason", "baseline tie evidence unavailable") if isinstance(baseline, dict)
+                else "baseline fixed row missing"
+            ),
+            "baseline_tie_semantics": BASELINE_TIE_SEMANTICS,
+            "exact_success_difference_lower_bound": lower,
+            "exact_success_difference_upper_bound": upper,
         }
         if main_status == "EVALUATED_TRUTH" and baseline_status == "EVALUATED":
             main_exact = int(main["exact_recovery"] is True)
@@ -1533,6 +1677,8 @@ def _comparison_source_summaries(comparison_rows):
         evaluable = [row for row in nonfull if row["status"] == "EVALUATED_PAIR"]
         unavailable = len(nonfull) - len(evaluable)
         observed_difference = sum(row["exact_success_difference_main_minus_baseline"] for row in evaluable)
+        compatible_lower = sum(row["exact_success_difference_lower_bound"] for row in nonfull)
+        compatible_upper = sum(row["exact_success_difference_upper_bound"] for row in nonfull)
         summaries.append({
             "source_summary_id": f"{case_id}/{method}",
             "cohort": cohort,
@@ -1556,11 +1702,9 @@ def _comparison_source_summaries(comparison_rows):
                 for row in nonfull
             ),
             "observed_exact_success_difference_sum": observed_difference,
-            "exact_success_difference_compatible_range": [
-                observed_difference - unavailable, observed_difference + unavailable,
-            ],
-            "exact_success_difference_lower_bound": observed_difference - unavailable,
-            "exact_success_difference_upper_bound": observed_difference + unavailable,
+            "exact_success_difference_compatible_range": [compatible_lower, compatible_upper],
+            "exact_success_difference_lower_bound": compatible_lower,
+            "exact_success_difference_upper_bound": compatible_upper,
             "complete_fixed_nonfull_pairs": unavailable == 0,
             "full_control_planned": len(full),
             "full_control_evaluable": sum(row["status"] == "EVALUATED_PAIR" for row in full),
@@ -1576,6 +1720,8 @@ def _comparison_cohort_summaries(source_summaries):
         rows = [row for row in source_summaries if row["cohort"] == cohort and row["baseline_method"] == method]
         observed = sum(row["observed_exact_success_difference_sum"] for row in rows)
         unavailable = sum(row["unavailable_nonfull_pairs"] for row in rows)
+        compatible_lower = sum(row["exact_success_difference_lower_bound"] for row in rows)
+        compatible_upper = sum(row["exact_success_difference_upper_bound"] for row in rows)
         output[f"{cohort}|{method}"] = {
             "cohort": cohort,
             "baseline_method": method,
@@ -1585,7 +1731,9 @@ def _comparison_cohort_summaries(source_summaries):
             "evaluable_nonfull_pairs": sum(row["evaluable_nonfull_pairs"] for row in rows),
             "unavailable_nonfull_pairs": unavailable,
             "observed_exact_success_difference_sum": observed,
-            "exact_success_difference_compatible_range": [observed - unavailable, observed + unavailable],
+            "exact_success_difference_compatible_range": [compatible_lower, compatible_upper],
+            "exact_success_difference_lower_bound": compatible_lower,
+            "exact_success_difference_upper_bound": compatible_upper,
             "full_control_rows": sum(row["full_control_planned"] for row in rows),
             "evaluable_full_controls": sum(row["full_control_evaluable"] for row in rows),
             "independence_unit": "SOURCE; VIEW_ROWS_ARE_CLUSTERED",
@@ -1631,14 +1779,21 @@ def phase_evaluate(store, config):
             row = {**slot}
             evidence = receiver_evidence[slot["case_id"]]
             if "slots_error" in evidence:
-                row.update(status="FAILED", reason=evidence["slots_error"])
+                row.update(
+                    status="FAILED", reason=evidence["slots_error"],
+                    **_main_vote_tie_evidence({}),
+                )
                 receiver_rows.append(row)
                 continue
             observed = evidence["slots"].get(slot["slot_id"], {})
             if not isinstance(observed, dict):
-                row.update(status="FAILED", reason="blind read slot must be an object")
+                row.update(
+                    status="FAILED", reason="blind read slot must be an object",
+                    **_main_vote_tie_evidence(observed),
+                )
                 receiver_rows.append(row)
                 continue
+            row.update(_main_vote_tie_evidence(observed))
             if observed.get("status") == "READ":
                 bits = observed.get("decoded_bits")
                 if isinstance(bits, list) and len(bits) == 32 and all(type(bit) is int and bit in (0, 1) for bit in bits):
@@ -1769,7 +1924,12 @@ def phase_evaluate(store, config):
             "claim_guard": "Saved execution and exact recovery are fixed-manifest evidence only; no threshold, FPR, independence, or population guarantee is inferred.",
         }
         with (store.output / "receiver_rows.csv").open("w", newline="", encoding="utf-8") as stream:
-            fields = ("slot_id", "case_id", "cohort", "observation_id", "arm", "protocol", "analysis_role", "frames", "key_label", "mode", "planned_bits", "status", "bit_errors", "exact_recovery", "reason")
+            fields = (
+                "slot_id", "case_id", "cohort", "observation_id", "arm", "protocol",
+                "analysis_role", "frames", "key_label", "mode", "planned_bits", "status",
+                "bit_errors", "exact_recovery", "main_vote_tie_count", "tie_count",
+                "tie_policy", "tie_evidence_status", "tie_evidence_reason", "reason",
+            )
             writer = csv.DictWriter(stream, fieldnames=fields, lineterminator="\n", extrasaction="ignore")
             writer.writeheader()
             writer.writerows(receiver_rows)
@@ -1794,8 +1954,13 @@ def phase_evaluate(store, config):
                 "protocol", "analysis_role", "main_arm", "main_key_label", "main_mode",
                 "main_status", "baseline_status", "status", "main_exact_recovery",
                 "baseline_exact_recovery", "main_bit_errors", "baseline_bit_errors",
+                "main_vote_tie_count", "main_tie_policy", "main_tie_evidence_status",
+                "main_tie_evidence_reason", "main_tie_semantics", "baseline_tie_count",
+                "baseline_tie_policy", "baseline_tie_evidence_status",
+                "baseline_tie_evidence_reason", "baseline_tie_semantics",
                 "exact_success_difference_main_minus_baseline",
-                "bit_error_difference_main_minus_baseline", "reason", "main_reason", "baseline_reason",
+                "bit_error_difference_main_minus_baseline", "exact_success_difference_lower_bound",
+                "exact_success_difference_upper_bound", "reason", "main_reason", "baseline_reason",
             )
             writer = csv.DictWriter(stream, fieldnames=fields, lineterminator="\n", extrasaction="ignore")
             writer.writeheader()

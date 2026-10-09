@@ -185,6 +185,16 @@ reported only as an unadopted sensitivity analysis. The adopted main analysis
 keeps each method's native bit decision and reports `tie_count`, avoiding that
 additional baseline-only rejection.
 
+Main recovery keeps its existing Counter decision unchanged. Reporting derives
+`main_vote_tie_count` only when the saved blind receiver detail contains 32
+valid `original_readout.votes` rows (or verified synonymous `bit_rows`) and
+counts rows with `ones == zeros`. Missing or malformed vote evidence is
+reported as unavailable and never converted to zero or used to invalidate an
+otherwise valid saved 32-bit result. Comparison rows label this as final-bit
+Counter vote equality; baseline `tie_count` instead means an exactly zero
+reduced effective soft value. The two counts are disclosed separately and are
+not treated as the same score.
+
 Main embeds each bit across 46 latent times and repeated spatial coordinates;
 the receiver reads 44 or 22 latent times with 30 frequency votes per bit/time.
 RivaGAN repeats observations over frames, while VideoSeal propagates its native

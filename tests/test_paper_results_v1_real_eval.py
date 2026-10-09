@@ -474,15 +474,30 @@ def test_fixed_comparison_left_join_keeps_missing_rows_and_source_denominator():
     global_01 = next(row for row in slots if row["view_id"] == "global_01")
     global_02 = next(row for row in slots if row["view_id"] == "global_02")
     receiver_rows = [
-        {"slot_id": global_01["main_slot_id"], "status": "EVALUATED_TRUTH", "exact_recovery": True, "bit_errors": 0},
+        {
+            "slot_id": global_01["main_slot_id"], "status": "EVALUATED_TRUTH",
+            "exact_recovery": True, "bit_errors": 0, "main_vote_tie_count": 2,
+            "tie_policy": real_eval.MAIN_VOTE_TIE_POLICY,
+            "tie_evidence_status": "AVAILABLE_ORIGINAL_READOUT_VOTES",
+            "tie_evidence_reason": None,
+        },
         {"slot_id": global_02["main_slot_id"], "status": "EVALUATED_TRUTH", "exact_recovery": False, "bit_errors": 2},
     ]
     baseline_rows = [
-        {"slot_id": global_01["baseline_slot_id"], "status": "EVALUATED", "exact_recovery": False, "bit_errors": 1},
+        {
+            "slot_id": global_01["baseline_slot_id"], "status": "EVALUATED",
+            "exact_recovery": False, "bit_errors": 1, "tie_count": 1,
+            "tie_policy": "NATIVE_BIT_RETAINED",
+        },
     ]
     rows = real_eval._evaluate_comparison_rows(slots, receiver_rows, baseline_rows)
     assert len(rows) == 9
-    assert next(row for row in rows if row["view_id"] == "global_01")["status"] == "EVALUATED_PAIR"
+    complete = next(row for row in rows if row["view_id"] == "global_01")
+    assert complete["status"] == "EVALUATED_PAIR"
+    assert complete["main_vote_tie_count"] == 2
+    assert complete["main_tie_semantics"] == "FINAL_BIT_COUNTER_VOTE_EQUALITY"
+    assert complete["baseline_tie_count"] == 1
+    assert complete["baseline_tie_semantics"] == real_eval.BASELINE_TIE_SEMANTICS
     incomplete = next(row for row in rows if row["view_id"] == "global_02")
     assert incomplete["status"] == "UNEVALUABLE_PAIR"
     assert incomplete["baseline_status"] == "MISSING_ROW"
@@ -498,8 +513,27 @@ def test_fixed_comparison_left_join_keeps_missing_rows_and_source_denominator():
     assert summary["main_observed_errors_nonfull"] == 1
     assert summary["baseline_observed_errors_nonfull"] == 1
     assert summary["observed_exact_success_difference_sum"] == 1
-    assert summary["exact_success_difference_compatible_range"] == [-6, 8]
+    assert summary["exact_success_difference_compatible_range"] == [-6, 7]
     assert summary["full_control_planned"] == 1
+    cohort = real_eval._comparison_cohort_summaries([summary])[
+        "CONFIRMATION_CANDIDATE|videoseal"
+    ]
+    assert cohort["exact_success_difference_compatible_range"] == [-6, 7]
+
+
+@pytest.mark.parametrize(
+    ("main_exact", "baseline_exact", "expected"),
+    [
+        (True, None, (0, 1)),
+        (False, None, (-1, 0)),
+        (None, True, (-1, 0)),
+        (None, False, (0, 1)),
+        (None, None, (-1, 1)),
+        (True, False, (1, 1)),
+    ],
+)
+def test_exact_success_difference_bounds_use_every_known_side(main_exact, baseline_exact, expected):
+    assert real_eval._exact_success_difference_bounds(main_exact, baseline_exact) == expected
 
 
 @pytest.mark.parametrize("frames", [180, 182])
@@ -602,12 +636,26 @@ def test_evaluate_isolates_bad_receiver_baseline_and_sidecar_receipts(tmp_path):
     case_records = store.data["records"].setdefault("pilot_01", {})
     first_receiver = store.data["receiver_slots"][0]["slot_id"]
     second_receiver = store.data["receiver_slots"][1]["slot_id"]
+    third_receiver = store.data["receiver_slots"][2]["slot_id"]
+    fourth_receiver = store.data["receiver_slots"][3]["slot_id"]
+    votes = [
+        {"ones": 2, "zeros": 2, "count": 4},
+        *[{"ones": 3, "zeros": 1, "count": 4} for _ in range(31)],
+    ]
     case_records["blind_reads"] = real_eval._json_dump(
         tmp_path / "bad_receiver.json",
         {
             "slots": {
-                first_receiver: {"status": "READ", "decoded_bits": config["payload_bits"]},
-                second_receiver: [],
+                first_receiver: {
+                    "status": "READ", "decoded_bits": config["payload_bits"],
+                    "detail": {"original_readout": {"votes": votes}},
+                },
+                second_receiver: {"status": "READ", "decoded_bits": config["payload_bits"]},
+                third_receiver: {
+                    "status": "READ", "decoded_bits": config["payload_bits"],
+                    "detail": {"original_readout": {"votes": votes[:-1]}},
+                },
+                fourth_receiver: [],
             },
             "physical_encodes": [],
         },
@@ -633,8 +681,17 @@ def test_evaluate_isolates_bad_receiver_baseline_and_sidecar_receipts(tmp_path):
     assert report_value["status"] == "COMPLETE_WITH_RETAINED_ISSUES"
     assert len(report_value["receiver_rows"]) == 160
     assert report_value["receiver_rows"][0]["status"] == "EVALUATED_TRUTH"
-    assert report_value["receiver_rows"][1]["status"] == "FAILED"
-    assert sum(row["status"] == "FAILED" for row in report_value["receiver_rows"]) == 159
+    assert report_value["receiver_rows"][0]["main_vote_tie_count"] == 1
+    assert report_value["receiver_rows"][0]["tie_evidence_status"] == "AVAILABLE_ORIGINAL_READOUT_VOTES"
+    assert report_value["receiver_rows"][1]["status"] == "EVALUATED_TRUTH"
+    assert report_value["receiver_rows"][1]["main_vote_tie_count"] is None
+    assert report_value["receiver_rows"][1]["tie_evidence_status"] == "UNAVAILABLE_MISSING"
+    assert report_value["receiver_rows"][2]["status"] == "EVALUATED_TRUTH"
+    assert report_value["receiver_rows"][2]["exact_recovery"] is True
+    assert report_value["receiver_rows"][2]["main_vote_tie_count"] is None
+    assert report_value["receiver_rows"][2]["tie_evidence_status"] == "UNAVAILABLE_INVALID"
+    assert report_value["receiver_rows"][3]["status"] == "FAILED"
+    assert sum(row["status"] == "FAILED" for row in report_value["receiver_rows"]) == 157
     assert len(report_value["baseline_rows"]) == 18
     assert all(row["status"] == "FAILED" for row in report_value["baseline_rows"])
     assert report_value["receiver_resource_counts"]["actual_unique_physical_encodes_by_case"]["pilot_01"]["status"] == "FAILED"
