@@ -45,10 +45,12 @@ empty `cases`, `native_jobs`, and `quality_pairs`. Its backend policy is
 
 Each `cases[]` entry declares one source artifact and content ID, one noise ID
 and integer seed, and one codec operation with explicit parameters. It must
-declare exactly four stages. OFF and P0 consume the source; P1 consumes the P0
-PRE artifact; M05 consumes the P1 PRE artifact. Every stage declares its input,
-PRE, and POST artifact IDs plus its transform callback. Plan expansion creates
-one transform and one codec row per stage before any callback runs.
+declare exactly four stages plus one `framewise_encode` row. OFF and P0 consume
+the source. The encode row consumes P0 PRE and creates a named latent artifact;
+P1 and M05 both consume independent clones of that same latent. Every stage
+declares its input, PRE, and POST artifact IDs plus its transform callback. Plan
+expansion creates four transform rows, four codec rows, and one shared encode
+row per case before any callback runs.
 
 Each `native_jobs[]` entry declares VideoSeal or RivaGAN, an input OFF artifact,
 native PRE and POST artifact IDs, and the complete native message. RivaGAN
@@ -58,12 +60,13 @@ workflow calls native embed, the case's shared codec callback, then native
 extract. Missing source, transform, codec, or native backend remains in plan,
 artifact, native, quality, and cost records as appropriate.
 
-Each `quality_pairs[]` entry references two POST artifacts from the same case
-and supplies a finite positive data range. Matching source/content, noise,
-seed, and codec receipts are checked before CPU array metrics run. This is
-declaration and callback-receipt verification, not physical media identity
-proof. MSE, RMSE, and PSNR are absolute pairwise metrics; the reporter does not
-subtract them into an additive VAE or M05 decomposition.
+Each `quality_pairs[]` entry references two POST or NATIVE_POST artifacts from
+the same case and supplies a finite positive data range. Matching
+source/content, noise, seed, and codec receipts are checked before CPU array
+metrics run. This is declaration and callback-receipt verification, not
+physical media identity proof. MSE, RMSE, and PSNR are absolute pairwise
+metrics; the reporter does not subtract them into an additive VAE or M05
+decomposition.
 
 `main_report` either stays explicitly pending or names a strict
 `paper-results-v1` manifest and its saved inputs. The workflow CLI writes that

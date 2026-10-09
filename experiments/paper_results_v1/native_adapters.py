@@ -5,9 +5,11 @@ capacity mapping, or turn frame/spatial outputs into a sequence decision.
 """
 from __future__ import annotations
 
+import hashlib
 import math
 import time
 from collections.abc import Iterable, Mapping
+from pathlib import Path
 
 
 class NativeAdapterError(ValueError):
@@ -84,10 +86,88 @@ def _output_shapes(value):
 def _output_counts(value):
     if isinstance(value, Mapping):
         return {str(key): _output_counts(item) for key, item in value.items()}
+    declared = getattr(value, "shape", None)
+    if declared is not None:
+        try:
+            return math.prod(int(part) for part in declared)
+        except (TypeError, ValueError):
+            pass
+    if isinstance(value, (list, tuple)):
+        return sum(_output_counts(item) for item in value)
+    _json_value(value)
+    return 1
+
+
+def _count_total(value):
+    if isinstance(value, Mapping):
+        return sum(_count_total(item) for item in value.values())
+    return int(value)
+
+
+def _file_sha256(path):
+    digest = hashlib.sha256()
+    with Path(path).open("rb") as stream:
+        for chunk in iter(lambda: stream.read(1024 * 1024), b""):
+            digest.update(chunk)
+    return digest.hexdigest()
+
+
+def _media_descriptor(value, backend=None):
+    shape = _shape(value)
+    count = math.prod(shape) if shape else None
+    dtype = getattr(value, "dtype", None)
+    descriptor = {
+        "storage": "ARTIFACT_VALUE_NOT_INLINED",
+        "shape": shape,
+        "element_count": count,
+        "dtype": str(dtype) if dtype is not None else type(value).__name__,
+        "identity_status": "NOT_PROVIDED_BY_BACKEND",
+    }
+    if isinstance(value, (str, Path)):
+        path = Path(value)
+        descriptor["uri"] = str(value)
+        if path.is_file():
+            descriptor.update(identity_status="FILE_SHA256", sha256=_file_sha256(path), bytes=path.stat().st_size)
+    identity = getattr(backend, "media_identity", None)
+    if callable(identity):
+        supplied = identity(value)
+        if supplied is not None:
+            if not isinstance(supplied, Mapping):
+                raise NativeAdapterError("backend media_identity must return an object or null")
+            descriptor.update(identity_status="BACKEND_PROVIDED", identity=_json_value(supplied))
+    return descriptor
+
+
+def _preserve_native_output(value, *, label, store, inline_element_limit):
+    shapes = _output_shapes(value)
+    counts = _output_counts(value)
+    total = _count_total(counts)
+    base = {"output_shapes": shapes, "output_element_counts": counts, "total_element_count": total}
+    if total <= inline_element_limit:
+        return {**base, "storage": "INLINE_FULL", "raw_native_output": _json_value(value)}
+    if store is None:
+        raise NativeAdapterError(
+            f"{label} has {total} elements; an explicit lossless native_output_store is required"
+        )
+    reference = store(label, value, {"shapes": shapes, "counts": counts, "total_element_count": total})
+    if not isinstance(reference, Mapping) or reference.get("lossless") is not True:
+        raise NativeAdapterError("native_output_store must return an object with lossless=true")
+    for field in ("uri", "format"):
+        if not isinstance(reference.get(field), str) or not reference[field]:
+            raise NativeAdapterError(f"native_output_store reference must include {field}")
+    return {**base, "storage": "LOSSLESS_SIDECAR", "lossless_native_output": _json_value(reference)}
+
+
+def _flat_message(value):
     value = _json_value(value)
     if isinstance(value, list):
-        return sum(_output_counts(item) for item in value)
-    return 1
+        result = []
+        for item in value:
+            result.extend(_flat_message(item))
+        return result
+    if isinstance(value, bool) or not isinstance(value, (int, float)) or value not in (0, 1):
+        raise NativeAdapterError("VideoSeal message builder produced a non-bit value")
+    return [int(value)]
 
 
 class VideoSealLoadedBackend:
@@ -104,11 +184,14 @@ class VideoSealLoadedBackend:
         self.message_builder = message_builder
         self.lowres_attenuation = bool(lowres_attenuation)
 
-    def embed(self, media, message_bits, output_uri=None):
+    def build_message(self, message_bits):
+        return self.message_builder(list(message_bits))
+
+    def embed(self, media, prepared_message, output_uri=None):
         del output_uri
         return self.model.embed(
             media,
-            msgs=self.message_builder(list(message_bits)),
+            msgs=prepared_message,
             is_video=True,
             lowres_attenuation=self.lowres_attenuation,
         )
@@ -174,10 +257,90 @@ class CallableTensorBackend:
         return self.extract_call(media)
 
 
+class RivaGANLoadedTensorBackend:
+    """Pinned-source tensor wiring without RivaGAN's hidden mp4v path codec.
+
+    ``tensor_module`` is an explicitly supplied torch-compatible module and
+    ``array_module`` is NumPy-compatible. The loaded model must expose
+    ``encoder`` and ``decoder`` callables.
+    """
+
+    def __init__(self, model, *, tensor_module, array_module, device, input_color_layout="BGR_UINT8"):
+        if input_color_layout not in ("BGR_UINT8", "RGB_UINT8_TO_BGR"):
+            raise NativeAdapterError("RivaGAN tensor input_color_layout must be BGR_UINT8 or RGB_UINT8_TO_BGR")
+        self.model = model
+        self.tensor_module = tensor_module
+        self.array_module = array_module
+        self.device = device
+        self.input_color_layout = input_color_layout
+        self.transport_metadata = {
+            "transport_mode": "LOADED_ENCODER_DECODER_TENSOR_NO_CODEC",
+            "color_layout": input_color_layout,
+            "decoder_normalization": "uint8/127.5-1",
+            "codec_comparability": "NO_HIDDEN_CODEC_SHARED_CODEC_REQUIRED_AFTER_EMBED",
+        }
+
+    def _frames(self, media):
+        shape = getattr(media, "shape", None)
+        if shape is None or len(shape) != 4 or int(shape[-1]) != 3:
+            raise NativeAdapterError("RivaGAN tensor media must have shape [T,H,W,3]")
+        dtype = str(getattr(media, "dtype", "")).lower()
+        if "uint8" not in dtype:
+            raise NativeAdapterError("RivaGAN tensor media must be uint8")
+        return media
+
+    def _bgr_frame(self, frame):
+        if self.input_color_layout == "RGB_UINT8_TO_BGR":
+            return frame[..., ::-1].copy()
+        return frame
+
+    def _model_frame(self, frame):
+        tensor = self.tensor_module.as_tensor(
+            self._bgr_frame(frame), dtype=self.tensor_module.float32, device=self.device,
+        )
+        return (tensor / 127.5 - 1.0).permute(2, 0, 1).unsqueeze(1).unsqueeze(0)
+
+    def embed(self, media, message_bits, output_uri=None):
+        del output_uri
+        frames = self._frames(media)
+        message = _bits(list(message_bits), 32)
+        data = self.tensor_module.as_tensor(
+            [message], dtype=self.tensor_module.float32, device=self.device,
+        )
+        if [int(part) for part in data.shape] != [1, 32]:
+            raise NativeAdapterError("RivaGAN message tensor must have shape [1,32]")
+        encoded_frames = []
+        for frame in frames:
+            encoded = self.model.encoder(self._model_frame(frame), data).clamp(-1.0, 1.0)
+            output = encoded[0, :, 0, :, :].permute(1, 2, 0)
+            output = ((output + 1.0) * 127.5).detach().cpu().numpy().astype("uint8")
+            if self.input_color_layout == "RGB_UINT8_TO_BGR":
+                output = output[..., ::-1].copy()
+            encoded_frames.append(output)
+        return self.array_module.stack(encoded_frames, axis=0)
+
+    def embedded_media(self, output):
+        return output
+
+    def extract(self, media):
+        frames = self._frames(media)
+        for frame in frames:
+            logits = self.model.decoder(self._model_frame(frame))[0]
+            yield logits.detach().cpu().numpy()
+
+
 class VideoSealNativeAdapter:
     method = "videoseal"
 
-    def __init__(self, backend, *, native_message_length, backend_metadata):
+    def __init__(
+        self,
+        backend,
+        *,
+        native_message_length,
+        backend_metadata,
+        native_output_store=None,
+        inline_element_limit=1_000_000,
+    ):
         if type(native_message_length) is not int or native_message_length <= 0:
             raise NativeAdapterError("VideoSeal native_message_length must be a positive integer")
         self.backend = backend
@@ -187,19 +350,39 @@ class VideoSealNativeAdapter:
             ("source_version", "model_version", "weight_identity", "detect_output_layout"),
             "VideoSeal",
         )
+        if native_output_store is not None and not callable(native_output_store):
+            raise NativeAdapterError("native_output_store must be callable")
+        if type(inline_element_limit) is not int or inline_element_limit <= 0:
+            raise NativeAdapterError("inline_element_limit must be a positive integer")
+        self.native_output_store = native_output_store
+        self.inline_element_limit = inline_element_limit
 
     def embed(self, media, message_bits, *, output_uri=None):
         message = _bits(message_bits, self.native_message_length)
+        prepared_message = self.backend.build_message(message)
+        submitted_shape = _shape(prepared_message)
+        submitted_bits = _flat_message(prepared_message)
+        if submitted_shape != [1, self.native_message_length] or submitted_bits != message:
+            raise NativeAdapterError(
+                "VideoSeal message builder must preserve declared bits exactly with shape [1,native_message_length]"
+            )
         started = time.perf_counter()
-        embed_output = self.backend.embed(media, message, output_uri=output_uri)
+        embed_output = self.backend.embed(media, prepared_message, output_uri=output_uri)
         embedded = self.backend.embedded_media(embed_output)
         embed_seconds = time.perf_counter() - started
+        non_media = {
+            str(key): value for key, value in embed_output.items() if key != "imgs_w"
+        } if isinstance(embed_output, Mapping) else {}
         return embedded, {
             "api": "embed(media,msgs=message_builder(bits),is_video=True,lowres_attenuation=declared)",
             "native_message": {"length_bits": len(message), "bits": message},
-            "raw_native_output": _json_value(embed_output),
-            "output_shapes": _output_shapes(embed_output),
-            "output_element_counts": _output_counts(embed_output),
+            "submitted_msgs": {
+                "bits": submitted_bits,
+                "shape": submitted_shape,
+                "element_count": len(submitted_bits),
+            },
+            "embedded_media": _media_descriptor(embedded, self.backend),
+            "non_media_native_output": _json_value(non_media),
             "seconds": embed_seconds,
         }
 
@@ -207,12 +390,16 @@ class VideoSealNativeAdapter:
         started = time.perf_counter()
         extraction = self.backend.extract(media)
         extract_seconds = time.perf_counter() - started
+        preserved = _preserve_native_output(
+            extraction,
+            label="videoseal_detect_output",
+            store=self.native_output_store,
+            inline_element_limit=self.inline_element_limit,
+        )
         return {
             "api": "detect(media,is_video=True)",
             "truth_input_supplied": False,
-            "raw_native_output": _json_value(extraction),
-            "output_shapes": _output_shapes(extraction),
-            "output_element_counts": _output_counts(extraction),
+            **preserved,
             "spatial_or_temporal_reducer": "PENDING_NOT_APPLIED",
             "seconds": extract_seconds,
             "main_32bit_mapping": "PENDING_NOT_APPLIED",
@@ -259,9 +446,7 @@ class RivaGANNativeAdapter:
         return embedded, {
             "api": "explicit_backend.embed(media,tuple(bits),output_uri=declared)",
             "native_message": {"length_bits": 32, "bits": message},
-            "raw_native_output": _json_value(embed_output),
-            "output_shapes": _output_shapes(embed_output),
-            "output_element_counts": _output_counts(embed_output),
+            "embedded_media": _media_descriptor(embedded, self.backend),
             "seconds": embed_seconds,
         }
 
@@ -276,8 +461,8 @@ class RivaGANNativeAdapter:
         for frame in decoded:
             values = _json_value(frame)
             shape = _shape(frame)
-            if len(shape) != 1:
-                raise NativeAdapterError("RivaGAN frame logits must have one native bit dimension")
+            if shape != [32]:
+                raise NativeAdapterError("RivaGAN frame logits must have strict shape [32]")
             frame_soft.append(values)
             frame_shapes.append(shape)
             frame_bits.append([int(value >= 0.0) for value in values])

@@ -1,6 +1,8 @@
 """Deterministic CPU fixtures that exercise the real workflow call path."""
 from __future__ import annotations
 
+import copy
+
 from experiments.paper_results_v1.native_adapters import (
     CallableTensorBackend,
     RivaGANNativeAdapter,
@@ -27,12 +29,37 @@ def _fixture_codec(value, context):
     return _map_numeric(value, lambda item: round(item, precision))
 
 
-def build_fixture_operations():
+def build_fixture_operations(trace=None):
+    trace = trace if trace is not None else {}
+
+    def framewise_encode(value, context):
+        del context
+        trace["framewise_encode_calls"] = trace.get("framewise_encode_calls", 0) + 1
+        latent = {"values": copy.deepcopy(value), "fixture_latent": True}
+        trace["shared_latent_reference"] = latent
+        trace["shared_latent_original"] = copy.deepcopy(latent)
+        return latent
+
+    def framewise_recon(latent, context):
+        del context
+        trace["framewise_decode_calls"] = trace.get("framewise_decode_calls", 0) + 1
+        trace["p1_input"] = copy.deepcopy(latent)
+        return _map_numeric(latent["values"], lambda item: item + 0.005)
+
+    def framewise_m05(latent, context):
+        del context
+        trace["framewise_decode_calls"] = trace.get("framewise_decode_calls", 0) + 1
+        trace["m05_input_before_write"] = copy.deepcopy(latent)
+        latent["values"] = _map_numeric(latent["values"], lambda item: item + 0.002)
+        trace["m05_private_written_latent"] = copy.deepcopy(latent)
+        return copy.deepcopy(latent["values"])
+
     return {
         "fixture_off_native": _offset(0.0),
         "fixture_payload_native": _offset(0.01),
-        "fixture_framewise_recon": _offset(0.005),
-        "fixture_framewise_m05": _offset(0.002),
+        "fixture_framewise_encode": framewise_encode,
+        "fixture_framewise_recon": framewise_recon,
+        "fixture_framewise_m05": framewise_m05,
         "fixture_codec_roundtrip": _fixture_codec,
     }
 
@@ -117,4 +144,12 @@ def build_fixture_native_adapters():
                 "weight_identity": "synthetic_fixture_no_checkpoint",
             },
         ),
+    }
+
+
+def build_fixture_backend_bundle():
+    """Explicit CLI factory used only when named by the caller."""
+    return {
+        "operations": build_fixture_operations(),
+        "native_adapters": build_fixture_native_adapters(),
     }

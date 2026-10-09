@@ -6,6 +6,7 @@ manifest, rather than successful outputs, defines every denominator.
 from __future__ import annotations
 
 import csv
+import copy
 import json
 import math
 import time
@@ -15,6 +16,8 @@ from pathlib import Path
 
 WORKFLOW_SCHEMA_VERSION = "paper-workflow-v1"
 STAGES = ("OFF_NATIVE", "PAYLOAD_NATIVE", "PAYLOAD_FRAMEWISE_RECON", "PAYLOAD_FRAMEWISE_M05")
+PRE_ENCODE_STAGES = ("OFF_NATIVE", "PAYLOAD_NATIVE")
+POST_ENCODE_STAGES = ("PAYLOAD_FRAMEWISE_RECON", "PAYLOAD_FRAMEWISE_M05")
 
 
 class WorkflowManifestError(ValueError):
@@ -66,7 +69,7 @@ def validate_workflow_manifest(manifest):
     artifact_index = {}
     for index, case in enumerate(manifest["cases"]):
         where = f"cases[{index}]"
-        _require(case, ("case_id", "source_id", "source", "noise", "codec", "stages"), where)
+        _require(case, ("case_id", "source_id", "source", "noise", "codec", "framewise_encode", "stages"), where)
         _identifier(case["case_id"], f"{where}.case_id")
         if case["case_id"] in case_ids:
             raise WorkflowManifestError(f"duplicate case_id {case['case_id']!r}")
@@ -99,7 +102,16 @@ def validate_workflow_manifest(manifest):
         if not isinstance(case["stages"], dict) or set(case["stages"]) != set(STAGES):
             raise WorkflowManifestError(f"{where}.stages must declare exactly {', '.join(STAGES)}")
 
-        ids = [source["artifact_id"]]
+        framewise = case["framewise_encode"]
+        _require(
+            framewise,
+            ("input_artifact_id", "latent_artifact_id", "operation"),
+            f"{where}.framewise_encode",
+        )
+        for field in ("input_artifact_id", "latent_artifact_id", "operation"):
+            _identifier(framewise[field], f"{where}.framewise_encode.{field}")
+
+        ids = [source["artifact_id"], framewise["latent_artifact_id"]]
         stage_rows = case["stages"]
         for stage in STAGES:
             row = stage_rows[stage]
@@ -114,9 +126,13 @@ def validate_workflow_manifest(manifest):
         expected_inputs = {
             "OFF_NATIVE": source["artifact_id"],
             "PAYLOAD_NATIVE": source["artifact_id"],
-            "PAYLOAD_FRAMEWISE_RECON": stage_rows["PAYLOAD_NATIVE"]["pre_artifact_id"],
-            "PAYLOAD_FRAMEWISE_M05": stage_rows["PAYLOAD_FRAMEWISE_RECON"]["pre_artifact_id"],
+            "PAYLOAD_FRAMEWISE_RECON": framewise["latent_artifact_id"],
+            "PAYLOAD_FRAMEWISE_M05": framewise["latent_artifact_id"],
         }
+        if framewise["input_artifact_id"] != stage_rows["PAYLOAD_NATIVE"]["pre_artifact_id"]:
+            raise WorkflowManifestError(
+                f"{where}.framewise_encode.input_artifact_id must be the PAYLOAD_NATIVE PRE artifact"
+            )
         for stage, expected in expected_inputs.items():
             if stage_rows[stage]["input_artifact_id"] != expected:
                 raise WorkflowManifestError(f"{where}.stages.{stage}.input_artifact_id must be {expected!r}")
@@ -125,6 +141,7 @@ def validate_workflow_manifest(manifest):
                 raise WorkflowManifestError(f"duplicate artifact_id {artifact_id!r}")
             artifact_ids.add(artifact_id)
         artifact_index[source["artifact_id"]] = (case["case_id"], "SOURCE", "SOURCE")
+        artifact_index[framewise["latent_artifact_id"]] = (case["case_id"], "SHARED_FRAMEWISE_LATENT", "LATENT")
         for stage in STAGES:
             artifact_index[stage_rows[stage]["pre_artifact_id"]] = (case["case_id"], stage, "PRE")
             artifact_index[stage_rows[stage]["post_artifact_id"]] = (case["case_id"], stage, "POST")
@@ -182,8 +199,8 @@ def validate_workflow_manifest(manifest):
             if artifact_id not in artifact_index:
                 raise WorkflowManifestError(f"{where}.{field} is not declared")
             case_id, _stage, phase = artifact_index[artifact_id]
-            if case_id != pair["case_id"] or phase != "POST":
-                raise WorkflowManifestError(f"{where}.{field} must be a POST artifact from the same case")
+            if case_id != pair["case_id"] or phase not in ("POST", "NATIVE_POST"):
+                raise WorkflowManifestError(f"{where}.{field} must be a POST or NATIVE_POST artifact from the same case")
         if not isinstance(pair["data_range"], (int, float)) or isinstance(pair["data_range"], bool):
             raise WorkflowManifestError(f"{where}.data_range must be positive and finite")
         if not math.isfinite(float(pair["data_range"])) or pair["data_range"] <= 0:
@@ -207,7 +224,34 @@ def expand_plan(manifest):
     validate_workflow_manifest(manifest)
     rows = []
     for case in manifest["cases"]:
-        for stage in STAGES:
+        for stage in PRE_ENCODE_STAGES:
+            stage_row = case["stages"][stage]
+            rows.append({
+                "step_id": f"{case['case_id']}/{stage}/TRANSFORM",
+                "case_id": case["case_id"], "stage": stage, "phase": "TRANSFORM",
+                "operation": stage_row["transform_operation"],
+                "input_artifact_id": stage_row["input_artifact_id"],
+                "output_artifact_id": stage_row["pre_artifact_id"],
+                "state": "PLANNED", "reason": None,
+            })
+            rows.append({
+                "step_id": f"{case['case_id']}/{stage}/CODEC",
+                "case_id": case["case_id"], "stage": stage, "phase": "CODEC",
+                "operation": case["codec"]["operation"],
+                "input_artifact_id": stage_row["pre_artifact_id"],
+                "output_artifact_id": stage_row["post_artifact_id"],
+                "state": "PLANNED", "reason": None,
+            })
+        framewise = case["framewise_encode"]
+        rows.append({
+            "step_id": f"{case['case_id']}/SHARED_FRAMEWISE_LATENT/ENCODE",
+            "case_id": case["case_id"], "stage": "SHARED_FRAMEWISE_LATENT", "phase": "FRAMEWISE_ENCODE",
+            "operation": framewise["operation"],
+            "input_artifact_id": framewise["input_artifact_id"],
+            "output_artifact_id": framewise["latent_artifact_id"],
+            "state": "PLANNED", "reason": None,
+        })
+        for stage in POST_ENCODE_STAGES:
             stage_row = case["stages"][stage]
             rows.append({
                 "step_id": f"{case['case_id']}/{stage}/TRANSFORM",
@@ -229,6 +273,17 @@ def expand_plan(manifest):
 
 
 def _nested_shape(value):
+    candidate = value
+    for method in ("detach", "cpu"):
+        function = getattr(candidate, method, None)
+        if callable(function):
+            candidate = function()
+    declared = getattr(candidate, "shape", None)
+    if declared is not None:
+        try:
+            return [int(part) for part in declared]
+        except (TypeError, ValueError):
+            pass
     if not isinstance(value, (list, tuple)):
         return []
     if not value:
@@ -253,6 +308,50 @@ def _flatten_numeric(value):
     return [number]
 
 
+def _numpy_array(value):
+    candidate = value
+    for method in ("detach", "cpu"):
+        function = getattr(candidate, method, None)
+        if callable(function):
+            candidate = function()
+    numpy_method = getattr(candidate, "numpy", None)
+    if callable(numpy_method):
+        candidate = numpy_method()
+    import numpy as np
+    array = np.asarray(candidate)
+    if array.dtype.kind not in "iuf":
+        raise ValueError("quality input must be a numeric non-boolean array")
+    if not np.isfinite(array).all():
+        raise ValueError("quality input contains a non-finite value")
+    return array
+
+
+def _quality_metrics(left_value, right_value):
+    array_path = any(
+        hasattr(value, "shape") or callable(getattr(value, "detach", None))
+        for value in (left_value, right_value)
+    )
+    if array_path:
+        import numpy as np
+        left = _numpy_array(left_value)
+        right = _numpy_array(right_value)
+        if left.shape != right.shape:
+            raise ValueError("paired arrays have different shapes")
+        if left.size == 0:
+            raise ValueError("paired arrays are empty")
+        difference = left.astype(np.float64, copy=False) - right.astype(np.float64, copy=False)
+        mse = float(np.mean(np.square(difference), dtype=np.float64))
+        return [int(part) for part in left.shape], int(left.size), mse
+    if _nested_shape(left_value) != _nested_shape(right_value):
+        raise ValueError("paired arrays have different shapes")
+    left = _flatten_numeric(left_value)
+    right = _flatten_numeric(right_value)
+    if not left:
+        raise ValueError("paired arrays are empty")
+    mse = sum((a - b) ** 2 for a, b in zip(left, right)) / len(left)
+    return _nested_shape(left_value), len(left), mse
+
+
 def _public_artifact(row):
     return {key: value for key, value in row.items() if key != "_value"}
 
@@ -263,18 +362,34 @@ def _artifact(artifact_id, status, metadata, *, role, stage, phase, reason=None,
         "phase": phase, "reason": reason, **metadata,
     }
     if status == "AVAILABLE":
-        row["value_shape"] = _nested_shape(value) if isinstance(value, (list, tuple)) else None
+        row["value_shape"] = _nested_shape(value)
         if isinstance(value, (str, Path)):
             row["uri"] = str(value)
         row["_value"] = value
     return row
 
 
+def _clone_shared_latent(value):
+    if isinstance(value, (list, tuple, dict, set)):
+        return copy.deepcopy(value)
+    clone = getattr(value, "clone", None)
+    if callable(clone):
+        return clone()
+    copy_method = getattr(value, "copy", None)
+    if callable(copy_method):
+        return copy_method()
+    return copy.deepcopy(value)
+
+
 def _execute_step(row, case, artifacts, operations):
     metadata = _case_metadata(case)
     source = artifacts[row["input_artifact_id"]]
     output_role = "MAIN_METHOD"
-    output_phase = "PRE" if row["phase"] == "TRANSFORM" else "POST"
+    output_phase = {
+        "TRANSFORM": "PRE",
+        "CODEC": "POST",
+        "FRAMEWISE_ENCODE": "LATENT",
+    }[row["phase"]]
     if source["status"] != "AVAILABLE":
         row.update(state="BLOCKED_DEPENDENCY", reason=f"input artifact state is {source['status']}")
         artifacts[row["output_artifact_id"]] = _artifact(
@@ -300,7 +415,8 @@ def _execute_step(row, case, artifacts, operations):
     }
     started = time.perf_counter()
     try:
-        value = operation(source["_value"], context)
+        operation_input = _clone_shared_latent(source["_value"]) if source["phase"] == "LATENT" else source["_value"]
+        value = operation(operation_input, context)
         if value is None:
             raise ValueError("operation returned no artifact value or URI")
         elapsed = time.perf_counter() - started
@@ -343,13 +459,7 @@ def _quality_record(pair, artifacts):
         base.update(state="CONFLICT", reason="paired artifact identity mismatch: " + ", ".join(mismatches))
         return base
     try:
-        if _nested_shape(reference["_value"]) != _nested_shape(candidate["_value"]):
-            raise ValueError("paired arrays have different shapes")
-        left = _flatten_numeric(reference["_value"])
-        right = _flatten_numeric(candidate["_value"])
-        if not left:
-            raise ValueError("paired arrays are empty")
-        mse = sum((a - b) ** 2 for a, b in zip(left, right)) / len(left)
+        shape, sample_count, mse = _quality_metrics(reference["_value"], candidate["_value"])
         rmse = math.sqrt(mse)
         if mse == 0.0:
             psnr = None
@@ -358,7 +468,7 @@ def _quality_record(pair, artifacts):
             psnr = 20.0 * math.log10(float(pair["data_range"]) / rmse)
             psnr_status = "FINITE"
         base.update(
-            state="OBSERVED", sample_count=len(left), shape=_nested_shape(reference["_value"]),
+            state="OBSERVED", sample_count=sample_count, shape=shape,
             mse=mse, rmse=rmse, psnr_db=psnr, psnr_status=psnr_status,
             declared_pairing_receipt={field: reference[field] for field in identity_fields},
             pairing_verification_scope="DECLARATION_AND_CALLBACK_RECEIPT_ONLY_NOT_PHYSICAL_MEDIA_VERIFICATION",
@@ -438,7 +548,19 @@ def run_workflow(manifest, *, operations=None, native_adapters=None, base_dir=No
             {"cost_id": f"native/{job['job_id']}/CODEC", "kind": "WALL_SECONDS_OBSERVED_CALL", "state": "BLOCKED_DEPENDENCY", "seconds": None, "budget_status": "NO_BUDGET_ADOPTED", "reason": None},
             {"cost_id": f"native/{job['job_id']}/EXTRACT", "kind": "WALL_SECONDS_OBSERVED_CALL", "state": "BLOCKED_DEPENDENCY", "seconds": None, "budget_status": "NO_BUDGET_ADOPTED", "reason": None},
         ]
-        if source["status"] != "AVAILABLE":
+        if adapter is not None and getattr(adapter, "method", None) != job["method"]:
+            record.update(
+                status="CONFLICT",
+                reason=f"adapter.method {getattr(adapter, 'method', None)!r} != job.method {job['method']!r}",
+            )
+            for phase, field in (("NATIVE_PRE", "pre_artifact_id"), ("NATIVE_POST", "post_artifact_id")):
+                artifacts[job[field]] = _artifact(
+                    job[field], "CONFLICT", metadata, role="NATIVE_BASELINE",
+                    stage=job["method"], phase=phase, reason=record["reason"],
+                )
+            for cost in phase_costs:
+                cost.update(state="CONFLICT", reason=record["reason"])
+        elif source["status"] != "AVAILABLE":
             record.update(status="BLOCKED_DEPENDENCY", reason=f"input artifact state is {source['status']}")
             for phase, field in (("NATIVE_PRE", "pre_artifact_id"), ("NATIVE_POST", "post_artifact_id")):
                 artifacts[job[field]] = _artifact(

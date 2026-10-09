@@ -18,6 +18,11 @@
         "operation": "fixture_codec_roundtrip",
         "parameters": {"decimal_places": 3}
       },
+      "framewise_encode": {
+        "input_artifact_id": "fixture_ok/p0/pre",
+        "latent_artifact_id": "fixture_ok/framewise/latent",
+        "operation": "fixture_framewise_encode"
+      },
       "stages": {
         "OFF_NATIVE": {
           "input_artifact_id": "fixture_ok/source",
@@ -32,13 +37,13 @@
           "transform_operation": "fixture_payload_native"
         },
         "PAYLOAD_FRAMEWISE_RECON": {
-          "input_artifact_id": "fixture_ok/p0/pre",
+          "input_artifact_id": "fixture_ok/framewise/latent",
           "pre_artifact_id": "fixture_ok/p1/pre",
           "post_artifact_id": "fixture_ok/p1/post",
           "transform_operation": "fixture_framewise_recon"
         },
         "PAYLOAD_FRAMEWISE_M05": {
-          "input_artifact_id": "fixture_ok/p1/pre",
+          "input_artifact_id": "fixture_ok/framewise/latent",
           "pre_artifact_id": "fixture_ok/m05/pre",
           "post_artifact_id": "fixture_ok/m05/post",
           "transform_operation": "fixture_framewise_m05"
@@ -59,6 +64,11 @@
         "operation": "fixture_codec_roundtrip",
         "parameters": {"decimal_places": 3}
       },
+      "framewise_encode": {
+        "input_artifact_id": "fixture_missing/p0/pre",
+        "latent_artifact_id": "fixture_missing/framewise/latent",
+        "operation": "fixture_framewise_encode"
+      },
       "stages": {
         "OFF_NATIVE": {
           "input_artifact_id": "fixture_missing/source",
@@ -73,13 +83,13 @@
           "transform_operation": "fixture_payload_native"
         },
         "PAYLOAD_FRAMEWISE_RECON": {
-          "input_artifact_id": "fixture_missing/p0/pre",
+          "input_artifact_id": "fixture_missing/framewise/latent",
           "pre_artifact_id": "fixture_missing/p1/pre",
           "post_artifact_id": "fixture_missing/p1/post",
           "transform_operation": "fixture_framewise_recon"
         },
         "PAYLOAD_FRAMEWISE_M05": {
-          "input_artifact_id": "fixture_missing/p1/pre",
+          "input_artifact_id": "fixture_missing/framewise/latent",
           "pre_artifact_id": "fixture_missing/m05/pre",
           "post_artifact_id": "fixture_missing/m05/post",
           "transform_operation": "fixture_framewise_m05"
@@ -129,9 +139,13 @@
     {"quality_id": "fixture_ok/total", "case_id": "fixture_ok", "comparison": "M05_POST_VS_OFF_POST_TOTAL", "reference_artifact_id": "fixture_ok/off/post", "candidate_artifact_id": "fixture_ok/m05/post", "data_range": 1.0},
     {"quality_id": "fixture_ok/extra_vae", "case_id": "fixture_ok", "comparison": "P1_POST_VS_P0_POST_PAIRWISE", "reference_artifact_id": "fixture_ok/p0/post", "candidate_artifact_id": "fixture_ok/p1/post", "data_range": 1.0},
     {"quality_id": "fixture_ok/m05", "case_id": "fixture_ok", "comparison": "M05_POST_VS_P1_POST_PAIRWISE", "reference_artifact_id": "fixture_ok/p1/post", "candidate_artifact_id": "fixture_ok/m05/post", "data_range": 1.0},
+    {"quality_id": "fixture_ok/videoseal_native", "case_id": "fixture_ok", "comparison": "VIDEOSEAL_NATIVE_POST_VS_OFF_POST_SYNTHETIC", "reference_artifact_id": "fixture_ok/off/post", "candidate_artifact_id": "fixture_ok/videoseal/post", "data_range": 1.0},
+    {"quality_id": "fixture_ok/rivagan_native", "case_id": "fixture_ok", "comparison": "RIVAGAN_NATIVE_POST_VS_OFF_POST_SYNTHETIC", "reference_artifact_id": "fixture_ok/off/post", "candidate_artifact_id": "fixture_ok/rivagan/post", "data_range": 1.0},
     {"quality_id": "fixture_missing/total", "case_id": "fixture_missing", "comparison": "M05_POST_VS_OFF_POST_TOTAL", "reference_artifact_id": "fixture_missing/off/post", "candidate_artifact_id": "fixture_missing/m05/post", "data_range": 1.0},
     {"quality_id": "fixture_missing/extra_vae", "case_id": "fixture_missing", "comparison": "P1_POST_VS_P0_POST_PAIRWISE", "reference_artifact_id": "fixture_missing/p0/post", "candidate_artifact_id": "fixture_missing/p1/post", "data_range": 1.0},
-    {"quality_id": "fixture_missing/m05", "case_id": "fixture_missing", "comparison": "M05_POST_VS_P1_POST_PAIRWISE", "reference_artifact_id": "fixture_missing/p1/post", "candidate_artifact_id": "fixture_missing/m05/post", "data_range": 1.0}
+    {"quality_id": "fixture_missing/m05", "case_id": "fixture_missing", "comparison": "M05_POST_VS_P1_POST_PAIRWISE", "reference_artifact_id": "fixture_missing/p1/post", "candidate_artifact_id": "fixture_missing/m05/post", "data_range": 1.0},
+    {"quality_id": "fixture_missing/videoseal_native", "case_id": "fixture_missing", "comparison": "VIDEOSEAL_NATIVE_POST_VS_OFF_POST_SYNTHETIC", "reference_artifact_id": "fixture_missing/off/post", "candidate_artifact_id": "fixture_missing/videoseal/post", "data_range": 1.0},
+    {"quality_id": "fixture_missing/rivagan_native", "case_id": "fixture_missing", "comparison": "RIVAGAN_NATIVE_POST_VS_OFF_POST_SYNTHETIC", "reference_artifact_id": "fixture_missing/off/post", "candidate_artifact_id": "fixture_missing/rivagan/post", "data_range": 1.0}
   ],
   "main_report": {
     "report_id": "synthetic_strict_32bit_fixture",

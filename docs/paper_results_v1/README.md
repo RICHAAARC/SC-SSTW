@@ -42,6 +42,22 @@ python -m experiments.paper_results_v1.workflow_cli \
   --output-dir /tmp/paper-results-v1-workflow
 ```
 
+For an explicitly supplied real integration module, the CLI accepts exactly
+one named zero-argument factory and performs no discovery, download, or model
+selection:
+
+```bash
+python -m experiments.paper_results_v1.workflow_cli \
+  --manifest /absolute/path/to/adopted-workflow.json \
+  --backend-factory my_package.paper_backends:build_bundle \
+  --output-dir /absolute/new/workflow-output
+```
+
+The factory returns exactly `operations` and `native_adapters` mappings.
+`--backend-factory` and `--fixture-backends` are mutually exclusive. Loading a
+factory is an explicit caller action; the checked package does not contain a
+weight loader or a default real-model factory.
+
 The fixture uses the production plan expansion, dependency handling, artifact
 registry, codec callback, native adapter, quality, cost, and strict-main-report
 link paths. `--fixture-backends` is rejected unless the manifest says
@@ -108,19 +124,26 @@ payload when importing old evidence.
 
 The workflow manifest now declares source/content identity, noise ID and seed,
 one shared codec callback, and PRE/POST artifact IDs. It expands each case into
-`OFF_NATIVE` and `PAYLOAD_NATIVE` (P0). From P0 it produces
-`PAYLOAD_FRAMEWISE_RECON` (P1) and `PAYLOAD_FRAMEWISE_M05`. Every POST artifact
-used in a comparison traverses that case's same explicit codec callback, while
-PRE and POST remain distinct. Native baselines likewise run as native embed,
-the shared codec callback, then native extract. Matching noise/codec fields and
-callback receipts verify the declaration and code path; they are not a claim
-that two media files were physically identical without inspecting the files.
+`OFF_NATIVE` and `PAYLOAD_NATIVE` (P0). P0 PRE enters one explicit shared
+framewise encode step. P1 decodes an independent clone of that frozen latent;
+M05 writes and decodes a separate clone of the same latent. The scheduler does
+not feed P1 pixels into M05 or encode P0 twice. Every POST artifact used in a
+comparison traverses that case's same explicit codec callback, while PRE,
+latent, and POST remain distinct. Native baselines likewise run as native
+embed, the shared codec callback, then native extract. Matching noise/codec
+fields and callback receipts verify the declaration and code path; they are
+not a claim that two media files were physically identical without inspecting
+the files.
 
 Quality rows report absolute paired MSE, RMSE, and PSNR. They never subtract
 PSNR or present pairwise metrics as an additive decomposition. Identical arrays
 use `psnr_db=null` with `IDENTICAL_INFINITE`, avoiding non-finite JSON. P0 still
 contains payload. Historical P0 cannot fill OFF, and its old POST references do
-not establish the new same-codec comparison.
+not establish the new same-codec comparison. CPU quality calculation accepts
+numeric lists and tensor/ndarray values; tensor values are detached and moved
+to CPU, and array-backed values are checked and reduced without converting a
+full video to nested Python lists. Quality pairs may reference main POST or
+native-baseline NATIVE_POST artifacts from the same declared case.
 
 The current main prepare path already creates P0 and uses one shared framewise
 encode for separate P1/M05 decodes and codecs; its fixed runner has no OFF arm.
@@ -158,9 +181,16 @@ score semantics.
 
 `native_adapters.py` now provides real call-through interfaces for explicitly
 loaded backends. VideoSeal calls `embed(..., msgs=..., is_video=True)` and
-`detect(..., is_video=True)`, retains the complete raw output, nested shapes,
-and element counts, and applies no spatial, temporal, capacity, or 32-bit reduction. The available
-interface reference is [current upstream main](https://github.com/facebookresearch/videoseal/blob/main/videoseal/models/videoseal.py);
+`detect(..., is_video=True)`. Before embed it verifies that the caller's
+message builder preserved every declared bit exactly at shape `[1,K]`, and it
+records the exact submitted bits, shape, and count. Embedded media are retained
+as workflow artifacts and represented in JSON only by shape, dtype, count, URI,
+and a real file/backend identity when one exists; `imgs_w` is never expanded
+into report JSON. Detect output retains the complete raw values, nested shapes,
+and element counts. Large outputs require an explicit lossless sidecar writer
+and URI rather than truncation. The adapter applies no spatial, temporal,
+capacity, or 32-bit reduction. The available interface reference is
+[current upstream main](https://github.com/facebookresearch/videoseal/blob/main/videoseal/models/videoseal.py);
 the historical `e00b...` API was not reverified locally, so every real backend
 must declare its actual source and model version. VideoSeal's documented and
 code-comment layouts have varied; an output such as `T,1+K,H,W` is preserved
@@ -169,13 +199,19 @@ model version, weight identity, and detected-output layout metadata; unknowns
 must be recorded as such rather than inferred from the adapter name.
 
 RivaGAN retains every decoded frame's soft logits and its native per-frame
-zero-threshold bits. The [pinned upstream implementation](https://github.com/DAI-Lab/RivaGAN/blob/efffa72a4ca46d4d5051f6970c96424c2cdab441/rivagan/rivagan.py)
+zero-threshold bits and requires each frame to have strict shape `[32]`. The
+[pinned upstream implementation](https://github.com/DAI-Lab/RivaGAN/blob/efffa72a4ca46d4d5051f6970c96424c2cdab441/rivagan/rivagan.py)
 writes OpenCV `mp4v` at 20 fps in path `encode` and decodes BGR frames with
 `value/127.5-1`; the path wrapper exposes that hidden transport and marks it
-incompatible with the shared-codec claim. A tensor-level or explicit codec-hook
-backend avoids that ambiguity. Neither adapter receives truth during extract.
-RivaGAN construction likewise requires explicit source, model, weight, color,
-normalization, transport, and codec-comparability metadata.
+incompatible with the shared-codec claim. `RivaGANLoadedTensorBackend` wires an
+explicitly loaded encoder/decoder to BGR uint8 frames, `[1,3,1,H,W]` normalized
+model tensors, and `[1,32]` messages. It clamps encoder output to `[-1,1]` and
+uses the pinned implementation's `(x+1)*127.5` uint8 truncation, without a
+hidden file codec. Extraction detaches and returns each frame immediately so a
+video does not retain every autograd graph. Neither adapter receives truth
+during extract, and no sequence reducer is selected. RivaGAN construction
+requires explicit source, model, weight, color, normalization, transport, and
+codec-comparability metadata.
 
 `archive/SSTW/external_baseline/source_registry.json` and its
 `official_eval_adapters` directory also declare VidSig, VideoShield, VideoMark,

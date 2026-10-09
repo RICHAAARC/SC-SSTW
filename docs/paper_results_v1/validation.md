@@ -58,15 +58,17 @@ PYTHONDONTWRITEBYTECODE=1 \
   tests/test_paper_results_v1_workflow.py
 ```
 
-Result: `19 passed in 0.13s` (the 12 strict-report regressions plus 7 workflow
+Result: `27 passed in 0.14s` (the 12 strict-report regressions plus 15 workflow
 and native-adapter tests).
 
 The workflow fixture ran two predeclared cases through the real scheduler: one
-available inline CPU array and one missing file. Its fixed denominators were 16
-main plan steps, 4 native jobs, 6 quality pairs, and 28 cost rows. The available
-case produced 8 successful main steps, 2 successful native jobs, and 3 observed
-quality pairs. The missing case retained 8 blocked main steps, 2 blocked native
-jobs, and 3 blocked quality rows. VideoSeal retained a complete synthetic
+available inline CPU array and one missing file. The scheduler inserts one
+explicit shared framewise encode row per case, so its fixed denominators are 18
+main plan steps, 4 native jobs, 10 quality
+pairs, and 30 cost rows. The available case produced 9 successful main steps,
+2 successful native jobs, and 5 observed quality pairs. The missing case
+retained 9 blocked main steps, 2 blocked native jobs, and 5 blocked quality
+rows. VideoSeal retained a complete synthetic
 `[2,5,1,1]` raw output without reduction; RivaGAN retained two complete 32-logit
 frames and their native zero-threshold bits without a sequence reducer. The
 same CLI linked the six-row synthetic strict 32-bit report under `main_report/`
@@ -75,8 +77,15 @@ and also ran from a copied source directory with no `.git`.
 Additional tests verify dependency validation, exact native messages, callback
 failure retention, absent-backend behavior, RivaGAN path mp4v/20fps disclosure,
 truth-free extraction, declared pairing conflicts, and identical-array
-`psnr_db=null` serialization. These are deterministic engineering fixtures;
-they are not model, codec, quality, timing, or scientific results.
+`psnr_db=null` serialization. This repair pass also checks a single shared
+latent encode with two independent deep-cloned decode inputs, a concrete
+pinned-layout RivaGAN loaded-tensor backend, strict 32-logit frames, immediate
+per-frame detach, VideoSeal message-builder tamper rejection before embed,
+non-inlined embedded media, explicit lossless sidecars for large detect output,
+tensor/array quality reduction with non-finite rejection, NATIVE_POST quality
+pairs, adapter/method conflicts with retained rows, and explicit CLI factory
+loading from a copied source directory. These are deterministic engineering
+fixtures; they are not model, codec, quality, timing, or scientific results.
 
 ## Historical saved-result import
 

@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import argparse
+import importlib
 import json
 from pathlib import Path
 
@@ -44,25 +45,45 @@ def _link_main_report(declaration, *, base_dir, output_dir):
         return {"report_id": report_id, "status": "FAILED", "reason": f"{type(exc).__name__}: {exc}"}
 
 
+def _load_backend_factory(specification):
+    if specification.count(":") != 1:
+        raise ValueError("--backend-factory requires MODULE:FUNCTION")
+    module_name, function_name = specification.split(":", 1)
+    if not module_name or not function_name:
+        raise ValueError("--backend-factory requires MODULE:FUNCTION")
+    factory = getattr(importlib.import_module(module_name), function_name)
+    if not callable(factory):
+        raise TypeError("backend factory target is not callable")
+    bundle = factory()
+    if not isinstance(bundle, dict) or set(bundle) != {"operations", "native_adapters"}:
+        raise TypeError("backend factory must return operations and native_adapters objects")
+    if not isinstance(bundle["operations"], dict) or not isinstance(bundle["native_adapters"], dict):
+        raise TypeError("backend factory operations and native_adapters must be objects")
+    return bundle
+
+
 def main(argv=None):
     parser = argparse.ArgumentParser(
         description="Execute explicitly injected outer workflow callbacks over a fixed artifact plan."
     )
     parser.add_argument("--manifest", required=True, type=Path)
     parser.add_argument("--output-dir", required=True, type=Path)
-    parser.add_argument(
+    backend_group = parser.add_mutually_exclusive_group()
+    backend_group.add_argument(
         "--fixture-backends",
         action="store_true",
         help="Use deterministic CPU fixture callbacks; valid only for SYNTHETIC_FIXTURE_ONLY manifests.",
+    )
+    backend_group.add_argument(
+        "--backend-factory",
+        metavar="MODULE:FUNCTION",
+        help="Load only the explicitly named zero-argument factory; no backend discovery is performed.",
     )
     args = parser.parse_args(argv)
     manifest_path = args.manifest.resolve()
     manifest = validate_workflow_manifest(read_json(manifest_path))
     if args.fixture_backends and manifest["evidence_role"] != "SYNTHETIC_FIXTURE_ONLY":
         parser.error("--fixture-backends requires evidence_role SYNTHETIC_FIXTURE_ONLY")
-    if args.output_dir.exists():
-        parser.error("--output-dir must not already exist")
-    args.output_dir.mkdir(parents=True)
     operations = {}
     native_adapters = {}
     if args.fixture_backends:
@@ -72,6 +93,16 @@ def main(argv=None):
         )
         operations = build_fixture_operations()
         native_adapters = build_fixture_native_adapters()
+    elif args.backend_factory:
+        try:
+            bundle = _load_backend_factory(args.backend_factory)
+        except Exception as exc:
+            parser.error(f"backend factory failed: {type(exc).__name__}: {exc}")
+        operations = bundle["operations"]
+        native_adapters = bundle["native_adapters"]
+    if args.output_dir.exists():
+        parser.error("--output-dir must not already exist")
+    args.output_dir.mkdir(parents=True)
     link = _link_main_report(
         manifest["main_report"], base_dir=manifest_path.parent, output_dir=args.output_dir,
     )
