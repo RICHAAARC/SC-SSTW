@@ -119,6 +119,8 @@ def _load_raw_receipt(
 
 
 def _condition_or_missing(row: dict[str, Any]) -> dict[str, Any]:
+    if isinstance(row.get("evaluation"), dict):
+        return method.descriptive_condition(row["evaluation"])
     if row.get("status") != "EVALUATED":
         return dict(status="ENGINEERING_FAILURE", met=None, reason=row.get("reason", "evaluation unavailable"),
                     classification="ENGINEERING_FAILURE", scientific_pass=False)
@@ -187,8 +189,11 @@ def run(run_result_path: Path, config_path: Path, output: Path) -> dict[str, Any
             for label, key in (("CORRECT", truth["key"]), ("WRONG", truth["wrong_key"])):
                 rows = raw[arm][layer][label]
                 if rows is None:
+                    reason = seal["entries"][f"{arm}/{layer}/{label}"].get(
+                        "reason", "raw observation unavailable")
                     evaluations[arm][layer][label] = dict(
-                        status="ENGINEERING_FAILURE", reason="raw observation unavailable",
+                        status="ENGINEERING_FAILURE", reason=reason,
+                        evaluation=method.missing_evaluation(reason),
                         auxiliary_wrong_key=(label == "WRONG"))
                     continue
                 try:
@@ -196,16 +201,25 @@ def run(run_result_path: Path, config_path: Path, output: Path) -> dict[str, Any
                     evaluations[arm][layer][label] = dict(
                         status="EVALUATED", evaluation=value, auxiliary_wrong_key=(label == "WRONG"))
                 except Exception as exc:
+                    reason = f"{type(exc).__name__}: {exc}"
                     evaluations[arm][layer][label] = dict(
-                        status="ENGINEERING_FAILURE", reason=f"{type(exc).__name__}: {exc}",
+                        status="ENGINEERING_FAILURE", reason=reason,
+                        evaluation=method.missing_evaluation(reason),
                         auxiliary_wrong_key=(label == "WRONG"))
 
     comparisons = {}
     for layer in method.LAYERS:
         off, joint = evaluations["OFF"][layer]["CORRECT"], evaluations["JOINT"][layer]["CORRECT"]
-        comparisons[layer] = (method.compare_arms(off["evaluation"], joint["evaluation"])
-                              if off["status"] == joint["status"] == "EVALUATED"
-                              else dict(status="ENGINEERING_FAILURE", reason="correct-key arm evaluation unavailable"))
+        comparison = method.compare_arms(off["evaluation"], joint["evaluation"])
+        comparison.update(
+            status="SCORED" if comparison["missing_values"] == 0 else "MISSING",
+            arm_statuses=dict(OFF=off["status"], JOINT=joint["status"]),
+            missing_reasons=dict(
+                OFF=None if off["status"] == "EVALUATED" else off.get("reason"),
+                JOINT=None if joint["status"] == "EVALUATED" else joint.get("reason"),
+            ),
+        )
+        comparisons[layer] = comparison
     correct_conditions = {
         arm: {layer: _condition_or_missing(evaluations[arm][layer]["CORRECT"])
               for layer in method.LAYERS}

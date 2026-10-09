@@ -15,6 +15,7 @@ from main.tube_state import local_joint_state_payload_carrier_v1 as carrier
 LAYERS = ("float_rgb", "rgb8", "mp4")
 ARMS = ("OFF", "JOINT")
 KEY_LABELS = ("CORRECT", "WRONG")
+PAYLOAD_EVIDENCE_COUNTS = (24, 24, 20, 20)
 
 
 def _finite_number(value: Any) -> bool:
@@ -138,7 +139,7 @@ def evaluate_observations(
                              invalid_items=[], evidence=state_items)
 
     payload_metrics = []
-    expected_counts = (24, 24, 20, 20)
+    expected_counts = PAYLOAD_EVIDENCE_COUNTS
     for fragment in range(4):
         for bit in range(8):
             sign = 2 * fragments[fragment][bit] - 1
@@ -178,7 +179,48 @@ def evaluate_observations(
     )
 
 
+def missing_evaluation(reason: str) -> dict[str, Any]:
+    """Fixed metric directory for an unavailable raw observation file.
+
+    This is an engineering placeholder, not 704 fabricated observations.
+    """
+    if not isinstance(reason, str) or not reason:
+        raise ValueError("missing evaluation requires an engineering reason")
+    correlations = [dict(
+        offset=offset, status="MISSING", value=None, missing_items=704,
+        reason=reason, directory_placeholder=True,
+    ) for offset in range(22)]
+    payload_metrics = [dict(
+        fragment=fragment, bit=bit, truth_bit=None, sign=None,
+        expected_evidence_count=PAYLOAD_EVIDENCE_COUNTS[fragment], evidence=[],
+        status="MISSING", signed_mean=None,
+        missing_items=PAYLOAD_EVIDENCE_COUNTS[fragment], reason=reason,
+        directory_placeholder=True,
+    ) for fragment in range(4) for bit in range(8)]
+    return dict(
+        schema="local-joint-known-grid-descriptive-v1",
+        status="ENGINEERING_FAILURE", engineering_reason=reason,
+        directory_placeholder=True, observed_evidence_items=0,
+        scope=dict(phase=1, slots=list(range(22)), state_denominator=704,
+                   payload_evidence_counts=list(PAYLOAD_EVIDENCE_COUNTS), blind_path=False,
+                   message_decoding=False, truth_loaded_after_raw_directory=True),
+        state=dict(status="MISSING", correlations=correlations, c0=None, max_other=None,
+                   c0_minus_max_other=None, global_max_ties=[], invalid_items=[], evidence=[],
+                   expected_evidence_count=704, observed_evidence_count=0,
+                   reason=reason, directory_placeholder=True),
+        payload=dict(status="MISSING", metrics=payload_metrics, reason=reason,
+                     expected_metric_count=32, observed_evidence_items=0,
+                     directory_placeholder=True),
+    )
+
+
 def descriptive_condition(evaluation: Mapping[str, Any]) -> dict[str, Any]:
+    if evaluation.get("status") == "ENGINEERING_FAILURE":
+        return dict(status="ENGINEERING_FAILURE", met=None,
+                    reason=evaluation.get("engineering_reason", "observation unavailable"),
+                    classification="ENGINEERING_FAILURE", construction_support_gap_items=0,
+                    engineering_failure_items=None, directory_placeholder=True,
+                    scientific_pass=False)
     state, payload = evaluation["state"], evaluation["payload"]
     if state["status"] != "SCORED" or payload["status"] != "SCORED":
         invalid = [item["evidence"] for item in state.get("invalid_items", [])]

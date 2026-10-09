@@ -266,6 +266,43 @@ def test_wrong_key_failure_is_auxiliary_when_correct_chain_is_complete(tmp_path)
     assert persisted["outcome_classification"] == "DESCRIPTIVE_PROGRESS_WITH_OFF_CONTRAST"
 
 
+def test_unavailable_complete_raw_file_preserves_fixed_metrics_and_other_evidence(tmp_path):
+    config = json.loads(posthoc.FIXED_CONFIG.read_text())
+    run_result = _fixture_run(tmp_path, config)
+    result = json.loads(run_result.read_text())
+    manifest_path = tmp_path / "raw_observation_manifest.json"
+    manifest = json.loads(manifest_path.read_text())
+    missing_path = tmp_path / "does-not-exist.json"
+    for owner in (result["arms"]["OFF"]["observations"], manifest["arms"]["OFF"]):
+        owner["mp4/CORRECT"]["path"] = str(missing_path)
+    run_result.write_text(json.dumps(result))
+    manifest_path.write_text(json.dumps(manifest))
+
+    persisted = posthoc.run(run_result, posthoc.FIXED_CONFIG, tmp_path / "missing-raw-output")
+    unavailable = persisted["evaluations"]["OFF"]["mp4"]["CORRECT"]
+    evaluation = unavailable["evaluation"]
+    assert unavailable["status"] == "ENGINEERING_FAILURE"
+    assert evaluation["status"] == "ENGINEERING_FAILURE" and evaluation["observed_evidence_items"] == 0
+    assert evaluation["scope"]["state_denominator"] == 704
+    assert len(evaluation["state"]["correlations"]) == 22
+    assert "FileNotFoundError" in unavailable["reason"]
+    assert all(row["value"] is None and row["reason"] == unavailable["reason"]
+               for row in evaluation["state"]["correlations"])
+    assert evaluation["state"]["c0_minus_max_other"] is None
+    assert len(evaluation["payload"]["metrics"]) == 32
+    assert [row["expected_evidence_count"] for row in evaluation["payload"]["metrics"][::8]] == [24, 24, 20, 20]
+    assert all(row["signed_mean"] is None and row["evidence"] == []
+               for row in evaluation["payload"]["metrics"])
+    comparison = persisted["correct_key_arm_differences"]["mp4"]
+    assert comparison["expected_values"] == 55 and comparison["missing_values"] == 55
+    assert len(comparison["state_correlations"]) == 22 and comparison["state_gap"] is None
+    assert len(comparison["payload_signed_means"]) == 32
+    assert persisted["evaluations"]["JOINT"]["mp4"]["CORRECT"]["status"] == "EVALUATED"
+    assert persisted["evaluations"]["JOINT"]["mp4"]["WRONG"]["status"] == "EVALUATED"
+    assert persisted["mp4_attribution"] == "ATTRIBUTION_UNRESOLVED_OFF_UNAVAILABLE"
+    assert persisted["outcome_classification"] == "ENGINEERING_FAILURE"
+
+
 @pytest.mark.parametrize(("field", "nonfinite"), (
     ("q", float("nan")), ("q", float("inf")),
     ("energy_plus", float("nan")), ("energy_minus", float("inf")),
