@@ -333,5 +333,11 @@ per source remain controls and ablations.
 
 This local method adoption does not authorize execution. VideoSeal native-K,
 threshold/FPR work, strength or reducer scans, extra attacks/baselines, and
-automatic execution remain outside the adopted method. No real model run or
-publication notebook was produced by this package.
+automatic confirmation execution remain outside the adopted method. The
+self-contained [`paper_results_v1_two_pilot_colab.ipynb`](../../notebooks/paper_results_v1_two_pilot_colab.ipynb)
+is a fixed Run-all handoff for the two excluded pilots only. It embeds the
+actual evaluator/runtime source closure and all ten adopted cases, but attempts
+only `pilot_01` and `pilot_02`; the eight confirmation cases remain planned and
+unexecuted in the fixed denominator. See
+[`colab_two_pilot_handoff.md`](colab_two_pilot_handoff.md). This repository pass
+did not execute the notebook, models, media, codec, GPU, Colab, or Drive.

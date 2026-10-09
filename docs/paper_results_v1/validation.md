@@ -262,3 +262,39 @@ bounds. The focused regression with one complete `+1`, one known-main failure,
 and six double-missing rows is `[-6,7]`, replacing the loose and incorrect
 `[-6,8]` result. No new inference, threshold, model, or media execution was
 introduced.
+
+## Fixed two-pilot Colab handoff
+
+Targeted command:
+
+```bash
+PYTHONHOME=/home/richar/projects/Video-WM/framework/.conda \
+PYTHONDONTWRITEBYTECODE=1 \
+/lib64/ld-linux-x86-64.so.2 \
+/home/richar/projects/Video-WM/framework/.conda/bin/python3.13 \
+  -m pytest -q --capture=sys -p no:cacheprovider \
+  tests/test_paper_results_v1_two_pilot_notebook.py
+```
+
+Result: `3 passed in 0.15s`.
+
+The checks parse every notebook code cell with Python AST, require empty
+outputs and the exact two-line first Drive cell, and freeze the two attempted
+pilots plus eight non-executed confirmation IDs. They decode the embedded ZIP,
+verify its ZIP and per-file SHA-256 values, reject `.git`, parse every embedded
+Python source file, and run `real_cli --phase plan` from the extracted no-`.git`
+copy. The expanded adopted denominator is unchanged: 10 cases, 690 artifacts,
+1,600 receiver rows/51,200 bits, 180 baseline rows, 180 comparison rows, 70
+quality rows, and 110 costs. Static checks also cover the fixed phase order,
+one-pass failure retention, report execution after failed stages, official
+source/model pins, isolated baseline dependencies, and the explicit historical
+evidence boundary.
+
+The notebook was not executed top to bottom because this task forbids Colab,
+Drive, GPU, model, VAE, codec, and media execution. The unclosed validation gap
+is therefore the real user-run environment: snapshot download, current
+VideoSeal/RivaGAN compatibility with the recorded modern main stack, actual
+GPU peak memory, wall time, and resulting media/readouts. The notebook records
+those operations and failures instead of claiming they passed. No dependency,
+source checkout, checkpoint, or model snapshot was downloaded during this
+validation.
