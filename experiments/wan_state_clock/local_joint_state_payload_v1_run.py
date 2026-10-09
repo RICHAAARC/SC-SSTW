@@ -74,7 +74,7 @@ def source_identity(root: Path) -> dict[str, Any]:
 
 
 class Store:
-    def __init__(self, output: Path, config: dict[str, Any], config_path: Path):
+    def __init__(self, output: Path, config: dict[str, Any], config_path: Path, execution_kind: str):
         self.output = Path(output)
         self.output.mkdir(parents=True, exist_ok=False)
         identity = source_identity(ROOT)
@@ -88,13 +88,16 @@ class Store:
             calls={},
             lifecycle=[],
             failures=[],
+            execution=dict(kind=execution_kind, attempted=False, completed=False,
+                           scientific_interpretation=False, blind_recovery=False, fpr_evidence=False),
             arms={arm: dict(
                 status="PENDING",
                 steps=[dict(index=i, status="PENDING") for i in range(50)],
                 layers={name: dict(status="PENDING") for name in runtime.LAYERS},
                 observations={name: dict(status="PENDING") for name in ("float_rgb", "rgb8", "mp4")},
             ) for arm in config["arms"]},
-            evidence_ceiling="engineering runner record; no real execution or scientific PASS in this delivery",
+            evidence_ceiling=("preflight is unexecuted; an ordinary explicit-config invocation records attempted execution, "
+                              "not scientific PASS, blind recovery, FPR, or generalization"),
         )
         self.save()
 
@@ -119,7 +122,7 @@ class Store:
         try:
             value = function()
         except Exception as exc:
-            self.failure(name, exc)
+            self.best_effort_failure(name, exc)
             raise
         row["completed"] += 1
         self.save()
@@ -128,6 +131,15 @@ class Store:
     def failure(self, stage: str, exc: BaseException, **extra: Any) -> None:
         self.data["failures"].append(dict(stage=stage, reason=f"{type(exc).__name__}: {exc}", retry=False, **extra))
         self.save()
+
+    def best_effort_failure(self, stage: str, exc: BaseException, **extra: Any) -> None:
+        """One finite persistence attempt; never masks an existing primary error."""
+        self.data["failures"].append(dict(stage=stage, reason=f"{type(exc).__name__}: {exc}", retry=False, **extra))
+        try:
+            self.save()
+        except Exception as record_exc:
+            self.data.setdefault("unpersisted_record_failures", []).append(
+                dict(stage=stage, reason=f"{type(record_exc).__name__}: {record_exc}"))
 
     def step(self, arm: str, row: dict[str, Any]) -> None:
         index = int(row["index"])
@@ -169,17 +181,22 @@ def _save_json(path: Path, value: Any) -> dict[str, Any]:
 
 
 def run(config: dict[str, Any], output: Path, *, preflight_only: bool = False,
-        residency_type: Any = runtime.WanSerialResidency, codec_type: Any = runtime.ExplicitFFmpeg) -> Store:
+        residency_type: Any = runtime.WanSerialResidency, codec_type: Any = runtime.ExplicitFFmpeg,
+        public_protocol: Any = None, raster_saver: Any = None,
+        execution_kind: str = "explicit_config_real_entry") -> Store:
     config = dict(config)
     config_path = Path(config.pop("_config_path")) if "_config_path" in config else Path("<in-memory>")
     runtime.validate_config(config)
-    store = Store(output, config, config_path)
+    public_protocol = runtime.carrier.PUBLIC if public_protocol is None else public_protocol
+    store = Store(output, config, config_path, execution_kind)
     if preflight_only:
         store.data.update(status="PREFLIGHT_COMPLETE", stage="PREFLIGHT", actual_model_calls=False)
         store.seal_incomplete()
         return store
     residency = residency_type(config, store.event)
+    primary: BaseException | None = None
     try:
+        store.data["execution"]["attempted"] = True
         store.data["stage"] = "MODEL_LOAD"; store.save()
         store.call("generation_load", residency.load_generation)
         initial_identity = residency._identity()["initial"]
@@ -206,6 +223,7 @@ def run(config: dict[str, Any], output: Path, *, preflight_only: bool = False,
                             residency, terminal, output / arm_name.lower(),
                             event=lambda name, row, arm_name=arm_name: _layer(store, arm_name, name, row),
                             restore_transformer=arm_index < len(config["arms"]) - 1,
+                            public_protocol=public_protocol, raster_saver=raster_saver,
                         ),
                     )
                 except Exception as exc:
@@ -213,33 +231,51 @@ def run(config: dict[str, Any], output: Path, *, preflight_only: bool = False,
                     raise
                 arm["layers"].update(layers); store.save()
                 for layer_name, observed in (("float_rgb", rgb), ("rgb8", rgb8)):
-                    _observe(store, arm_name, layer_name, observed, config, output)
+                    _observe(store, arm_name, layer_name, observed, config, output, public_protocol)
                 codec = codec_type(config["media"])
                 received, media = store.call(
                     f"{arm_name}/mp4_roundtrip",
-                    lambda arm_name=arm_name, rgb8=rgb8: codec.roundtrip(
-                        rgb8, output / arm_name.lower() / "video.mp4",
-                        event=lambda row, arm_name=arm_name: _layer(store, arm_name, "mp4", row),
+                    lambda arm_name=arm_name: codec.roundtrip(
+                        Path(arm["layers"]["rgb8"]["path"]), arm["layers"]["rgb8"]["sha256"],
+                        output / arm_name.lower() / "video.mp4",
+                        event=lambda row, arm_name=arm_name: _media_event(store, arm_name, row),
                     ),
                 )
                 arm["layers"]["mp4"] = media; store.save()
-                _observe(store, arm_name, "mp4", received, config, output)
+                _observe(store, arm_name, "mp4", received, config, output, public_protocol)
                 arm["status"] = "COMPLETE"; store.save()
             except Exception as exc:
-                arm["status"] = "FAILED"; store.failure(f"{arm_name}/arm", exc, arm=arm_name); raise
+                arm["status"] = "FAILED"; store.best_effort_failure(f"{arm_name}/arm", exc, arm=arm_name); raise
         if len({store.data["arms"][name]["initial_fingerprint"] for name in config["arms"]}) != 1:
             raise RuntimeError("arms did not share the exact initial latent")
-        store.data.update(status="COMPLETE", stage="COMPLETE", actual_model_calls=True)
+        store.data["execution"]["completed"] = True
+        store.data.update(status="COMPLETE", stage="COMPLETE",
+                          actual_model_calls=(execution_kind == "explicit_config_real_entry"))
         store.save()
         return store
     except BaseException as exc:
+        primary = exc
         store.data.update(status="FAILED", stage="FAILED")
-        if not isinstance(exc, Exception):
-            store.failure("process", exc)
-        store.seal_incomplete()
+        store.best_effort_failure("process", exc)
+        try:
+            store.seal_incomplete()
+        except Exception as record_exc:
+            store.best_effort_failure("seal_incomplete", record_exc, primary_reason=f"{type(exc).__name__}: {exc}")
         raise
     finally:
-        residency.release()
+        try:
+            residency.release()
+        except Exception as cleanup_exc:
+            store.best_effort_failure("residency_release", cleanup_exc,
+                                      primary_reason=None if primary is None else f"{type(primary).__name__}: {primary}")
+            if primary is None:
+                store.data.update(status="FAILED", stage="RELEASE_FAILED")
+                store.data["execution"]["completed"] = False
+                try:
+                    store.save()
+                except Exception:
+                    pass
+                raise
 
 
 def _count(store: Store, name: str, completed: bool) -> None:
@@ -253,23 +289,51 @@ def _layer(store: Store, arm: str, name: str, row: dict[str, Any]) -> None:
     store.save()
 
 
+def _media_event(store: Store, arm: str, row: dict[str, Any]) -> None:
+    current = store.data["arms"][arm]["layers"]["mp4"]
+    if "stages" not in current:
+        current = {"status": "RUNNING", "stages": {}}
+    stage = row["stage"]
+    current["stages"][stage] = dict(row)
+    if stage == "encode" and row["status"] == "COMPLETED":
+        current["artifact"] = dict(row["artifact"])
+    if row["status"] == "FAILED":
+        current["status"] = "FAILED"
+    elif stage == "read" and row["status"] == "COMPLETED":
+        current["status"] = "SAVED"
+    store.data["arms"][arm]["layers"]["mp4"] = current
+    store.save()
+
+
 def _mark_first_pending_layer_failed(store: Store, arm: str, exc: Exception) -> None:
     pending = [name for name in runtime.LAYERS if store.data["arms"][arm]["layers"][name]["status"] == "PENDING"]
     if pending:
         store.data["arms"][arm]["layers"][pending[0]] = dict(status="FAILED", reason=f"{type(exc).__name__}: {exc}")
         for name in pending[1:]:
             store.data["arms"][arm]["layers"][name] = dict(status="MISSING_DEPENDENCY", dependency=pending[0])
-        store.save()
+        try:
+            store.save()
+        except Exception as record_exc:
+            store.data.setdefault("unpersisted_record_failures", []).append(
+                dict(stage=f"{arm}/layer_failure", reason=f"{type(record_exc).__name__}: {record_exc}"))
 
 
-def _observe(store: Store, arm: str, layer: str, rgb: Any, config: dict[str, Any], output: Path) -> None:
+def _observe(store: Store, arm: str, layer: str, rgb: Any, config: dict[str, Any], output: Path,
+             public_protocol: Any) -> None:
     target = store.data["arms"][arm]["observations"]
     target[layer] = dict(status="ATTEMPTED"); store.save()
     try:
-        rows = store.call(f"{arm}/{layer}_observe", lambda: runtime.raw_observations(rgb, config["carrier"]["key"]))
+        rows = store.call(f"{arm}/{layer}_observe", lambda: runtime.raw_observations(
+            rgb, config["carrier"]["key"], public_protocol=public_protocol))
         target[layer] = _save_json(output / arm.lower() / f"{layer}_raw_observations.json", rows); store.save()
     except Exception as exc:
-        target[layer] = dict(status="FAILED", reason=f"{type(exc).__name__}: {exc}"); store.save(); raise
+        target[layer] = dict(status="FAILED", reason=f"{type(exc).__name__}: {exc}")
+        try:
+            store.save()
+        except Exception as record_exc:
+            store.data.setdefault("unpersisted_record_failures", []).append(
+                dict(stage=f"{arm}/{layer}_observe", reason=f"{type(record_exc).__name__}: {record_exc}"))
+        raise
 
 
 def main(argv: list[str] | None = None) -> int:

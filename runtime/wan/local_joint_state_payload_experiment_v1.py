@@ -246,8 +246,11 @@ class WanSerialResidency:
 
         started = time.perf_counter()
         row = dict(status="ATTEMPTED", transition="vae_release_without_transformer_restore",
-                   primary_reason=primary_reason, retry=False, resources=_resources(self.device))
-        self.event(label, dict(row))
+                   primary_reason=primary_reason, retry=False, resources=_resources(self.device), cleanup_record_errors=[])
+        try:
+            self.event(label, dict(row))
+        except Exception as exc:
+            row["cleanup_record_errors"].append(f"attempt_event: {type(exc).__name__}: {exc}")
         try:
             if self.vae is not None:
                 vae_adapter._clear_cache(self.vae)
@@ -262,7 +265,10 @@ class WanSerialResidency:
             self.phase = "FAILED_CLEANUP"
             row.update(status="FAILED", cleanup_reason=f"{type(exc).__name__}: {exc}",
                        elapsed_seconds=time.perf_counter() - started, resources=_resources(self.device))
-        self.event(label, dict(row))
+        try:
+            self.event(label, dict(row))
+        except Exception as exc:
+            row["cleanup_record_errors"].append(f"completion_event: {type(exc).__name__}: {exc}")
         return row
 
     def release(self) -> None:
@@ -297,6 +303,19 @@ class _DynamicBackend:
         return self.residency.backend.encode_normalized(value)
 
 
+def _best_effort_stop(residency: Any, label: str, reason: str) -> None:
+    """Never replace the provider/decode exception with cleanup bookkeeping."""
+    try:
+        residency.stop_in_vae_phase(label, primary_reason=reason)
+    except Exception as cleanup_exc:
+        try:
+            residency.event(label, dict(status="FAILED", transition="failure_cleanup",
+                            primary_reason=reason,
+                            cleanup_reason=f"{type(cleanup_exc).__name__}: {cleanup_exc}", retry=False))
+        except Exception:
+            pass
+
+
 def make_resident_control(residency: WanSerialResidency, config: dict[str, Any]) -> tuple[Any, joint.LocalJointPosteriorProvider]:
     """Bind the reviewed provider to VAE residency around enabled steps only."""
     from runtime.wan import local_joint_state_payload_v1 as adapter
@@ -323,9 +342,12 @@ def make_resident_control(residency: WanSerialResidency, config: dict[str, Any])
             result = base(**kwargs)
         except Exception as exc:
             reason = f"{type(exc).__name__}: {exc}"
-            residency.event(f"joint_step_{index:02d}_provider", dict(status="FAILED", reason=reason, retry=False,
-                             backend_calls=dict(provider.calls), backend_failures=list(provider.failures), resources=_resources(residency.device)))
-            residency.stop_in_vae_phase(f"joint_step_{index:02d}_failure_cleanup", primary_reason=reason)
+            try:
+                residency.event(f"joint_step_{index:02d}_provider", dict(status="FAILED", reason=reason, retry=False,
+                                 backend_calls=dict(provider.calls), backend_failures=list(provider.failures), resources=_resources(residency.device)))
+            except Exception:
+                pass
+            _best_effort_stop(residency, f"joint_step_{index:02d}_failure_cleanup", reason)
             raise
         else:
             residency.event(f"joint_step_{index:02d}_provider", dict(status="COMPLETED",
@@ -366,7 +388,9 @@ def run_arm(residency: WanSerialResidency, config: dict[str, Any], arm: str, *, 
 
 def save_terminal_and_rgb_layers(residency: WanSerialResidency, terminal: Any, output: Path,
                                  *, event: Callable[[str, dict[str, Any]], None],
-                                 restore_transformer: bool) -> tuple[Any, Any, dict[str, Any]]:
+                                 restore_transformer: bool,
+                                 public_protocol: carrier.CarrierProtocol = carrier.PUBLIC,
+                                 raster_saver: Callable[[Any, Path], dict[str, Any]] | None = None) -> tuple[Any, Any, dict[str, Any]]:
     """Save normalized terminal, adapter-clamped float RGB, and its exact RGB8 raster."""
     import torch
     from runtime.wan import fixed_rgb_media
@@ -380,10 +404,20 @@ def save_terminal_and_rgb_layers(residency: WanSerialResidency, terminal: Any, o
     residency.event("terminal_decode", dict(status="ATTEMPTED", resources=_resources(residency.device)))
     try:
         decoded = residency.backend.decode_normalized(terminal.to(residency.device))
+        if (not torch.is_tensor(decoded) or decoded.dtype != torch.float32 or
+                tuple(decoded.shape) != public_protocol.video_shape):
+            raise ValueError("terminal decoder must return FP32 public RGB geometry")
+        if not bool(torch.isfinite(decoded).all()):
+            raise FloatingPointError("terminal decoder returned nonfinite FP32 RGB")
+        if bool((decoded < 0).any()) or bool((decoded > 1).any()):
+            raise ValueError("terminal decoder output must be adapter-clamped to [0,1]")
     except Exception as exc:
         reason = f"{type(exc).__name__}: {exc}"
-        residency.event("terminal_decode", dict(status="FAILED", reason=reason, retry=False))
-        residency.stop_in_vae_phase("terminal_failure_cleanup", primary_reason=reason)
+        try:
+            residency.event("terminal_decode", dict(status="FAILED", reason=reason, retry=False))
+        except Exception:
+            pass
+        _best_effort_stop(residency, "terminal_failure_cleanup", reason)
         residency.active_scheduler = None
         raise
     residency.event("terminal_decode", dict(status="COMPLETED", elapsed_seconds=time.perf_counter() - started,
@@ -393,51 +427,101 @@ def save_terminal_and_rgb_layers(residency: WanSerialResidency, terminal: Any, o
     else:
         residency.stop_in_vae_phase("terminal_vae_release")
     residency.active_scheduler = None
-    if decoded.dtype != torch.float32 or tuple(decoded.shape) != carrier.PUBLIC.video_shape:
-        raise ValueError("terminal decoder must return FP32 public RGB geometry")
     layers["float_rgb"] = _tensor_file(output / "float_rgb.pt", decoded)
     layers["float_rgb"]["coordinate"] = "vae_adapter_clamped_rgb_0_1"
     event("float_rgb", layers["float_rgb"])
     rgb8 = vae_adapter.quantize_rgb8_no_codec(decoded)
-    layers["rgb8"] = fixed_rgb_media.save_raster(rgb8, output / "rgb8.rgb")
+    save = fixed_rgb_media.save_raster if raster_saver is None else raster_saver
+    layers["rgb8"] = save(rgb8, output / "rgb8.rgb")
     event("rgb8", layers["rgb8"])
     return decoded.detach().cpu(), rgb8, layers
 
 
 class ExplicitFFmpeg:
     """One no-retry RGB24 round trip using only explicit media config."""
-    def __init__(self, media: dict[str, Any]):
+    def __init__(self, media: dict[str, Any], *, raster_loader: Callable | None = None):
         self.media = dict(media)
+        self.raster_loader = raster_loader
 
-    def roundtrip(self, rgb8: Any, path: Path, *, event: Callable[[dict[str, Any]], None]) -> tuple[Any, dict[str, Any]]:
+    def roundtrip(self, raster_path: Path, expected_sha256: str, path: Path,
+                  *, event: Callable[[dict[str, Any]], None]) -> tuple[Any, dict[str, Any]]:
         import numpy as np
         import torch
+        from runtime.wan import fixed_rgb_media
 
-        if rgb8.dtype != torch.uint8 or tuple(rgb8.shape) != carrier.PUBLIC.video_shape:
-            raise ValueError("MP4 input must be the persisted public RGB8 raster")
+        raster_path = Path(raster_path)
+        reopen = fixed_rgb_media.reopen_raster if self.raster_loader is None else self.raster_loader
+        rgb8 = reopen(raster_path, expected_sha256)
         t, h, w, _ = carrier.PUBLIC.video_shape
         partial = path.with_name(path.stem + ".partial.mp4")
         if path.exists() or partial.exists():
             raise FileExistsError("MP4 output already exists")
+        actual_sha256 = _sha(raster_path)
         raw = rgb8.detach().cpu().contiguous().numpy().tobytes()
         save = ["ffmpeg", "-v", "error", "-threads", "1", "-f", "rawvideo", "-pix_fmt", "rgb24", "-s", f"{w}x{h}", "-r", str(self.media["fps"]), "-i", "pipe:0", "-an", "-c:v", self.media["codec"], "-crf", str(self.media["crf"]), "-pix_fmt", self.media["pixel_format"], "-n", str(partial)]
-        row = {"status": "ATTEMPTED", "command": save, "input_rgb8_sha256": hashlib.sha256(raw).hexdigest(), "retry": False}
+        row = {"stage": "encode", "status": "ATTEMPTED", "command": save,
+               "input_raster_path": str(raster_path), "input_expected_sha256": expected_sha256,
+               "input_actual_sha256": actual_sha256, "input_bytes_sha256": hashlib.sha256(raw).hexdigest(), "retry": False}
         event(dict(row))
-        child = subprocess.run(save, input=raw, capture_output=True, check=False)
-        if child.returncode:
-            row.update(status="FAILED", returncode=child.returncode, stderr=child.stderr.decode(errors="replace")); event(dict(row)); raise RuntimeError("FFmpeg encode failed")
-        os.replace(partial, path)
+        child = None
+        try:
+            child = subprocess.run(save, input=raw, capture_output=True, check=False)
+            if child.returncode:
+                raise RuntimeError(f"FFmpeg encode exited {child.returncode}")
+            os.replace(partial, path)
+            artifact = dict(path=str(path), sha256=_sha(path), bytes=path.stat().st_size)
+            row.update(status="COMPLETED", returncode=0, artifact=artifact,
+                       stdout=child.stdout.decode(errors="replace"), stderr=child.stderr.decode(errors="replace"))
+            event(dict(row))
+        except Exception as exc:
+            row.update(status="FAILED", reason=f"{type(exc).__name__}: {exc}")
+            if child is not None:
+                row.update(returncode=child.returncode, stdout=child.stdout.decode(errors="replace"),
+                           stderr=child.stderr.decode(errors="replace"))
+            event(dict(row)); raise
+        probe_command = ["ffprobe", "-v", "error", "-select_streams", "v:0", "-show_entries", "stream=width,height,nb_frames", "-of", "json", str(path)]
+        probe = {"stage": "probe", "status": "ATTEMPTED", "command": probe_command, "mp4_sha256": artifact["sha256"]}
+        event(dict(probe))
+        child = None
+        try:
+            child = subprocess.run(probe_command, capture_output=True, check=False)
+            metadata = json.loads(child.stdout)
+            stream = metadata["streams"][0]
+            if child.returncode or (int(stream["width"]), int(stream["height"])) != (w, h):
+                raise ValueError("ffprobe width/height mismatch")
+        except Exception as exc:
+            probe.update(status="FAILED", reason=f"{type(exc).__name__}: {exc}")
+            if child is not None:
+                probe.update(returncode=child.returncode, stdout=child.stdout.decode(errors="replace"),
+                             stderr=child.stderr.decode(errors="replace"))
+            event(dict(probe)); raise RuntimeError("FFprobe failed or reported wrong geometry") from exc
+        probe.update(status="COMPLETED", returncode=0, metadata=metadata,
+                     stdout=child.stdout.decode(errors="replace"), stderr=child.stderr.decode(errors="replace"))
+        event(dict(probe))
         read = ["ffmpeg", "-v", "error", "-threads", "1", "-noautorotate", "-i", str(path), "-map", "0:v:0", "-f", "rawvideo", "-pix_fmt", "rgb24", "-"]
-        child = subprocess.run(read, capture_output=True, check=False)
-        if child.returncode or len(child.stdout) != t * h * w * 3:
-            row.update(status="FAILED", read_returncode=child.returncode, read_bytes=len(child.stdout)); event(dict(row)); raise RuntimeError("FFmpeg readback failed or changed fixed geometry")
+        read_row = {"stage": "read", "status": "ATTEMPTED", "command": read, "mp4_sha256": artifact["sha256"]}
+        event(dict(read_row))
+        child = None
+        try:
+            child = subprocess.run(read, capture_output=True, check=False)
+            if child.returncode or len(child.stdout) != t * h * w * 3:
+                raise RuntimeError("FFmpeg readback failed or changed fixed geometry")
+        except Exception as exc:
+            read_row.update(status="FAILED", reason=f"{type(exc).__name__}: {exc}")
+            if child is not None:
+                read_row.update(returncode=child.returncode, read_bytes=len(child.stdout),
+                                stderr=child.stderr.decode(errors="replace"))
+            event(dict(read_row)); raise
         received = torch.from_numpy(np.frombuffer(child.stdout, dtype=np.uint8).reshape(carrier.PUBLIC.video_shape).copy())
-        row.update(status="SAVED", path=str(path), sha256=_sha(path), bytes=path.stat().st_size, read_bytes=len(child.stdout), input_is_exact_persisted_rgb8=True)
-        event(dict(row))
-        return received, row
+        read_row.update(status="COMPLETED", returncode=0, read_bytes=len(child.stdout),
+                        stderr=child.stderr.decode(errors="replace"), full_frame_count_by_raw_bytes=t)
+        event(dict(read_row))
+        return received, dict(status="SAVED", artifact=artifact, input_raster_path=str(raster_path),
+                              input_expected_sha256=expected_sha256, input_actual_sha256=actual_sha256,
+                              encode=row, probe=probe, read=read_row)
 
 
-def raw_observations(rgb: Any, key: str) -> list[dict[str, Any]]:
+def raw_observations(rgb: Any, key: str, *, public_protocol: carrier.CarrierProtocol = carrier.PUBLIC) -> list[dict[str, Any]]:
     """Serialize received-only raw rows; no reducer, truth, threshold, or path selection."""
     values = rgb.float() / 255.0 if str(rgb.dtype).endswith("uint8") else rgb.float()
-    return [row.as_dict() for row in joint.read_received_catalog(values, key)]
+    return [row.to_dict() for row in joint.read_received_catalog(values, key, public_protocol=public_protocol)]

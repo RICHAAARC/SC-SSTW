@@ -20,7 +20,7 @@
 - public key 原字符串 `local-joint-state-payload-v1-first-mechanism`；wrong key 建议为该字符串加 `-wrong`，只作旁证，不建立 FPR。message 严格为 hex `8001a55a`，四个 byte 各不相同且按 byte 顺序、MSB-first；不按结果挑 message。
 - 8 fps，FFmpeg RGB24 输入，`libx264`、CRF 18、`yuv420p`；MP4 必须由已经独立持久化的同一 RGB8 raster 字节产生。建议 `device=cuda`、transformer dtype `bfloat16`、冻结 VAE `float32`，不设具体 GPU 型号 gate，也不自动换 dtype。source id、所有上述字段、device 与 transformer dtype 都由运行配置显式提供，无代码默认。
 
-总物理规模为 2 个 MP4、362 帧、200 次 transformer forward、100 次 native step。JOINT 在 steps 25..49 做 25 次 clean decode 与 50 次 posterior encode，两个 arm 各做 1 次 terminal decode，因此合计 27 decode、50 encode、2 次 MP4 save/read。每个联合步先取得 c/u，再将实际 arm scheduler 与大 transformer 切到 CPU/VAE 阶段，完成 1D+2E、释放临时量与 VAE、恢复同一 transformer/scheduler 后才做 CFG/native step；conditioning 与当前 z/c/u 小张量保留在 device。约 25 个 VAE 阶段、25 次往返（按方向约 50 次驻留切换），初始化和最终 decode 另计。
+总物理规模为 2 个 MP4、362 帧、200 次 transformer forward、100 次 native step。JOINT 在 steps 25..49 做 25 次 clean decode 与 50 次 posterior encode，两个 arm 各做 1 次 terminal decode，因此合计 27 decode、50 encode、2 次 MP4 save/read。当前串行 loader 每次进入 VAE phase 都调用 `load_frozen_vae`，所以建议的 OFF+JOINT 名单成功完成时共有 27 次 VAE load 尝试；缓存文件重复加载开销尚未测量。每个联合步先取得 c/u，再将实际 arm scheduler 与大 transformer 切到 CPU/VAE 阶段，完成 1D+2E、释放临时量与 VAE、恢复同一 transformer/scheduler 后才做 CFG/native step；conditioning 与当前 z/c/u 小张量保留在 device。约 25 个 joint VAE 阶段、25 次 joint 往返（按方向约 50 次驻留切换），初始化和两个 terminal decode 另计。不由性能猜测引入 VAE cache、自动恢复或替代驻留策略。
 
 仓内历史工程依据是 `runtime/wan/generation.prepare_generation(load_vae=False)` 与 `load_frozen_vae`，以及历史 `WanMultiBackend.to_vae_phase/to_transformer_phase` 的同一 transformer 串行驻留方式。`diagnostics/receiver-first-20260923/rgb_dct_multistep_real_result_audit_20260924.md` 记录 run `20260924T121641567985Z/S2=d23fe4e` 在 L4 完成 8/8 MP4、多次 LIFT/RESUME 与 FINAL_MEDIA，恢复 CFG `max_abs_error=0`、14 decode/16 encode、0 backward、峰值 allocated 约 11.65 GB（原审计口径）、无 OOM；同一历史的较早介入结果仍为负（SINGLE46 C14/15、MULTI C19/16，而 SINGLE49 C30/30）。这些只支持旧无梯度分相路径可接线，不保证本轮 25 次完整 181 帧三次 VAE 调用的显存峰值、时延或存留效果。
 
@@ -43,5 +43,67 @@ State 对 22 个循环 label 偏移全部报告
 runner 应逐步流式保存 50 行、模型驻留 attempt/completion/failure、terminal/float/RGB8/MP4 固定层状态和原始观测。OOM、加载、nonfinite、scheduler cursor、保存或读取失败属于工程无结果；有限 zero-support 或载荷符号失败属于构造证据。不得自动重试、换 dtype、分时间 chunk、换 seed/message/frequency/rho/cap 或扫描。若一次完整冻结候选在该 development source 上产生有限负结果，则停止这一冻结候选；这否定的是该源上的双证据闭合，不是整类路线。
 
 当前实现是可选 runtime provider、串行 residency loader 与独立显式配置 CLI。CLI 的普通路径会调用真实 50-step sampler；`--preflight-only` 只验证显式配置、完整源码闭包身份和固定记录目录，便于无 `.git` 发布目录检查。驻留事件保存 elapsed time，以及 CUDA allocated/reserved 和进程自上次 CUDA reset 起的累计 peak；CPU 检查对应值为 null。实现不含 model residency 常驻缓存、独立 GPU 型号 gate、自动 dtype fallback、blind selector、fragment reducer 或实验参数默认。当前 CPU 只用 fake transformer/VAE/codec 边界与小张量验证生命周期、50-step 接线、失败停止、同 RGB8 字节输入和 no-git 运行；未验证真实 25 次往返的资源可行性。
+
+### 可执行入口与精确配置 schema
+
+入口只接受包含下列 **8 个且仅有这些** 顶层 section 的 JSON；所有字段必填，代码不补默认值。以下数值仍是本提案建议，只有用户采纳并另行授权真实执行后才可保存为运行配置：
+
+```json
+{
+  "schema": "local-joint-state-payload-real-v1",
+  "model": {
+    "id": "Wan-AI/Wan2.1-T2V-1.3B-Diffusers",
+    "revision": "0fad780a534b6463e45facd96134c9f345acfa5b"
+  },
+  "generation": {
+    "height": 320,
+    "width": 512,
+    "frames": 181,
+    "steps": 50,
+    "guidance_scale": 5.0,
+    "max_sequence_length": 512,
+    "prompt": "locked camera, a small yellow ceramic sailboat gently drifting across a shallow clear glass tank on a stone tabletop, steady soft daylight, no people, no cuts",
+    "negative_prompt": "text, watermark, logo, camera motion, cuts, multiple objects, flicker",
+    "seed": 2026100701
+  },
+  "carrier": {
+    "key": "local-joint-state-payload-v1-first-mechanism",
+    "message_hex": "8001a55a",
+    "rho": 0.5,
+    "cap": 1.0
+  },
+  "media": {
+    "fps": 8,
+    "codec": "libx264",
+    "crf": 18,
+    "pixel_format": "yuv420p"
+  },
+  "source": {
+    "source_id": "yellow_sailboat_dev_s2026100701",
+    "development_only": true
+  },
+  "arms": ["OFF", "JOINT"],
+  "runtime": {
+    "device": "cuda",
+    "transformer_dtype": "bfloat16"
+  }
+}
+```
+
+只做无模型预检：
+
+```bash
+PYTHONPATH=. python -B -m experiments.wan_state_clock.local_joint_state_payload_v1_run \
+  --config /absolute/path/run.json --output /new/output/path --preflight-only
+```
+
+普通命令会真实加载模型并开始两条完整轨迹，本轮没有执行：
+
+```bash
+PYTHONPATH=. python -B -m experiments.wan_state_clock.local_joint_state_payload_v1_run \
+  --config /absolute/path/run.json --output /new/output/path
+```
+
+wrong key 和本文件给出的 state/payload 描述性 reducer 不属于这 8-section runner 输入，也不被生产 runner 消费；它们属于原始 768 行封存后的独立后评，须随后单独实现、冻结并审查，不能把 routing 当作恢复。
 
 请用户一次裁定：是否采纳上述 `1 source × {OFF,JOINT}` 名单、`rho=0.5/cap=1`、source/seed/prompts/key/message/codec、描述性后评公式与进展条件，并另行授权真实执行。若不采纳，请指出要替换的具体字段；代码不会把本提案推荐值变成默认。

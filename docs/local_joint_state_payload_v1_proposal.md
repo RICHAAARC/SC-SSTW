@@ -167,3 +167,5 @@ A2/A3 对 `1f9b2f0f56d07f8e225d407f279ba21c91901b37` 的 finding 只引出记录
 受审代码版本为 `8f664a365b2e808a3db2db243ed18f11936ff5fe`。初版审查提出的五类 finding——correspondence 盲性不可推断、route 与有效证据混淆、非法 received frame 索引、非 FP32 输入导致的 ROI 外变化及 FP32/clip 顺序、非 backend stage 失败漏记——均已关闭。A2 与 A3 对该同一版本均为 ACCEPT 且无必修 finding；A3 独立复跑 `5 passed in 1.38s`，是上述 20 项 CPU 总分母的子集，不另加到分母。A4 综合与 A5 独立里程碑审计均为 ACCEPT；A5 未提出新 finding，并确认分支 clean、main 基线仍为 `527c4800292c296222c2c0533809eccb82a29a65`，架构没有反向导入 runtime、experiments 或 governance。carrier 内含按需导入的 torch 数学实现，不把它描述为仅标准库。
 
 该版本提供可选 carrier 与显式注入 provider，不包含 model-residency loader 或独立实验 runner。20 项 CPU 只支持工程实现与记录语义，不是 scientific PASS；`rho/cap` 数值仍待决定，真实问题仍是多步写入后的局部 state 与不同 payload fragment 能否共同穿过 MP4。
+
+上述“不包含 model-residency loader 或独立实验 runner”只描述受审版本 `8f664a3` 的历史状态。后续入口、显式配置 schema、资源成本和仍待用户裁定的最小真实机制名单见 [独立真实实验提案](local_joint_state_payload_v1_real_experiment_proposal.md)；新增 runner 不改变本文件中 carrier 数学、参数待决定状态或历史审查结论，也不表示真实执行获授权。
