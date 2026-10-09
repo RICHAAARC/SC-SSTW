@@ -15,7 +15,9 @@ source, arm, receiver mode (`RAW`, `GLOBAL`, `PATH`, or `ORACLE`), result input,
 adapter, exact result locator, explicit `key_label`, and planned bit count. V1
 requires integer 32 for both `comparability.message_length_bits` and every
 `planned_bits`; the saved payload row must independently contain integer
-`planned_final_bits=32`. `included=false` and
+`planned_final_bits=32`. Every slot also requires `key_role` equal to
+`CORRECT_KEY` or `WRONG_KEY`; the saved posthoc row must match it. Recovery
+summaries group by both `key_label` and `key_role`. `included=false` and
 `supported=false` remain explicit rows. Duplicate IDs, duplicate locators, or
 multiple files for one `result_id` become `CONFLICT` rows.
 

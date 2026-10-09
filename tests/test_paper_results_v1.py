@@ -124,6 +124,42 @@ def test_32bit_contract_rejects_manifest_and_saved_payload_mismatches(tmp_path):
     assert "planned_final_bits" in raw["reason"]
 
 
+def test_key_role_is_required_checked_and_grouped_with_key_label(tmp_path):
+    manifest = fixture_manifest()
+    del manifest["slots"][0]["key_role"]
+    with pytest.raises(report.ManifestError, match="key_role"):
+        report.validate_manifest(manifest)
+
+    manifest = fixture_manifest()
+    manifest["slots"][0]["key_role"] = "UNKNOWN"
+    with pytest.raises(report.ManifestError, match="key_role"):
+        report.validate_manifest(manifest)
+
+    saved = report.read_json(FIXTURE / "synthetic_fixture.result.json")
+    saved["posthoc"]["global_00/K0/BASELINE"]["key_role"] = "WRONG_KEY"
+    path = tmp_path / "wrong-role.json"
+    path.write_text(json.dumps(saved), encoding="utf-8")
+    value = report.build_report(fixture_manifest(), report.load_inputs([("fixture", path)]))
+    raw = next(row for row in value["truth_rows"] if row["slot_id"] == "fixture/raw")
+    assert raw["state"] == "CONFLICT" and "key_role" in raw["reason"]
+
+    manifest = fixture_manifest()
+    saved = report.read_json(FIXTURE / "synthetic_fixture.result.json")
+    manifest["slots"][1]["receiver_mode"] = "RAW"
+    manifest["slots"][1]["key_label"] = "K1"
+    saved["payload_reads"]["global_00/K0/EST_ALIGN"].update(mode="BASELINE", key_label="K1")
+    path = tmp_path / "same-role-two-keys.json"
+    path.write_text(json.dumps(saved), encoding="utf-8")
+    value = report.build_report(manifest, report.load_inputs([("fixture", path)]))
+    groups = [
+        row for row in value["conditional_recovery"]
+        if row["source_id"] == "synthetic_source" and row["receiver_mode"] == "RAW"
+    ]
+    assert {(row["key_label"], row["key_role"], row["manifest_slots"]) for row in groups} == {
+        ("K0", "CORRECT_KEY", 1), ("K1", "CORRECT_KEY", 1),
+    }
+
+
 @pytest.mark.parametrize("mismatch", ["view", "input_id", "result_id"])
 def test_pair_requires_same_declared_and_saved_condition_identity(tmp_path, mismatch):
     manifest = fixture_manifest()
@@ -176,6 +212,20 @@ def test_malformed_and_nonfinite_inputs_are_retained_and_report_writes(tmp_path)
     value = report.build_report(fixture_manifest(), report.load_inputs([("fixture", nonfinite)]))
     assert value["input_records"][0]["status"] == "FAILED"
     report.write_report(value, tmp_path / "nonfinite-output")
+
+    overflow = tmp_path / "overflow.json"
+    overflow.write_text(
+        (FIXTURE / "synthetic_fixture.result.json").read_text(encoding="utf-8").replace(
+            '"physical_read": "synthetic-raw"',
+            '"physical_read": "synthetic-raw", "operation_cost": 1e400',
+            1,
+        ),
+        encoding="utf-8",
+    )
+    value = report.build_report(fixture_manifest(), report.load_inputs([("fixture", overflow)]))
+    assert value["input_records"][0]["status"] == "FAILED"
+    assert value["manifest_denominator"]["slot_state_counts"] == {"FAILED": 4, "EXCLUDED": 1, "UNSUPPORTED": 1}
+    report.write_report(value, tmp_path / "overflow-output")
 
 
 def test_historical_manifest_is_explicit_44_slots_and_separates_roles_and_oracle():

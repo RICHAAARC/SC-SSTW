@@ -121,6 +121,15 @@ wrapper is copied and no historical TPR/FPR is promoted into this report. This
 stage is an inventory only; an external-record adapter waits for the adopted
 capacity, roster, codec, and score semantics.
 
+`archive/SSTW/external_baseline/source_registry.json` and its
+`official_eval_adapters` directory also declare VidSig, VideoShield, VideoMark,
+REVMark, and WAM-frame entries. This pass checked those inventory entry points
+and declarations only; it does not claim that their historical evaluations ran
+successfully. `videoseal_official_runtime.py` is a CWD layout helper and cannot
+by itself establish a complete VideoSeal baseline. Cross-model generation and
+inversion cost and their intended use remain pending, so these entries are not
+added to the default minimal comparison set.
+
 The remaining user decisions for a new evaluation are the source roster and
 size, VideoSeal capacity/redundancy semantics, the concrete OFF and
 quality/resource comparison budget, and any additional attacks or numerical

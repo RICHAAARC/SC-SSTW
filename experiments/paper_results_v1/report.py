@@ -30,12 +30,23 @@ class ManifestError(ValueError):
     """The planned denominator is malformed and cannot be interpreted safely."""
 
 
-def read_json(path):
-    return json.loads(Path(path).read_text(encoding="utf-8"), parse_constant=_reject_nonfinite)
-
-
 def _reject_nonfinite(value):
     raise ValueError(f"non-finite JSON constant {value}")
+
+
+def _parse_finite_float(value):
+    parsed = float(value)
+    if not math.isfinite(parsed):
+        raise ValueError(f"non-finite JSON float {value}")
+    return parsed
+
+
+def _loads_json(value):
+    return json.loads(value, parse_constant=_reject_nonfinite, parse_float=_parse_finite_float)
+
+
+def read_json(path):
+    return _loads_json(Path(path).read_text(encoding="utf-8"))
 
 
 def _require(row, fields, where):
@@ -72,7 +83,7 @@ def validate_manifest(manifest):
             slot,
             (
                 "slot_id", "source_id", "arm", "receiver_mode", "result_id", "adapter",
-                "locator", "planned_bits", "key_label", "included", "supported",
+                "locator", "planned_bits", "key_label", "key_role", "included", "supported",
             ),
             f"slots[{index}]",
         )
@@ -84,6 +95,8 @@ def validate_manifest(manifest):
             raise ManifestError(f"slots[{index}].planned_bits must be integer 32")
         if slot["key_label"] not in ("K0", "K1"):
             raise ManifestError(f"slots[{index}].key_label must be K0 or K1")
+        if slot["key_role"] not in ("CORRECT_KEY", "WRONG_KEY"):
+            raise ManifestError(f"slots[{index}].key_role must be CORRECT_KEY or WRONG_KEY")
         if type(slot["included"]) is not bool or type(slot["supported"]) is not bool:
             raise ManifestError(f"slots[{index}] included/supported must be booleans")
         if slot["result_id"] not in manifest["result_bindings"]:
@@ -118,7 +131,7 @@ def load_inputs(entries):
         record = {"result_id": result_id, "path": str(Path(path).resolve())}
         try:
             raw = Path(path).read_bytes()
-            data = json.loads(raw, parse_constant=_reject_nonfinite)
+            data = _loads_json(raw)
             if not isinstance(data, dict):
                 raise ValueError("result top level must be an object")
             record.update(
@@ -142,7 +155,7 @@ def _base_slot(slot, index):
         "arm": slot["arm"],
         "receiver_mode": slot["receiver_mode"],
         "view": slot.get("view"),
-        "key_role": slot.get("key_role"),
+        "key_role": slot["key_role"],
         "key_label": slot["key_label"],
         "result_id": slot["result_id"],
         "adapter": slot["adapter"],
@@ -215,7 +228,7 @@ def _conditional_slot(slot, result):
     status = truth_row.get("status")
     if status != "EVALUATED_TRUTH":
         return "FAILED", truth_row.get("error", f"posthoc status {status!r}"), blind, truth
-    if slot.get("key_role") is not None and truth_row.get("key_role") != slot["key_role"]:
+    if truth_row.get("key_role") != slot["key_role"]:
         return "CONFLICT", "manifest key_role does not match posthoc key_role", blind, truth
     expected_oracle = slot["receiver_mode"] == "ORACLE"
     if payload_row.get("oracle") is not expected_oracle or truth_row.get("oracle") is not expected_oracle:
@@ -327,9 +340,9 @@ def normalize_measurements(manifest, inputs):
 def aggregate_slots(rows):
     groups = defaultdict(list)
     for row in rows:
-        groups[(row["source_id"], row["arm"], row["receiver_mode"], row.get("key_role"))].append(row)
+        groups[(row["source_id"], row["arm"], row["receiver_mode"], row["key_label"], row["key_role"])].append(row)
     output = []
-    for (source_id, arm, mode, key_role), members in sorted(groups.items(), key=lambda item: tuple(str(x) for x in item[0])):
+    for (source_id, arm, mode, key_label, key_role), members in sorted(groups.items(), key=lambda item: tuple(str(x) for x in item[0])):
         eligible = [row for row in members if row["state"] not in ("EXCLUDED", "UNSUPPORTED")]
         evaluable = [row for row in eligible if row["state"] == "OBSERVED"]
         exact = [row for row in evaluable if row["truth"].get("exact_recovery")]
@@ -338,6 +351,7 @@ def aggregate_slots(rows):
             "source_id": source_id,
             "arm": arm,
             "receiver_mode": mode,
+            "key_label": key_label,
             "key_role": key_role,
             "manifest_slots": len(members),
             "fixed_denominator_slots": len(members),
@@ -539,12 +553,12 @@ def render_markdown(report):
     lines += [
         "", "Logical slots, unique physical key-read identities, input media, actual calls, and independent source labels are separate counts.",
         "", "## Conditional 32-bit recovery", "",
-        "| Source | Arm | Receiver | Key role | Physical key-read IDs | Exact / full fixed | Exact / eligible | Exact / evaluable | Bit errors / evaluable bits | States |",
-        "| --- | --- | --- | --- | ---: | ---: | ---: | ---: | ---: | --- |",
+        "| Source | Arm | Receiver | Key label | Key role | Physical key-read IDs | Exact / full fixed | Exact / eligible | Exact / evaluable | Bit errors / evaluable bits | States |",
+        "| --- | --- | --- | --- | --- | ---: | ---: | ---: | ---: | ---: | --- |",
     ]
     for row in report["conditional_recovery"]:
         lines.append(
-            f"| {row['source_id']} | {row['arm']} | {row['receiver_mode']} | {row.get('key_role') or ''} | "
+            f"| {row['source_id']} | {row['arm']} | {row['receiver_mode']} | {row['key_label']} | {row['key_role']} | "
             f"{row['unique_physical_key_read_identities']} | {row['exact_32bit_numerator']} / {row['exact_32bit_fixed_denominator']} | "
             f"{row['exact_32bit_numerator']} / {row['exact_32bit_eligible_denominator']} | "
             f"{row['exact_32bit_numerator']} / {row['exact_32bit_evaluable_denominator']} | "

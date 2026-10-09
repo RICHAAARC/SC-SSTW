@@ -46,16 +46,16 @@ Logical slots, unique physical key-read identities, input media, actual calls, a
 
 ## Conditional 32-bit recovery
 
-| Source | Arm | Receiver | Key role | Physical key-read IDs | Exact / full fixed | Exact / eligible | Exact / evaluable | Bit errors / evaluable bits | States |
-| --- | --- | --- | --- | ---: | ---: | ---: | ---: | ---: | --- |
-| historical_seen_dev_source_ac111d0 | HYBRID | GLOBAL | CORRECT_KEY | 8 | 9 / 9 | 9 / 9 | 9 / 9 | 0 / 288 | `{"OBSERVED":9}` |
-| historical_seen_dev_source_ac111d0 | HYBRID | GLOBAL | WRONG_KEY | 8 | 0 / 9 | 0 / 9 | 0 / 9 | 101 / 288 | `{"OBSERVED":9}` |
-| historical_seen_dev_source_ac111d0 | HYBRID | ORACLE | CORRECT_KEY | 2 | 2 / 2 | 2 / 2 | 2 / 2 | 0 / 64 | `{"OBSERVED":2}` |
-| historical_seen_dev_source_ac111d0 | HYBRID | ORACLE | WRONG_KEY | 2 | 0 / 2 | 0 / 2 | 0 / 2 | 22 / 64 | `{"OBSERVED":2}` |
-| historical_seen_dev_source_ac111d0 | HYBRID | PATH | CORRECT_KEY | 2 | 2 / 2 | 2 / 2 | 2 / 2 | 0 / 64 | `{"OBSERVED":2}` |
-| historical_seen_dev_source_ac111d0 | HYBRID | PATH | WRONG_KEY | 2 | 0 / 2 | 0 / 2 | 0 / 2 | 22 / 64 | `{"OBSERVED":2}` |
-| historical_seen_dev_source_ac111d0 | HYBRID | RAW | CORRECT_KEY | 8 | 9 / 9 | 9 / 9 | 9 / 9 | 0 / 288 | `{"OBSERVED":9}` |
-| historical_seen_dev_source_ac111d0 | HYBRID | RAW | WRONG_KEY | 8 | 0 / 9 | 0 / 9 | 0 / 9 | 101 / 288 | `{"OBSERVED":9}` |
+| Source | Arm | Receiver | Key label | Key role | Physical key-read IDs | Exact / full fixed | Exact / eligible | Exact / evaluable | Bit errors / evaluable bits | States |
+| --- | --- | --- | --- | --- | ---: | ---: | ---: | ---: | ---: | --- |
+| historical_seen_dev_source_ac111d0 | HYBRID | GLOBAL | K0 | CORRECT_KEY | 8 | 9 / 9 | 9 / 9 | 9 / 9 | 0 / 288 | `{"OBSERVED":9}` |
+| historical_seen_dev_source_ac111d0 | HYBRID | GLOBAL | K1 | WRONG_KEY | 8 | 0 / 9 | 0 / 9 | 0 / 9 | 101 / 288 | `{"OBSERVED":9}` |
+| historical_seen_dev_source_ac111d0 | HYBRID | ORACLE | K0 | CORRECT_KEY | 2 | 2 / 2 | 2 / 2 | 2 / 2 | 0 / 64 | `{"OBSERVED":2}` |
+| historical_seen_dev_source_ac111d0 | HYBRID | ORACLE | K1 | WRONG_KEY | 2 | 0 / 2 | 0 / 2 | 0 / 2 | 22 / 64 | `{"OBSERVED":2}` |
+| historical_seen_dev_source_ac111d0 | HYBRID | PATH | K0 | CORRECT_KEY | 2 | 2 / 2 | 2 / 2 | 2 / 2 | 0 / 64 | `{"OBSERVED":2}` |
+| historical_seen_dev_source_ac111d0 | HYBRID | PATH | K1 | WRONG_KEY | 2 | 0 / 2 | 0 / 2 | 0 / 2 | 22 / 64 | `{"OBSERVED":2}` |
+| historical_seen_dev_source_ac111d0 | HYBRID | RAW | K0 | CORRECT_KEY | 8 | 9 / 9 | 9 / 9 | 9 / 9 | 0 / 288 | `{"OBSERVED":9}` |
+| historical_seen_dev_source_ac111d0 | HYBRID | RAW | K1 | WRONG_KEY | 8 | 0 / 9 | 0 / 9 | 0 / 9 | 101 / 288 | `{"OBSERVED":9}` |
 
 ## Planned RAW/SYNC pairs
 
