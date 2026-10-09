@@ -25,8 +25,10 @@ complete runtime source closure are recorded. A standalone no-.git copy must
 work, including under an unrelated parent Git repository. Git identity is used
 only when root/.git exists; otherwise use the bundled content manifest.
 
-Notebooks begin with the two-line mount. Publish reviewed source S, then bind
-all formal notebooks to S and publish N. Source drafts remain None; the strict
-published-binding gate stays pending until N. Schema/CPU/full portability
+Notebooks begin with the two-line mount. Published source references locate the
+code used; reproducibility metadata is diagnostic, never an immutable-source or
+strong-reproducibility admission gate. Record source/config/environment differences
+without blocking usable code, including optional missing provenance. Preserve safe
+extraction, actual import/load errors, and fixed experiment semantics. Schema/CPU/full portability
 checks must actually run; they do not execute real models. Real evidence stays
 at its original version and source. No automatic paper-experiment preparation.

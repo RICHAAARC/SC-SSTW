@@ -12,3 +12,9 @@ Complete CLIs must work without notebook/scripts and from a no-.git source copy;
 record real manifest content identity, never invent a Git SHA or inherit parent
 Git. Model execution/Colab and Git publication require the current user scope.
 CPU/fixture and release checks are engineering evidence, not scientific PASS.
+
+Reproducibility is diagnostic only: record available source/config/environment
+identity, but do not impose immutable-source, portable-package/hash, clean-Git,
+or exact-version admission gates. Missing optional provenance must not block
+usable code. Preserve safe extraction, real import/load errors, fixed experiment
+semantics, and complete failure records. Do not add strict/override modes.

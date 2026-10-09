@@ -93,7 +93,7 @@ def build_notebook() -> dict[str, object]:
     config = json.loads((ROOT / CONFIG_PATH).read_text(encoding="utf-8"))
     config_sha = hashlib.sha256((ROOT / CONFIG_PATH).read_bytes()).hexdigest()
     build_id = hashlib.sha256(
-        (package_sha + config_sha + "local-joint-colab-v1").encode()
+        (package_sha + config_sha + "local-joint-colab-v1.1").encode()
     ).hexdigest()
     encoded = base64.b64encode(package).decode("ascii")
     chunks = "\n".join(f"    {chunk!r}" for chunk in
@@ -231,11 +231,14 @@ def build_notebook() -> dict[str, object]:
             "import importlib.metadata as metadata, json, pathlib, shutil, sys, torch, diffusers",
             "from diffusers import WanPipeline, AutoencoderKLWan",
             "pins = {'torch':'2.11.0','diffusers':'0.39.0','transformers':'4.57.6','numpy':'2.1.3','accelerate':'1.15.0','safetensors':'0.8.0','huggingface-hub':'0.36.2','tokenizers':'0.22.2','sentencepiece':'0.2.2','ftfy':'6.3.1'}",
-            "actual = {name: metadata.version(name) for name in pins}",
-            "assert all(actual[name].split('+',1)[0] == version for name, version in pins.items()), actual",
+            "actual = {}",
+            "for name in pins:",
+            "    try: actual[name] = metadata.version(name)",
+            "    except metadata.PackageNotFoundError: actual[name] = None",
+            "version_differences = {name: {'reference': version, 'actual': actual[name]} for name, version in pins.items() if str(actual[name]).split('+',1)[0] != version}",
             "assert torch.cuda.is_available(), 'CUDA torch required'",
-            "row = dict(python=sys.version, versions=actual, torch_cuda_runtime=torch.version.cuda, cuda_available=True, device=torch.cuda.get_device_name(0), total_device_memory=int(torch.cuda.get_device_properties(0).total_memory), ffmpeg=shutil.which('ffmpeg'), ffprobe=shutil.which('ffprobe'))",
-            "pathlib.Path(" + repr(str(probe_path)) + ").write_text(json.dumps(row, indent=2)+'\\n', encoding='utf-8')",
+            "row = dict(python=sys.version, versions=actual, version_differences=version_differences, torch_cuda_runtime=torch.version.cuda, cuda_available=True, device=torch.cuda.get_device_name(0), total_device_memory=int(torch.cuda.get_device_properties(0).total_memory), ffmpeg=shutil.which('ffmpeg'), ffprobe=shutil.which('ffprobe'))",
+            "pathlib.Path(" + repr(str(probe_path)) + ").write_text(json.dumps(row, indent=2) + chr(10), encoding='utf-8')",
         ]
         probe_code = '\\n'.join(probe_lines)
         probe_returncode = logged([PYTHON, '-u', '-c', probe_code], 'DEPENDENCY_PROBE', check=False)
@@ -267,39 +270,36 @@ def build_notebook() -> dict[str, object]:
     import base64, io, zipfile
     SOURCE_PACKAGE_B64 = (\n{chunks}\n    )
     try:
-        package_bytes = base64.b64decode(''.join(SOURCE_PACKAGE_B64), validate=True)
-        if hashlib.sha256(package_bytes).hexdigest() != PACKAGE_SHA256:
-            raise RuntimeError('embedded source package SHA mismatch')
+        package_bytes = base64.b64decode(''.join(SOURCE_PACKAGE_B64))
         WORKSPACE.mkdir(parents=True, exist_ok=False)
         with zipfile.ZipFile(io.BytesIO(package_bytes)) as archive:
-            names = set(archive.namelist())
-            expected = set({list(PORTABLE_FILES)!r}) | {{'portable_source_manifest.json'}}
-            if names != expected:
-                raise RuntimeError('embedded source package file set mismatch')
-            for name in sorted(names):
-                target = (WORKSPACE / name).resolve()
+            for member in archive.infolist():
+                target = (WORKSPACE / member.filename).resolve()
                 if not target.is_relative_to(WORKSPACE.resolve()):
                     raise RuntimeError('unsafe embedded archive path')
+                if member.is_dir():
+                    target.mkdir(parents=True, exist_ok=True)
+                    continue
                 target.parent.mkdir(parents=True, exist_ok=True)
-                target.write_bytes(archive.read(name))
-        manifest = json.loads((WORKSPACE / 'portable_source_manifest.json').read_text(encoding='utf-8'))
-        actual_hashes = {{name: hashlib.sha256((WORKSPACE / name).read_bytes()).hexdigest()
-                         for name in manifest['files']}}
-        actual_content = hashlib.sha256(json.dumps(actual_hashes, sort_keys=True,
-                                                   separators=(',', ':')).encode()).hexdigest()
-        if (actual_hashes != manifest['files'] or actual_content != SOURCE_CONTENT_SHA256
-                or manifest['content_sha256'] != SOURCE_CONTENT_SHA256
-                or manifest['git_commit'] is not None or (WORKSPACE / '.git').exists()):
-            raise RuntimeError('portable source identity mismatch')
-        config_path = WORKSPACE / {CONFIG_PATH!r}
-        if hashlib.sha256(config_path.read_bytes()).hexdigest() != CONFIG_SHA256:
-            raise RuntimeError('fixed config byte identity mismatch')
-        if json.loads(config_path.read_text(encoding='utf-8')) != FIXED_CONFIG:
-            raise RuntimeError('fixed config semantic mismatch')
-        write_json(OUTPUT / 'portable_source_receipt.json', dict(
-            status='VERIFIED', kind='embedded_unversioned_directory', git_commit=None,
-            package_sha256=PACKAGE_SHA256, content_sha256=actual_content,
-            files=actual_hashes, workspace=str(WORKSPACE), config_sha256=CONFIG_SHA256))
+                target.write_bytes(archive.read(member))
+        # Provenance describes the extracted source; it is never an admission check.
+        receipt = dict(status='RECORDED', blocking=False, workspace=str(WORKSPACE),
+                       package_sha256=hashlib.sha256(package_bytes).hexdigest(),
+                       package_reference_sha256=PACKAGE_SHA256)
+        try:
+            actual_hashes = {{name: hashlib.sha256((WORKSPACE / name).read_bytes()).hexdigest()
+                             for name in {list(PORTABLE_FILES)!r} if (WORKSPACE / name).is_file()}}
+            receipt.update(files=actual_hashes,
+                           content_sha256=hashlib.sha256(json.dumps(actual_hashes, sort_keys=True,
+                                                       separators=(',', ':')).encode()).hexdigest())
+            config_path = WORKSPACE / {CONFIG_PATH!r}
+            receipt['config_sha256'] = hashlib.sha256(config_path.read_bytes()).hexdigest()
+        except Exception as record_error:
+            receipt['record_error'] = repr(record_error)
+        try:
+            write_json(OUTPUT / 'portable_source_receipt.json', receipt)
+        except Exception as record_error:
+            print('Source provenance could not be recorded:', repr(record_error), flush=True)
     except BaseException as exc:
         try: record_failure('PORTABLE_SOURCE', exc)
         except BaseException as record_error:
@@ -363,9 +363,8 @@ def build_notebook() -> dict[str, object]:
                                 source_identity=run_result.get('source_identity'),
                                 arms={name: row.get('status') for name, row in run_result.get('arms', {}).items()})
             identity = run_result.get('source_identity', {})
-            if (identity.get('kind') != 'unversioned_directory' or identity.get('git_commit') is not None
-                or identity.get('content_sha256') != RUNNER_CONTENT_SHA256):
-                raise RuntimeError('runner portable source identity mismatch')
+            audit['runner_source_matches_reference'] = (
+                isinstance(identity, dict) and identity.get('content_sha256') == RUNNER_CONTENT_SHA256)
         if (POSTHOC_OUTPUT / 'raw_observation_seal.json').is_file():
             raw_seal = json.loads((POSTHOC_OUTPUT / 'raw_observation_seal.json').read_text(encoding='utf-8'))
             audit['raw_seal'] = dict(entries=len(raw_seal.get('entries', {})), truth_loaded=raw_seal.get('truth_loaded'),
@@ -419,12 +418,12 @@ def build_notebook() -> dict[str, object]:
             _markdown('''
             # Local Joint State+Payload V1 — fixed Colab run
 
-            1. Upload and open this notebook in Colab.
+            1. Open this notebook in Colab.
             2. Select a CUDA GPU runtime; no GPU model is required by the notebook.
             3. Choose **Run all** once and authorize the Drive mount when prompted.
 
             This notebook mounts Drive, prepares the historically grounded Wan environment,
-            verifies an embedded no-`.git` B-line source closure, then runs exactly the adopted
+            extracts the embedded B-line source and records provenance without integrity gates, then runs the adopted
             `yellow_sailboat_dev_s2026100701` OFF/JOINT experiment and its seal-first posthoc.
 
             The fixed configuration uses seed 2026100701, rho 0.5, cap 1, message `8001a55a`, the adopted

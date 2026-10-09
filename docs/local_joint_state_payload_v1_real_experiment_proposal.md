@@ -118,7 +118,7 @@ PYTHONPATH=. python -B -m experiments.wan_state_clock.local_joint_state_payload_
 
 wrong key 已是 8-section 配置中 `carrier.wrong_key` 的显式必填字段，runner 只用它保存第二套 received-only raw observation；message 不进入 raw reader。posthoc 才在 seal 后加载固定 truth 并应用 known-grid reducer。wrong-key 结果不决定主条件或形成 FPR，routing 也不等于恢复。
 
-posthoc 在 seal 后还会从 `result.json` 重建同样的去 key manifest，并要求与已封存 manifest 精确相等，以绑定同一次 run、arm、layer 和 receipt。输出分别保存 `mp4_attribution` 与顶层 `outcome_classification`：run 未完成时顶层为 `INCOMPLETE`，任一 correct-key 层为工程失败时顶层为 `ENGINEERING_FAILURE`；wrong-key 单独失败不推翻完整 correct-key 链。非有限 q 或必要 energy 在 derived JSON 中写为 `null` 并保留 missing reason，不能参与正结论；原 raw 文件及其 SHA 不被改写。
+posthoc 在 seal 后从 `result.json` 重建去 key manifest，记录与已封存 manifest 的差异；哈希和来源元数据差异不阻断后评。实际 raw 目录格式、arm/layer/key 标签以及 key/message 与已保存 run 的对应关系仍决定如何解释证据。输出分别保存 `mp4_attribution` 与顶层 `outcome_classification`：run 未完成时顶层为 `INCOMPLETE`，任一 correct-key 层为工程失败时顶层为 `ENGINEERING_FAILURE`；wrong-key 单独失败不推翻完整 correct-key 链。非有限 q 或必要 energy 在 derived JSON 中写为 `null` 并保留 missing reason，不能参与正结论；原 raw 文件及其记录不被改写。
 
 上述 `1 source × {OFF,JOINT}` 名单、`rho=0.5/cap=1`、source/seed/prompts/key/message/codec、描述性后评公式与进展条件已经采纳并显式冻结。真实执行仍未授权；执行前不再改变这些字段，也不增加 arm、扫描或自动重试。
 
@@ -136,18 +136,28 @@ runner 冻结代码、CPU 工程分母与 A2/A3/A4/A5 同版审查结果绑定�
 
 完成或失败后，直接分享/回传整个新建的 UTC 目录，包括 raw observations 与失败记录；最终 summary 单元在异常后可能不会执行，不能只回传屏幕摘要。目录中存在即回传：`notebook_failure.json`、`execution.log`、`fixed_slots.json`、`setup_receipt.json`、`environment_receipt.json`、`portable_source_receipt.json`、`execution_receipt.json`、`notebook_audit.json`、`run/result.json`、`run/raw_observation_manifest.json`、`posthoc/raw_observation_seal.json`、`posthoc/posthoc_result.json`，以及这些清单所在目录的其余 raw/media/failure 文件。两臂 float RGB 与 RGB8 栅格的已知合计约 0.89 GB；模型权重/cache、临时量、12 份 raw JSON、MP4 与日志的额外存储总需求没有测量，不据此编造最低磁盘值。
 
-同目录的 `local_joint_state_payload_v1_portable_source.zip` 与 notebook 内嵌 ZIP 字节完全相同，仅供本地审阅/下载，不是用户额外上传或运行步骤。ZIP 包含 23 个 B-line 必需文件、完整 hash manifest、`git_commit=null`，展开目录不含 `.git`，因此不会继承外层或 Drive 上其他 checkout 的 Git 身份。notebook 分别核对 23 文件 package identity、runner 自身 20 文件 source closure identity 和固定配置字节/语义，不把未发布源码冒充某个历史 SHA。
+同目录的 `local_joint_state_payload_v1_portable_source.zip` 是 notebook 内嵌源码的审阅副本，不是用户额外上传或运行步骤。源码包、配置与 runner 来源只作定位记录，不按哈希、文件清单、Git 身份或配置字节一致性设置准入门禁；可选 manifest 缺失或格式错误也不阻断可用源码。解压路径越界、无法解压或实际 import/load 失败仍按真实工程错误保存。
 
-依赖口径采用较新 conditional-joint 实跑环境的固定组合：torch 2.11.0、diffusers 0.39.0、transformers 4.57.6、numpy 2.1.3、accelerate 1.15.0、safetensors 0.8.0、huggingface-hub 0.36.2、tokenizers 0.22.2、sentencepiece 0.2.2、ftfy 6.3.1。`diagnostics/trajectory-conditional-joint-real-run-audit-20261008/raw/setup/` 的 primary receipts 绑定实际源码 `ac111d0fed253767651929d115c343fe1636c525`，记录 torch 2.11.0+cu130/diffusers 0.39.0、runner rc 0；当前 B 的 generation/VAE/trajectory 关键调用与该实跑版本保持功能兼容。`pip check` 的返回码只写入环境收据，不作为无关 Colab 包冲突的 hard gate。
+依赖修复参考较新 conditional-joint 实跑环境组合：torch 2.11.0、diffusers 0.39.0、transformers 4.57.6、numpy 2.1.3、accelerate 1.15.0、safetensors 0.8.0、huggingface-hub 0.36.2、tokenizers 0.22.2、sentencepiece 0.2.2、ftfy 6.3.1。先检查实际入口 import；版本差异只记录，不能单独触发重装或拒绝运行。`diagnostics/trajectory-conditional-joint-real-run-audit-20261008/raw/setup/` 的 primary receipts 记录实际源码 `ac111d0fed253767651929d115c343fe1636c525`、torch 2.11.0+cu130/diffusers 0.39.0、runner rc 0。`pip check` 的返回码也只写入环境收据，不作为无关 Colab 包冲突的 hard gate；实际模型兼容性以本次执行为准。
 
 串行驻留依据另来自 [旧 multistep 审计](../../../diagnostics/receiver-first-20260923/rgb_dct_multistep_real_result_audit_20260924.md)及其 [Drive result](https://drive.google.com/file/d/16TX_EE8s1Zj5xA873WJzbn_wuoQdFLGA/view) 和 [setup log](https://drive.google.com/file/d/1LMz-TtvSCJEJshyV9Pu-sjZp2wRRR0eW/view)：精确 notebook source 为 `6850ee81454f538916bc228f2ecec521f9ac7511`，运行源码为 `d23fe4eeaca81395c57c98fc403e1d37b4dcd6e4`，run id 为 `20260924T121641567985Z`。该 N2/S2 run 使用 torch 2.11.0+cu128、diffusers 0.40.0、transformers 5.16.1、accelerate 1.14.0、huggingface-hub 1.29.0、numpy 2.1.3，在 L4 完成 8/8 media、14 decode/16 encode、0 backward、CFG restore max-abs 0，peak allocated `11652710912` bytes（约 11.65 GB，原审计十进口径）。这套旧环境没有与较新 conditional-joint 环境混写为同一个验证栈；它只证明较小的同 Wan 无梯度释放/重载路径曾真实成功，不能证明当前 27 decode、50 encode、27 次 VAE load、25 次 joint 往返的显存、时间或媒体存留。
 
 notebook 及 builder 的本地验证只执行 deterministic source packaging、代码单元语法和完全 stub 的编排；没有运行模型、权重、GPU、VAE、codec、媒体、Colab 或 Drive，也没有安装/下载依赖。Run all 是之后的真实外部执行动作，仍不能从这些本地检查推断 state 与四个 payload fragment 穿过 MP4。
 
-## Colab notebook 最终交付收据
+## Colab notebook 初版交付收据（历史）
 
 最终受审实现版本为 `d7fbe542045f49e6b736d2476b1c12416ed99181`。本收据之后的交付提交只追加本文档，不反向声称自身已经接受同版代码审查。交付 notebook SHA-256 为 `95e29a2a405f47740cbd390f5f8d42e063f081e2f38fcebb59d675ff616a73a6`；与 notebook 内嵌内容完全相同的 companion ZIP SHA-256 为 `8e79e5511c8ee51907987d1c8becbf59f782c35097252f1a268446764129108b`。
 
 A1 初版定向工程检查为 5 passed in 0.07s，覆盖确定性包/静态约束、stub Run all 成功、runner 非零仍进入 seal-first posthoc、dependency failure 固定槽与 primary exception、receipt failure 不覆盖 runner primary。A3 在同一受审初版独立复跑同 5 项，并补 no-`.git` fresh-child 对 20/23 文件 identity 的真实 import 核对；这些是同一测试范围，不另加分母。handoff 文案修复后，A1 定向 deterministic 检查为 1 passed in 0.04s；A3 独立核对所有 code cell、首单元、空 outputs、companion ZIP 未改变及交付清单。A2 与 A3 对 `d7fbe54` 同版 ACCEPT，A4 综合无分歧，A5 里程碑 ACCEPT，无新增必修。
 
 全部证据只支持 notebook/source packaging、身份、编排和失败持久化的工程交付。没有真实安装依赖，没有运行模型、权重、GPU、VAE、codec、媒体或 Colab，也没有写入 Drive；27 decode、50 encode、27 次 VAE load、25 次 joint 往返的资源可行性以及 state 与四个 payload fragment 的 MP4 存留仍未知。本分支没有 push 或 merge。
+
+## 2026-10-09 Colab 工程修复与非阻断原则
+
+用户运行 `20261009T123404556039Z` 在 DEPENDENCY_PROBE/DEPENDENCY_REPROBE 均遇到 `SyntaxError: unterminated string literal`。原因是 builder 到 notebook 再到 `python -c` 的两层字符串构造把 JSON 尾部换行提前展开。修复为在最终子进程中使用 `chr(10)`；模型阶段尚未开始。此前外层语法和全替身测试没有执行内层 probe，不能据此声称真实启动路径已验证。
+
+按用户当前明确要求，以及项目 `other/Video-WM_项目推进原则与协作规范_可复用标准.md` 第 4 节和实施审计规则，复现信息仅用于定位、解释与复用，禁止不可篡改或强可复现性门禁。notebook 源码包、文件清单、配置与 runner 身份差异只记录；可选 manifest 不参与执行准入；环境版本差异记录为 `version_differences`。只有实际入口不可导入时才需要参考历史环境修复。固定方法参数、OFF/JOINT 名单、无扫描/自动重试及完整失败记录继续保留。
+
+定向 notebook 检查 12 passed（0.42s）：真实新解释器执行最终生成的 probe，覆盖正常导入、版本不同仍继续、实际导入失败后复查；读取真实 JSON 输出；覆盖修改源码注释/配置格式/额外文件/缺失或错误 manifest 仍进入下游替身流程。坏 ZIP 和越界解压保留真实失败。检查不安装依赖、不执行模型/GPU、codec、Colab 或 Drive；新真实实验可行性仍待用户运行结果。
+
+下游修复 `493cf4167854a12bfc7fcfe03dace29f38f51343` 经 14 项定向 CPU 检查（21.40s）：RGB8、raw observation、manifest 及来源记录差异均作记录；可选哈希读取失败不挡可解析数据。实际视频字节数、geometry、768 行观测目录、layer/key 标签和 key/message 对应关系继续检查；OFF/JOINT 对照与驻留状态检查未改。FFmpeg 全部替身，无真实媒体执行。
