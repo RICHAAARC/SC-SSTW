@@ -10,6 +10,7 @@ import json
 import os
 import subprocess
 import sys
+import textwrap
 import zipfile
 from pathlib import Path
 
@@ -345,3 +346,150 @@ def test_baseline_environment_receipts_separate_resolution_probe_and_model_statu
     assert probe_failure["entry_import_probe_status"] == "FAILED"
     assert probe_failure["entry_import_probe_reason"] == "ImportError: entry unavailable"
     assert probe_failure["model_compatibility_status"] == "NOT_VALIDATED_REQUIRES_REAL_EMBED_EXTRACT"
+
+
+def test_generated_code_cells_run_in_order_from_fresh_isolated_kernel_with_boundary_stubs(tmp_path):
+    isolated_python = Path("/usr/bin/python3")
+    assert isolated_python.is_file()
+    isolated = tmp_path / "isolated"
+    isolated.mkdir()
+    script = isolated / "run_notebook_boundary_stub.py"
+    identity_injection = textwrap.dedent('''\
+        def verified_checkout(label, url, commit, destination):
+            destination = Path(destination); destination.mkdir(parents=True, exist_ok=True)
+            if label.startswith("VIDEOSEAL"):
+                (destination / "videoseal/cards").mkdir(parents=True, exist_ok=True)
+                (destination / "videoseal/__init__.py").write_text("")
+                (destination / "videoseal/cards/videoseal_1.0.yaml").write_text("args:\\n  nbits: 256\\n")
+            else:
+                (destination / "rivagan").mkdir(parents=True, exist_ok=True)
+                (destination / "rivagan/__init__.py").write_text("")
+                (destination / "rivagan/rivagan.py").write_text("class RivaGAN: pass\\n")
+            return destination
+        def cached_download(label, url, destination):
+            destination = Path(destination); destination.parent.mkdir(parents=True, exist_ok=True)
+            destination.write_bytes((label + "-stub").encode())
+            return destination, sha256_file(destination)
+    ''')
+    script.write_text(textwrap.dedent(f'''\
+        import json, os, subprocess, sys, types
+        from pathlib import Path
+
+        notebook_path = Path({str(NOTEBOOK)!r})
+        sandbox = Path({str(isolated)!r})
+        content_root = sandbox / "content"
+        drive_root = sandbox / "drive" / "MyDrive" / "Video-WM"
+        content_root.mkdir(parents=True, exist_ok=True)
+        drive_root.mkdir(parents=True, exist_ok=True)
+
+        google = types.ModuleType("google")
+        colab = types.ModuleType("google.colab")
+        drive = types.ModuleType("google.colab.drive")
+        drive.mount = lambda path: None
+        colab.drive = drive
+        colab.userdata = types.SimpleNamespace(get=lambda key: None)
+        google.colab = colab
+        sys.modules.update({{
+            "google": google, "google.colab": colab, "google.colab.drive": drive,
+        }})
+        huggingface_hub = types.ModuleType("huggingface_hub")
+        snapshot_calls = []
+        def snapshot_download(*, repo_id, revision, local_dir, allow_patterns):
+            snapshot_calls.append((repo_id, revision, tuple(allow_patterns)))
+            root = Path(local_dir); root.mkdir(parents=True, exist_ok=True)
+            if repo_id.startswith("Wan-AI/"):
+                for name in (
+                    "model_index.json", "scheduler/scheduler_config.json",
+                    "tokenizer/tokenizer_config.json", "text_encoder/config.json",
+                    "transformer/config.json", "vae/config.json",
+                    "transformer/stub.safetensors",
+                ):
+                    path = root / name; path.parent.mkdir(parents=True, exist_ok=True); path.write_text("{{}}")
+            else:
+                (root / "config.json").write_text("{{}}")
+                (root / "diffusion_pytorch_model.safetensors").write_bytes(b"stub")
+            return str(root)
+        huggingface_hub.snapshot_download = snapshot_download
+        sys.modules["huggingface_hub"] = huggingface_hub
+
+        notebook = json.loads(notebook_path.read_text(encoding="utf-8"))
+        cells = ["".join(cell["source"]) for cell in notebook["cells"] if cell["cell_type"] == "code"]
+        def adapted(source):
+            return source.replace(
+                "/content/drive/MyDrive/Video-WM", str(drive_root)
+            ).replace("/content", str(content_root))
+
+        namespace = {{"__name__": "__main__"}}
+        os.chdir(sandbox)
+        exec(compile(adapted(cells[0]), "cell-0", "exec"), namespace)
+        exec(compile(adapted(cells[1]), "cell-1", "exec"), namespace)
+        portable_root = namespace["PORTABLE_ROOT"]
+        assert sys.path[0] == str(portable_root)
+        assert Path(sys.path[0]).is_dir()
+
+        identity = adapted(cells[2])
+        injection = {identity_injection!r}
+        identity = identity.replace("baseline_setup = {{}}", injection + "\\nbaseline_setup = {{}}", 1)
+        exec(compile(identity, "cell-2", "exec"), namespace)
+        assert (namespace["RUN_OUTPUT"] / "run_state.json").is_file()
+
+        original_logged = namespace["logged"]
+        original_check_output = subprocess.check_output
+        environment_commands = []
+        def environment_logged(command, stage, **kwargs):
+            environment_commands.append((stage, list(command)))
+            return 0
+        def check_output_stub(command, *args, **kwargs):
+            if "pip" in command and "freeze" in command:
+                return "" if kwargs.get("text") else b""
+            return original_check_output(command, *args, **kwargs)
+        namespace["logged"] = environment_logged
+        subprocess.check_output = check_output_stub
+        try:
+            exec(compile(adapted(cells[3]), "cell-3", "exec"), namespace)
+        finally:
+            subprocess.check_output = original_check_output
+            namespace["logged"] = original_logged
+        assert len(snapshot_calls) == 2
+        assert all(
+            row["dependency_install_status"] == "COMPLETE"
+            and row["entry_import_probe_status"] == "IMPORT_READY_NO_MODEL_OR_WEIGHT_LOADED"
+            for row in namespace["baseline_setup"].values()
+        )
+        assert any("--constraint" in command for _stage, command in environment_commands)
+        assert not any("--no-deps" in command for _stage, command in environment_commands)
+
+        phase_commands = []
+        def phase_logged(command, stage, **kwargs):
+            phase = command[command.index("--phase") + 1] if "--phase" in command else None
+            if phase in ("preflight", "evaluate"):
+                return original_logged(command, stage, **kwargs)
+            phase_commands.append((stage, list(command)))
+            return 1
+        namespace["logged"] = phase_logged
+        exec(compile(adapted(cells[4]), "cell-4", "exec"), namespace)
+        namespace["logged"] = original_logged
+        exec(compile(adapted(cells[5]), "cell-5", "exec"), namespace)
+
+        progress = json.loads((namespace["OUTPUT_ROOT"] / "pilot_phase_attempts.json").read_text())
+        assert len(progress["phase_attempts"]) == 22
+        assert {{row["case_id"] for row in progress["phase_attempts"]}} == {{"pilot_01", "pilot_02"}}
+        assert progress["evaluate"]["status"] == "COMPLETE"
+        assert len(phase_commands) == 22
+        handoff = json.loads((namespace["OUTPUT_ROOT"] / "handoff_summary.json").read_text())
+        assert handoff["pilot_status_source"] == "evaluation_report_final_rows"
+        assert handoff["execution_scope"]["attempted"] == ["pilot_01", "pilot_02"]
+        assert handoff["confirmation"]["execution_scope_status"] == "NOT_EXECUTED_BY_NOTEBOOK"
+        assert (namespace["RUN_OUTPUT"] / "evaluation_report.json").is_file()
+        assert "torch" not in sys.modules
+        print(json.dumps({{"status": "BOUNDARY_STUB_COMPLETE", "phases": len(phase_commands)}}))
+    '''), encoding="utf-8")
+    environment = dict(os.environ)
+    environment.pop("PYTHONPATH", None)
+    environment.pop("PYTHONHOME", None)
+    completed = subprocess.run(
+        [str(isolated_python), "-I", str(script)], cwd=isolated,
+        env=environment, text=True, capture_output=True, check=False,
+    )
+    assert completed.returncode == 0, completed.stdout + "\n" + completed.stderr
+    assert '"status": "BOUNDARY_STUB_COMPLETE"' in completed.stdout

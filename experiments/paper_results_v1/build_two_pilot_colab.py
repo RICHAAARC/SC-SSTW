@@ -86,7 +86,7 @@ def build_notebook():
     setup = textwrap.dedent(f'''\
         # Fixed scope and self-contained source identity. This cell imports only the standard library.
         from pathlib import Path
-        import base64, datetime, hashlib, json, os, shutil, signal, subprocess, sys, time, traceback, urllib.request, uuid, zipfile
+        import base64, datetime, hashlib, importlib, json, os, shutil, signal, subprocess, sys, time, traceback, urllib.request, uuid, zipfile
 
         PILOT_CASES = ("pilot_01", "pilot_02")
         CONFIRMATION_CASES = ("confirm_01", "confirm_02", "confirm_03", "confirm_04", "confirm_05", "confirm_06", "confirm_07", "confirm_08")
@@ -236,10 +236,15 @@ def build_notebook():
 
         try:
             SOURCE_MANIFEST = extract_portable_source()
+            portable_source_path = str(PORTABLE_ROOT)
+            if portable_source_path in sys.path:
+                sys.path.remove(portable_source_path)
+            sys.path.insert(0, portable_source_path)
+            importlib.invalidate_caches()
             BASE_CONFIG = PORTABLE_ROOT / "experiments/paper_results_v1/real_eval.adopted.json"
             BOOTSTRAP_PLAN = OUTPUT_ROOT / "bootstrap_plan"
             portable_env = {{**os.environ, "PYTHONPATH": str(PORTABLE_ROOT)}}
-            logged([PYTHON, "-u", "-m", "experiments.paper_results_v1.real_cli", "--config", str(BASE_CONFIG), "--output", str(BOOTSTRAP_PLAN), "--phase", "plan"], "BOOTSTRAP_FIXED_PLAN", env=portable_env)
+            logged([PYTHON, "-u", "-m", "experiments.paper_results_v1.real_cli", "--config", str(BASE_CONFIG), "--output", str(BOOTSTRAP_PLAN), "--phase", "plan"], "BOOTSTRAP_FIXED_PLAN", cwd=PORTABLE_ROOT, env=portable_env)
             atomic_json(OUTPUT_ROOT / "execution_scope.json", {{
                 "status": "FIXED_TWO_PILOT_ATTEMPT_SCOPE",
                 "attempted_case_ids": list(PILOT_CASES),
@@ -350,8 +355,8 @@ def build_notebook():
         atomic_json(EFFECTIVE_CONFIG, effective)
         EFFECTIVE_CONFIG_SHA256 = sha256_file(EFFECTIVE_CONFIG)
         portable_env = {**os.environ, "PYTHONPATH": str(PORTABLE_ROOT)}
-        logged([PYTHON, "-u", "-m", "experiments.paper_results_v1.real_cli", "--config", str(EFFECTIVE_CONFIG), "--output", str(OUTPUT_ROOT / "fixed_plan"), "--phase", "plan"], "EFFECTIVE_FIXED_PLAN", env=portable_env)
-        logged([PYTHON, "-u", "-m", "experiments.paper_results_v1.real_cli", "--config", str(EFFECTIVE_CONFIG), "--output", str(RUN_OUTPUT), "--phase", "init"], "RUN_STATE_INIT", env=portable_env)
+        logged([PYTHON, "-u", "-m", "experiments.paper_results_v1.real_cli", "--config", str(EFFECTIVE_CONFIG), "--output", str(OUTPUT_ROOT / "fixed_plan"), "--phase", "plan"], "EFFECTIVE_FIXED_PLAN", cwd=PORTABLE_ROOT, env=portable_env)
+        logged([PYTHON, "-u", "-m", "experiments.paper_results_v1.real_cli", "--config", str(EFFECTIVE_CONFIG), "--output", str(RUN_OUTPUT), "--phase", "init"], "RUN_STATE_INIT", cwd=PORTABLE_ROOT, env=portable_env)
         record_stage("FIXED_IDENTITIES_AND_RUN_INIT", "SUCCEEDED", effective_config_sha256=EFFECTIVE_CONFIG_SHA256)
         print("Initialized full 10-case denominator. Run all will attempt only:", PILOT_CASES)
     ''')
@@ -513,14 +518,14 @@ def build_notebook():
 
         def preflight_once():
             # BLOCKED is retained but does not erase the plan or suppress independent attempts.
-            return logged([PYTHON, *cli_prefix, "--phase", "preflight"], "STATIC_PREFLIGHT", env=portable_env, check=False)
+            return logged([PYTHON, *cli_prefix, "--phase", "preflight"], "STATIC_PREFLIGHT", cwd=PORTABLE_ROOT, env=portable_env, check=False)
 
         def invoke_once(case_id, phase):
             interpreter = phase_interpreters.get(phase, PYTHON)
-            return logged([interpreter, *cli_prefix, "--phase", phase, "--case-id", case_id], f"{case_id}:{phase}", env=portable_env, check=False)
+            return logged([interpreter, *cli_prefix, "--phase", phase, "--case-id", case_id], f"{case_id}:{phase}", cwd=PORTABLE_ROOT, env=portable_env, check=False)
 
         def evaluate_once():
-            return logged([PYTHON, *cli_prefix, "--phase", "evaluate"], "FINAL_FIXED_DENOMINATOR_EVALUATE", env=portable_env, check=False)
+            return logged([PYTHON, *cli_prefix, "--phase", "evaluate"], "FINAL_FIXED_DENOMINATOR_EVALUATE", cwd=PORTABLE_ROOT, env=portable_env, check=False)
 
         try:
             execution_progress = execute_fixed_sequence(

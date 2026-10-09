@@ -276,8 +276,8 @@ PYTHONDONTWRITEBYTECODE=1 \
   tests/test_paper_results_v1_two_pilot_notebook.py
 ```
 
-Result after the same-version notebook orchestration repair: `8 passed in
-0.25s`.
+Result after the same-version notebook orchestration repair: `9 passed in
+0.81s`.
 
 The checks parse every notebook code cell with Python AST, require empty
 outputs and the exact two-line first Drive cell, and freeze the two attempted
@@ -308,6 +308,15 @@ confirms four pilot source summaries plus both method-specific cohort summaries
 are unevaluable and that the eight unexecuted confirmation cases retain their
 immutable 1,280/144/144/56 receiver/baseline/comparison/quality plan counts.
 
+The generated notebook code cells were also executed in order under a fresh
+isolated `/usr/bin/python3 -I` kernel boundary stub, with an empty
+`PYTHONPATH`, a non-repository working directory, and fake Drive, network, pip,
+Hugging Face, model, and media boundaries. The real embedded-source digest
+checks, standard-library plan/init/evaluate path, and handoff summary ran. The
+test confirms that the verified portable root is activated in the live kernel,
+all portable CLI children execute from that root, exactly two pilot IDs reach
+the phase scheduler, and Torch is never imported by the stub run.
+
 The baseline-environment stub separately verifies dependency-resolution,
 entry-import, and real-model-compatibility receipts for success, resolver
 failure, and import failure. Notebook AST checks require the dedicated venv pip
@@ -318,9 +327,11 @@ and require VideoSeal's explicit `antlr4-python3-runtime==4.9.*` and
 No pip resolver, package installation, import probe, model, or checkpoint was
 run locally; those operations occur only when the user runs the notebook.
 
-The notebook was not executed top to bottom because this task forbids Colab,
-Drive, GPU, model, VAE, codec, and media execution. The unclosed validation gap
-is therefore the real user-run environment: snapshot download, current
+The real Colab/model workflow was not executed because this task forbids Drive,
+GPU, model, VAE, codec, media, package installation, and network execution. The
+ordered code-cell boundary stub above is engineering evidence only; it does not
+claim a real Colab or model run. The unclosed validation gap is the real
+user-run environment: snapshot download, current
 VideoSeal/RivaGAN compatibility with the recorded modern main stack, actual
 GPU peak memory, wall time, and resulting media/readouts. The notebook records
 those operations and failures instead of claiming they passed. No dependency,
