@@ -279,6 +279,9 @@ def test_dual_key_raw_seal_keeps_correct_when_wrong_key_extraction_fails(monkeyp
     wrong = store.data["arms"]["OFF"]["observations"]["float_rgb/WRONG"]
     assert correct["status"] == "SAVED" and correct["rows"] == 768 and Path(correct["path"]).is_file()
     assert wrong["status"] == "FAILED" and "fixture-wrong-key-only" in wrong["reason"]
+    failures = [row for row in store.data["failures"]
+                if row["stage"] == "OFF/float_rgb/WRONG_observe"]
+    assert len(failures) == 1 and failures[0]["reason"] == "RuntimeError: fixture-wrong-key-only"
 
 
 class FakeExperimentResidency:

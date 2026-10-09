@@ -100,6 +100,9 @@ def test_missing_nonfinite_zero_and_partial_do_not_drop_or_reweight(failure):
     assert condition["classification"] == (
         "CONSTRUCTION_SUPPORT_GAP" if failure == "zero" else "ENGINEERING_FAILURE"
     )
+    complete = method.evaluate_observations(rows(key, message, .5), key=key, message=message, protocol=PROTOCOL)
+    comparison = method.compare_arms(complete, value)
+    assert comparison["expected_values"] == 55 and comparison["missing_values"] == 23
 
     payload_rows = rows(key, message, .5)
     row = next(item for item in payload_rows if item["spec"]["observation_id"] == "phase1:slot0:roi0")
@@ -109,6 +112,7 @@ def test_missing_nonfinite_zero_and_partial_do_not_drop_or_reweight(failure):
     missing = [item for item in payload["payload"]["metrics"] if item["status"] == "MISSING"]
     assert [(item["fragment"], item["bit"], item["missing_items"]) for item in missing] == [(0, 0, 1)]
     assert missing[0]["expected_evidence_count"] == 24 and len(missing[0]["evidence"]) == 24
+    assert method.compare_arms(complete, payload)["missing_values"] == 1
 
 
 def test_condition_and_attribution_keep_finite_negative_and_missing_control_distinct():
@@ -140,7 +144,15 @@ def _fixture_run(root: Path, config: dict):
                 observations[arm][f"{layer}/{label}"] = dict(
                     status="SAVED", path=str(path), sha256=sha, rows=768,
                     fixed_directory_rows=768, key_label=label, layer=layer, key=key, truth_used=False)
-    result = dict(config=config, arms={arm: dict(observations=value) for arm, value in observations.items()})
+    result = dict(
+        status="COMPLETE", stage="COMPLETE", config=config, actual_model_calls=False,
+        source_identity={"kind": "dependency_injected_cpu_fixture"},
+        execution=dict(kind="dependency_injected_cpu_fixture", attempted=True, completed=True,
+                       scientific_interpretation=False, blind_recovery=False, fpr_evidence=False),
+        arms={arm: dict(status="COMPLETE", initial_fingerprint="shared-initial",
+                        terminal_fingerprint=f"{arm.lower()}-terminal", observations=value)
+              for arm, value in observations.items()},
+    )
     path = root / "result.json"; path.write_text(json.dumps(result))
     manifest = dict(schema="local-joint-raw-observation-manifest-v1", truth_loaded=False,
                     arms={arm: {
@@ -191,10 +203,104 @@ def test_saved_posthoc_cli_no_git_seals_before_truth_and_compares_arms(tmp_path)
     assert result["truth"]["loaded_after_raw_seal"] is True
     assert result["mp4_conditions"]["JOINT"]["met"] is True
     assert result["mp4_conditions"]["OFF"]["met"] is False
-    assert result["attribution"] == "DESCRIPTIVE_PROGRESS_WITH_OFF_CONTRAST"
+    assert result["mp4_attribution"] == "DESCRIPTIVE_PROGRESS_WITH_OFF_CONTRAST"
+    assert result["outcome_classification"] == "DESCRIPTIVE_PROGRESS_WITH_OFF_CONTRAST"
+    assert result["run_result"]["status"] == "COMPLETE"
+    assert result["run_result"]["execution"]["completed"] is True
+    assert result["run_result"]["arms"]["OFF"]["initial_fingerprint"] == "shared-initial"
     assert set(result["correct_key_conditions"]["JOINT"]) == set(method.LAYERS)
     assert all(result["correct_key_conditions"]["JOINT"][layer]["met"] is True for layer in method.LAYERS)
     assert all(result["wrong_key_conditions"]["JOINT"][layer]["auxiliary_only"] is True
                for layer in method.LAYERS)
     assert result["evaluations"]["JOINT"]["mp4"]["WRONG"]["auxiliary_wrong_key"] is True
     assert result["scientific_pass"] is False
+
+
+def test_sealed_manifest_must_match_same_run_arm_and_layer_receipts(tmp_path):
+    config = json.loads(posthoc.FIXED_CONFIG.read_text())
+    run_result = _fixture_run(tmp_path, config)
+    result = json.loads(run_result.read_text())
+    result["arms"]["OFF"]["observations"]["float_rgb/CORRECT"]["sha256"] = "0" * 64
+    run_result.write_text(json.dumps(result))
+    output = tmp_path / "binding-output"
+    with pytest.raises(ValueError, match="sealed raw manifest does not match"):
+        posthoc.run(run_result, posthoc.FIXED_CONFIG, output)
+    seal = json.loads((output / "raw_observation_seal.json").read_text())
+    assert seal["truth_loaded"] is False and len(seal["entries"]) == 12
+    assert not (output / "posthoc_result.json").exists()
+
+
+def test_incomplete_run_cannot_be_overridden_by_positive_local_mp4_evidence(tmp_path):
+    config = json.loads(posthoc.FIXED_CONFIG.read_text())
+    run_result = _fixture_run(tmp_path, config)
+    result = json.loads(run_result.read_text())
+    result["status"] = "FAILED"
+    result["stage"] = "FAILED"
+    result["execution"]["completed"] = False
+    result["arms"]["JOINT"]["status"] = "FAILED"
+    run_result.write_text(json.dumps(result))
+    output = tmp_path / "incomplete-output"
+    persisted = posthoc.run(run_result, posthoc.FIXED_CONFIG, output)
+    assert persisted["mp4_attribution"] == "DESCRIPTIVE_PROGRESS_WITH_OFF_CONTRAST"
+    assert persisted["status"] == "INCOMPLETE" and persisted["outcome_classification"] == "INCOMPLETE"
+    assert persisted["run_result"]["execution"]["completed"] is False
+    assert persisted["run_result"]["arms"]["JOINT"]["status"] == "FAILED"
+
+
+def test_wrong_key_failure_is_auxiliary_when_correct_chain_is_complete(tmp_path):
+    config = json.loads(posthoc.FIXED_CONFIG.read_text())
+    run_result = _fixture_run(tmp_path, config)
+    result = json.loads(run_result.read_text())
+    manifest_path = tmp_path / "raw_observation_manifest.json"
+    manifest = json.loads(manifest_path.read_text())
+    for owner in (result["arms"]["JOINT"]["observations"], manifest["arms"]["JOINT"]):
+        owner["mp4/WRONG"] = dict(status="FAILED", layer="mp4", key_label="WRONG",
+                                   truth_used=False, reason="fixture wrong-key failure")
+    result["status"] = "COMPLETE_WITH_OBSERVATION_FAILURE"
+    result["arms"]["JOINT"]["status"] = "COMPLETE_WITH_OBSERVATION_FAILURE"
+    run_result.write_text(json.dumps(result))
+    manifest_path.write_text(json.dumps(manifest))
+    persisted = posthoc.run(run_result, posthoc.FIXED_CONFIG, tmp_path / "wrong-aux-output")
+    assert persisted["wrong_key_conditions"]["JOINT"]["mp4"]["classification"] == "ENGINEERING_FAILURE"
+    assert persisted["mp4_attribution"] == "DESCRIPTIVE_PROGRESS_WITH_OFF_CONTRAST"
+    assert persisted["outcome_classification"] == "DESCRIPTIVE_PROGRESS_WITH_OFF_CONTRAST"
+
+
+@pytest.mark.parametrize(("field", "nonfinite"), (
+    ("q", float("nan")), ("q", float("inf")),
+    ("energy_plus", float("nan")), ("energy_minus", float("inf")),
+), ids=("q-nan", "q-infinity", "energy-plus-nan", "energy-minus-infinity"))
+def test_persisted_nonfinite_raw_cli_writes_strict_engineering_result(tmp_path, field, nonfinite):
+    config = json.loads(posthoc.FIXED_CONFIG.read_text())
+    run_result = _fixture_run(tmp_path, config)
+    result = json.loads(run_result.read_text())
+    manifest_path = tmp_path / "raw_observation_manifest.json"
+    manifest = json.loads(manifest_path.read_text())
+    receipt = result["arms"]["OFF"]["observations"]["float_rgb/CORRECT"]
+    raw_path = Path(receipt["path"])
+    raw_rows = json.loads(raw_path.read_text())
+    target = next(row for row in raw_rows if row["spec"]["observation_id"] == "phase1:slot0:roi0")
+    target["state_chips"][0][field] = nonfinite
+    encoded = json.dumps(raw_rows, separators=(",", ":"), allow_nan=True).encode()
+    raw_path.write_bytes(encoded)
+    sha = hashlib.sha256(encoded).hexdigest()
+    receipt["sha256"] = sha
+    manifest["arms"]["OFF"]["float_rgb/CORRECT"]["sha256"] = sha
+    run_result.write_text(json.dumps(result))
+    manifest_path.write_text(json.dumps(manifest))
+
+    output = tmp_path / "nonfinite-output"
+    assert posthoc.main(["--run-result", str(run_result), "--config", str(posthoc.FIXED_CONFIG),
+                         "--output", str(output)]) == 0
+    persisted_text = (output / "posthoc_result.json").read_text()
+    assert "NaN" not in persisted_text and "Infinity" not in persisted_text
+    persisted = json.loads(persisted_text)
+    evidence = persisted["evaluations"]["OFF"]["float_rgb"]["CORRECT"]["evaluation"][
+        "state"]["invalid_items"][0]["evidence"]
+    assert evidence[field] is None
+    assert evidence["missing_reason"] == (
+        "q_missing_or_nonfinite" if field == "q" else "energy_missing_or_nonfinite")
+    assert persisted["correct_key_conditions"]["OFF"]["float_rgb"][
+        "classification"] == "ENGINEERING_FAILURE"
+    assert persisted["mp4_attribution"] == "DESCRIPTIVE_PROGRESS_WITH_OFF_CONTRAST"
+    assert persisted["outcome_classification"] == "ENGINEERING_FAILURE"

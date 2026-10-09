@@ -26,6 +26,8 @@ def _chip_reason(row: Mapping[str, Any], chip: Mapping[str, Any], component: str
         return f"chip_status={chip.get('status')}"
     if not _finite_number(chip.get("q")):
         return "q_missing_or_nonfinite"
+    if not _finite_number(chip.get("energy_plus")) or not _finite_number(chip.get("energy_minus")):
+        return "energy_missing_or_nonfinite"
     if type(chip.get("supported_samples")) is not int or chip["supported_samples"] <= 0:
         return "zero_supported_samples"
     if chip.get("failed_samples") != 0:
@@ -221,9 +223,12 @@ def compare_arms(off: Mapping[str, Any], joint: Mapping[str, Any]) -> dict[str, 
              value=difference(item["signed_mean"], off["payload"]["metrics"][index]["signed_mean"]))
         for index, item in enumerate(joint["payload"]["metrics"])
     ]
+    state_gap = difference(joint["state"]["c0_minus_max_other"], off["state"]["c0_minus_max_other"])
     return dict(
         state_correlations=state_deltas,
-        state_gap=difference(joint["state"]["c0_minus_max_other"], off["state"]["c0_minus_max_other"]),
+        state_gap=state_gap,
         payload_signed_means=payload_deltas,
-        missing_values=sum(item["value"] is None for item in (*state_deltas, *payload_deltas)),
+        expected_values=55,
+        missing_values=(sum(item["value"] is None for item in (*state_deltas, *payload_deltas))
+                        + int(state_gap is None)),
     )

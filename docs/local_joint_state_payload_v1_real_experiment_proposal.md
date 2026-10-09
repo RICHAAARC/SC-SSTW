@@ -118,6 +118,8 @@ PYTHONPATH=. python -B -m experiments.wan_state_clock.local_joint_state_payload_
 
 wrong key 已是 8-section 配置中 `carrier.wrong_key` 的显式必填字段，runner 只用它保存第二套 received-only raw observation；message 不进入 raw reader。posthoc 才在 seal 后加载固定 truth 并应用 known-grid reducer。wrong-key 结果不决定主条件或形成 FPR，routing 也不等于恢复。
 
+posthoc 在 seal 后还会从 `result.json` 重建同样的去 key manifest，并要求与已封存 manifest 精确相等，以绑定同一次 run、arm、layer 和 receipt。输出分别保存 `mp4_attribution` 与顶层 `outcome_classification`：run 未完成时顶层为 `INCOMPLETE`，任一 correct-key 层为工程失败时顶层为 `ENGINEERING_FAILURE`；wrong-key 单独失败不推翻完整 correct-key 链。非有限 q 或必要 energy 在 derived JSON 中写为 `null` 并保留 missing reason，不能参与正结论；原 raw 文件及其 SHA 不被改写。
+
 上述 `1 source × {OFF,JOINT}` 名单、`rho=0.5/cap=1`、source/seed/prompts/key/message/codec、描述性后评公式与进展条件已经采纳并显式冻结。真实执行仍未授权；执行前不再改变这些字段，也不增加 arm、扫描或自动重试。
 
 runner 冻结代码、CPU 工程分母与 A2/A3/A4/A5 同版审查结果绑定在[主提案的第三阶段收据](local_joint_state_payload_v1_proposal.md#第三阶段-runner-版本绑定与审查收据)；这些历史收据不表示本阶段后评实现已经过同一审查，也不改变真实执行边界。

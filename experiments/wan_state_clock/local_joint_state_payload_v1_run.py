@@ -363,6 +363,18 @@ def _observe_layer(store: Store, arm: str, layer: str, rgb: Any, config: dict[st
         try:
             rows = store.call(f"{arm}/{layer}/{label}_observe", lambda label=label: runtime.raw_observations(
                 rgb, keys[label], public_protocol=public_protocol))
+        except Exception as exc:
+            # Store.call already recorded the extraction failure once.
+            target[entry] = dict(status="FAILED", layer=layer, key_label=label, key=keys[label],
+                                 truth_used=False, reason=f"{type(exc).__name__}: {exc}")
+            try:
+                store.save()
+            except Exception as record_exc:
+                store.data.setdefault("unpersisted_record_failures", []).append(
+                    dict(stage=f"{arm}/{layer}/{label}_observe_receipt",
+                         reason=f"{type(record_exc).__name__}: {record_exc}"))
+            continue
+        try:
             receipt = _save_json(
                 output / arm.lower() / f"{layer}_{label.lower()}_raw_observations.json", rows)
             target[entry] = dict(**receipt, layer=layer, key_label=label, key=keys[label],
@@ -371,7 +383,7 @@ def _observe_layer(store: Store, arm: str, layer: str, rgb: Any, config: dict[st
         except Exception as exc:
             target[entry] = dict(status="FAILED", layer=layer, key_label=label, key=keys[label],
                                  truth_used=False, reason=f"{type(exc).__name__}: {exc}")
-            store.best_effort_failure(f"{arm}/{layer}/{label}_observe", exc, arm=arm,
+            store.best_effort_failure(f"{arm}/{layer}/{label}_save", exc, arm=arm,
                                       layer=layer, key_label=label)
 
 

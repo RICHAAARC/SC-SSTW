@@ -101,7 +101,7 @@ fragment helper 只按调用者显式 correspondence 路由原始 payload 条目
 
 ## 分阶段证据与停止条件
 
-第一阶段只检验同一新构造的多步 state+payload 是否共同穿过媒体。层次分别记录 terminal latent（后评）、raw VAE float RGB、RGB8、同一 RGB8 经 codec 得到的 MP4；旧 `DIRECT_RGB8` 不能称为纯 VAE 通道。控制可按具体问题安排 OFF、local payload-only、current hybrid 与 new joint，但不跑大笛卡尔积，也不把不同载体臂称为 budget matched。实际 source/seed/key/codec/message/阈值须另行冻结。
+第一阶段只检验同一新构造的多步 state+payload 是否共同穿过媒体。层次分别记录 terminal latent（后评）、raw VAE float RGB、RGB8、同一 RGB8 经 codec 得到的 MP4；旧 `DIRECT_RGB8` 不能称为纯 VAE 通道。当前已采纳配置固定为单一 `yellow_sailboat_dev_s2026100701` source 与 OFF/JOINT 两臂，seed/key/message/codec/rho/cap 均由同一显式配置冻结；不增加 payload-only、current hybrid、其他 source 或扫描，也不把历史不同载体臂称为 budget matched。
 
 早期媒体共同存留不等于正式四分片机制完成。后续阶段才比较正确、错误、无对齐的不同 fragment 重组，再进入预先声明的有界攻击与聚合。
 
@@ -197,3 +197,11 @@ A1 定向验证为 `3 passed in 2.96s`，包含 1 个新增 constructor 回归�
 后评不删除或重权缺失项：完整有限但不满足条件记为 `VALID_FINITE_NEGATIVE`；完整帧/样本支持下有限 `E+=E-=0` 的项记为 `CONSTRUCTION_SUPPORT_GAP` 且对应 metric 仍缺失；nonfinite、帧/样本缺失、失败或读取错误记为 `ENGINEERING_FAILURE`。JOINT 满足而 OFF 缺失时记为归因未决，不冒称已有 OFF contrast。所有输出继续声明 `scientific_pass=false`，不实现 blind path、decoded message 或 FPR。
 
 本阶段冻结前的受影响 CPU 合并验证为 `24 passed in 24.80s`：16 项 runner/lifecycle/media/no-git 检查与 8 项固定后评/双 key/seal/no-git 检查。测试使用 `/home/richar/projects/CEG-WM/alive/CEG-WM/.venv/bin/python`，设置 `PYTHONDONTWRITEBYTECODE=1`、`CUDA_VISIBLE_DEVICES=''`，没有安装依赖或调用真实模型、GPU、VAE、codec、媒体、Colab 或 Drive。该工程分母不能证明显存可行性、真实 25 次驻留往返、媒体共同存留或科学 PASS；同版独立审查尚未开始。
+
+#### `a8de425` 同版审查后的记录修复
+
+A2/A3 对初版 `a8de425e8beca85551a9060f2b1474f78b311692` 的方法公式和固定分母无异议，随后要求收紧六项工程语义：seal 后把 run receipt 的去 key observation manifest 与已封存 manifest 精确绑定；derived JSON 把非有限 q/energy 写为 `null` 并保留工程 missing reason；将 MP4 局部归因与顶层 run 完整性分开；JOINT-OFF 缺失计数覆盖 22 correlations、1 gap 和 32 payload 共 55 项；双 key 单次提取失败只记一次；当前文案只保留已采纳的单 source OFF/JOINT roster。
+
+修复后 `posthoc_result.json` 保留 run SHA、run status/stage/execution/source identity 与两臂 status/initial/terminal identity。若 run 未完整执行，顶层为 `INCOMPLETE`；任一 correct-key 层发生工程失败时顶层为 `ENGINEERING_FAILURE`，同时独立保存 `mp4_attribution` 和全部局部有限证据。wrong-key 失败仍只作辅助记录。manifest/run 不一致则在已经写出 truth-free seal 后失败关闭，不生成混合 run 的后评结果。
+
+冻结前受影响范围合并验证为 `17 passed in 54.23s`：15 项 posthoc 覆盖 run/manifest 错配、run incomplete、wrong-key 辅助失败、55 项分母，以及持久化 q/energy 的 NaN/Infinity；另有 2 项 runner 覆盖双 key 单次失败记账与 50-step fake 路径 manifest。它们不与初版 24 项简单相加，也未重跑未受影响的旧 carrier 测试。
