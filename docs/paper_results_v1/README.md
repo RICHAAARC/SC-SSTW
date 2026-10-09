@@ -67,6 +67,63 @@ missing model or source as a successful run. `workflow.template.json` has no
 source roster, seeds, budget, or thresholds; running it reports
 `PENDING_EMPTY_ROSTER`, not a completed result.
 
+## Staged real execution entry
+
+`real_cli` is the concrete repository entry for a future user-selected local
+configuration. It contains direct lazy loaders for the frozen Wan generation
+and receiver paths, the frozen framewise VAE, VideoSeal local card/checkpoint,
+and the RivaGAN local community checkpoint. It never downloads a model and it
+has no default config. The checked
+`real_eval.proposal.json` is explicitly unadopted; its ten cases are two
+excluded pilots plus eight confirmation candidates.
+
+The standard-library-only phases are safe to run in a source copy without
+`.git` and do not import torch or load media:
+
+```bash
+python -m experiments.paper_results_v1.real_cli \
+  --config /absolute/selected-real-config.json \
+  --output /absolute/output \
+  --phase preflight
+
+python -m experiments.paper_results_v1.real_cli \
+  --config /absolute/selected-real-config.json \
+  --output /absolute/output \
+  --phase plan
+
+python -m experiments.paper_results_v1.real_cli \
+  --config /absolute/selected-real-config.json \
+  --output /absolute/new/output \
+  --phase init
+```
+
+After the user supplies real local paths and parameters, each heavyweight
+phase is a separate invocation with `--case-id`: `generate`, `decode`,
+`framewise`, `baseline-embed-videoseal`, `baseline-embed-rivagan`, `codec`,
+`quality`,
+`baseline-extract-videoseal`, `baseline-extract-rivagan`, `receiver-sync`, and
+`receiver-read`. The final `evaluate` phase aggregates all cases and takes no
+case ID. Separate processes allow each model family to release memory before
+the next phase. Failures update the fixed `run_state.json`; they do not remove
+planned artifacts, receiver slots, or cost rows.
+
+Wan and framewise entries require complete local snapshot directories. Wan is
+passed to the existing diffusers loader by local directory path; framewise uses
+`local_files_only=True`. VideoSeal requires an explicit local source tree,
+model card, checkpoint, and their digests. RivaGAN requires an explicit local
+source tree, the declared community checkpoint, and its digest. Preflight only
+checks module/path availability and never imports or deserializes them.
+
+The real runner saves full RGB8 media with byte SHA-256, Wan/framewise latent
+receipts, codec commands and readbacks, seven fixed POST quality pairs, full
+RivaGAN frame logits, and complete VideoSeal detector arrays in a forced
+lossless NPZ sidecar. Each baseline retains nine logical edit rows over eight
+unique index maps. Blind receiver plans/readouts are persisted incrementally
+before truth evaluation. Pilot and confirmation summaries remain separate.
+See [evaluation_proposal_v1.md](evaluation_proposal_v1.md) for the proposed
+roster, exact edit denominator, effective-32 baseline rules, costs, claim
+ceiling, and the decisions that remain with the user.
+
 `historical_conditional_joint.manifest.json` is a static 44-slot import map for
 the already-audited conditional-joint development result. It was declared from
 the frozen protocol layout, not generated from observed successful rows. It

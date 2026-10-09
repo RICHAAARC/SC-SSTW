@@ -113,3 +113,43 @@ use seven of those inputs. The saved call receipts separately record 21 blind
 Wan receiver encodes. All 15 available quality/call fields were imported;
 the planned wall-clock cost remains `MISSING`, producing
 `COMPLETE_WITH_RETAINED_ISSUES` without changing the 44-slot result denominator.
+
+## Staged real-evaluation entry
+
+Command:
+
+```bash
+PYTHONHOME=/home/richar/projects/Video-WM/framework/.conda \
+PYTHONDONTWRITEBYTECODE=1 \
+/lib64/ld-linux-x86-64.so.2 \
+/home/richar/projects/Video-WM/framework/.conda/bin/python3.13 \
+  -m pytest -q --capture=sys -p no:cacheprovider \
+  tests/test_paper_results_v1.py \
+  tests/test_paper_results_v1_workflow.py \
+  tests/test_paper_results_v1_real_eval.py
+```
+
+Result: `37 passed in 0.76s` (the previous 27 checks plus 10 staged-runner
+checks).
+
+The unadopted ten-case proposal expands to 690 artifact rows, 1,600 main
+receiver rows (51,200 bits), 180 baseline edit rows, 70 quality rows, and 110
+phase-cost rows. Pilot rows remain separate from the eight confirmation
+candidates. The manifest-derived receiver plan is 360 framewise sync encodes,
+1,600 reads, 320 RAW `(case, arm, expanded map)` encode identities, and an
+upper bound of 1,200 Wan receiver encodes after adding 880 non-RAW rows.
+
+Focused checks cover no-`.git` preflight/plan/init, local-only VideoSeal model
+construction with forced lossless detector sidecars, strict RivaGAN sequence
+failure semantics, the exact 50-step no-payload sibling arithmetic, retained
+phase failures, nine baseline logical views with eight deduplicated expanded
+maps, and the full 36-observation blind-sync construction from declared
+`map_id` values. Syntax compilation also passed for `real_backends.py`,
+`real_eval.py`, and `real_cli.py`.
+
+The current lightweight interpreter reports the real preflight as blocked: it
+does not expose torch, NumPy, diffusers, transformers, safetensors, accelerate,
+or OmegaConf, and proposal local snapshots/source/checkpoints are placeholders.
+No dependency was installed, no model or checkpoint was imported or
+deserialized, and no generation, VAE, baseline, media codec, GPU, Colab, or
+Drive operation ran. `ffmpeg`/`ffprobe` path discovery is static evidence only.
