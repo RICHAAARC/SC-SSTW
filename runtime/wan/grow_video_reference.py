@@ -41,22 +41,31 @@ def predict_branches(pipe,z,scheduler,prompt,negative,dtype,index,count):
 
 
 def run_trajectory(pipe,initial,scheduler,prompt,negative,dtype,arm,key,bits,count,
-                   record_step,*,reference_eta=method.REFERENCE_ETA):
+                   record_step,*,reference_eta=method.REFERENCE_ETA,injected_control=None):
     """Caller supplies a separate complete pristine scheduler for each arm."""
     import torch
     trajectory.validate_scheduler(scheduler)
     if scheduler.step_index is not None:
         raise ValueError("arm must start with pristine complete native history")
     z=initial.detach().float().clone()
-    target,mask=method.build_target(z,key,bits)
+    if injected_control is None:
+        target,mask=method.build_target(z,key,bits)
+    elif not callable(injected_control):
+        raise TypeError("injected control must be callable")
     for index in range(50):
         c,u=predict_branches(pipe,z,scheduler,prompt,negative,dtype,index,count)
-        enabled=method.control_enabled(arm,index)
         sigma=float(scheduler.sigmas[index])
-        if enabled: count("local_gradient",False)
-        velocity,update=method.guided_velocity(z,c,u,sigma,target,mask,
-            enabled=enabled,guidance=5.0,reference_eta=reference_eta)
-        if enabled: count("local_gradient",True)
+        if injected_control is None:
+            enabled=method.control_enabled(arm,index)
+            if enabled: count("local_gradient",False)
+            velocity,update=method.guided_velocity(z,c,u,sigma,target,mask,
+                enabled=enabled,guidance=5.0,reference_eta=reference_eta)
+            if enabled: count("local_gradient",True)
+        else:
+            count("injected_joint_control",False)
+            velocity,update=injected_control(z=z,conditional=c,unconditional=u,
+                sigma=sigma,index=index,total_steps=50)
+            count("injected_joint_control",True)
         before=scheduler.step_index
         # No reset, deepcopy or speculative tail inside an arm.
         z=trajectory.native_step(scheduler,z,velocity,index,count,kind="native_step")
@@ -64,11 +73,14 @@ def run_trajectory(pipe,initial,scheduler,prompt,negative,dtype,arm,key,bits,cou
             cursor_after=scheduler.step_index,**update))
     if scheduler.step_index!=50:
         raise RuntimeError("native trajectory did not complete50 steps")
-    return z.detach().cpu(),dict(scheduler_class=type(scheduler).__name__,
+    receipt=dict(scheduler_class=type(scheduler).__name__,
         scheduler_config=dict(scheduler.config),final_cursor=scheduler.step_index,
         final_history_sha256=trajectory.fingerprint(vars(scheduler)),
         terminal_sha256=trajectory.fingerprint(z),transformer_dtype=str(dtype),
         state_dtype=str(z.dtype),control_dtype="torch.float32",cfg_dtype="torch.float32")
+    if injected_control is not None:
+        receipt["control_adapter"]="injected_local_joint_state_payload"
+    return z.detach().cpu(),receipt
 
 
 def read_diagnostic_latent(normalized,keys,public=method.PUBLIC,*,count=None):
