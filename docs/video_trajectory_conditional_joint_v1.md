@@ -1,5 +1,7 @@
 # 同版条件性联合恢复
 
+> 2026-10-09 导航：下文保留条件联合恢复原版本的协议、发布阶段和结果范围。后续研究分支归属及不确定审计见[当前状态](research_status_2026-10-09.md)，不改变本实验的原结论或 main 实现范围。
+
 固定入口：`python -B -m experiments.wan_state_clock.video_trajectory_conditional_joint_v1_run --config experiments/wan_state_clock/configs/video_trajectory_conditional_joint_v1.json --output <新的输出目录>`。用户 Run-all Notebook 为 `notebooks/video_trajectory_conditional_joint_v1_colab.ipynb`。源码 S 候选阶段全部正式 Notebook 保持 `SOURCE_SHA=None` 并在输出目录创建前拒绝运行；发布 S 后，交付 N 将全部正式 Notebook 绑定到该 S。main 发布已完成 CPU/fake/schema/portability 验证，其中包含 synthetic CPU FFmpeg fixture；未运行新的真实模型、GPU、Colab 或 Drive 实验，已有固定真实证据仍绑定原源码 `ac111d0fed253767651929d115c343fe1636c525`。
 
 命题是预声明协议内的条件盲恢复：收到视频假定已含 trajectory payload 与 M05 terminal sync，接收器只用 RGB、当前 key、公开长度与协议族。它不知道真实 offset、删除位置、消息，也不通过真攻击类别选择算法。不是任意视频存在检测或自动攻击路由；不调用 Stage1 的阈值、m 或 ACCEPT_ACTION 门。

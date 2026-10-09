@@ -42,6 +42,129 @@
           "sha256": "be509d41d6d91c4dc4603842bde481d79e4ddbcd27b9eaf5d0c3ccf5ccdf0a77"
         }
       ]
+    },
+    {
+      "mechanism": "conditional_joint_v1",
+      "source_sha": "ac111d0fed253767651929d115c343fe1636c525",
+      "notebook_commit": "5145a3eb26dcad4713fdd3e610cc0e7f5b57b5b7",
+      "published_branch": "main",
+      "implemented": true,
+      "real_run_completed": true,
+      "audited": true,
+      "published": true,
+      "implementation_in_main": true,
+      "report_path": "/home/richar/projects/Video-WM/diagnostics/trajectory-conditional-joint-real-run-audit-20261008/report.md",
+      "report_sha256": "69f7c2bd27366ee37b13e598567b1a318e0fda6a54d083518783d2e82b4a86c4",
+      "result_sha256": "a3e3d64286514817d5ee3c6ce1fe9bd3486b0752a65477ec0682f48991941a44",
+      "run_id": "20261008T003135066923Z",
+      "main_source_sha": "9054f67337088f4e000ea8225c72d1ca18ce3a9c",
+      "independent_unseen_sources": 0,
+      "seen_development_sources": 1,
+      "primary_logical_success": 8,
+      "primary_physical_reads": 7,
+      "all_K0_zero_error_slots": 22,
+      "ceiling": "Limited hybrid conditional chain; no generation-time joint state/payload embedding or BER necessity claim.",
+      "real_run_source_sha": "ac111d0fed253767651929d115c343fe1636c525",
+      "notebook_bound_source_sha": "9054f67337088f4e000ea8225c72d1ca18ce3a9c"
+    },
+    {
+      "mechanism": "trajectory_attribution_v1",
+      "source_sha": "cd5e21221cb3c4bc95727a2a0ba15ea94b5aea83",
+      "notebook_commit": "e1a201766f42733c9ca4ac28234bc0d3d34110ee",
+      "published_branch": "dev/trajectory-attribution-v1",
+      "implemented": true,
+      "real_run_completed": true,
+      "audited": true,
+      "published": true,
+      "implementation_in_main": false,
+      "report_path": "/home/richar/projects/Video-WM/diagnostics/trajectory-attribution-v1-real-run-audit-20261008/root_raw_audit.json",
+      "report_sha256": "cc3df9882dbd6f5dad6db4d1419819523807ff363588cd11bf5639207fc73ff0",
+      "result_sha256": "c01935eee4006acaf826fabb293a75d1e8101018b98e84873be72d41e8ed35e5",
+      "run_id": "20261008T085244020205Z",
+      "confirmation_sources": 2,
+      "confirmation_queries": 128,
+      "confirmation_outcomes": {
+        "ACCEPT": 16,
+        "REJECT": 112,
+        "UNCERTAIN": 0,
+        "technical_missing": 0
+      },
+      "real_uncertainty_covered": false,
+      "ceiling": "Two source clusters only; no population FPR or generalization claim. DEV64 excluded from unseen confirmation.",
+      "real_run_source_sha": "cd5e21221cb3c4bc95727a2a0ba15ea94b5aea83",
+      "notebook_bound_source_sha": "cd5e21221cb3c4bc95727a2a0ba15ea94b5aea83"
+    },
+    {
+      "mechanism": "trajectory_attribution_uncertainty_v1",
+      "source_sha": "1fb1b129ba27b58705e407c7ef2d7627aaf47b1e",
+      "notebook_commit": "c8dda3ef18bd9df3af8b677d1befeb5e4489a1de",
+      "published_branch": "dev/trajectory-attribution-v1",
+      "implemented": true,
+      "real_run_completed": true,
+      "audited": true,
+      "published": true,
+      "implementation_in_main": false,
+      "report_path": "/home/richar/projects/Video-WM/diagnostics/trajectory-attribution-uncertainty-v1-real-run-audit-20261009/root_raw_audit.json",
+      "report_sha256": "8ef088e62696b885482b4325299df1f59641d42668e6db859f0fd009ffe295ed",
+      "result_sha256": "963ce8e41bb08a67f5a8ec1c42ec4c50ee42bfa547c8bf53e53f96c0ceef920b",
+      "run_id": "20261008T225339511895Z",
+      "method_status": "COMPLETE_BUT_NOT_COVERED",
+      "queries": 22,
+      "physical_observations": 20,
+      "reused_sources": 2,
+      "new_independent_sources": 0,
+      "outcomes": {
+        "ACCEPT": 16,
+        "REJECT": 6,
+        "UNCERTAIN": 0,
+        "technical_missing": 0,
+        "false_accept_queries": 0,
+        "unknown_queries": 0
+      },
+      "coverage": {
+        "shared_primary_queries": true,
+        "primary_denominator": 10,
+        "sync_unreliable_action": {
+          "valid_coverage": 0,
+          "denominator": 10,
+          "status": "NOT_OBSERVED_FIXED_ROSTER"
+        },
+        "weak_identity": {
+          "valid_coverage": 0,
+          "denominator": 10,
+          "status": "NOT_OBSERVED_FIXED_ROSTER"
+        }
+      },
+      "controls": {
+        "positive_matched": 2,
+        "positive_total": 2,
+        "negative_matched": 6,
+        "negative_total": 6,
+        "alias_controls": 4,
+        "same_action_alias_tie_observed": false
+      },
+      "correct_abstention_real_evidence": "NOT_ESTABLISHED",
+      "ceiling": "Complete fixed roster with both real uncertainty branches uncovered; no replacement inputs, retuning or automatic reruns.",
+      "real_run_source_sha": "1fb1b129ba27b58705e407c7ef2d7627aaf47b1e",
+      "notebook_bound_source_sha": "1fb1b129ba27b58705e407c7ef2d7627aaf47b1e"
     }
-  ]
+  ],
+  "status_as_of": "2026-10-09",
+  "interpretation": "Current cross-branch evidence index. Implementation presence is separate from cited original-source real execution. Query counts are not source counts.",
+  "retained_constraints": {
+    "stage1_source": "ab60d457c58eb6fb1ec3e5bd402f3dc86eded5bd",
+    "stage1_run": "20261007T122708953536Z",
+    "stage1_177_null": {
+      "ACCEPT": 1,
+      "REJECT": 4,
+      "UNCERTAIN": 1
+    },
+    "stage1_89_null": {
+      "ACCEPT": 0,
+      "REJECT": 0,
+      "UNCERTAIN": 6
+    },
+    "known_dev_calibration": "Old counterexample included in DEV, not an unseen-counterexample repair",
+    "original_research_complete": false
+  }
 }

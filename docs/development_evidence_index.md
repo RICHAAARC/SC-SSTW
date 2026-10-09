@@ -1,6 +1,6 @@
 # Bounded development evidence index
 
-Updated 2026-10-08. This is an index of construction-specific outcomes, not an
+Updated 2026-10-09. This is an index of construction-specific outcomes, not an
 import of development implementations. Source links are immutable. Removed old executable entrypoints are listed in
 [the historical entry index](historical_entries.md).
 Large original results and media remain in the user's Video-WM Drive archive.
@@ -25,3 +25,9 @@ nor evidence that synchronization aided recovery. Any future shared-component
 extraction requires a separately bounded interface and validation.
 
 The later accepted M05/global-alignment/fixed-deletion whitelist and its original-version evidence are indexed separately in [mechanism evidence](mechanism_evidence_index.md). The historical negatives above are not imported as current method dependencies.
+
+## 2026-10-09 cross-branch status
+
+[Current formal requirements and evidence](research_status_2026-10-09.md) separates branch implementations from original-version results. Research source `cd5e212…` completed C1/C2 confirmation128: 16 ACCEPT / 112 REJECT / 0 UNCERTAIN / 0 technical missing, from **two** sources. Research source `1fb1b129…` completed the uncertainty follow-up: 22/22, 16 ACCEPT / 6 REJECT / 0 UNCERTAIN; both branches have 0/10 coverage over the **same** ten probes. These implementations are published only on `dev/trajectory-attribution-v1`, not integrated into main.
+
+The known Stage1 counterexample entered DEV calibration; this is not a new unseen-counterexample repair. Prior failed routes and their original outcomes remain above. Neither query count nor full-search candidate count is an independent-source count; observed zero false claims does not establish population FPR=0.
