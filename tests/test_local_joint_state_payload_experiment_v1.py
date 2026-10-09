@@ -366,21 +366,31 @@ def test_runner_success_then_release_failure_becomes_nonzero_failed_result(monke
 
 
 def test_runner_residency_constructor_failure_is_sealed_without_model_attempt_or_release(tmp_path):
+    original = RuntimeError("fixture-residency-constructor")
     class ConstructorFailure:
         def __init__(self, cfg, event):
-            raise RuntimeError("fixture-residency-constructor")
+            raise original
     output = tmp_path / "constructor-failure"
-    with pytest.raises(RuntimeError, match="fixture-residency-constructor"):
+    with pytest.raises(RuntimeError, match="fixture-residency-constructor") as caught:
         runner.run(config(), output, residency_type=ConstructorFailure,
                    execution_kind="dependency_injected_cpu_fixture")
+    assert caught.value is original
     result = json.loads((output / "result.json").read_text())
     assert result["status"] == "FAILED" and result["failed_stage"] == "RESIDENCY_CONSTRUCTION"
-    assert result["execution"]["attempted"] is False and "generation_load" not in result["calls"]
-    assert any(row["stage"] == "residency_construction" for row in result["failures"])
+    assert result["actual_model_calls"] is False and result["calls"] == {}
+    assert result["execution"]["attempted"] is False and result["execution"]["completed"] is False
+    constructor = [row for row in result["failures"] if row["stage"] == "residency_construction"]
+    assert len(constructor) == 1 and constructor[0]["reason"] == "RuntimeError: fixture-residency-constructor"
+    assert not any(row["stage"] == "residency_release" for row in result["failures"])
+    assert set(result["arms"]) == {"OFF", "JOINT"}
     for arm in result["arms"].values():
         assert arm["status"] == "NOT_RUN"
-        assert len(arm["steps"]) == 50 and all(row["status"] == "NOT_COMPLETED" for row in arm["steps"])
+        assert [(row["index"], row["status"]) for row in arm["steps"]] == [
+            (index, "NOT_COMPLETED") for index in range(50)]
+        assert set(arm["layers"]) == set(runtime.LAYERS)
         assert all(row["status"] == "MISSING_DEPENDENCY" for row in arm["layers"].values())
+        assert set(arm["observations"]) == {"float_rgb", "rgb8", "mp4"}
+        assert all(row["status"] == "MISSING_DEPENDENCY" for row in arm["observations"].values())
 
 
 def test_terminal_wrong_geometry_is_failed_before_completed_or_rgb_artifacts(tmp_path):

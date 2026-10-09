@@ -200,6 +200,7 @@ def run(config: dict[str, Any], output: Path, *, preflight_only: bool = False,
         try:
             residency = residency_type(config, store.event)
         except Exception as exc:
+            store.data.update(failed_stage="RESIDENCY_CONSTRUCTION", actual_model_calls=False)
             store.best_effort_failure("residency_construction", exc)
             raise
         store.data["execution"]["attempted"] = True
@@ -261,7 +262,7 @@ def run(config: dict[str, Any], output: Path, *, preflight_only: bool = False,
         return store
     except BaseException as exc:
         primary = exc
-        store.data.update(status="FAILED", stage="FAILED", failed_stage=store.data["stage"])
+        store.data.update(status="FAILED", stage="FAILED")
         store.best_effort_failure("process", exc)
         try:
             store.seal_incomplete()
