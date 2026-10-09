@@ -129,3 +129,15 @@ runner 冻结代码、CPU 工程分母与 A2/A3/A4/A5 同版审查结果绑定�
 固定配置、双 key 原始目录与独立 posthoc 的最终受审版本、17 项工程验证及 A2/A3 同版 ACCEPT 记录见[主提案的最终同版审查收据](local_joint_state_payload_v1_proposal.md#最终同版审查收据)。该收据确认方法实现闭合，不改变本文件的 `EXECUTION_NOT_AUTHORIZED` 边界，也不提供真实媒体结果。
 
 整份 raw observation 缺失时仍保留固定 55 项 metric 目录的补充修复与同版审查，见[整份观察缺失目录补充收据](local_joint_state_payload_v1_proposal.md#整份观察缺失目录补充收据)；载体参数和固定配置未改变。
+
+## 单文件 Colab 交付
+
+本阶段交付 `notebooks/local_joint_state_payload_v1_colab.ipynb`。用户只需把这一文件上传到 Colab 并选择 **Run all**；首个代码单元严格只有 `drive.mount('/content/drive')` 的两行导入/调用。它在独立的 `MyDrive/Video-WM/Local-Joint-State-Payload-V1/<UTC>` 目录先写固定 OFF/JOINT、每臂 50 step、4 层和 6 份 observation 的未完成槽，再准备环境、展开内嵌的 no-`.git` 源码闭包、运行固定真实 CLI，并在 runner 已保存 `result.json` 与 raw manifest 时继续执行 seal-first posthoc。没有运行开关、参数扫描、自动重试或 GPU 型号 gate。失败会保留已有 result/raw/posthoc、流式日志、执行收据和原始主异常；posthoc 仍保留整份 raw 不可用时的 55 项目录。
+
+同目录的 `local_joint_state_payload_v1_portable_source.zip` 与 notebook 内嵌 ZIP 字节完全相同，仅供本地审阅/下载，不是用户额外上传或运行步骤。ZIP 包含 23 个 B-line 必需文件、完整 hash manifest、`git_commit=null`，展开目录不含 `.git`，因此不会继承外层或 Drive 上其他 checkout 的 Git 身份。notebook 分别核对 23 文件 package identity、runner 自身 20 文件 source closure identity 和固定配置字节/语义，不把未发布源码冒充某个历史 SHA。
+
+依赖口径采用较新 conditional-joint 实跑环境的固定组合：torch 2.11.0、diffusers 0.39.0、transformers 4.57.6、numpy 2.1.3、accelerate 1.15.0、safetensors 0.8.0、huggingface-hub 0.36.2、tokenizers 0.22.2、sentencepiece 0.2.2、ftfy 6.3.1。`diagnostics/trajectory-conditional-joint-real-run-audit-20261008/raw/setup/` 的 primary receipts 绑定实际源码 `ac111d0fed253767651929d115c343fe1636c525`，记录 torch 2.11.0+cu130/diffusers 0.39.0、runner rc 0；当前 B 的 generation/VAE/trajectory 关键调用与该实跑版本保持功能兼容。`pip check` 的返回码只写入环境收据，不作为无关 Colab 包冲突的 hard gate。
+
+串行驻留依据另来自 [旧 multistep 审计](../../../diagnostics/receiver-first-20260923/rgb_dct_multistep_real_result_audit_20260924.md)及其 [Drive result](https://drive.google.com/file/d/16TX_EE8s1Zj5xA873WJzbn_wuoQdFLGA/view) 和 [setup log](https://drive.google.com/file/d/1LMz-TtvSCJEJshyV9Pu-sjZp2wRRR0eW/view)：该 N2/S2 run 使用 torch 2.11.0+cu128、diffusers 0.40.0、transformers 5.16.1、accelerate 1.14.0、huggingface-hub 1.29.0、numpy 2.1.3，在 L4 完成 8/8 media、14 decode/16 encode、0 backward、CFG restore max-abs 0，peak allocated `11652710912` bytes（约 11.65 GB，原审计十进口径）。这套旧环境没有与较新 conditional-joint 环境混写为同一个验证栈；它只证明较小的同 Wan 无梯度释放/重载路径曾真实成功，不能证明当前 27 decode、50 encode、27 次 VAE load、25 次 joint 往返的显存、时间或媒体存留。
+
+notebook 及 builder 的本地验证只执行 deterministic source packaging、代码单元语法和完全 stub 的编排；没有运行模型、权重、GPU、VAE、codec、媒体、Colab 或 Drive，也没有安装/下载依赖。Run all 是之后的真实外部执行动作，仍不能从这些本地检查推断 state 与四个 payload fragment 穿过 MP4。
