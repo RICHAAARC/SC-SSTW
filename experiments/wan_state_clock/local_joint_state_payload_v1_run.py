@@ -55,12 +55,24 @@ def _jsonable(value: Any) -> Any:
     return value
 
 
+def source_files(root: Path, names: tuple[str, ...]) -> tuple[dict[str, Any], dict[str, str]]:
+    """Best-effort source descriptions; readable runtime code needs no receipt."""
+    files, errors = {}, {}
+    for name in names:
+        try:
+            files[name] = hashlib.sha256((root / name).read_bytes()).hexdigest()
+        except OSError as exc:
+            files[name] = None
+            errors[name] = f"{type(exc).__name__}: {exc}"
+    return files, errors
+
+
 def source_identity(root: Path) -> dict[str, Any]:
-    """Content identity for this entry's closure; exact-root Git only."""
+    """Optional content/Git records, never an execution eligibility check."""
     root = Path(root).resolve()
-    files = {name: hashlib.sha256((root / name).read_bytes()).hexdigest() for name in SOURCE_CLOSURE}
+    files, errors = source_files(root, SOURCE_CLOSURE)
     row = dict(kind="unversioned_directory", git_commit=None, git_status=None,
-               files=files, content_sha256=content_id(files))
+               files=files, file_errors=errors, content_sha256=None if errors else content_id(files))
     if (root / ".git").exists():
         try:
             sha = subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=root, stderr=subprocess.DEVNULL, text=True).strip()

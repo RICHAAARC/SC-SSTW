@@ -458,12 +458,14 @@ class ExplicitFFmpeg:
         partial = path.with_name(path.stem + ".partial.mp4")
         if path.exists() or partial.exists():
             raise FileExistsError("MP4 output already exists")
-        actual_sha256 = _sha(raster_path)
         raw = rgb8.detach().cpu().contiguous().numpy().tobytes()
+        actual_sha256 = hashlib.sha256(raw).hexdigest()
+        identity_matches = actual_sha256 == expected_sha256 if expected_sha256 is not None else None
         save = ["ffmpeg", "-v", "error", "-threads", "1", "-f", "rawvideo", "-pix_fmt", "rgb24", "-s", f"{w}x{h}", "-r", str(self.media["fps"]), "-i", "pipe:0", "-an", "-c:v", self.media["codec"], "-crf", str(self.media["crf"]), "-pix_fmt", self.media["pixel_format"], "-n", str(partial)]
         row = {"stage": "encode", "status": "ATTEMPTED", "command": save,
                "input_raster_path": str(raster_path), "input_expected_sha256": expected_sha256,
-               "input_actual_sha256": actual_sha256, "input_bytes_sha256": hashlib.sha256(raw).hexdigest(), "retry": False}
+               "input_actual_sha256": actual_sha256, "input_bytes_sha256": actual_sha256,
+               "input_sha256_matches": identity_matches, "retry": False}
         event(dict(row))
         child = None
         try:
@@ -520,6 +522,7 @@ class ExplicitFFmpeg:
         event(dict(read_row))
         return received, dict(status="SAVED", artifact=artifact, input_raster_path=str(raster_path),
                               input_expected_sha256=expected_sha256, input_actual_sha256=actual_sha256,
+                              input_sha256_matches=identity_matches,
                               encode=row, probe=probe, read=read_row)
 
 

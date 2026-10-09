@@ -196,17 +196,18 @@ def test_provider_primary_survives_stop_and_event_cleanup_failures(monkeypatch):
         control(z=torch.zeros(1), conditional=torch.zeros(1), unconditional=torch.zeros(1), sigma=1.0, index=25, total_steps=50)
 
 
-def test_codec_consumes_exact_rgb8_bytes_and_returns_fixed_readback(monkeypatch, tmp_path):
+@pytest.mark.parametrize("declared_sha", ("matching", "stale", None))
+def test_codec_consumes_exact_rgb8_bytes_and_returns_fixed_readback(monkeypatch, tmp_path, declared_sha):
+    from runtime.wan import fixed_rgb_media
     small = carrier.CarrierProtocol(video_shape=(8, 8, 32, 3), segment_start=0, segment_frames=8,
                                     segment_count=1, rois=((0, 8, 0, 8), (0, 8, 8, 16), (0, 8, 16, 24), (0, 8, 24, 32)))
     monkeypatch.setattr(carrier, "PUBLIC", small)
     pixels = torch.arange(8 * 8 * 32 * 3, dtype=torch.int64).remainder(256).to(torch.uint8).reshape(small.video_shape)
     expected = pixels.numpy().tobytes(); invocations = []
     raster = tmp_path / "pixels.rgb"; raster.write_bytes(expected); expected_sha = hashlib.sha256(expected).hexdigest()
-    def reopen(path, sha):
-        raw = Path(path).read_bytes()
-        assert sha == expected_sha and hashlib.sha256(raw).hexdigest() == sha
-        return torch.frombuffer(bytearray(raw), dtype=torch.uint8).reshape(small.video_shape)
+    monkeypatch.setattr(fixed_rgb_media, "SHAPE", small.video_shape)
+    monkeypatch.setattr(fixed_rgb_media, "RGB_BYTES", len(expected))
+    supplied_sha = expected_sha if declared_sha == "matching" else declared_sha
     class Result:
         returncode = 0; stderr = b""
         def __init__(self, stdout=b""): self.stdout = stdout
@@ -221,14 +222,64 @@ def test_codec_consumes_exact_rgb8_bytes_and_returns_fixed_readback(monkeypatch,
         return Result(expected)
     monkeypatch.setattr(runtime.subprocess, "run", invoke)
     rows = []
-    received, receipt = runtime.ExplicitFFmpeg(config()["media"], raster_loader=reopen).roundtrip(
-        raster, expected_sha, tmp_path / "x.mp4", event=rows.append)
+    received, receipt = runtime.ExplicitFFmpeg(config()["media"]).roundtrip(
+        raster, supplied_sha, tmp_path / "x.mp4", event=rows.append)
     assert torch.equal(received, pixels) and receipt["input_actual_sha256"] == expected_sha
+    assert receipt["input_sha256_matches"] is (None if supplied_sha is None else supplied_sha == expected_sha)
     assert len(invocations) == 3
     assert [(row["stage"], row["status"]) for row in rows] == [
         ("encode", "ATTEMPTED"), ("encode", "COMPLETED"),
         ("probe", "ATTEMPTED"), ("probe", "COMPLETED"),
         ("read", "ATTEMPTED"), ("read", "COMPLETED")]
+
+
+def test_raster_wrong_byte_count_remains_a_format_failure(monkeypatch, tmp_path):
+    from runtime.wan import fixed_rgb_media
+    monkeypatch.setattr(fixed_rgb_media, "RGB_BYTES", 12)
+    raster = tmp_path / "short.rgb"
+    raster.write_bytes(b"short")
+    with pytest.raises(ValueError, match="byte count"):
+        fixed_rgb_media._bytes(raster, "stale")
+
+
+def test_shared_media_transport_hash_changes_are_recorded_not_blocked(monkeypatch, tmp_path):
+    from runtime.wan import fixed_rgb_media
+    shape = (1, 2, 2, 3); raw = bytes(range(12))
+    monkeypatch.setattr(fixed_rgb_media, "SHAPE", shape)
+    monkeypatch.setattr(fixed_rgb_media, "RGB_BYTES", len(raw))
+    raster = tmp_path / "input.rgb"; raster.write_bytes(raw)
+    def invoke(command, **kwargs):
+        if "pipe:0" in command:
+            assert kwargs["input"] == raw
+            Path(command[-1]).write_bytes(b"fixture-mp4")
+            return SimpleNamespace(returncode=0, stdout=b"", stderr=b"")
+        if command[0] == "ffprobe":
+            return SimpleNamespace(returncode=0, stdout=b'{"streams":[{"height":2,"width":2}]}', stderr=b"")
+        raster.write_bytes(bytes(reversed(raw)))
+        return SimpleNamespace(returncode=0, stdout=raw, stderr=b"")
+    monkeypatch.setattr(fixed_rgb_media.subprocess, "run", invoke)
+    events = []
+    received = fixed_rgb_media.mp4_roundtrip(
+        raster, "stale", tmp_path / "out.mp4", tmp_path / "received.rgb",
+        count=lambda *_: None, event=lambda stage, row: events.append((stage, row)))
+    assert received.numpy().tobytes() == raw
+    identity = events[-1][1]
+    assert events[-1][0] == "transport_identity" and identity["raster_sha256_matches"] is False
+
+
+def test_source_metadata_read_errors_do_not_block_fixed_store(monkeypatch, tmp_path):
+    original = Path.read_bytes
+    def unavailable(path):
+        if path.name == "generation.py":
+            raise PermissionError("fixture optional source unreadable")
+        return original(path)
+    monkeypatch.setattr(Path, "read_bytes", unavailable)
+    store = runner.Store(tmp_path / "source-record-failure", config(), Path("fixture.json"), "fixture")
+    identity = store.data["source_identity"]
+    assert identity["content_sha256"] is None
+    assert "PermissionError" in identity["file_errors"]["runtime/wan/generation.py"]
+    assert (store.output / "result.json").is_file()
+    assert all(len(arm["steps"]) == 50 for arm in store.data["arms"].values())
 
 
 def test_codec_wrong_width_height_preserves_encoded_artifact(monkeypatch, tmp_path):

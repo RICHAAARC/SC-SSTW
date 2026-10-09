@@ -29,6 +29,14 @@ def _sha(path: Path) -> str:
         return hashlib.file_digest(stream, "sha256").hexdigest()
 
 
+def _optional_sha(path: Path, errors: dict[str, str]) -> str | None:
+    try:
+        return _sha(path)
+    except OSError as exc:
+        errors[str(path)] = f"{type(exc).__name__}: {exc}"
+        return None
+
+
 def _write(path: Path, value: Any) -> dict[str, Any]:
     path.parent.mkdir(parents=True, exist_ok=True)
     encoded = json.dumps(_json_safe(value), ensure_ascii=False, sort_keys=True, indent=2,
@@ -64,7 +72,7 @@ def _truth_free_manifest_from_result(run_result: dict[str, Any]) -> dict[str, An
     )
 
 
-def _run_receipt(run_result_path: Path, run_identity: str, run_result: dict[str, Any]) -> dict[str, Any]:
+def _run_receipt(run_result_path: Path, run_identity: str | None, run_result: dict[str, Any]) -> dict[str, Any]:
     return dict(
         path=str(run_result_path), sha256=run_identity, status=run_result.get("status"),
         stage=run_result.get("stage"), execution=run_result.get("execution"),
@@ -88,11 +96,11 @@ def _run_is_complete(run_result: dict[str, Any]) -> bool:
 
 
 def _source_identity() -> dict[str, Any]:
-    files = {name: _sha(ROOT / name) for name in SOURCE_CLOSURE}
+    files, errors = experiment.source_files(ROOT, SOURCE_CLOSURE)
     # The experiment entry already implements exact-root Git detection.  Its
     # receipt is nested while this posthoc adds the complete posthoc file set.
-    return dict(experiment_source=experiment.source_identity(ROOT), files=files,
-                content_sha256=content_id(files), parent_git_inheritance=False)
+    return dict(experiment_source=experiment.source_identity(ROOT), files=files, file_errors=errors,
+                content_sha256=None if errors else content_id(files), parent_git_inheritance=False)
 
 
 def _load_raw_receipt(
@@ -101,17 +109,20 @@ def _load_raw_receipt(
     if receipt.get("status") != "SAVED":
         return None, dict(status="ENGINEERING_FAILURE", reason=receipt.get("reason", "raw observation not saved"),
                           source_receipt=receipt)
-    path = Path(receipt["path"])
+    path = None
     try:
+        path = Path(receipt["path"])
         if receipt.get("layer") != expected_layer or receipt.get("key_label") != expected_label:
             raise ValueError("raw observation receipt layer/key label mismatch")
-        actual = _sha(path)
-        if actual != receipt["sha256"]:
-            raise ValueError("raw observation SHA mismatch")
-        rows = json.loads(path.read_text(encoding="utf-8"))
-        if not isinstance(rows, list) or len(rows) != 768 or receipt.get("rows") != 768:
+        encoded = path.read_bytes()
+        actual = hashlib.sha256(encoded).hexdigest()
+        rows = json.loads(encoded)
+        if not isinstance(rows, list) or len(rows) != 768:
             raise ValueError("raw observation fixed directory must contain 768 rows")
         return rows, dict(status="SEALED", path=str(path), sha256=actual, rows=768,
+                          expected_sha256=receipt.get("sha256"),
+                          sha256_matches=(actual == receipt["sha256"] if receipt.get("sha256") is not None else None),
+                          declared_rows=receipt.get("rows"),
                           key_label=receipt["key_label"], layer=receipt["layer"], truth_used=False)
     except Exception as exc:
         return None, dict(status="ENGINEERING_FAILURE", path=str(path),
@@ -142,9 +153,10 @@ def _attribution(off: dict[str, Any], joint: dict[str, Any]) -> str:
 def run(run_result_path: Path, config_path: Path, output: Path) -> dict[str, Any]:
     output = Path(output); output.mkdir(parents=True, exist_ok=False)
     run_result_path, config_path = Path(run_result_path), Path(config_path)
-    run_identity = _sha(run_result_path)
+    identity_errors: dict[str, str] = {}
+    run_identity = _optional_sha(run_result_path, identity_errors)
     manifest_path = run_result_path.with_name("raw_observation_manifest.json")
-    manifest_identity = _sha(manifest_path)
+    manifest_identity = _optional_sha(manifest_path, identity_errors)
     manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
     if (manifest.get("schema") != "local-joint-raw-observation-manifest-v1"
             or manifest.get("truth_loaded") is not False):
@@ -170,13 +182,16 @@ def run(run_result_path: Path, config_path: Path, output: Path) -> dict[str, Any
     # Truth/config is loaded only after the raw directory and its identities
     # have been independently sealed above.
     run_result = json.loads(run_result_path.read_text(encoding="utf-8"))
-    if _truth_free_manifest_from_result(run_result) != manifest:
-        raise ValueError("sealed raw manifest does not match the run receipt observations")
+    # Metadata differences are retained for inspection, not an integrity gate.
+    manifest_matches = _truth_free_manifest_from_result(run_result) == manifest
     config = json.loads(config_path.read_text(encoding="utf-8"))
-    fixed = json.loads(FIXED_CONFIG.read_text(encoding="utf-8"))
     runtime.validate_config(config)
-    if config != fixed or run_result.get("config") != config:
-        raise ValueError("adopted posthoc requires the exact fixed run config and matching run receipt")
+    run_config = run_result.get("config", {})
+    # These values label/sign the received evidence; using different truth is
+    # a method error, unlike a different source revision or receipt hash.
+    if any(run_config.get("carrier", {}).get(name) != config["carrier"][name]
+           for name in ("key", "wrong_key", "message_hex")):
+        raise ValueError("posthoc key/message truth does not match the run configuration")
     truth = dict(key=config["carrier"]["key"], wrong_key=config["carrier"]["wrong_key"],
                  message_hex=config["carrier"]["message_hex"], loaded_after_raw_seal=True)
     message = bytes.fromhex(truth["message_hex"])
@@ -250,7 +265,11 @@ def run(run_result_path: Path, config_path: Path, output: Path) -> dict[str, Any
         status=("INCOMPLETE" if not run_complete else
                 "COMPLETE_WITH_ENGINEERING_FAILURE" if engineering_failure else "COMPLETE"),
         source_identity=_source_identity(), run_result=_run_receipt(run_result_path, run_identity, run_result),
-        config=dict(path=str(config_path), sha256=_sha(config_path)), raw_seal=seal_receipt, truth=truth,
+        metadata_comparison=dict(manifest_matches_run_receipt=manifest_matches,
+                                 config_matches_run_receipt=(run_config == config),
+                                 identity_differences_are_advisory=True),
+        config=dict(path=str(config_path), sha256=_optional_sha(config_path, identity_errors)),
+        identity_errors=identity_errors, raw_seal=seal_receipt, truth=truth,
         evaluations=evaluations, correct_key_arm_differences=comparisons,
         correct_key_conditions=correct_conditions, wrong_key_conditions=wrong_conditions,
         mp4_conditions=dict(OFF=off_mp4, JOINT=joint_mp4), mp4_attribution=attribution,

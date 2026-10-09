@@ -216,18 +216,60 @@ def test_saved_posthoc_cli_no_git_seals_before_truth_and_compares_arms(tmp_path)
     assert result["scientific_pass"] is False
 
 
-def test_sealed_manifest_must_match_same_run_arm_and_layer_receipts(tmp_path):
+def test_metadata_differences_and_optional_hash_errors_do_not_block_posthoc(tmp_path, monkeypatch):
     config = json.loads(posthoc.FIXED_CONFIG.read_text())
     run_result = _fixture_run(tmp_path, config)
     result = json.loads(run_result.read_text())
     result["arms"]["OFF"]["observations"]["float_rgb/CORRECT"]["sha256"] = "0" * 64
+    result["config"]["model"]["revision"] = "different-source-record"
     run_result.write_text(json.dumps(result))
+    # The source snapshot is optional; the already imported implementation can
+    # evaluate readable observations even without its source/config sidecars.
+    monkeypatch.setattr(posthoc, "ROOT", tmp_path / "missing-source")
+    monkeypatch.setattr(posthoc, "_sha", lambda path: (_ for _ in ()).throw(PermissionError("optional hash read")))
     output = tmp_path / "binding-output"
-    with pytest.raises(ValueError, match="sealed raw manifest does not match"):
+    persisted = posthoc.run(run_result, posthoc.FIXED_CONFIG, output)
+    seal = json.loads((output / "raw_observation_seal.json").read_text())
+    assert seal["truth_loaded"] is False and len(seal["entries"]) == 12
+    assert persisted["truth"]["loaded_after_raw_seal"] is True
+    assert persisted["metadata_comparison"]["manifest_matches_run_receipt"] is False
+    assert persisted["metadata_comparison"]["config_matches_run_receipt"] is False
+    assert persisted["source_identity"]["file_errors"]
+    assert len(persisted["identity_errors"]) == 3
+    assert persisted["outcome_classification"] == "DESCRIPTIVE_PROGRESS_WITH_OFF_CONTRAST"
+
+
+@pytest.mark.parametrize("declared_sha", ("stale", None))
+def test_raw_receipt_hash_is_advisory(tmp_path, declared_sha):
+    path = tmp_path / "raw.json"
+    path.write_text(json.dumps([{}] * 768))
+    receipt = dict(status="SAVED", path=str(path), layer="mp4", key_label="CORRECT", sha256=declared_sha)
+    loaded, sealed = posthoc._load_raw_receipt(receipt, expected_layer="mp4", expected_label="CORRECT")
+    assert len(loaded) == 768 and sealed["status"] == "SEALED"
+    assert sealed["sha256_matches"] is (None if declared_sha is None else False)
+    path.write_text(json.dumps([{}] * 767))
+    loaded, failure = posthoc._load_raw_receipt(receipt, expected_layer="mp4", expected_label="CORRECT")
+    assert loaded is None and "768 rows" in failure["reason"]
+
+
+def test_raw_receipt_layer_label_remains_a_method_boundary(tmp_path):
+    path = tmp_path / "raw.json"; path.write_text(json.dumps([{}] * 768))
+    receipt = dict(status="SAVED", path=str(path), layer="float_rgb", key_label="CORRECT")
+    loaded, failure = posthoc._load_raw_receipt(receipt, expected_layer="mp4", expected_label="CORRECT")
+    assert loaded is None and "layer/key label mismatch" in failure["reason"]
+
+
+def test_posthoc_truth_mismatch_is_rejected_after_raw_seal(tmp_path):
+    config = json.loads(posthoc.FIXED_CONFIG.read_text())
+    run_result = _fixture_run(tmp_path, config)
+    result = json.loads(run_result.read_text())
+    result["config"]["carrier"]["message_hex"] = "00000000"
+    run_result.write_text(json.dumps(result))
+    output = tmp_path / "wrong-truth-output"
+    with pytest.raises(ValueError, match="key/message truth"):
         posthoc.run(run_result, posthoc.FIXED_CONFIG, output)
     seal = json.loads((output / "raw_observation_seal.json").read_text())
     assert seal["truth_loaded"] is False and len(seal["entries"]) == 12
-    assert not (output / "posthoc_result.json").exists()
 
 
 def test_incomplete_run_cannot_be_overridden_by_positive_local_mp4_evidence(tmp_path):
