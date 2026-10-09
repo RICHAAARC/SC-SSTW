@@ -109,3 +109,5 @@ wrong key 和本文件给出的 state/payload 描述性 reducer 不属于这 8-s
 请用户一次裁定：是否采纳上述 `1 source × {OFF,JOINT}` 名单、`rho=0.5/cap=1`、source/seed/prompts/key/message/codec、描述性后评公式与进展条件，并另行授权真实执行。若不采纳，请指出要替换的具体字段；代码不会把本提案推荐值变成默认。
 
 runner 冻结代码、CPU 工程分母与 A2/A3/A4/A5 同版审查结果绑定在[主提案的第三阶段收据](local_joint_state_payload_v1_proposal.md#第三阶段-runner-版本绑定与审查收据)；该收据不改变本文件的 PROPOSED 状态或真实执行边界。
+
+主提案同节的 constructor 补充收据把最终受影响代码绑定到 `ac822e6`；它只证明 constructor 失败能固定封存，不实现 wrong-key/reducer，也不让 runner 自动形成共同存留结论。方法可先裁定，真实执行前仍需完成采用后的后评。

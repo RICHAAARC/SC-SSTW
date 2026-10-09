@@ -179,3 +179,13 @@ A1 最终合并验证为 `34 passed in 14.72s`，由 14 项 runner/异常/media/
 完整 non-preflight fake 成功集成只运行 OFF arm，使用 181×8×32 的小空间 RGB、fake residency/codec 与小 latent，真实经过同一 `run_trajectory` 的 50 steps，并为 float RGB、RGB8、MP4 各保存固定 768 行目录。JOINT binding 与 steps 25..49 的 25 次启用行为由组件和既有 CPU 测试覆盖；没有运行真实权重、模型、GPU、VAE、codec 或媒体。因此这些检查不构成完整真实 JOINT 验证，也不证明显存可行性、25 次驻留往返、27 次 VAE load 或媒体存留。
 
 真实实验的参数、arm 名单、后评 reducer 与描述性进展条件仍为 PROPOSED；wrong-key 后评与 reducer 尚未实现。本线审查 ACCEPT 只接受该冻结版本的工程接线、记录和提案边界，不是主审计结论、真实执行授权或发布授权。
+
+#### Constructor 失败封存补充收据
+
+主审随后在旧受审代码 `cb81e1f71c1bd1467dd1daf18f6ca79174487e69`、交付文档版本 `86526f5042b6a7aadd17e163a5baa2dd609cf16d` 上发现 residency constructor 位于保护 `try` 之外，异常会遗留 `RUNNING/INITIALIZED`。原始探针 `diagnostics/b-line-third-stage-constructor-audit-20261009.py` 与原失败目录 `diagnostics/b-line-third-stage-constructor-failure-20261009/result.json` 保留，不被修复验证覆盖。初修 `ad921061b2a46ed91bc79f33f72d5abf6e41997c` 已由主审独立 probe 确认关闭原 escape；修复输出保存在 `diagnostics/b-line-third-stage-constructor-fixed-20261009/result.json`。
+
+A2/A3 定向复核又要求去除对后续阶段的 `failed_stage` 过度推导，在 constructor 失败时显式记录 `actual_model_calls=false`，并加强同一个回归的固定分母与异常身份断言。最终受审代码为 `ac822e6e5f50e7d79de375f6e9600d999fab7dee`：原 primary exception 原样保留；结果为 `FAILED` 且 `failed_stage=RESIDENCY_CONSTRUCTION`；`execution.attempted/completed` 均为 false、`actual_model_calls=false`、`calls={}`；OFF/JOINT 两臂、每臂 50 个 step、4 个 layer 与 3 个 observation 目录全部固定封存；residency 未构造时不调用 release。
+
+A1 定向验证为 `3 passed in 2.96s`，包含 1 个新增 constructor 回归与 2 个相邻 cleanup 回归，相关 `py_compile` 与 `git diff --check` 通过。A3 独立复跑新增项为 `1 passed in 0.97s`，是这 3 项的子集；A2 未重复运行。不能把旧 34 项与本次 3 项简单相加，也不声称存在一次新 35 项全量通过。A2/A3 只接受本次受影响范围；A4/A5 结论仍只绑定旧 `cb81e1f`，本轮没有完整重审 carrier，也没有运行真实模型、GPU、VAE、codec 或媒体。
+
+`rho/cap`、真实 arm 名单、后评公式和描述性进展条件继续待用户采纳，wrong-key 与 reducer 尚未实现。可以先裁定方法；真实执行前仍须完成采用后的后评实现与冻结，当前 runner 不能自动回答 state 与四个 payload fragment 是否共同穿过媒体。
