@@ -276,7 +276,8 @@ PYTHONDONTWRITEBYTECODE=1 \
   tests/test_paper_results_v1_two_pilot_notebook.py
 ```
 
-Result: `3 passed in 0.15s`.
+Result after the same-version notebook orchestration repair: `6 passed in
+0.15s`.
 
 The checks parse every notebook code cell with Python AST, require empty
 outputs and the exact two-line first Drive cell, and freeze the two attempted
@@ -289,6 +290,17 @@ quality rows, and 110 costs. Static checks also cover the fixed phase order,
 one-pass failure retention, report execution after failed stages, official
 source/model pins, isolated baseline dependencies, and the explicit historical
 evidence boundary.
+
+The added behavior stubs force a real `OSError` launch failure, verify that the
+next independent phase and final report-only evaluation still run, and inspect
+the immediately persisted attempt history. A separate `KeyboardInterrupt`
+stub verifies that later expensive phases stop, the interrupted attempt and
+fixed scope are saved, report-only evaluation is attempted in `finally`, and
+the interrupt is re-raised. Summary stubs verify that pilot receiver, baseline,
+comparison, and quality counts come from final `evaluation_report` rows when
+available; fallback state is explicitly labeled unevaluated. Confirmation plan
+counts and the report's missing-evidence projections are separate, and pilot
+source-level comparison summaries are carried into the handoff.
 
 The notebook was not executed top to bottom because this task forbids Colab,
 Drive, GPU, model, VAE, codec, and media execution. The unclosed validation gap

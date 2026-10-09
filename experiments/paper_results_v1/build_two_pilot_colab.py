@@ -146,7 +146,8 @@ def build_notebook():
             stage_receipts.append(row); atomic_json(STAGE_RECEIPTS, stage_receipts); return row
 
         def logged(command, stage, *, cwd=None, env=None, check=True):
-            started = time.monotonic(); child = None; returncode = None
+            started = time.monotonic(); child = None; returncode = None; primary = None; primary_tb = None; cleanup_errors = []
+            print(f"[{{stage}}] start; full output: {{LOG_PATH}}", flush=True)
             try:
                 with LOG_PATH.open("a", encoding="utf-8") as log:
                     log.write("COMMAND " + repr(command) + "\\n"); log.flush()
@@ -154,23 +155,54 @@ def build_notebook():
                         command, cwd=cwd, env=env, stdout=log, stderr=subprocess.STDOUT,
                         text=True, start_new_session=(os.name == "posix"),
                     )
-                    returncode = child.wait()
-                record_stage(stage, "SUCCEEDED" if returncode == 0 else "FAILED", returncode=returncode, seconds=time.monotonic()-started, command=command)
-                if check and returncode:
-                    raise subprocess.CalledProcessError(returncode, command)
-                return returncode
-            except BaseException as exc:
-                if child is not None and child.poll() is None:
                     try:
-                        if os.name == "posix": os.killpg(child.pid, signal.SIGTERM)
-                        else: child.terminate()
-                        child.wait(timeout=10)
-                    except BaseException:
-                        try: child.kill()
-                        except BaseException: pass
-                if not stage_receipts or stage_receipts[-1].get("stage") != stage:
-                    record_stage(stage, "FAILED", returncode=returncode, seconds=time.monotonic()-started, command=command, reason=f"{{type(exc).__name__}}: {{exc}}")
-                raise
+                        returncode = child.wait()
+                    except BaseException as exc:
+                        primary = exc; primary_tb = exc.__traceback__
+                    finally:
+                        if child is not None and os.name == "posix":
+                            try: os.killpg(child.pid, signal.SIGTERM)
+                            except ProcessLookupError: pass
+                            except BaseException as exc: cleanup_errors.append("group SIGTERM: " + repr(exc))
+                            deadline = time.monotonic() + 5.0
+                            while time.monotonic() < deadline:
+                                try: os.killpg(child.pid, 0)
+                                except ProcessLookupError: break
+                                except BaseException as exc:
+                                    cleanup_errors.append("group probe: " + repr(exc)); break
+                                time.sleep(0.05)
+                            try: os.killpg(child.pid, signal.SIGKILL)
+                            except ProcessLookupError: pass
+                            except BaseException as exc: cleanup_errors.append("group SIGKILL: " + repr(exc))
+                        elif child is not None and child.poll() is None:
+                            try: child.terminate()
+                            except ProcessLookupError: pass
+                            except BaseException as exc: cleanup_errors.append("terminate: " + repr(exc))
+                        if child is not None:
+                            try: returncode = child.wait(timeout=10)
+                            except subprocess.TimeoutExpired:
+                                try: child.kill()
+                                except ProcessLookupError: pass
+                                except BaseException as exc: cleanup_errors.append("kill: " + repr(exc))
+                                try: returncode = child.wait(timeout=10)
+                                except BaseException as exc: cleanup_errors.append("wait after kill: " + repr(exc))
+                            except BaseException as exc: cleanup_errors.append("wait: " + repr(exc))
+            except BaseException as exc:
+                if primary is None:
+                    primary = exc; primary_tb = exc.__traceback__
+                else:
+                    cleanup_errors.append("log wrapper: " + repr(exc))
+            if primary is None and cleanup_errors:
+                primary = RuntimeError("process cleanup failed: " + "; ".join(cleanup_errors)); primary_tb = primary.__traceback__
+            if primary is None and check and returncode:
+                primary = subprocess.CalledProcessError(returncode, command); primary_tb = primary.__traceback__
+            if primary is not None:
+                record_stage(stage, "FAILED", returncode=returncode, seconds=time.monotonic()-started, command=command, reason=f"{{type(primary).__name__}}: {{primary}}", cleanup_errors=cleanup_errors)
+                print(f"[{{stage}}] failed; full output: {{LOG_PATH}}", flush=True)
+                raise primary.with_traceback(primary_tb)
+            record_stage(stage, "SUCCEEDED" if returncode == 0 else "FAILED", returncode=returncode, seconds=time.monotonic()-started, command=command, cleanup_errors=cleanup_errors)
+            print(f"[{{stage}}] returncode={{returncode}}; full output: {{LOG_PATH}}", flush=True)
+            return returncode
 
         def extract_portable_source():
             raw = base64.b64decode(PORTABLE_B64.encode())
@@ -212,17 +244,17 @@ def build_notebook():
                 "status": "FIXED_TWO_PILOT_ATTEMPT_SCOPE",
                 "attempted_case_ids": list(PILOT_CASES),
                 "confirmation_case_ids": list(CONFIRMATION_CASES),
-                "confirmation_status": "PLANNED_NOT_EXECUTED_BY_THIS_NOTEBOOK",
-                "reason": "Run all is fixed to the two adopted pilot cases; confirmation remains in the full left-joined denominator.",
+                "confirmation_status": "NOT_EXECUTED_BY_NOTEBOOK",
+                "reason": "Run all is fixed to the two adopted pilot cases. Full-denominator evaluation later projects absent confirmation receiver/baseline/comparison evidence to failure/unevaluable rows while quality retains its recorded state; none are attempted runs.",
                 "full_denominator": FIXED_FULL_DENOMINATOR,
                 "attempt_scope": FIXED_ATTEMPT_SCOPE,
             }})
             record_stage("PORTABLE_SOURCE_AND_BOOTSTRAP_PLAN", "SUCCEEDED")
-        except BaseException as exc:
+        except Exception as exc:
             atomic_json(OUTPUT_ROOT / "bootstrap_failure.json", {{"status": "FAILED", "reason": f"{{type(exc).__name__}}: {{exc}}", "traceback": traceback.format_exc(), "full_denominator": FIXED_FULL_DENOMINATOR}})
             raise
         print("Run:", RUN_ID, "portable source:", PORTABLE_ZIP_SHA256)
-        print("Fixed execution scope:", PILOT_CASES, "; confirmation remains planned and unexecuted.")
+        print("Fixed execution scope:", PILOT_CASES, "; confirmation is not executed by this notebook.")
     ''')
 
     prepare_identity = textwrap.dedent('''\
@@ -273,7 +305,7 @@ def build_notebook():
             VS_WEIGHT, vs_weight_sha = cached_download("VIDEOSEAL_CHECKPOINT", VIDEOSEAL_CHECKPOINT_URL, VS_WEIGHT)
             vs_card_sha = sha256_file(VS_CARD)
             baseline_setup["videoseal"] = {"status": "READY", "source_commit": VIDEOSEAL_COMMIT, "card_sha256": vs_card_sha, "checkpoint_sha256": vs_weight_sha}
-        except BaseException as exc:
+        except Exception as exc:
             vs_card_sha = "0" * 64; vs_weight_sha = "0" * 64
             baseline_setup["videoseal"] = {"status": "FAILED", "reason": f"{type(exc).__name__}: {exc}", "source_commit": VIDEOSEAL_COMMIT}
 
@@ -288,7 +320,7 @@ def build_notebook():
                 "checkpoint_sha256": riva_weight_sha,
                 "checkpoint_provenance": "Peachypie98 community 32-bit checkpoint; not DAI-Lab official weights",
             }
-        except BaseException as exc:
+        except Exception as exc:
             riva_weight_sha = "0" * 64
             baseline_setup["rivagan"] = {"status": "FAILED", "reason": f"{type(exc).__name__}: {exc}", "source_commit": RIVAGAN_COMMIT, "checkpoint_source_commit": RIVAGAN_WEIGHT_COMMIT}
         atomic_json(OUTPUT_ROOT / "baseline_setup_receipts.json", baseline_setup)
@@ -341,7 +373,7 @@ def build_notebook():
                 logged([PYTHON, "-c", probe], "MAIN_DEPENDENCY_REPROBE")
             dependency_check_returncode = logged([PYTHON, "-m", "pip", "check"], "MAIN_PIP_CHECK_DIAGNOSTIC", check=False)
             (OUTPUT_ROOT / "environment_freeze.txt").write_text(subprocess.check_output([PYTHON, "-m", "pip", "freeze"], text=True), encoding="utf-8")
-        except BaseException as exc:
+        except Exception as exc:
             main_environment_status = "FAILED"
             dependency_check_returncode = None
             record_stage("MAIN_ENVIRONMENT_PREPARATION", "FAILED", reason=f"{type(exc).__name__}: {exc}")
@@ -371,7 +403,7 @@ def build_notebook():
                 (OUTPUT_ROOT / (method + "_environment_freeze.txt")).write_text(
                     subprocess.check_output([str(vpython), "-m", "pip", "freeze"], text=True), encoding="utf-8",
                 )
-            except BaseException as exc:
+            except Exception as exc:
                 baseline_setup[method]["environment_status"] = "FAILED"
                 baseline_setup[method]["environment_reason"] = f"{type(exc).__name__}: {exc}"
                 baseline_pythons[method] = PYTHON
@@ -396,7 +428,7 @@ def build_notebook():
                 allow_patterns=["config.json", "diffusion_pytorch_model.safetensors"],
             )
             model_snapshot_status = "READY"
-        except BaseException as exc:
+        except Exception as exc:
             model_snapshot_status = "FAILED"
             record_stage("MODEL_SNAPSHOT_PREPARATION", "FAILED", reason=f"{type(exc).__name__}: {exc}")
         finally:
@@ -414,56 +446,87 @@ def build_notebook():
 
     execute = textwrap.dedent('''\
         ## Execute the fixed two pilots once, one model family per process
+        from experiments.paper_results_v1.colab_orchestration import execute_fixed_sequence
+
         if sha256_file(EFFECTIVE_CONFIG) != EFFECTIVE_CONFIG_SHA256:
             raise RuntimeError("effective configuration changed after RunStore initialization")
         portable_env = {**os.environ, "PYTHONPATH": str(PORTABLE_ROOT)}
         cli_prefix = ["-u", "-m", "experiments.paper_results_v1.real_cli", "--config", str(EFFECTIVE_CONFIG), "--output", str(RUN_OUTPUT)]
-
-        # Preflight is evidence. BLOCKED is retained but does not erase the fixed plan or suppress later failure rows.
-        logged([PYTHON, *cli_prefix, "--phase", "preflight"], "STATIC_PREFLIGHT", env=portable_env, check=False)
         phase_interpreters = {
             "baseline-embed-videoseal": baseline_pythons["videoseal"],
             "baseline-extract-videoseal": baseline_pythons["videoseal"],
             "baseline-embed-rivagan": baseline_pythons["rivagan"],
             "baseline-extract-rivagan": baseline_pythons["rivagan"],
         }
-        phase_attempts = []
-        for case_id in PILOT_CASES:
-            for phase in PHASE_ORDER:
-                interpreter = phase_interpreters.get(phase, PYTHON)
-                code = logged([interpreter, *cli_prefix, "--phase", phase, "--case-id", case_id], f"{case_id}:{phase}", env=portable_env, check=False)
-                phase_attempts.append({"case_id": case_id, "phase": phase, "returncode": code, "status": "COMPLETE" if code == 0 else "FAILED_RETAINED"})
-                # Each CLI process releases all references on exit; no model families remain jointly resident.
-        atomic_json(OUTPUT_ROOT / "pilot_phase_attempts.json", phase_attempts)
 
-        # Evaluation is report-only and always runs after both fixed pilot attempts.
-        evaluate_code = logged([PYTHON, *cli_prefix, "--phase", "evaluate"], "FINAL_FIXED_DENOMINATOR_EVALUATE", env=portable_env, check=False)
-        record_stage("FIXED_TWO_PILOT_SEQUENCE", "COMPLETE_WITH_RETAINED_FAILURES" if any(row["returncode"] for row in phase_attempts) else "COMPLETE", evaluate_returncode=evaluate_code)
-        print("Pilot phase attempts:", len(phase_attempts), "failed:", sum(row["returncode"] != 0 for row in phase_attempts), "evaluate return code:", evaluate_code)
+        def persist_execution(progress):
+            atomic_json(OUTPUT_ROOT / "pilot_phase_attempts.json", progress)
+            if progress.get("interrupted"):
+                atomic_json(OUTPUT_ROOT / "interruption_handoff.json", {
+                    "status": "INTERRUPTED_AFTER_RETAINING_PROGRESS",
+                    "fixed_denominator": FIXED_FULL_DENOMINATOR,
+                    "attempt_scope": FIXED_ATTEMPT_SCOPE,
+                    "confirmation_status": "NOT_EXECUTED_BY_NOTEBOOK",
+                    "progress": progress,
+                    "run_state": str(RUN_OUTPUT / "run_state.json"),
+                    "evaluation_report": str(RUN_OUTPUT / "evaluation_report.json"),
+                })
+
+        def preflight_once():
+            # BLOCKED is retained but does not erase the plan or suppress independent attempts.
+            return logged([PYTHON, *cli_prefix, "--phase", "preflight"], "STATIC_PREFLIGHT", env=portable_env, check=False)
+
+        def invoke_once(case_id, phase):
+            interpreter = phase_interpreters.get(phase, PYTHON)
+            return logged([interpreter, *cli_prefix, "--phase", phase, "--case-id", case_id], f"{case_id}:{phase}", env=portable_env, check=False)
+
+        def evaluate_once():
+            return logged([PYTHON, *cli_prefix, "--phase", "evaluate"], "FINAL_FIXED_DENOMINATOR_EVALUATE", env=portable_env, check=False)
+
+        try:
+            execution_progress = execute_fixed_sequence(
+                pilot_ids=PILOT_CASES, phases=PHASE_ORDER,
+                preflight=preflight_once, invoke=invoke_once,
+                evaluate=evaluate_once, persist=persist_execution,
+            )
+        except KeyboardInterrupt:
+            record_stage("FIXED_TWO_PILOT_SEQUENCE", "INTERRUPTED_AFTER_REPORT_ONLY_CLEANUP_ATTEMPT")
+            raise
+        failed_attempts = sum(row["status"] != "COMPLETE" for row in execution_progress["phase_attempts"])
+        record_stage(
+            "FIXED_TWO_PILOT_SEQUENCE",
+            "COMPLETE_WITH_RETAINED_FAILURES" if failed_attempts or execution_progress["evaluate"]["status"] != "COMPLETE" else "COMPLETE",
+            evaluate=execution_progress["evaluate"],
+        )
+        print("Pilot phase attempts:", len(execution_progress["phase_attempts"]), "failed:", failed_attempts, "evaluate:", execution_progress["evaluate"])
     ''')
 
     summarize = textwrap.dedent('''\
         ## Write the compact handoff summary without changing any result row
+        from experiments.paper_results_v1.colab_orchestration import build_scope_summary
+
         state_path = RUN_OUTPUT / "run_state.json"
         state = json.loads(state_path.read_text(encoding="utf-8"))
         report_path = RUN_OUTPUT / "evaluation_report.json"
-        report = json.loads(report_path.read_text(encoding="utf-8")) if report_path.is_file() else None
-
-        def status_counts(rows):
-            counts = {}
-            for row in rows:
-                counts[row.get("status", "MISSING_STATUS")] = counts.get(row.get("status", "MISSING_STATUS"), 0) + 1
-            return counts
-
-        pilot_ids = set(PILOT_CASES); confirmation_ids = set(CONFIRMATION_CASES)
+        report = None; report_load = {"status": "MISSING", "reason": "evaluation_report.json not found"}
+        if report_path.is_file():
+            try:
+                report = json.loads(report_path.read_text(encoding="utf-8"))
+                report_load = {"status": "LOADED", "reason": None}
+            except Exception as exc:
+                report_load = {"status": "FAILED", "reason": f"{type(exc).__name__}: {exc}"}
+        scope_summary = build_scope_summary(
+            state, report, pilot_ids=PILOT_CASES, confirmation_ids=CONFIRMATION_CASES,
+        )
         handoff = {
             "schema_version": "paper-results-v1-two-pilot-colab-handoff-v1",
             "run_id": RUN_ID,
             "status": "REPORT_WRITTEN" if report is not None else "REPORT_MISSING_EVALUATE_FAILED",
+            "evaluation_report_load": report_load,
             "execution_scope": {
                 "attempted": list(PILOT_CASES),
                 "confirmation": list(CONFIRMATION_CASES),
-                "confirmation_status": "PLANNED_NOT_EXECUTED_BY_THIS_NOTEBOOK",
+                "confirmation_status": "NOT_EXECUTED_BY_NOTEBOOK",
                 "pilot_excluded_from_confirmation": True,
             },
             "identity": {
@@ -478,18 +541,7 @@ def build_notebook():
                 "pilot_A": str(RUN_OUTPUT / "artifacts/pilot_01"),
                 "pilot_B": str(RUN_OUTPUT / "artifacts/pilot_02"),
             },
-            "pilot_status_counts": {
-                "receiver": status_counts([row for row in state["receiver_slots"] if row["case_id"] in pilot_ids]),
-                "baseline": status_counts([row for row in state["baseline_slots"] if row["case_id"] in pilot_ids]),
-                "comparison": status_counts([row for row in state["comparison_slots"] if row["case_id"] in pilot_ids]),
-                "quality": status_counts([row for row in state["quality_rows"] if row["case_id"] in pilot_ids]),
-            },
-            "confirmation_status_counts": {
-                "receiver": status_counts([row for row in state["receiver_slots"] if row["case_id"] in confirmation_ids]),
-                "baseline": status_counts([row for row in state["baseline_slots"] if row["case_id"] in confirmation_ids]),
-                "comparison": status_counts([row for row in state["comparison_slots"] if row["case_id"] in confirmation_ids]),
-                "quality": status_counts([row for row in state["quality_rows"] if row["case_id"] in confirmation_ids]),
-            },
+            **scope_summary,
             "files": {
                 "run_state": str(state_path), "evaluation_report": str(report_path),
                 "receiver_csv": str(RUN_OUTPUT / "receiver_rows.csv"),
@@ -504,7 +556,8 @@ def build_notebook():
         atomic_json(OUTPUT_ROOT / "handoff_summary.json", handoff)
         print("Handoff:", OUTPUT_ROOT / "handoff_summary.json")
         print("Pilot status counts:", json.dumps(handoff["pilot_status_counts"], sort_keys=True))
-        print("Confirmation:", handoff["execution_scope"]["confirmation_status"])
+        print("Pilot status source:", handoff["pilot_status_source"])
+        print("Confirmation:", handoff["confirmation"]["execution_scope_status"], "; report projection:", handoff["confirmation"]["report_projection_status_counts"])
     ''')
 
     cells = [
@@ -512,7 +565,7 @@ def build_notebook():
         _cell("markdown", textwrap.dedent('''\
             # Paper Results V1 — fixed two-pilot Run-all
 
-            This handoff attempts **pilot_01** and **pilot_02** once, in the frozen order below. The eight confirmation cases remain in the immutable ten-case manifest and fixed-denominator report as `PLANNED_NOT_EXECUTED_BY_THIS_NOTEBOOK`; pilots are never pooled into confirmation.
+            This handoff attempts **pilot_01** and **pilot_02** once, in the frozen order below. The eight confirmation cases remain in the immutable ten-case manifest but are `NOT_EXECUTED_BY_NOTEBOOK`; full-denominator evaluation projects absent receiver/baseline/comparison evidence to disclosed FAILED/UNEVALUABLE rows while quality retains its recorded state. These are not attempted model failures, and pilots are never pooled into confirmation.
 
             The notebook embeds the current evaluator and its runtime/main source closure, so the notebook is the only project file to upload. It downloads named model snapshots, exact baseline source commits, and named checkpoint objects when the user runs it. The notebook itself has not been run against real models in this delivery; local validation is static plus CPU/fake only.
 

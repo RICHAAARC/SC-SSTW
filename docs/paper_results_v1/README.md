@@ -337,7 +337,10 @@ automatic confirmation execution remain outside the adopted method. The
 self-contained [`paper_results_v1_two_pilot_colab.ipynb`](../../notebooks/paper_results_v1_two_pilot_colab.ipynb)
 is a fixed Run-all handoff for the two excluded pilots only. It embeds the
 actual evaluator/runtime source closure and all ten adopted cases, but attempts
-only `pilot_01` and `pilot_02`; the eight confirmation cases remain planned and
-unexecuted in the fixed denominator. See
+only `pilot_01` and `pilot_02`. The eight confirmation cases are not executed
+by this notebook; full-denominator evaluation projects their absent evidence
+for receiver/baseline/comparison to disclosed failure/unevaluable rows, while
+quality retains its recorded state. None are treated as attempted model
+failures. See
 [`colab_two_pilot_handoff.md`](colab_two_pilot_handoff.md). This repository pass
 did not execute the notebook, models, media, codec, GPU, Colab, or Drive.
