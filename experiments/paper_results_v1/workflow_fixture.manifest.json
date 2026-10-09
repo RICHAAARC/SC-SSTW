@@ -1,0 +1,144 @@
+{
+  "schema_version": "paper-workflow-v1",
+  "study_id": "paper_results_v1_workflow_synthetic_fixture",
+  "evidence_role": "SYNTHETIC_FIXTURE_ONLY",
+  "backend_policy": "EXPLICIT_INJECTION_ONLY",
+  "cases": [
+    {
+      "case_id": "fixture_ok",
+      "source_id": "synthetic_source_ok",
+      "source": {
+        "artifact_id": "fixture_ok/source",
+        "content_id": "synthetic_fixture_content_ok",
+        "input": {"kind": "INLINE_ARRAY", "value": [[0.10, 0.20], [0.30, 0.40]]}
+      },
+      "noise": {"noise_id": "synthetic_noise_v1", "seed": 7},
+      "codec": {
+        "codec_id": "synthetic_decimal_roundtrip",
+        "operation": "fixture_codec_roundtrip",
+        "parameters": {"decimal_places": 3}
+      },
+      "stages": {
+        "OFF_NATIVE": {
+          "input_artifact_id": "fixture_ok/source",
+          "pre_artifact_id": "fixture_ok/off/pre",
+          "post_artifact_id": "fixture_ok/off/post",
+          "transform_operation": "fixture_off_native"
+        },
+        "PAYLOAD_NATIVE": {
+          "input_artifact_id": "fixture_ok/source",
+          "pre_artifact_id": "fixture_ok/p0/pre",
+          "post_artifact_id": "fixture_ok/p0/post",
+          "transform_operation": "fixture_payload_native"
+        },
+        "PAYLOAD_FRAMEWISE_RECON": {
+          "input_artifact_id": "fixture_ok/p0/pre",
+          "pre_artifact_id": "fixture_ok/p1/pre",
+          "post_artifact_id": "fixture_ok/p1/post",
+          "transform_operation": "fixture_framewise_recon"
+        },
+        "PAYLOAD_FRAMEWISE_M05": {
+          "input_artifact_id": "fixture_ok/p1/pre",
+          "pre_artifact_id": "fixture_ok/m05/pre",
+          "post_artifact_id": "fixture_ok/m05/post",
+          "transform_operation": "fixture_framewise_m05"
+        }
+      }
+    },
+    {
+      "case_id": "fixture_missing",
+      "source_id": "synthetic_source_missing",
+      "source": {
+        "artifact_id": "fixture_missing/source",
+        "content_id": "synthetic_fixture_content_missing",
+        "input": {"kind": "FILE", "path": "definitely_missing_synthetic_fixture.mp4"}
+      },
+      "noise": {"noise_id": "synthetic_noise_v1", "seed": 11},
+      "codec": {
+        "codec_id": "synthetic_decimal_roundtrip",
+        "operation": "fixture_codec_roundtrip",
+        "parameters": {"decimal_places": 3}
+      },
+      "stages": {
+        "OFF_NATIVE": {
+          "input_artifact_id": "fixture_missing/source",
+          "pre_artifact_id": "fixture_missing/off/pre",
+          "post_artifact_id": "fixture_missing/off/post",
+          "transform_operation": "fixture_off_native"
+        },
+        "PAYLOAD_NATIVE": {
+          "input_artifact_id": "fixture_missing/source",
+          "pre_artifact_id": "fixture_missing/p0/pre",
+          "post_artifact_id": "fixture_missing/p0/post",
+          "transform_operation": "fixture_payload_native"
+        },
+        "PAYLOAD_FRAMEWISE_RECON": {
+          "input_artifact_id": "fixture_missing/p0/pre",
+          "pre_artifact_id": "fixture_missing/p1/pre",
+          "post_artifact_id": "fixture_missing/p1/post",
+          "transform_operation": "fixture_framewise_recon"
+        },
+        "PAYLOAD_FRAMEWISE_M05": {
+          "input_artifact_id": "fixture_missing/p1/pre",
+          "pre_artifact_id": "fixture_missing/m05/pre",
+          "post_artifact_id": "fixture_missing/m05/post",
+          "transform_operation": "fixture_framewise_m05"
+        }
+      }
+    }
+  ],
+  "native_jobs": [
+    {
+      "job_id": "fixture_ok/videoseal",
+      "case_id": "fixture_ok",
+      "method": "videoseal",
+      "input_artifact_id": "fixture_ok/off/pre",
+      "pre_artifact_id": "fixture_ok/videoseal/pre",
+      "post_artifact_id": "fixture_ok/videoseal/post",
+      "native_message_bits": [0, 1, 1, 0]
+    },
+    {
+      "job_id": "fixture_ok/rivagan",
+      "case_id": "fixture_ok",
+      "method": "rivagan",
+      "input_artifact_id": "fixture_ok/off/pre",
+      "pre_artifact_id": "fixture_ok/rivagan/pre",
+      "post_artifact_id": "fixture_ok/rivagan/post",
+      "native_message_bits": [0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1]
+    },
+    {
+      "job_id": "fixture_missing/videoseal",
+      "case_id": "fixture_missing",
+      "method": "videoseal",
+      "input_artifact_id": "fixture_missing/off/pre",
+      "pre_artifact_id": "fixture_missing/videoseal/pre",
+      "post_artifact_id": "fixture_missing/videoseal/post",
+      "native_message_bits": [0, 1, 1, 0]
+    },
+    {
+      "job_id": "fixture_missing/rivagan",
+      "case_id": "fixture_missing",
+      "method": "rivagan",
+      "input_artifact_id": "fixture_missing/off/pre",
+      "pre_artifact_id": "fixture_missing/rivagan/pre",
+      "post_artifact_id": "fixture_missing/rivagan/post",
+      "native_message_bits": [0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1]
+    }
+  ],
+  "quality_pairs": [
+    {"quality_id": "fixture_ok/total", "case_id": "fixture_ok", "comparison": "M05_POST_VS_OFF_POST_TOTAL", "reference_artifact_id": "fixture_ok/off/post", "candidate_artifact_id": "fixture_ok/m05/post", "data_range": 1.0},
+    {"quality_id": "fixture_ok/extra_vae", "case_id": "fixture_ok", "comparison": "P1_POST_VS_P0_POST_PAIRWISE", "reference_artifact_id": "fixture_ok/p0/post", "candidate_artifact_id": "fixture_ok/p1/post", "data_range": 1.0},
+    {"quality_id": "fixture_ok/m05", "case_id": "fixture_ok", "comparison": "M05_POST_VS_P1_POST_PAIRWISE", "reference_artifact_id": "fixture_ok/p1/post", "candidate_artifact_id": "fixture_ok/m05/post", "data_range": 1.0},
+    {"quality_id": "fixture_missing/total", "case_id": "fixture_missing", "comparison": "M05_POST_VS_OFF_POST_TOTAL", "reference_artifact_id": "fixture_missing/off/post", "candidate_artifact_id": "fixture_missing/m05/post", "data_range": 1.0},
+    {"quality_id": "fixture_missing/extra_vae", "case_id": "fixture_missing", "comparison": "P1_POST_VS_P0_POST_PAIRWISE", "reference_artifact_id": "fixture_missing/p0/post", "candidate_artifact_id": "fixture_missing/p1/post", "data_range": 1.0},
+    {"quality_id": "fixture_missing/m05", "case_id": "fixture_missing", "comparison": "M05_POST_VS_P1_POST_PAIRWISE", "reference_artifact_id": "fixture_missing/p1/post", "candidate_artifact_id": "fixture_missing/m05/post", "data_range": 1.0}
+  ],
+  "main_report": {
+    "report_id": "synthetic_strict_32bit_fixture",
+    "status": "DECLARED",
+    "manifest_path": "synthetic_fixture.manifest.json",
+    "results": [
+      {"result_id": "fixture", "path": "synthetic_fixture.result.json"}
+    ]
+  }
+}

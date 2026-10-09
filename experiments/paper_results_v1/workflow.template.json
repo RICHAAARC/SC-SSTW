@@ -1,0 +1,21 @@
+{
+  "schema_version": "paper-workflow-v1",
+  "study_id": "PENDING_USER_ADOPTION",
+  "evidence_role": "PLANNED_FUTURE_EVALUATION",
+  "backend_policy": "EXPLICIT_INJECTION_ONLY",
+  "pending_decisions": {
+    "source_roster_and_count": "PENDING",
+    "noise_ids_and_seeds": "PENDING",
+    "execution_budget": "PENDING",
+    "videoseal_native_capacity_to_32bit_mapping": "PENDING_NOT_REQUIRED_FOR_NATIVE_TABLE",
+    "rivagan_frame_logits_to_sequence_32bit_rule": "PENDING",
+    "numerical_thresholds": "PENDING"
+  },
+  "cases": [],
+  "native_jobs": [],
+  "quality_pairs": [],
+  "main_report": {
+    "report_id": "main_strict_32bit",
+    "status": "PENDING_NOT_DECLARED"
+  }
+}

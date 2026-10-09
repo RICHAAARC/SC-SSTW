@@ -3,7 +3,8 @@
 This package turns an explicit predeclared slot manifest plus saved experiment
 outputs into deterministic JSON, CSV, and Markdown reports. It is an outer
 evaluation layer. It does not import or change generation, receiver, runtime,
-or core mathematics.
+or core mathematics. A second manifest-driven workflow calls only explicitly
+injected generation, framewise, codec, and native-baseline backends.
 
 ## Run
 
@@ -31,6 +32,25 @@ python -m experiments.paper_results_v1.cli \
   --output-dir /tmp/paper-results-v1-synthetic
 ```
 
+The outer workflow has a separate empty-roster template and an executable CPU
+fixture:
+
+```bash
+python -m experiments.paper_results_v1.workflow_cli \
+  --manifest experiments/paper_results_v1/workflow_fixture.manifest.json \
+  --fixture-backends \
+  --output-dir /tmp/paper-results-v1-workflow
+```
+
+The fixture uses the production plan expansion, dependency handling, artifact
+registry, codec callback, native adapter, quality, cost, and strict-main-report
+link paths. `--fixture-backends` is rejected unless the manifest says
+`SYNTHETIC_FIXTURE_ONLY`. Without injected callbacks, planned steps remain
+`SKIPPED_BACKEND_UNAVAILABLE` or `BLOCKED_DEPENDENCY`; the CLI does not wrap a
+missing model or source as a successful run. `workflow.template.json` has no
+source roster, seeds, budget, or thresholds; running it reports
+`PENDING_EMPTY_ROSTER`, not a completed result.
+
 `historical_conditional_joint.manifest.json` is a static 44-slot import map for
 the already-audited conditional-joint development result. It was declared from
 the frozen protocol layout, not generated from observed successful rows. It
@@ -57,6 +77,13 @@ the generated report also records the imported file path and byte SHA-256.
 - `measurements.csv` retains missing quality and cost fields.
 - `report.md` is a compact human-readable rendering of the same records.
 
+The workflow CLI writes `workflow_report.json` and Markdown plus `plan.csv`,
+`artifacts.csv`, `quality.csv`, `cost.csv`, and full `native_records.json`. When
+declared, it also writes the unchanged strict 32-bit reporter under
+`main_report/`. Every planned transform, codec call, native job, quality pair,
+and cost row stays in its fixed denominator when its source or backend is
+missing.
+
 The six slot states are `OBSERVED`, `FAILED`, `MISSING`, `EXCLUDED`,
 `UNSUPPORTED`, and `CONFLICT`. The full fixed denominator is every manifest
 slot, including excluded and unsupported rows. Conditional tables separately
@@ -77,19 +104,28 @@ do not establish arbitrary 32-bit message capacity. A future message or
 identity roster remains pending; this package does not randomize or replace the
 payload when importing old evidence.
 
-## Pending paired-control proposal
+## Implemented paired-control workflow boundary
 
-One narrow protocol is documented for user review, without adopting or running
-it. For each future unseen source, keep the source/noise/seed paired and produce
-`OFF_NATIVE` and `PAYLOAD_NATIVE` (P0). From P0, separately produce
+The workflow manifest now declares source/content identity, noise ID and seed,
+one shared codec callback, and PRE/POST artifact IDs. It expands each case into
+`OFF_NATIVE` and `PAYLOAD_NATIVE` (P0). From P0 it produces
 `PAYLOAD_FRAMEWISE_RECON` (P1) and `PAYLOAD_FRAMEWISE_M05`. Every POST artifact
-used in a comparison would traverse the same adopted codec, while PRE and POST
-remain distinct. This would make full-hybrid versus OFF the total distortion,
-P1 minus P0 the extra framewise-VAE component, and M05 minus P1 the M05
-increment. The source count, roster, execution budget, codec, and numerical
-criteria are all pending user adoption. Historical P0 cannot fill OFF, and its
-POST references do not establish this future same-codec comparison.
-Implementation stops at this pending boundary.
+used in a comparison traverses that case's same explicit codec callback, while
+PRE and POST remain distinct. Native baselines likewise run as native embed,
+the shared codec callback, then native extract. Matching noise/codec fields and
+callback receipts verify the declaration and code path; they are not a claim
+that two media files were physically identical without inspecting the files.
+
+Quality rows report absolute paired MSE, RMSE, and PSNR. They never subtract
+PSNR or present pairwise metrics as an additive decomposition. Identical arrays
+use `psnr_db=null` with `IDENTICAL_INFINITE`, avoiding non-finite JSON. P0 still
+contains payload. Historical P0 cannot fill OFF, and its old POST references do
+not establish the new same-codec comparison.
+
+The current main prepare path already creates P0 and uses one shared framewise
+encode for separate P1/M05 decodes and codecs; its fixed runner has no OFF arm.
+This outer workflow supplies callback and saved-report binding points without
+changing that runner or claiming that a new-source full configuration has run.
 ## External baseline inventory status
 
 The local archive contains historical RivaGAN, VideoSeal, and framewise HiDDeN
@@ -106,9 +142,8 @@ The inventory locations are:
 - `SyncTube_results.zip::SyncTube_results/numeric_conclusion_data/source_evidence/baseline_comparison_gate/external_*/records/baseline_formal_score_records.jsonl`
 - the sibling `tables/baseline_comparison_table.csv` files
 
-RivaGAN uses the community `Peachypie98/RivaGAN` 32-bit checkpoint and averages
-per-frame bit correctness rather than producing the same sequence-level 32-bit
-recovery event; its source pin is
+RivaGAN uses the community `Peachypie98/RivaGAN` 32-bit checkpoint; its source
+pin is
 `efffa72a4ca46d4d5051f6970c96424c2cdab441`. VideoSeal, pinned at
 `e00b98c7ca77eb1fb5b9b68260e7c6c8fc207a84`, expands its message to the
 model-native length (commonly 256) while historical scoring compares an
@@ -118,8 +153,29 @@ The archived source adapter metadata says `formal`, while the score records say
 The HiDDeN record path has a known 30 predicted bits versus a recorded
 `compared_length=32` inconsistency and stays a fallback inventory item. No
 wrapper is copied and no historical TPR/FPR is promoted into this report. This
-stage is an inventory only; an external-record adapter waits for the adopted
-capacity, roster, codec, and score semantics.
+historical-record import still waits for adopted capacity, roster, codec, and
+score semantics.
+
+`native_adapters.py` now provides real call-through interfaces for explicitly
+loaded backends. VideoSeal calls `embed(..., msgs=..., is_video=True)` and
+`detect(..., is_video=True)`, retains the complete raw output, nested shapes,
+and element counts, and applies no spatial, temporal, capacity, or 32-bit reduction. The available
+interface reference is [current upstream main](https://github.com/facebookresearch/videoseal/blob/main/videoseal/models/videoseal.py);
+the historical `e00b...` API was not reverified locally, so every real backend
+must declare its actual source and model version. VideoSeal's documented and
+code-comment layouts have varied; an output such as `T,1+K,H,W` is preserved
+rather than silently reduced. Construction requires explicit source version,
+model version, weight identity, and detected-output layout metadata; unknowns
+must be recorded as such rather than inferred from the adapter name.
+
+RivaGAN retains every decoded frame's soft logits and its native per-frame
+zero-threshold bits. The [pinned upstream implementation](https://github.com/DAI-Lab/RivaGAN/blob/efffa72a4ca46d4d5051f6970c96424c2cdab441/rivagan/rivagan.py)
+writes OpenCV `mp4v` at 20 fps in path `encode` and decodes BGR frames with
+`value/127.5-1`; the path wrapper exposes that hidden transport and marks it
+incompatible with the shared-codec claim. A tensor-level or explicit codec-hook
+backend avoids that ambiguity. Neither adapter receives truth during extract.
+RivaGAN construction likewise requires explicit source, model, weight, color,
+normalization, transport, and codec-comparability metadata.
 
 `archive/SSTW/external_baseline/source_registry.json` and its
 `official_eval_adapters` directory also declare VidSig, VideoShield, VideoMark,
@@ -130,8 +186,25 @@ by itself establish a complete VideoSeal baseline. Cross-model generation and
 inversion cost and their intended use remain pending, so these entries are not
 added to the default minimal comparison set.
 
-The remaining user decisions for a new evaluation are the source roster and
-size, VideoSeal capacity/redundancy semantics, the concrete OFF and
-quality/resource comparison budget, and any additional attacks or numerical
-thresholds. No publication notebook is generated by this package.
-External baseline integration stops at this inventory boundary.
+## Concrete recommendation pending adoption
+
+For a first engineering confirmation batch, the recommendation is eight unseen
+sources fixed before running. Per source, plan two native trajectories (OFF and
+P0), one shared framewise encode, two framewise decodes (P1 and M05), and the
+same explicit codec on all four main POST artifacts. That is 16 native
+trajectories, 8 framewise encodes, 16 framewise decodes, and 32 main codec
+roundtrips. VideoSeal and RivaGAN would each embed the same OFF native video and
+then traverse the shared codec, adding 16 baseline codec roundtrips: 48 total.
+The count does not apply when RivaGAN path encode silently adds mp4v/20fps.
+These are interface-call counts, not GPU time estimates or execution approval;
+eight sources cannot support low-FPR or population-level guarantees.
+
+Report VideoSeal first at its complete native capacity in a separate table,
+with no prefix presented as equivalent 32-bit capacity. Report RivaGAN's full
+per-frame logits/bits separately. If a sequence result is later adopted, the
+specific recommendation is an equal-weight mean of each bit's logits across
+all decoded frames followed by the native `>=0` bit decision. That reducer is
+not executed or defaulted here. Cross-method equivalent-32 mapping, the exact
+eight-source roster and seeds, execution budget, additional attacks, and all
+numerical thresholds remain user decisions. No publication notebook or real
+model run is produced by this package.

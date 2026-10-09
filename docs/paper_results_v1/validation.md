@@ -44,6 +44,40 @@ Physical counts are labeled as unique physical key-read identities rather than
 media counts or receiver call counts. Recovery rows group on both key label and
 key role, so two keys with the same declared role cannot be pooled.
 
+## Native adapter and workflow tests
+
+Command:
+
+```bash
+PYTHONHOME=/home/richar/projects/Video-WM/framework/.conda \
+PYTHONDONTWRITEBYTECODE=1 \
+/lib64/ld-linux-x86-64.so.2 \
+/home/richar/projects/Video-WM/framework/.conda/bin/python3.13 \
+  -m pytest -q --capture=sys -p no:cacheprovider \
+  tests/test_paper_results_v1.py \
+  tests/test_paper_results_v1_workflow.py
+```
+
+Result: `19 passed in 0.13s` (the 12 strict-report regressions plus 7 workflow
+and native-adapter tests).
+
+The workflow fixture ran two predeclared cases through the real scheduler: one
+available inline CPU array and one missing file. Its fixed denominators were 16
+main plan steps, 4 native jobs, 6 quality pairs, and 28 cost rows. The available
+case produced 8 successful main steps, 2 successful native jobs, and 3 observed
+quality pairs. The missing case retained 8 blocked main steps, 2 blocked native
+jobs, and 3 blocked quality rows. VideoSeal retained a complete synthetic
+`[2,5,1,1]` raw output without reduction; RivaGAN retained two complete 32-logit
+frames and their native zero-threshold bits without a sequence reducer. The
+same CLI linked the six-row synthetic strict 32-bit report under `main_report/`
+and also ran from a copied source directory with no `.git`.
+
+Additional tests verify dependency validation, exact native messages, callback
+failure retention, absent-backend behavior, RivaGAN path mp4v/20fps disclosure,
+truth-free extraction, declared pairing conflicts, and identical-array
+`psnr_db=null` serialization. These are deterministic engineering fixtures;
+they are not model, codec, quality, timing, or scientific results.
+
 ## Historical saved-result import
 
 Input:
