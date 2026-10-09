@@ -152,7 +152,7 @@ carrier、四分片时间组织与 posterior-difference lift 已获本地实现�
 - carrier/provider 新增 10 项 fixture，定向复跑为 `10 passed in 4.06s`；包括真实小 8×8 patch DCT 算术、pre-clipping pair 能量与目标 ratio、原 sign/zero-sign/zero-support、RGB 局部性与 clip/FP32 误差记录、key/RM/bit 顺序、短 T fixed-row/partial-chip、raw fragment routing/collision/erasure、fake posterior 坐标/mask/cap、50-step 25 decode/50 encode 调用顺序、`rho=0`/`cap=0` 区分及 backend attempted/completed 失败记录。
 - 既有 carrier-agnostic seam：`7 passed in 0.74s`。
 - 冻结前曾有一次 `9 passed, 1 failed in 4.01s`：一般随机样本中的小能量 pair 会放大 post-clip/FP32 ratio error，原断言 `<2e-6` 缺少数值保证，实际原始最大误差为 `2.5844881314240897e-05`。修复保留受控无 clip writer→reader q 容差检查，并增加从最终 FP32 RGB 独立复算全部 writer window 的 `E+/E-/pooled q` 与收据逐项一致检查；一般样本的误差继续原样保存且检查有限、非负。该单元测试容差不是媒体成功阈值，修复未改 carrier 数学。
-- 最终合并复跑以上不重复的 17 项：`17 passed in 4.12s`；四个相关 Python 模块 `py_compile` 与 `git diff --check` 通过。
+- 首次冻结时合并复跑以上不重复的 17 项：`17 passed in 4.12s`；四个相关 Python 模块 `py_compile` 与 `git diff --check` 通过。
 
 这些 fixture 使用小型 CPU tensor 和 fake posterior；没有执行完整 181 帧 carrier、真实模型/VAE、codec 或媒体。它们不证明资源可行性、blind path、fragment 聚合规则、真实多步存留或科学 PASS。下一项真实问题仍是：同一次多步写入后，局部 state 证据与不同 payload fragment 是否共同穿过 MP4；该问题不能由本轮 CPU 结果代答。
 
@@ -161,3 +161,9 @@ carrier、四分片时间组织与 posterior-difference lift 已获本地实现�
 A2/A3 对 `1f9b2f0f56d07f8e225d407f279ba21c91901b37` 的 finding 只引出记录与输入边界修复：correspondence truth 标为未核验并拆分 unrouted 与有 route 但全缺失/失败；非法 received frame 索引保留 FAILED 行；writer 拒绝非 FP32 输入并落实 FP32-before-clip；provider 统一记录非 backend stage 失败。carrier pair/state/payload 数学、显式 `rho/cap` 状态、25..49 调度与真实执行边界均未改变。
 
 受影响 carrier/provider fixture 为 `13 passed in 4.15s`，其中实际 clip 顺序定向复跑 `5 passed in 1.05s`；最终连同既有 7 项 seam 合并为 `20 passed in 4.27s`。四个相关 Python 模块 `py_compile` 与 `git diff --check` 通过。验证仍仅为 CPU 小 tensor/fake backend，不增加任何科学结论。
+
+### 第二阶段同版审查收据
+
+受审代码版本为 `8f664a365b2e808a3db2db243ed18f11936ff5fe`。初版审查提出的五类 finding——correspondence 盲性不可推断、route 与有效证据混淆、非法 received frame 索引、非 FP32 输入导致的 ROI 外变化及 FP32/clip 顺序、非 backend stage 失败漏记——均已关闭。A2 与 A3 对该同一版本均为 ACCEPT 且无必修 finding；A3 独立复跑 `5 passed in 1.38s`，是上述 20 项 CPU 总分母的子集，不另加到分母。A4 综合与 A5 独立里程碑审计均为 ACCEPT；A5 未提出新 finding，并确认分支 clean、main 基线仍为 `527c4800292c296222c2c0533809eccb82a29a65`，架构没有反向导入 runtime、experiments 或 governance。carrier 内含按需导入的 torch 数学实现，不把它描述为仅标准库。
+
+该版本提供可选 carrier 与显式注入 provider，不包含 model-residency loader 或独立实验 runner。20 项 CPU 只支持工程实现与记录语义，不是 scientific PASS；`rho/cap` 数值仍待决定，真实问题仍是多步写入后的局部 state 与不同 payload fragment 能否共同穿过 MP4。
