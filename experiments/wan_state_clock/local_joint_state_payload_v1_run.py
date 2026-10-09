@@ -193,9 +193,15 @@ def run(config: dict[str, Any], output: Path, *, preflight_only: bool = False,
         store.data.update(status="PREFLIGHT_COMPLETE", stage="PREFLIGHT", actual_model_calls=False)
         store.seal_incomplete()
         return store
-    residency = residency_type(config, store.event)
+    residency = None
     primary: BaseException | None = None
     try:
+        store.data["stage"] = "RESIDENCY_CONSTRUCTION"; store.save()
+        try:
+            residency = residency_type(config, store.event)
+        except Exception as exc:
+            store.best_effort_failure("residency_construction", exc)
+            raise
         store.data["execution"]["attempted"] = True
         store.data["stage"] = "MODEL_LOAD"; store.save()
         store.call("generation_load", residency.load_generation)
@@ -255,7 +261,7 @@ def run(config: dict[str, Any], output: Path, *, preflight_only: bool = False,
         return store
     except BaseException as exc:
         primary = exc
-        store.data.update(status="FAILED", stage="FAILED")
+        store.data.update(status="FAILED", stage="FAILED", failed_stage=store.data["stage"])
         store.best_effort_failure("process", exc)
         try:
             store.seal_incomplete()
@@ -263,19 +269,20 @@ def run(config: dict[str, Any], output: Path, *, preflight_only: bool = False,
             store.best_effort_failure("seal_incomplete", record_exc, primary_reason=f"{type(exc).__name__}: {exc}")
         raise
     finally:
-        try:
-            residency.release()
-        except Exception as cleanup_exc:
-            store.best_effort_failure("residency_release", cleanup_exc,
-                                      primary_reason=None if primary is None else f"{type(primary).__name__}: {primary}")
-            if primary is None:
-                store.data.update(status="FAILED", stage="RELEASE_FAILED")
-                store.data["execution"]["completed"] = False
-                try:
-                    store.save()
-                except Exception:
-                    pass
-                raise
+        if residency is not None:
+            try:
+                residency.release()
+            except Exception as cleanup_exc:
+                store.best_effort_failure("residency_release", cleanup_exc,
+                                          primary_reason=None if primary is None else f"{type(primary).__name__}: {primary}")
+                if primary is None:
+                    store.data.update(status="FAILED", stage="RELEASE_FAILED")
+                    store.data["execution"]["completed"] = False
+                    try:
+                        store.save()
+                    except Exception:
+                        pass
+                    raise
 
 
 def _count(store: Store, name: str, completed: bool) -> None:

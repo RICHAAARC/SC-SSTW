@@ -365,6 +365,24 @@ def test_runner_success_then_release_failure_becomes_nonzero_failed_result(monke
     assert any(row["stage"] == "residency_release" for row in result["failures"])
 
 
+def test_runner_residency_constructor_failure_is_sealed_without_model_attempt_or_release(tmp_path):
+    class ConstructorFailure:
+        def __init__(self, cfg, event):
+            raise RuntimeError("fixture-residency-constructor")
+    output = tmp_path / "constructor-failure"
+    with pytest.raises(RuntimeError, match="fixture-residency-constructor"):
+        runner.run(config(), output, residency_type=ConstructorFailure,
+                   execution_kind="dependency_injected_cpu_fixture")
+    result = json.loads((output / "result.json").read_text())
+    assert result["status"] == "FAILED" and result["failed_stage"] == "RESIDENCY_CONSTRUCTION"
+    assert result["execution"]["attempted"] is False and "generation_load" not in result["calls"]
+    assert any(row["stage"] == "residency_construction" for row in result["failures"])
+    for arm in result["arms"].values():
+        assert arm["status"] == "NOT_RUN"
+        assert len(arm["steps"]) == 50 and all(row["status"] == "NOT_COMPLETED" for row in arm["steps"])
+        assert all(row["status"] == "MISSING_DEPENDENCY" for row in arm["layers"].values())
+
+
 def test_terminal_wrong_geometry_is_failed_before_completed_or_rgb_artifacts(tmp_path):
     events = []
     residency = FakeExperimentResidency(_single_off_config(), lambda name, row: events.append((name, row)))
