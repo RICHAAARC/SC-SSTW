@@ -18,6 +18,7 @@ import pytest
 from experiments.paper_results_v1.colab_orchestration import (
     build_scope_summary,
     execute_fixed_sequence,
+    prepare_baseline_environment,
 )
 from experiments.paper_results_v1 import real_eval, report as report_io
 
@@ -132,6 +133,14 @@ def test_notebook_freezes_identity_downloads_stage_order_and_failure_retention()
     assert "31f26fdeee1355a5c34592e401dd41e45d25a493" in joined
     assert "torch==1.0.1.post2" not in joined
     assert "pip\", \"install\", \"-r" not in joined
+    assert '"--no-deps"' not in joined
+    assert '"--constraint", str(BASELINE_CORE_CONSTRAINTS)' in joined
+    assert "antlr4-python3-runtime==4.9.*" in joined
+    assert "PyYAML>=5.1.0" in joined
+    assert "from videoseal.utils.cfg import setup_model" in joined
+    assert "_install_rivagan_pickle_classes" in joined
+    assert "IMPORT_READY_NO_MODEL_LOADED" in joined
+    assert "IMPORT_READY_NO_CHECKPOINT_LOADED" in joined
     assert "MAIN_PIP_CHECK_DIAGNOSTIC\", check=False" in joined
 
     execute = next(source for source in code if "phase_interpreters" in source)
@@ -302,3 +311,37 @@ def test_actual_adopted_empty_evidence_report_keeps_both_pilot_method_cohorts(tm
     assert summary["confirmation"]["immutable_plan_counts"] == {
         "receiver": 1280, "baseline": 144, "comparison": 144, "quality": 56,
     }
+
+
+def test_baseline_environment_receipts_separate_resolution_probe_and_model_status():
+    calls = []
+
+    success = prepare_baseline_environment(
+        install=lambda: calls.append("install"),
+        probe=lambda: calls.append("probe"),
+    )
+    assert calls == ["install", "probe"]
+    assert success == {
+        "dependency_install_status": "COMPLETE",
+        "entry_import_probe_status": "IMPORT_READY_NO_MODEL_OR_WEIGHT_LOADED",
+        "model_compatibility_status": "NOT_VALIDATED_REQUIRES_REAL_EMBED_EXTRACT",
+    }
+
+    calls.clear()
+    install_failure = prepare_baseline_environment(
+        install=lambda: (_ for _ in ()).throw(OSError("resolver unavailable")),
+        probe=lambda: calls.append("probe must not run"),
+    )
+    assert calls == []
+    assert install_failure["dependency_install_status"] == "FAILED"
+    assert install_failure["entry_import_probe_status"] == "BLOCKED_DEPENDENCY_INSTALL_FAILED"
+    assert install_failure["dependency_install_reason"] == "OSError: resolver unavailable"
+
+    probe_failure = prepare_baseline_environment(
+        install=lambda: None,
+        probe=lambda: (_ for _ in ()).throw(ImportError("entry unavailable")),
+    )
+    assert probe_failure["dependency_install_status"] == "COMPLETE"
+    assert probe_failure["entry_import_probe_status"] == "FAILED"
+    assert probe_failure["entry_import_probe_reason"] == "ImportError: entry unavailable"
+    assert probe_failure["model_compatibility_status"] == "NOT_VALIDATED_REQUIRES_REAL_EMBED_EXTRACT"

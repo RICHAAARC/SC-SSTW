@@ -87,8 +87,23 @@ and weights being present is only preparation evidence; successful model/API
 compatibility requires the later embed/extract phase receipts. VideoSeal's
 official dependency set and RivaGAN's legacy dependency pins are not installed
 over the successful main stack. Each baseline gets a separate
-`--system-site-packages` virtual environment, with only its required interface
-packages added. The obsolete RivaGAN requirements file is never installed.
+`--system-site-packages` virtual environment. Pip resolves dependencies there
+under a constraints file that fixes Torch, torchvision, diffusers,
+Transformers, NumPy, Accelerate, safetensors, Hugging Face Hub, tokenizers,
+sentencepiece, and ftfy to the recorded main versions. VideoSeal explicitly
+requests `omegaconf==2.3.0`, `antlr4-python3-runtime==4.9.*`, and
+`PyYAML>=5.1.0`, so OmegaConf's parser/YAML closure does not depend on packages
+that happen to be present in the Colab base image. The obsolete RivaGAN
+requirements file is never installed.
+
+After resolution, each venv runs an import-only entry probe. VideoSeal imports
+`OmegaConf` and `videoseal.utils.cfg.setup_model`; RivaGAN imports the pinned
+pickle-compatibility classes through `_install_rivagan_pickle_classes`. These
+probes do not deserialize a checkpoint, instantiate a model, or process media.
+The receipt separates dependency-install status, entry-import status, and
+`NOT_VALIDATED_REQUIRES_REAL_EMBED_EXTRACT` model compatibility. A probe failure
+keeps the baseline's dedicated interpreter identity for the later retained
+failure instead of silently retrying under the main interpreter.
 
 Historical main-chain real evidence belongs to run
 `20261008T003135066923Z/fixed_reference` and source

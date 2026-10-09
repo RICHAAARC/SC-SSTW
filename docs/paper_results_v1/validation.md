@@ -276,7 +276,7 @@ PYTHONDONTWRITEBYTECODE=1 \
   tests/test_paper_results_v1_two_pilot_notebook.py
 ```
 
-Result after the same-version notebook orchestration repair: `7 passed in
+Result after the same-version notebook orchestration repair: `8 passed in
 0.25s`.
 
 The checks parse every notebook code cell with Python AST, require empty
@@ -307,6 +307,16 @@ confirms four pilot source summaries plus both method-specific cohort summaries
 (`videoseal` and `rivagan`). It also verifies that all 36 pilot comparison rows
 are unevaluable and that the eight unexecuted confirmation cases retain their
 immutable 1,280/144/144/56 receiver/baseline/comparison/quality plan counts.
+
+The baseline-environment stub separately verifies dependency-resolution,
+entry-import, and real-model-compatibility receipts for success, resolver
+failure, and import failure. Notebook AST checks require the dedicated venv pip
+commands to receive the recorded core constraints file, reject `--no-deps`,
+and require VideoSeal's explicit `antlr4-python3-runtime==4.9.*` and
+`PyYAML>=5.1.0` OmegaConf closure. They also require import-only probes for
+`videoseal.utils.cfg.setup_model` and the RivaGAN pickle-compatibility classes.
+No pip resolver, package installation, import probe, model, or checkpoint was
+run locally; those operations occur only when the user runs the notebook.
 
 The notebook was not executed top to bottom because this task forbids Colab,
 Drive, GPU, model, VAE, codec, and media execution. The unclosed validation gap

@@ -22,6 +22,35 @@ def _counts(rows):
     return dict(sorted(Counter(row.get("status", "MISSING_STATUS") for row in rows).items()))
 
 
+def prepare_baseline_environment(*, install, probe):
+    """Run dependency installation then an import-only probe with distinct receipts."""
+
+    receipt = {
+        "dependency_install_status": "NOT_ATTEMPTED",
+        "entry_import_probe_status": "NOT_ATTEMPTED",
+        "model_compatibility_status": "NOT_VALIDATED_REQUIRES_REAL_EMBED_EXTRACT",
+    }
+    try:
+        install()
+        receipt["dependency_install_status"] = "COMPLETE"
+    except Exception as exc:
+        receipt.update(
+            dependency_install_status="FAILED",
+            dependency_install_reason=f"{type(exc).__name__}: {exc}",
+            entry_import_probe_status="BLOCKED_DEPENDENCY_INSTALL_FAILED",
+        )
+        return receipt
+    try:
+        probe()
+        receipt["entry_import_probe_status"] = "IMPORT_READY_NO_MODEL_OR_WEIGHT_LOADED"
+    except Exception as exc:
+        receipt.update(
+            entry_import_probe_status="FAILED",
+            entry_import_probe_reason=f"{type(exc).__name__}: {exc}",
+        )
+    return receipt
+
+
 def build_scope_summary(state, report, *, pilot_ids, confirmation_ids):
     """Summarize attempted pilots and unattempted confirmation without conflating them."""
 

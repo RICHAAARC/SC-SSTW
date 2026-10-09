@@ -358,6 +358,8 @@ def build_notebook():
 
     prepare_environment = textwrap.dedent('''\
         ## Prepare the recorded main environment and isolated baseline dependencies
+        from experiments.paper_results_v1.colab_orchestration import prepare_baseline_environment
+
         # The historical non-zero pip check is retained as a diagnostic and is not a blanket hard failure.
         MAIN_PINS = {
             "torch": "2.11.0", "torchvision": "0.26.0", "diffusers": "0.39.0", "transformers": "4.57.6",
@@ -378,35 +380,70 @@ def build_notebook():
             dependency_check_returncode = None
             record_stage("MAIN_ENVIRONMENT_PREPARATION", "FAILED", reason=f"{type(exc).__name__}: {exc}")
 
-        baseline_pythons = {"videoseal": PYTHON, "rivagan": PYTHON}
+        BASELINE_CORE_CONSTRAINTS = OUTPUT_ROOT / "baseline_core_constraints.txt"
+        BASELINE_CORE_CONSTRAINTS.write_text(
+            "".join(f"{name}=={version}\\n" for name, version in MAIN_PINS.items()),
+            encoding="utf-8",
+        )
+        baseline_pythons = {}
         baseline_dependencies = {
             "videoseal": [
                 "PyWavelets", "av", "calflops", "decord", "einops==0.8.2", "lpips",
-                "omegaconf==2.3.0", "opencv-python", "pandas", "pycocotools",
-                "pytorch-msssim", "scikit-image", "scipy", "tensorboard", "timm==0.9.16",
+                "omegaconf==2.3.0", "antlr4-python3-runtime==4.9.*", "PyYAML>=5.1.0",
+                "opencv-python", "pandas==2.2.3", "pycocotools", "pytorch-msssim",
+                "scikit-image", "scipy==1.16.3", "setuptools", "tensorboard",
+                "timm==0.9.16", "tqdm", "transformers", "safetensors",
             ],
             "rivagan": ["torch-dct==0.1.5", "opencv-python", "pandas==2.2.3"],
         }
         for method in ("videoseal", "rivagan"):
             venv = Path("/content") / ("paper-results-v1-" + method + "-venv")
             vpython = venv / "bin/python"
-            try:
+            baseline_pythons[method] = str(vpython)
+            baseline_setup[method]["environment_python"] = str(vpython)
+
+            def install_baseline_dependencies():
                 if baseline_setup[method]["status"] != "READY":
                     raise RuntimeError(method + " source/checkpoint preparation failed")
                 if not vpython.exists():
                     logged([PYTHON, "-m", "venv", "--system-site-packages", str(venv)], method.upper() + "_VENV_CREATE")
-                # No official baseline requirements file is installed: it would downgrade the main stack.
-                logged([str(vpython), "-m", "pip", "install", "--no-deps", *baseline_dependencies[method]], method.upper() + "_ISOLATED_DEPENDENCIES")
-                baseline_pythons[method] = str(vpython)
-                baseline_setup[method]["environment_status"] = "READY_UNEXECUTED_MODEL_COMPATIBILITY"
+                # Resolve full transitive dependencies inside the dedicated venv while
+                # constraining the already-recorded main stack. Never install the
+                # obsolete official RivaGAN requirements file.
+                logged([
+                    str(vpython), "-m", "pip", "install",
+                    "--constraint", str(BASELINE_CORE_CONSTRAINTS),
+                    *baseline_dependencies[method],
+                ], method.upper() + "_ISOLATED_DEPENDENCIES")
                 baseline_setup[method]["environment_freeze_path"] = str(OUTPUT_ROOT / (method + "_environment_freeze.txt"))
                 (OUTPUT_ROOT / (method + "_environment_freeze.txt")).write_text(
                     subprocess.check_output([str(vpython), "-m", "pip", "freeze"], text=True), encoding="utf-8",
                 )
-            except Exception as exc:
-                baseline_setup[method]["environment_status"] = "FAILED"
-                baseline_setup[method]["environment_reason"] = f"{type(exc).__name__}: {exc}"
-                baseline_pythons[method] = PYTHON
+
+            def probe_baseline_entry():
+                if method == "videoseal":
+                    probe_code = (
+                        "import sys; sys.path.insert(0," + repr(str(VS_ROOT)) + "); "
+                        "from omegaconf import OmegaConf; "
+                        "from videoseal.utils.cfg import setup_model; "
+                        "print('VIDEOSEAL_IMPORT_READY_NO_MODEL_LOADED')"
+                    )
+                else:
+                    probe_code = (
+                        "import sys; sys.path[:0]=" + repr([str(PORTABLE_ROOT), str(RIVA_ROOT)]) + "; "
+                        "from experiments.paper_results_v1.real_backends import _install_rivagan_pickle_classes; "
+                        "_install_rivagan_pickle_classes(); "
+                        "print('RIVAGAN_IMPORT_READY_NO_CHECKPOINT_LOADED')"
+                    )
+                logged(
+                    [str(vpython), "-c", probe_code],
+                    method.upper() + "_ENTRY_IMPORT_PROBE", env=portable_env,
+                )
+
+            baseline_setup[method].update(prepare_baseline_environment(
+                install=install_baseline_dependencies,
+                probe=probe_baseline_entry,
+            ))
         atomic_json(OUTPUT_ROOT / "baseline_setup_receipts.json", baseline_setup)
 
         try:
@@ -438,6 +475,8 @@ def build_notebook():
             "main_pip_check_returncode_nonfatal_diagnostic": dependency_check_returncode,
             "model_snapshot_status": model_snapshot_status,
             "wan_revision": WAN_REVISION, "framewise_revision": FRAMEWISE_REVISION,
+            "baseline_core_constraints_path": str(BASELINE_CORE_CONSTRAINTS),
+            "baseline_core_constraints_sha256": sha256_file(BASELINE_CORE_CONSTRAINTS),
             "baseline_environments": baseline_setup,
             "note": "Model/backend compatibility is established only by later phase receipts, not by preparation status.",
         })
@@ -585,7 +624,7 @@ def build_notebook():
 
             Return the entire unique Drive run directory, especially `handoff_summary.json`, `effective_config.json`, `portable_source_receipt.json`, `execution.log`, `stage_receipts.json`, `run_state/run_state.json`, all CSV/JSON evaluation reports, both `run_state/artifacts/pilot_01` and `pilot_02` trees, and every native `.npz` sidecar. Do not rerun a failed phase in the same run directory; another attempt requires a new Run-all directory.
 
-            `pip check` is retained as a diagnostic. The historical successful main environment had a non-zero result from unrelated Gradio/Hub and Jedi conflicts, so a non-zero value alone is not used to erase model-phase evidence. Baseline dependencies are installed into separate system-site-package virtual environments and the old RivaGAN requirements are not installed because they pin obsolete Torch/OpenCV/Pandas/NumPy versions.
+            `pip check` is retained as a diagnostic. The historical successful main environment had a non-zero result from unrelated Gradio/Hub and Jedi conflicts, so a non-zero value alone is not used to erase model-phase evidence. Baseline dependencies are resolved inside separate system-site-package virtual environments under constraints that preserve the recorded main stack. VideoSeal explicitly includes OmegaConf's ANTLR and PyYAML closure. Each venv then runs an import-only entry probe; model compatibility remains unvalidated until its real embed/extract phase. The old RivaGAN requirements are not installed because they pin obsolete Torch/OpenCV/Pandas/NumPy versions.
         '''), "handoff"),
     ]
     notebook = {
