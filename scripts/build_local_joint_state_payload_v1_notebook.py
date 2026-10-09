@@ -419,7 +419,11 @@ def build_notebook() -> dict[str, object]:
             _markdown('''
             # Local Joint State+Payload V1 — fixed Colab run
 
-            Run all once. This notebook mounts Drive, prepares the historically grounded Wan environment,
+            1. Upload and open this notebook in Colab.
+            2. Select a CUDA GPU runtime; no GPU model is required by the notebook.
+            3. Choose **Run all** once and authorize the Drive mount when prompted.
+
+            This notebook mounts Drive, prepares the historically grounded Wan environment,
             verifies an embedded no-`.git` B-line source closure, then runs exactly the adopted
             `yellow_sailboat_dev_s2026100701` OFF/JOINT experiment and its seal-first posthoc.
 
@@ -428,8 +432,17 @@ def build_notebook() -> dict[str, object]:
             mode switches, parameter scans or automatic retries. A complete run plans 200 transformer forwards,
             100 native steps, 27 VAE decodes, 50 encodes, 27 VAE load attempts and 25 residency roundtrips.
             Historical N2 proved a smaller no-gradient serial path on L4; it does not establish this run's memory
-            or latency. The known uncompressed float-RGB plus RGB8 raster floor is about 0.89 GB for two arms,
-            before terminal latents, 12 raw-observation JSON files, MP4, logs and model cache.
+            or latency. The known two-arm float-RGB plus RGB8 rasters total about 0.89 GB. Additional storage for
+            model weights/cache, temporary values, 12 raw-observation JSON files, MP4 and logs has not been measured.
+
+            After completion or failure, return/share the entire new UTC directory under
+            `MyDrive/Video-WM/Local-Joint-State-Payload-V1/`, including raw observations and failure records.
+            When present it contains `notebook_failure.json`, `execution.log`, `fixed_slots.json`,
+            `setup_receipt.json`, `environment_receipt.json`, `portable_source_receipt.json`,
+            `execution_receipt.json`, `notebook_audit.json`, `run/result.json`,
+            `run/raw_observation_manifest.json`, `posthoc/raw_observation_seal.json`, and
+            `posthoc/posthoc_result.json`. Return every file that exists. The final summary cell may not run after a
+            failure, so the UTC directory is the handoff artifact rather than copied notebook output.
 
             Results describe one seen development source. The posthoc is known-grid and preserves all missing
             metric slots; it is not blind recovery, message reconstruction, an FPR estimate, or scientific PASS.
