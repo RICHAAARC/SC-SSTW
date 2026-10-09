@@ -1,10 +1,10 @@
 # Local Joint State + Payload V1 单一候选
 
-状态：**CONSTRUCTION_AUTHORIZED_PARAMETERS_PENDING**
+状态：**METHOD_ADOPTED / EXECUTION_NOT_AUTHORIZED**
 
 日期：2026-10-09
 
-边界：用户已授权在本地分支实现本文的单一 carrier、四分片时间组织和 posterior-difference 联合构造；`rho` 与联合 L2 cap 的具体数值仍待单独决定。当前授权不冻结实验输入，也不授权模型、GPU、真实 VAE、codec、Drive 或媒体执行。
+边界：用户已采纳本文的单一 carrier、四分片时间组织、posterior-difference 联合构造，以及独立真实实验提案中的固定 source/arm/参数/后评口径；`rho=0.5`、每步 normalized conditional-clean joint `L2 cap=1`。当前授权只覆盖本地实现、配置和 CPU/静态验证，不授权模型、GPU、真实 VAE、codec、Drive 或媒体执行。
 
 ## 机制假设与贡献上限
 
@@ -60,7 +60,7 @@ message 必须严格为 4 bytes，不接受字符串自动编码。按 byte 顺�
 2. writer 入口明确要求 Wan adapter 提供的 FP32 RGB，拒绝其他浮点 dtype，避免在 ROI 外发生隐式全域 cast。DCT、系数修改与逆 DCT 使用 FP64；逆 DCT 差同量加到 RGB 三通道后，先转 FP32，再按 FP32 preclip 值统计并 clip 到 `[0,1]` 得 `X'`。收据分别记录 FP64→FP32 rounding L2 与 FP32 clip adjustment L2。该数值口径不承诺跨硬件 bitwise 一致。
 3. VAE 坐标严格复用 `runtime/wan/vae.py`：decode 前把 normalized `x0` 转为 raw `x0*latents_std+latents_mean`；RGB 输入使用 `[-1,1]`；posterior mode 得 raw `r` 后，以 `E_norm(X)=(r.float()-mean)/std` 回到 normalized 坐标。冻结 VAE 使用 FP32、`no_grad` 并在调用边界 clear cache。
 4. joint raw 定义为 `M*(E_norm(X')-E_norm(X))`，以 FP32 形成后先施加 hard mask：all channels、`T[1,45)`、四个半开 latent 8×8 ROI `(8,16,12,20)`、`(8,16,44,52)`、`(28,36,12,20)`、`(28,36,44,52)`。该 mask 只是 control support，不声称精确等于 VAE 感受野。
-5. 对 masked raw 以 FP64 跨全部 `B,C,T,H,W` reduce 得 L2 norm，令 `d=raw*min(1,cap/norm)`，再以 FP32 送入 Flow；`norm=0` 时 `d=0`。生产 API 要求调用者显式传入 `rho` 与 cap，不提供默认值或正式配置；只作 `0<=rho<=1`、`cap>=0` 的有限数学校验。历史提案中的 `rho=0.5`、每步 cap=1 尚未被用户采纳。state/payload 共享 cap，不假定 50/50 能量，不自动扩幅；该 cap 是 normalized conditional-clean 坐标的联合 L2 cap，不是旧 `R*`、native response、终态质量或 CFG 后预算。`rho=0` 会把有支持的 pair 改为等能量，一般不是 identity/OFF；`cap=0` 才使最终 latent operand 为零，但仍会执行已启用步的 decode/encode。
+5. 对 masked raw 以 FP64 跨全部 `B,C,T,H,W` reduce 得 L2 norm，令 `d=raw*min(1,cap/norm)`，再以 FP32 送入 Flow；`norm=0` 时 `d=0`。生产 API 仍要求调用者显式传入 `rho` 与 cap，不提供函数默认值；只作 `0<=rho<=1`、`cap>=0` 的有限数学校验。已采纳固定配置传入 `rho=0.5`、每步 cap=1。state/payload 共享 cap，不假定 50/50 能量，不自动扩幅；该 cap 是 normalized conditional-clean 坐标的联合 L2 cap，不是旧 `R*`、native response、终态质量或 CFG 后预算。`rho=0` 会把有支持的 pair 改为等能量，一般不是 identity/OFF；`cap=0` 才使最终 latent operand 为零，但仍会执行已启用步的 decode/encode。
 6. Flow 映射为 `c'=c-d/sigma`，继续同一完整 scheduler；不做 terminal 像素添加，不对 denoiser 或 tail 回放反传，不强制扩幅、不回退、不扫描。
 
 每步分别保留 provider 给出的 nominal joint operand、FP32 实际 realized conditional-clean delta、FP32 realized CFG velocity delta，以及 scheduler 从本步输入到输出的 total native state update。最后一项不是控制的 counterfactual effect，也不是终态预算。posterior backend 分开累计 decode/encode 的 attempted 与 completed；backend callable、carrier apply、posterior 输出校验、raw difference 和 mask-cap 各 stage 的失败都保留 sampling step、具体 stage 和异常原因并原样抛出，不重复记录、不重试或回退。后评另记 RGB clip、ROI 外改变、终端层差异和质量；没有质量阈值。本轮公共 adapter 只应用外部 provider 给出的最终 `joint_delta`；可选 state/payload delta 只是诊断，adapter 不计算或声称二者构成 joint 分解。
@@ -112,9 +112,9 @@ fragment helper 只按调用者显式 correspondence 路由原始 payload 条目
 - 资源、OOM、接线或 instrumentation 失败：工程证据不足，不是构造负结果。
 - 一个冻结候选得到有效负结果后停止该构造；不改 `rho`、cap、频率或支持后重跑。无实际数据前不预设科学 PASS 阈值。
 
-## 参数待决定与执行边界
+## 已采纳参数与执行边界
 
-carrier、四分片时间组织与 posterior-difference lift 已获本地实现授权。用户仍需单独决定具体 `rho` 与 cap 数值；API 中出现的 CPU fixture 数值不是实验冻结。任何 source/seed/key/message/codec、blind path、阈值、正式 arm 或真实执行范围仍需另行明确。
+carrier、四分片时间组织、posterior-difference lift，以及独立提案的单 source、OFF/JOINT、`rho=0.5/cap=1`、seed/key/message/codec 和 fixed known-grid 描述性规则均已采纳并保存为显式配置。blind path、完整消息恢复和 FPR 不在该后评中；真实执行范围仍须另行明确。此前各阶段收据中的 `PROPOSED` 或“参数待决定”只描述当时版本，不覆盖当前采纳状态。
 
 ## 阶段 1 公共接口交付与验证收据（历史）
 
@@ -168,7 +168,7 @@ A2/A3 对 `1f9b2f0f56d07f8e225d407f279ba21c91901b37` 的 finding 只引出记录
 
 该版本提供可选 carrier 与显式注入 provider，不包含 model-residency loader 或独立实验 runner。20 项 CPU 只支持工程实现与记录语义，不是 scientific PASS；`rho/cap` 数值仍待决定，真实问题仍是多步写入后的局部 state 与不同 payload fragment 能否共同穿过 MP4。
 
-上述“不包含 model-residency loader 或独立实验 runner”只描述受审版本 `8f664a3` 的历史状态。后续入口、显式配置 schema、资源成本和仍待用户裁定的最小真实机制名单见 [独立真实实验提案](local_joint_state_payload_v1_real_experiment_proposal.md)；新增 runner 不改变本文件中 carrier 数学、参数待决定状态或历史审查结论，也不表示真实执行获授权。
+上述“不包含 model-residency loader 或独立实验 runner”及“参数待决定”只描述受审版本 `8f664a3` 的历史状态。后续入口、显式配置 schema、资源成本和当时待裁定的最小真实机制名单见 [独立真实实验提案](local_joint_state_payload_v1_real_experiment_proposal.md)；新增 runner 不改变本文件中 carrier 数学或历史审查结论，也不表示真实执行获授权。
 
 ### 第三阶段 runner 版本绑定与审查收据
 
@@ -178,7 +178,7 @@ A1 最终合并验证为 `34 passed in 14.72s`，由 14 项 runner/异常/media/
 
 完整 non-preflight fake 成功集成只运行 OFF arm，使用 181×8×32 的小空间 RGB、fake residency/codec 与小 latent，真实经过同一 `run_trajectory` 的 50 steps，并为 float RGB、RGB8、MP4 各保存固定 768 行目录。JOINT binding 与 steps 25..49 的 25 次启用行为由组件和既有 CPU 测试覆盖；没有运行真实权重、模型、GPU、VAE、codec 或媒体。因此这些检查不构成完整真实 JOINT 验证，也不证明显存可行性、25 次驻留往返、27 次 VAE load 或媒体存留。
 
-真实实验的参数、arm 名单、后评 reducer 与描述性进展条件仍为 PROPOSED；wrong-key 后评与 reducer 尚未实现。本线审查 ACCEPT 只接受该冻结版本的工程接线、记录和提案边界，不是主审计结论、真实执行授权或发布授权。
+在该受审版本中，真实实验的参数、arm 名单、后评 reducer 与描述性进展条件仍为 PROPOSED，wrong-key 后评与 reducer 尚未实现。本线审查 ACCEPT 只接受该冻结版本的工程接线、记录和提案边界，不是主审计结论、真实执行授权或发布授权；后续采纳与实现不追溯改变该收据。
 
 #### Constructor 失败封存补充收据
 
@@ -188,4 +188,12 @@ A2/A3 定向复核又要求去除对后续阶段的 `failed_stage` 过度推导�
 
 A1 定向验证为 `3 passed in 2.96s`，包含 1 个新增 constructor 回归与 2 个相邻 cleanup 回归，相关 `py_compile` 与 `git diff --check` 通过。A3 独立复跑新增项为 `1 passed in 0.97s`，是这 3 项的子集；A2 未重复运行。不能把旧 34 项与本次 3 项简单相加，也不声称存在一次新 35 项全量通过。A2/A3 只接受本次受影响范围；A4/A5 结论仍只绑定旧 `cb81e1f`，本轮没有完整重审 carrier，也没有运行真实模型、GPU、VAE、codec 或媒体。
 
-`rho/cap`、真实 arm 名单、后评公式和描述性进展条件继续待用户采纳，wrong-key 与 reducer 尚未实现。可以先裁定方法；真实执行前仍须完成采用后的后评实现与冻结，当前 runner 不能自动回答 state 与四个 payload fragment 是否共同穿过媒体。
+以上句子记录的是 constructor 修复版本的历史边界。随后用户已经采纳固定参数、OFF/JOINT 名单、wrong key 与 known-grid 描述性后评公式；本阶段在同一 runner 中增加双 key 原始目录，并以独立只读 posthoc 实现 seal 后真值后评。它仍不能自动回答 blind recovery、FPR 或科学 PASS，也不授权真实资源执行。
+
+### 已采纳后评实现（待同版审查）
+
+固定配置保存于 `experiments/wan_state_clock/configs/local_joint_state_payload_v1.json`。runner 对 OFF/JOINT 的 float RGB、RGB8、MP4 分别保存 correct/wrong key 两套 768 行 received-only 目录；每套独立失败，已保存的另一套不被覆盖，并同步写不含 key/message 的 `raw_observation_manifest.json`。`main/tube_state/local_joint_state_payload_posthoc_v1.py` 实现固定 phase 1、slot 0..21 的 22 个 state 循环相关值与 32 个 payload signed mean，保留严格并列和 24/24/20/20 固定 evidence 数。`experiments/wan_state_clock/local_joint_state_payload_posthoc_v1_run.py` 在读取含配置的 `result.json` 前，先依据 manifest 重读并哈希封存 12 份 raw 目录，再加载固定 truth；wrong key 只作辅助观察。
+
+后评不删除或重权缺失项：完整有限但不满足条件记为 `VALID_FINITE_NEGATIVE`；完整帧/样本支持下有限 `E+=E-=0` 的项记为 `CONSTRUCTION_SUPPORT_GAP` 且对应 metric 仍缺失；nonfinite、帧/样本缺失、失败或读取错误记为 `ENGINEERING_FAILURE`。JOINT 满足而 OFF 缺失时记为归因未决，不冒称已有 OFF contrast。所有输出继续声明 `scientific_pass=false`，不实现 blind path、decoded message 或 FPR。
+
+本阶段冻结前的受影响 CPU 合并验证为 `24 passed in 24.80s`：16 项 runner/lifecycle/media/no-git 检查与 8 项固定后评/双 key/seal/no-git 检查。测试使用 `/home/richar/projects/CEG-WM/alive/CEG-WM/.venv/bin/python`，设置 `PYTHONDONTWRITEBYTECODE=1`、`CUDA_VISIBLE_DEVICES=''`，没有安装依赖或调用真实模型、GPU、VAE、codec、媒体、Colab 或 Drive。该工程分母不能证明显存可行性、真实 25 次驻留往返、媒体共同存留或科学 PASS；同版独立审查尚未开始。

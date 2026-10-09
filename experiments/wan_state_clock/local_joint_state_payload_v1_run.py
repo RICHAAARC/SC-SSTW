@@ -20,6 +20,7 @@ from runtime.wan.provenance import content_id
 
 
 ROOT = Path(__file__).resolve().parents[2]
+RAW_KEY_LABELS = ("CORRECT", "WRONG")
 SOURCE_CLOSURE = (
     "experiments/__init__.py",
     "experiments/wan_state_clock/__init__.py",
@@ -94,7 +95,8 @@ class Store:
                 status="PENDING",
                 steps=[dict(index=i, status="PENDING") for i in range(50)],
                 layers={name: dict(status="PENDING") for name in runtime.LAYERS},
-                observations={name: dict(status="PENDING") for name in ("float_rgb", "rgb8", "mp4")},
+                observations={f"{layer}/{label}": dict(status="PENDING", layer=layer, key_label=label)
+                              for layer in ("float_rgb", "rgb8", "mp4") for label in RAW_KEY_LABELS},
             ) for arm in config["arms"]},
             evidence_ceiling=("preflight is unexecuted; an ordinary explicit-config invocation records attempted execution, "
                               "not scientific PASS, blind recovery, FPR, or generalization"),
@@ -110,6 +112,25 @@ class Store:
             stream.flush()
             os.fsync(stream.fileno())
         os.replace(temp, path)
+        # This separate manifest contains only raw-observation receipts.  The
+        # posthoc can seal these files before it reads result.json/config truth.
+        manifest = dict(
+            schema="local-joint-raw-observation-manifest-v1", truth_loaded=False,
+            arms={arm: {
+                name: {key: value for key, value in receipt.items() if key != "key"}
+                for name, receipt in row["observations"].items()
+            } for arm, row in self.data["arms"].items()},
+        )
+        manifest_path = self.output / "raw_observation_manifest.json"
+        manifest_temp = manifest_path.with_suffix(".json.tmp")
+        manifest_encoded = json.dumps(
+            _jsonable(manifest), ensure_ascii=False, sort_keys=True, indent=2, allow_nan=False
+        ).encode("utf-8")
+        with manifest_temp.open("wb") as stream:
+            stream.write(manifest_encoded)
+            stream.flush()
+            os.fsync(stream.fileno())
+        os.replace(manifest_temp, manifest_path)
 
     def event(self, name: str, row: dict[str, Any]) -> None:
         self.data["lifecycle"].append(dict(event=name, **row))
@@ -238,7 +259,7 @@ def run(config: dict[str, Any], output: Path, *, preflight_only: bool = False,
                     raise
                 arm["layers"].update(layers); store.save()
                 for layer_name, observed in (("float_rgb", rgb), ("rgb8", rgb8)):
-                    _observe(store, arm_name, layer_name, observed, config, output, public_protocol)
+                    _observe_layer(store, arm_name, layer_name, observed, config, output, public_protocol)
                 codec = codec_type(config["media"])
                 received, media = store.call(
                     f"{arm_name}/mp4_roundtrip",
@@ -249,14 +270,20 @@ def run(config: dict[str, Any], output: Path, *, preflight_only: bool = False,
                     ),
                 )
                 arm["layers"]["mp4"] = media; store.save()
-                _observe(store, arm_name, "mp4", received, config, output, public_protocol)
-                arm["status"] = "COMPLETE"; store.save()
+                _observe_layer(store, arm_name, "mp4", received, config, output, public_protocol)
+                arm["status"] = ("COMPLETE_WITH_OBSERVATION_FAILURE"
+                                 if any(row["status"] == "FAILED" for row in arm["observations"].values())
+                                 else "COMPLETE")
+                store.save()
             except Exception as exc:
                 arm["status"] = "FAILED"; store.best_effort_failure(f"{arm_name}/arm", exc, arm=arm_name); raise
         if len({store.data["arms"][name]["initial_fingerprint"] for name in config["arms"]}) != 1:
             raise RuntimeError("arms did not share the exact initial latent")
         store.data["execution"]["completed"] = True
-        store.data.update(status="COMPLETE", stage="COMPLETE",
+        final_status = ("COMPLETE_WITH_OBSERVATION_FAILURE"
+                        if any(row["status"] == "COMPLETE_WITH_OBSERVATION_FAILURE"
+                               for row in store.data["arms"].values()) else "COMPLETE")
+        store.data.update(status=final_status, stage="COMPLETE",
                           actual_model_calls=(execution_kind == "explicit_config_real_entry"))
         store.save()
         return store
@@ -326,22 +353,26 @@ def _mark_first_pending_layer_failed(store: Store, arm: str, exc: Exception) -> 
                 dict(stage=f"{arm}/layer_failure", reason=f"{type(record_exc).__name__}: {record_exc}"))
 
 
-def _observe(store: Store, arm: str, layer: str, rgb: Any, config: dict[str, Any], output: Path,
-             public_protocol: Any) -> None:
+def _observe_layer(store: Store, arm: str, layer: str, rgb: Any, config: dict[str, Any], output: Path,
+                   public_protocol: Any) -> None:
     target = store.data["arms"][arm]["observations"]
-    target[layer] = dict(status="ATTEMPTED"); store.save()
-    try:
-        rows = store.call(f"{arm}/{layer}_observe", lambda: runtime.raw_observations(
-            rgb, config["carrier"]["key"], public_protocol=public_protocol))
-        target[layer] = _save_json(output / arm.lower() / f"{layer}_raw_observations.json", rows); store.save()
-    except Exception as exc:
-        target[layer] = dict(status="FAILED", reason=f"{type(exc).__name__}: {exc}")
+    keys = dict(CORRECT=config["carrier"]["key"], WRONG=config["carrier"]["wrong_key"])
+    for label in RAW_KEY_LABELS:
+        entry = f"{layer}/{label}"
+        target[entry] = dict(status="ATTEMPTED", layer=layer, key_label=label, truth_used=False); store.save()
         try:
+            rows = store.call(f"{arm}/{layer}/{label}_observe", lambda label=label: runtime.raw_observations(
+                rgb, keys[label], public_protocol=public_protocol))
+            receipt = _save_json(
+                output / arm.lower() / f"{layer}_{label.lower()}_raw_observations.json", rows)
+            target[entry] = dict(**receipt, layer=layer, key_label=label, key=keys[label],
+                                 truth_used=False, fixed_directory_rows=len(rows))
             store.save()
-        except Exception as record_exc:
-            store.data.setdefault("unpersisted_record_failures", []).append(
-                dict(stage=f"{arm}/{layer}_observe", reason=f"{type(record_exc).__name__}: {record_exc}"))
-        raise
+        except Exception as exc:
+            target[entry] = dict(status="FAILED", layer=layer, key_label=label, key=keys[label],
+                                 truth_used=False, reason=f"{type(exc).__name__}: {exc}")
+            store.best_effort_failure(f"{arm}/{layer}/{label}_observe", exc, arm=arm,
+                                      layer=layer, key_label=label)
 
 
 def main(argv: list[str] | None = None) -> int:

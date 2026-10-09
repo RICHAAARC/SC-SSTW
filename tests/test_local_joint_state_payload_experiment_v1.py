@@ -29,7 +29,8 @@ def config() -> dict:
             "guidance_scale": 5.0, "max_sequence_length": 512,
             "prompt": "explicit prompt", "negative_prompt": "explicit negative", "seed": 7,
         },
-        "carrier": {"key": "raw-鍵", "message_hex": "8001a55a", "rho": 0.37, "cap": 0.83},
+        "carrier": {"key": "raw-鍵", "wrong_key": "raw-鍵-wrong",
+                    "message_hex": "8001a55a", "rho": 0.37, "cap": 0.83},
         "media": {"fps": 8, "codec": "configured-codec", "crf": 21, "pixel_format": "configured-pixfmt"},
         "source": {"source_id": "development-source", "development_only": True},
         "arms": ["OFF", "JOINT"],
@@ -263,6 +264,23 @@ def test_raw_observations_serializes_all_768_public_catalog_rows():
     assert all(set(row) >= {"spec", "state_chips", "payload_chips"} for row in rows)
 
 
+def test_dual_key_raw_seal_keeps_correct_when_wrong_key_extraction_fails(monkeypatch, tmp_path):
+    cfg = _single_off_config()
+    store = runner.Store(tmp_path / "dual-key", cfg, Path("<fixture>"), "dependency_injected_cpu_fixture")
+    original = runtime.raw_observations
+    rgb = torch.zeros(1, 8, 32, 3, dtype=torch.float32).expand(181, -1, -1, -1)
+    def extract(value, key, **kwargs):
+        if key == cfg["carrier"]["wrong_key"]:
+            raise RuntimeError("fixture-wrong-key-only")
+        return original(value, key, **kwargs)
+    monkeypatch.setattr(runtime, "raw_observations", extract)
+    runner._observe_layer(store, "OFF", "float_rgb", rgb, cfg, store.output, CATALOG_PROTOCOL)
+    correct = store.data["arms"]["OFF"]["observations"]["float_rgb/CORRECT"]
+    wrong = store.data["arms"]["OFF"]["observations"]["float_rgb/WRONG"]
+    assert correct["status"] == "SAVED" and correct["rows"] == 768 and Path(correct["path"]).is_file()
+    assert wrong["status"] == "FAILED" and "fixture-wrong-key-only" in wrong["reason"]
+
+
 class FakeExperimentResidency:
     decoded = torch.full(CATALOG_PROTOCOL.video_shape, 0.25, dtype=torch.float32)
     fail_stop = False
@@ -327,7 +345,11 @@ def test_runner_nonpreflight_fake_success_uses_real_50_steps_and_three_768_catal
                                            blind_recovery=False, fpr_evidence=False)
     assert len(arm["steps"]) == 50 and all(row["status"] == "COMPLETED" for row in arm["steps"])
     assert all(arm["layers"][name]["status"] == "SAVED" for name in runtime.LAYERS)
-    assert all(arm["observations"][name]["rows"] == 768 for name in ("float_rgb", "rgb8", "mp4"))
+    assert all(arm["observations"][f"{layer}/{label}"]["rows"] == 768
+               for layer in ("float_rgb", "rgb8", "mp4") for label in runner.RAW_KEY_LABELS)
+    manifest = json.loads((tmp_path / "success" / "raw_observation_manifest.json").read_text())
+    assert manifest["truth_loaded"] is False and set(manifest["arms"]["OFF"]) == set(arm["observations"])
+    assert all("key" not in receipt for receipt in manifest["arms"]["OFF"].values())
 
 
 def test_runner_terminal_nonfinite_keeps_primary_and_records_cleanup_failures(tmp_path):
@@ -389,7 +411,8 @@ def test_runner_residency_constructor_failure_is_sealed_without_model_attempt_or
             (index, "NOT_COMPLETED") for index in range(50)]
         assert set(arm["layers"]) == set(runtime.LAYERS)
         assert all(row["status"] == "MISSING_DEPENDENCY" for row in arm["layers"].values())
-        assert set(arm["observations"]) == {"float_rgb", "rgb8", "mp4"}
+        assert set(arm["observations"]) == {
+            f"{layer}/{label}" for layer in ("float_rgb", "rgb8", "mp4") for label in runner.RAW_KEY_LABELS}
         assert all(row["status"] == "MISSING_DEPENDENCY" for row in arm["observations"].values())
 
 

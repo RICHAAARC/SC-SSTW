@@ -64,10 +64,12 @@ def validate_config(config: dict[str, Any]) -> None:
     if not math.isfinite(float(generation["guidance_scale"])):
         raise ValueError("guidance_scale must be finite")
     spec = config["carrier"]
-    if set(spec) != {"key", "message_hex", "rho", "cap"}:
-        raise ValueError("carrier requires explicit key, message_hex, rho, and cap")
-    if not isinstance(spec["key"], str):
-        raise TypeError("key must be the original Unicode string")
+    if set(spec) != {"key", "wrong_key", "message_hex", "rho", "cap"}:
+        raise ValueError("carrier requires explicit key, wrong_key, message_hex, rho, and cap")
+    if not isinstance(spec["key"], str) or not isinstance(spec["wrong_key"], str):
+        raise TypeError("keys must be original Unicode strings")
+    if spec["wrong_key"] == spec["key"]:
+        raise ValueError("wrong_key must differ from the writer key")
     try:
         message = bytes.fromhex(spec["message_hex"])
     except (TypeError, ValueError) as exc:

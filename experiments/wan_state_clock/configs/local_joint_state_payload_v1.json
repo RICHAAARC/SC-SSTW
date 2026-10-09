@@ -1,0 +1,43 @@
+{
+  "schema": "local-joint-state-payload-real-v1",
+  "model": {
+    "id": "Wan-AI/Wan2.1-T2V-1.3B-Diffusers",
+    "revision": "0fad780a534b6463e45facd96134c9f345acfa5b"
+  },
+  "generation": {
+    "height": 320,
+    "width": 512,
+    "frames": 181,
+    "steps": 50,
+    "guidance_scale": 5.0,
+    "max_sequence_length": 512,
+    "prompt": "locked camera, a small yellow ceramic sailboat gently drifting across a shallow clear glass tank on a stone tabletop, steady soft daylight, no people, no cuts",
+    "negative_prompt": "text, watermark, logo, camera motion, cuts, multiple objects, flicker",
+    "seed": 2026100701
+  },
+  "carrier": {
+    "key": "local-joint-state-payload-v1-first-mechanism",
+    "wrong_key": "local-joint-state-payload-v1-first-mechanism-wrong",
+    "message_hex": "8001a55a",
+    "rho": 0.5,
+    "cap": 1.0
+  },
+  "media": {
+    "fps": 8,
+    "codec": "libx264",
+    "crf": 18,
+    "pixel_format": "yuv420p"
+  },
+  "source": {
+    "source_id": "yellow_sailboat_dev_s2026100701",
+    "development_only": true
+  },
+  "arms": [
+    "OFF",
+    "JOINT"
+  ],
+  "runtime": {
+    "device": "cuda",
+    "transformer_dtype": "bfloat16"
+  }
+}
