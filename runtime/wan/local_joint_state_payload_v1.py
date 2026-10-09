@@ -52,10 +52,14 @@ def apply_joint_control(z, conditional, unconditional, request, result, *, guida
     payload = (_validated_delta(result.payload_delta,z,"payload_delta")
                if result.payload_delta is not None else None)
     sigma = float(request.sampling.sigma)
+    clean_before = z - sigma * conditional
+    baseline_velocity = unconditional + float(guidance) * (conditional - unconditional)
     controlled = conditional - joint / sigma
+    clean_after = z - sigma * controlled
     velocity = unconditional + float(guidance) * (controlled - unconditional)
-    if not bool(torch.isfinite(velocity).all()):
-        raise FloatingPointError("nonfinite injected joint-control velocity")
+    if not all(bool(torch.isfinite(value).all()) for value in (
+            clean_before,clean_after,baseline_velocity,velocity)):
+        raise FloatingPointError("nonfinite injected joint-control arithmetic")
     receipt = dict(
         enabled=result.enabled,
         control_kind="external_local_joint_state_payload",
@@ -69,23 +73,20 @@ def apply_joint_control(z, conditional, unconditional, request, result, *, guida
             spatial_region=list(x.spatial_region) if x.spatial_region is not None else None,
         ) for x in request.windows],
         requested_budget=dict(request.requested_budget),
-        actual_control_delta=dict(
+        nominal_provider_operand=dict(
             coordinate="conditional_clean_estimate",
             joint=_delta_measurement(joint),
             state_diagnostic=_delta_measurement(state) if state is not None else None,
             payload_diagnostic=_delta_measurement(payload) if payload is not None else None,
-            cfg_velocity=dict(
-                coordinate="guided_velocity",
-                guidance=float(guidance),
-                measurement=_delta_measurement(-float(guidance)*joint/sigma),
-            ),
         ),
-        composition=result.composition,
-        provider_declares_component_decomposition=
-            result.provider_declares_component_decomposition,
-        joint_minus_components_l2=(
-            _delta_measurement(joint-state-payload)["l2"]
-            if state is not None and payload is not None else None),
+        realized_control_delta=dict(
+            conditional_clean_estimate=_delta_measurement(clean_after-clean_before),
+            guided_velocity=_delta_measurement(velocity-baseline_velocity),
+            guidance=float(guidance),
+            arithmetic_dtype="torch.float32",
+        ),
+        provider_composition=result.composition,
+        provider_composition_unverified=True,
         provider_detail=dict(result.detail),
         branch_dtype="float32",
         cfg_dtype="float32",

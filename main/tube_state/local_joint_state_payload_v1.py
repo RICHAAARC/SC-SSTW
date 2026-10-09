@@ -102,18 +102,13 @@ class JointControlResult:
     enabled: bool
     state_delta: Any | None = None
     payload_delta: Any | None = None
-    provider_declares_component_decomposition: bool = False
     detail: Mapping[str, Any] = field(default_factory=dict)
 
     def __post_init__(self) -> None:
         if not self.composition:
             raise ValueError("the external provider must name its composition")
-        if (type(self.enabled) is not bool or
-                type(self.provider_declares_component_decomposition) is not bool):
-            raise TypeError("control flags must be explicit booleans")
-        if self.provider_declares_component_decomposition and (
-                self.state_delta is None or self.payload_delta is None):
-            raise ValueError("declared component decomposition requires both diagnostic deltas")
+        if type(self.enabled) is not bool:
+            raise TypeError("enabled must be an explicit boolean")
         if not isinstance(self.detail, Mapping):
             raise TypeError("joint-control detail must be a mapping")
 

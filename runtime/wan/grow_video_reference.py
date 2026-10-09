@@ -26,6 +26,21 @@ def file_sha256(path):
         return hashlib.file_digest(stream,"sha256").hexdigest()
 
 
+def _native_update_measurement(before,after):
+    import torch
+    value=(after.detach().float()-before.detach().float()).double().reshape(-1)
+    return dict(
+        coordinate="native_scheduler_state",
+        shape=list(after.shape),
+        rms=float(value.square().mean().sqrt()),
+        l2=float(value.square().sum().sqrt()),
+        abs_max=float(value.abs().max()),
+        nonzero=int(torch.count_nonzero(value)),
+        interpretation=("total native scheduler state update for this step; "
+                        "not a counterfactual control effect or terminal budget"),
+    )
+
+
 def predict_branches(pipe,z,scheduler,prompt,negative,dtype,index,count):
     import torch
     outputs=[]
@@ -67,8 +82,12 @@ def run_trajectory(pipe,initial,scheduler,prompt,negative,dtype,arm,key,bits,cou
                 sigma=sigma,index=index,total_steps=50)
             count("injected_joint_control",True)
         before=scheduler.step_index
+        if injected_control is not None:
+            before_state=z
         # No reset, deepcopy or speculative tail inside an arm.
         z=trajectory.native_step(scheduler,z,velocity,index,count,kind="native_step")
+        if injected_control is not None:
+            update["native_step_total_state_update"]=_native_update_measurement(before_state,z)
         record_step(dict(index=index,sigma=sigma,cursor_before=before,
             cursor_after=scheduler.step_index,**update))
     if scheduler.step_index!=50:

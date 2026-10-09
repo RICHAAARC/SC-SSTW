@@ -63,7 +63,7 @@ def test_injected_provider_is_same_callable_on_actual_50_step_path(monkeypatch):
         payload=torch.full_like(z,.02)
         joint=torch.full_like(z,.025)
         return api.JointControlResult(
-            joint,"external_joint_cap",True,state,payload,True,{"fixture":True})
+            joint,"external_joint_cap",True,state,payload,{"fixture":True})
     control=adapter.make_control_step(
         windows=windows(),state_spec={"kind":"external"},payload_spec={"kind":"external"},
         requested_budget=requested,provider=provider)
@@ -80,15 +80,20 @@ def test_injected_provider_is_same_callable_on_actual_50_step_path(monkeypatch):
     assert ledger["injected_joint_control"]==[50,50]
     assert receipt["control_adapter"]=="injected_local_joint_state_payload"
     assert [x["requested_budget"] for x in rows]==[requested]*50
-    actual=rows[0]["actual_control_delta"]
-    assert actual["coordinate"]=="conditional_clean_estimate"
-    assert actual["state_diagnostic"]["rms"]==pytest.approx(.01)
-    assert actual["payload_diagnostic"]["rms"]==pytest.approx(.02)
-    assert actual["joint"]["rms"]==pytest.approx(.025)
-    assert actual["cfg_velocity"]["coordinate"]=="guided_velocity"
-    assert rows[0]["composition"]=="external_joint_cap"
-    assert rows[0]["provider_declares_component_decomposition"]
-    assert rows[0]["joint_minus_components_l2"]==pytest.approx(.005*(initial.numel()**.5))
+    nominal=rows[0]["nominal_provider_operand"]
+    assert nominal["coordinate"]=="conditional_clean_estimate"
+    assert nominal["state_diagnostic"]["rms"]==pytest.approx(.01)
+    assert nominal["payload_diagnostic"]["rms"]==pytest.approx(.02)
+    assert nominal["joint"]["rms"]==pytest.approx(.025)
+    assert rows[0]["provider_composition"]=="external_joint_cap"
+    assert rows[0]["provider_composition_unverified"]
+    assert "joint_minus_components_l2" not in rows[0]
+    assert rows[0]["realized_control_delta"]["conditional_clean_estimate"]["rms"]==pytest.approx(.025)
+    assert rows[0]["realized_control_delta"]["guided_velocity"]["rms"]==pytest.approx(.125)
+    native=rows[0]["native_step_total_state_update"]
+    assert native["coordinate"]=="native_scheduler_state"
+    assert native["rms"]==pytest.approx(.00065,rel=1e-5)
+    assert "not a counterfactual control effect" in native["interpretation"]
 
 
 def test_joint_delta_is_only_applied_value_and_diagnostic_components_are_optional():
@@ -99,13 +104,27 @@ def test_joint_delta_is_only_applied_value_and_diagnostic_components_are_optiona
         joint_delta=torch.full_like(z,.2),composition="provider_defined",enabled=True)
     velocity,row=adapter.apply_joint_control(z,conditional,unconditional,request,result,guidance=5)
     torch.testing.assert_close(velocity,torch.full_like(z,3.0))
-    assert row["actual_control_delta"]["state_diagnostic"] is None
-    assert row["actual_control_delta"]["payload_diagnostic"] is None
-    assert not row["provider_declares_component_decomposition"]
+    assert row["nominal_provider_operand"]["state_diagnostic"] is None
+    assert row["nominal_provider_operand"]["payload_diagnostic"] is None
+    assert row["provider_composition_unverified"]
     with pytest.raises(ValueError,match="disabled"):
         adapter.apply_joint_control(
             z,conditional,unconditional,request,
             api.JointControlResult(torch.ones_like(z),"external",False))
+
+
+def test_sub_ulp_nominal_control_can_have_zero_realized_fp32_effect():
+    z=torch.zeros((1,1,1,1,1),dtype=torch.float32)
+    conditional=torch.ones_like(z);unconditional=torch.zeros_like(z)
+    request=api.JointControlRequest(
+        api.SamplingStepCoord(3,50,1.0),windows(),{}, {}, {"unit":"fixture"})
+    velocity,row=adapter.apply_joint_control(
+        z,conditional,unconditional,request,
+        api.JointControlResult(torch.full_like(z,1e-10),"sub_ulp_fixture",True))
+    assert row["nominal_provider_operand"]["joint"]["rms"]==pytest.approx(1e-10)
+    assert row["realized_control_delta"]["conditional_clean_estimate"]["rms"]==0
+    assert row["realized_control_delta"]["guided_velocity"]["rms"]==0
+    torch.testing.assert_close(velocity,torch.full_like(z,5.0),rtol=0,atol=0)
 
 
 def test_default_grow_seam_keeps_legacy_target_and_control(monkeypatch):
@@ -128,6 +147,7 @@ def test_default_grow_seam_keeps_legacy_target_and_control(monkeypatch):
     assert all(x[1]==7 for x in guided)
     assert ledger["local_gradient"]==[25,25]
     assert "control_adapter" not in receipt
+    assert all("native_step_total_state_update" not in row for row in rows)
 
 
 def test_received_only_window_records_preserve_scored_missing_and_failed():
