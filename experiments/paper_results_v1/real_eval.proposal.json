@@ -66,11 +66,16 @@
     },
     "videoseal": {
       "source_root": "/ABSOLUTE/LOCAL/videoseal",
-      "source_commit": "PENDING_CURRENT_OFFICIAL_COMMIT_PIN",
+      "source_commit": "870ca7fb33578b90f14c602016b6c2788096226e",
+      "source_url": "https://github.com/facebookresearch/videoseal/tree/870ca7fb33578b90f14c602016b6c2788096226e",
       "card_path": "/ABSOLUTE/LOCAL/videoseal/videoseal/cards/videoseal_1.0.yaml",
       "card_sha256": "PENDING_LOCAL_FILE_SHA256",
+      "card_url": "https://github.com/facebookresearch/videoseal/blob/870ca7fb33578b90f14c602016b6c2788096226e/videoseal/cards/videoseal_1.0.yaml",
+      "cfg_url": "https://github.com/facebookresearch/videoseal/blob/870ca7fb33578b90f14c602016b6c2788096226e/videoseal/utils/cfg.py",
       "checkpoint_path": "/ABSOLUTE/LOCAL/videoseal/y_256b_img.pth",
       "checkpoint_sha256": "PENDING_LOCAL_FILE_SHA256",
+      "checkpoint_source_url": "https://dl.fbaipublicfiles.com/videoseal/y_256b_img.pth",
+      "checkpoint_download_status": "NOT_DOWNLOADED_LOCAL_DIGEST_PENDING",
       "model_card_name": "videoseal_1.0_256bit",
       "device": "cuda",
       "native_message_length": 256,
@@ -334,7 +339,8 @@
       ],
       "lowres_attenuation": true,
       "detect_output_layout": "T,1+K or T,1+K,H,W retained exactly",
-      "interface_reference": "current official setup_model(config, local_ckpt); historical e00b pin compatibility unverified"
+      "interface_reference": "official 870ca7f setup_model(card, local_checkpoint); e00b98c...870ca7f changes only four copyright headers",
+      "historical_compare_url": "https://github.com/facebookresearch/videoseal/compare/e00b98c7ca77eb1fb5b9b68260e7c6c8fc207a84...870ca7fb33578b90f14c602016b6c2788096226e"
     },
     "rivagan": {
       "source_root": "/ABSOLUTE/LOCAL/RivaGAN",
@@ -4580,11 +4586,17 @@
   "evaluation_rules": {
     "videoseal_32": {
       "status": "PENDING_USER_ADOPTION",
-      "rule": "CHANNEL_J_MOD_32_REPEAT_MEAN_STRICT_GT_ZERO_ZERO_TIE_UNEVALUABLE"
+      "rule": "CHANNEL_J_MOD_32_REPEAT_MEAN_STRICT_GT_ZERO_ZERO_TIE_UNEVALUABLE",
+      "implemented_candidate": "ZERO_TIE_UNEVALUABLE",
+      "recommended_unimplemented_option": "KEEP_NATIVE_GT_ZERO_BIT_AND_REPORT_TIE_COUNT",
+      "selection_required_before_execution": true
     },
     "rivagan_sequence": {
       "status": "PENDING_USER_ADOPTION",
-      "rule": "ALL_DECLARED_FRAMES_EQUAL_LOGIT_MEAN_GE_ZERO_ZERO_TIE_UNEVALUABLE"
+      "rule": "ALL_DECLARED_FRAMES_EQUAL_LOGIT_MEAN_GE_ZERO_ZERO_TIE_UNEVALUABLE",
+      "implemented_candidate": "ZERO_TIE_UNEVALUABLE",
+      "recommended_unimplemented_option": "KEEP_NATIVE_GE_ZERO_BIT_AND_REPORT_TIE_COUNT",
+      "selection_required_before_execution": true
     }
   },
   "proposal_only": true

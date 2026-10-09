@@ -182,3 +182,15 @@ The final focused case also derives each multi-case phase summary after every
 transition: active work takes `RUNNING`, any terminal failure takes `FAILED`, a
 completed subset with remaining planned cases takes `PARTIAL`, and per-case
 failure histories remain unchanged.
+
+## Proposal metadata closure
+
+This docs-only pass pins the reviewed VideoSeal source/card/API identity,
+separates the recommended native-bit-plus-tie presentation from the currently
+implemented unadopted zero-tie rejection candidate, and predeclares the M05/K0
+paper comparison readout. It changes no execution code or adopted setting.
+
+`python -m json.tool` accepted `real_eval.proposal.json`. A standard-library
+`real_cli --phase plan` expansion retained exactly 10 cases, 690 artifacts,
+1,600 receiver rows (51,200 bits), 180 baseline rows, 70 quality rows, and 110
+cost rows. No model test or model/media operation ran.

@@ -81,6 +81,18 @@ do not add a codec pass. If edited media are later re-encoded, those operations
 need separate manifest and cost rows rather than being absorbed into the counts
 below.
 
+The proposed paper-facing external comparison predeclares exactly one main
+readout per source and logical view: the full M05 arm with correct key K0;
+non-FULL GLOBAL views use `GLOBAL`, SINGLE_JUMP views use `PATH`, and FULL181
+uses `RAW` in a separate geometry table. No result-dependent best-mode choice
+or average over all 160 receiver rows is allowed. For eight confirmation
+sources, the eight non-FULL views give 64 paired rows per external method; the
+eight FULL rows remain a separate control table. All 160 receiver rows per
+source remain in the package as wrong-key controls, arm ablations, RAW
+controls, and synchronization-effect evidence. The 72 source-by-logical-view
+rows, including FULL, are repeated within eight sources and are not 72
+independent samples.
+
 ## External baselines and 32-bit task mapping
 
 Both baselines embed the same OFF PRE content and then traverse the same shared
@@ -92,20 +104,23 @@ maps used by the main arms. Implementations may reuse one native detector call
 for byte-identical expanded maps, while every logical row and failure remains
 in the fixed denominator.
 
-The proposed VideoSeal model is the official VideoSeal v1.0 256-channel card,
-loaded with `videoseal.utils.cfg.setup_model(card, local_checkpoint)`. The local
-source commit, card digest, checkpoint digest, and compatibility with the old
-historical `e00b...` pin must be resolved before execution. The runner does not
-call the default download path. For the effective-32 task, channel `j` carries
+The proposed VideoSeal model is the official VideoSeal v1.0 256-channel card at
+commit `870ca7fb33578b90f14c602016b6c2788096226e` (2026-07-02, `Fix header
+copyrights`), loaded with
+`videoseal.utils.cfg.setup_model(card, local_checkpoint)`. At that commit the
+card declares `args.nbits=256` and names checkpoint object
+[`y_256b_img.pth`](https://dl.fbaipublicfiles.com/videoseal/y_256b_img.pth).
+The runner does not call that download URL: the user must supply the local
+object and its actual digest. For the effective-32 task, channel `j` carries
 bit `j mod 32`, giving eight native channels per information bit and rate 1/8.
 After removing the presence channel, average every received frame/spatial soft
 value for each native channel, then average the eight channels belonging to
 each effective bit. A value `>0` decodes as one; `<=0` decodes as zero. Exact
-zero therefore retains the native zero-bit decision, but the proposed
-effective-32 row is marked `UNEVALUABLE_ZERO_TIE`; it cannot count as exact
-recovery and is never resolved using truth or confidence-based frame
-selection. This tie treatment is a recommendation in this unadopted proposal,
-not an adopted threshold. The explicit proposal rule name is
+zero retains the native zero-bit decision and is reported in `tie_count`.
+The recommended paper comparison keeps that native bit and reports the tie;
+it does not turn the row unevaluable. The current runner also implements an
+unadopted, stricter candidate that marks any reduced zero
+`UNEVALUABLE_ZERO_TIE`. Its explicit proposal rule name is
 `CHANNEL_J_MOD_32_REPEAT_MEAN_STRICT_GT_ZERO_ZERO_TIE_UNEVALUABLE`. If native
 `K` is not divisible by 32, this mapping fails
 closed; no prefix, truncation, or filler is inferred.
@@ -127,21 +142,31 @@ tensor backend bypasses upstream's hidden mp4v/20-fps path, follows BGR uint8,
 `value/127.5-1`, `[1,3,1,H,W]`, encoder clamp, and uint8 truncation, then uses
 the shared codec. Its proposed sequence rule is an equal-weight soft-logit mean
 for each bit over every predeclared received frame, followed by native `>=0`.
-Mean zero therefore retains native bit one but marks the proposed effective-32
-row `UNEVALUABLE_ZERO_TIE`; it cannot count as exact recovery. This tie
-treatment remains unadopted; its explicit proposal rule name is
+Mean zero retains native bit one and is reported in `tie_count`. The
+recommended paper comparison keeps that bit. The current runner's stricter,
+unadopted candidate instead marks the row `UNEVALUABLE_ZERO_TIE`; its explicit
+proposal rule name is
 `ALL_DECLARED_FRAMES_EQUAL_LOGIT_MEAN_GE_ZERO_ZERO_TIE_UNEVALUABLE`. Empty video,
 missing or extra frames, non-finite logits, or any frame shape other than
 `[32]` fails the whole row; frames are never skipped to improve a result.
 
-The loader implementation is based on the current official VideoSeal
-[`videoseal.py`](https://github.com/facebookresearch/videoseal/blob/main/videoseal/models/videoseal.py),
-local-only [`utils/cfg.py`](https://github.com/facebookresearch/videoseal/blob/main/videoseal/utils/cfg.py),
-and [`videoseal_1.0.yaml`](https://github.com/facebookresearch/videoseal/blob/main/videoseal/cards/videoseal_1.0.yaml),
-plus pinned RivaGAN
+The loader implementation is based on pinned official VideoSeal
+[`videoseal.py`](https://github.com/facebookresearch/videoseal/blob/870ca7fb33578b90f14c602016b6c2788096226e/videoseal/models/videoseal.py),
+local-only [`utils/cfg.py`](https://github.com/facebookresearch/videoseal/blob/870ca7fb33578b90f14c602016b6c2788096226e/videoseal/utils/cfg.py),
+and [`videoseal_1.0.yaml`](https://github.com/facebookresearch/videoseal/blob/870ca7fb33578b90f14c602016b6c2788096226e/videoseal/cards/videoseal_1.0.yaml).
+The official
+[`e00b98c...870ca7f` comparison](https://github.com/facebookresearch/videoseal/compare/e00b98c7ca77eb1fb5b9b68260e7c6c8fc207a84...870ca7fb33578b90f14c602016b6c2788096226e)
+changes only four copyright-header files; the card, `cfg.py`, and algorithm are
+unchanged. RivaGAN loader evidence uses pinned
 [`rivagan.py`](https://github.com/DAI-Lab/RivaGAN/blob/efffa72a4ca46d4d5051f6970c96424c2cdab441/rivagan/rivagan.py).
 These links specify interface evidence; no source or weight is fetched by the
 runner.
+
+The native-tie recommendation and the stricter implemented candidate are both
+still unadopted. If the user selects the native-tie recommendation, the runner
+needs a small explicit evaluation option plus focused review before any real
+execution. Existing code does not silently switch semantics, and this document
+does not claim that the recommended option has run.
 
 Main embeds each bit across 46 latent times and repeated spatial coordinates;
 the receiver reads 44 or 22 latent times with 30 frequency votes per bit/time.
@@ -223,9 +248,11 @@ model, VAE, or codec was loaded in preparing this proposal.
 | --- | --- | --- |
 | pilot/confirmation roster | two excluded pilots, then freeze the eight confirmation candidates after archive identity review | pilots cannot enter or repair confirmation denominator |
 | 32-bit task message | adopt one explicit non-`OKOK` 32-bit list, proposed `A6D39C5E` | new interface evidence; historical arbitrary-message claim remains unavailable |
-| VideoSeal source and weight | pin a locally reviewed current-official commit, card, and checkpoint digest | current API is known; historical `e00b...` exact compatibility remains unverified |
+| VideoSeal source and weight | adopt official commit `870ca7f`, its 256-bit card, and the named `y_256b_img.pth` object; verify the supplied local file digest | source/card/API identity is resolved; weight adoption and local identity remain user decisions, and no weight was downloaded here |
 | VideoSeal comparison | adopt effective-32 repeat-by-`j mod 32`; keep native-K optional and separate | rate 1/8, different redundancy/strength; native-K raises codec count to 56 |
 | RivaGAN weight | explicitly accept or reject the community checkpoint | not official DAI-Lab weights |
+| external main readout | use M05/K0 with GLOBAL for non-FULL GLOBAL, PATH for SINGLE_JUMP, and RAW FULL in a separate table | 64 non-FULL pairs per method plus eight FULL controls; 160 rows/source remain controls and ablations |
+| zero-tie semantics | keep each baseline's native bit (`>0` VideoSeal, `>=0` RivaGAN) and report `tie_count` | current code exposes only the stricter unevaluable-tie candidate; selecting this recommendation requires a minimal explicit option and review before execution |
 | RivaGAN sequence rule | adopt all-declared-frame equal soft mean with native `>=0` | missing/nonfinite/shape error fails whole row |
 | thresholds/FPR | no threshold for exact recovery; design a larger independent calibration/evaluation roster before any presence/FPR claim | ten proposed sources cannot support low-FPR claims |
 | compute and storage budget | approve the recorded calls, about 8.54 GB base raster storage, plus receiver/native outputs | GPU peak and wall time remain unknown until a separate authorized pilot |

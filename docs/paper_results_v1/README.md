@@ -234,6 +234,10 @@ pin is
 `e00b98c7ca77eb1fb5b9b68260e7c6c8fc207a84`, expands its message to the
 model-native length (commonly 256) while historical scoring compares an
 expected prefix, so a 32-bit/native-capacity mapping requires a user decision.
+Official commit `870ca7fb33578b90f14c602016b6c2788096226e` differs from that
+historical pin only in four copyright headers; its card, `cfg.py`, and
+algorithm are unchanged. This resolves the source/API comparison, while the
+historical adapter-to-score-record identity remains separate.
 The archived source adapter metadata says `formal`, while the score records say
 `real_smoke_adapter`; exact same-version binding is therefore not established.
 The HiDDeN record path has a known 30 predicted bits versus a recorded
@@ -252,10 +256,12 @@ and a real file/backend identity when one exists; `imgs_w` is never expanded
 into report JSON. Detect output retains the complete raw values, nested shapes,
 and element counts. Large outputs require an explicit lossless sidecar writer
 and URI rather than truncation. The adapter applies no spatial, temporal,
-capacity, or 32-bit reduction. The available interface reference is
-[current upstream main](https://github.com/facebookresearch/videoseal/blob/main/videoseal/models/videoseal.py);
-the historical `e00b...` API was not reverified locally, so every real backend
-must declare its actual source and model version. VideoSeal's documented and
+capacity, or 32-bit reduction. The interface references are pinned
+[`videoseal.py`](https://github.com/facebookresearch/videoseal/blob/870ca7fb33578b90f14c602016b6c2788096226e/videoseal/models/videoseal.py),
+[`cfg.py`](https://github.com/facebookresearch/videoseal/blob/870ca7fb33578b90f14c602016b6c2788096226e/videoseal/utils/cfg.py),
+and the [256-bit card](https://github.com/facebookresearch/videoseal/blob/870ca7fb33578b90f14c602016b6c2788096226e/videoseal/cards/videoseal_1.0.yaml).
+The card names `y_256b_img.pth`, but this work did not download it or invent a
+digest; every real backend must bind the actual local file. VideoSeal's documented and
 code-comment layouts have varied; an output such as `T,1+K,H,W` is preserved
 rather than silently reduced. Construction requires explicit source version,
 model version, weight identity, and detected-output layout metadata; unknowns
@@ -298,6 +304,13 @@ eight separately summarized confirmation candidates, VideoSeal effective-32
 `j mod 32` channel repetition as the primary 32-information-bit comparison,
 RivaGAN all-frame soft means, and an optional separate VideoSeal native-K
 table. Both reducers preserve their native zero-bit convention but mark an
-exact reduced zero as `UNEVALUABLE_ZERO_TIE`. The proposal does not select a
-roster, mapping, reducer, budget, threshold, or execution by default, and no
-real model run or publication notebook is produced by this package.
+exact reduced zero as `UNEVALUABLE_ZERO_TIE` in the currently implemented
+candidate. The paper-facing recommendation instead keeps each native bit and
+reports `tie_count`; that option still needs explicit minimal wiring and review
+if selected. The same proposal fixes the paper-facing main row to M05/K0:
+GLOBAL for non-FULL GLOBAL views, PATH for SINGLE_JUMP, and RAW FULL in a
+separate table, giving 64 non-FULL pairs per external method and eight FULL
+controls over the eight confirmation sources. The complete 160 rows per source
+remain controls and ablations. The proposal does not select a roster, mapping,
+reducer, budget, threshold, or execution by default, and no real model run or
+publication notebook is produced by this package.
