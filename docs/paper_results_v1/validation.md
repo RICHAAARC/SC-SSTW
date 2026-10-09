@@ -194,3 +194,42 @@ paper comparison readout. It changes no execution code or adopted setting.
 `real_cli --phase plan` expansion retained exactly 10 cases, 690 artifacts,
 1,600 receiver rows (51,200 bits), 180 baseline rows, 70 quality rows, and 110
 cost rows. No model test or model/media operation ran.
+
+## Adopted method definition and fixed comparison tables
+
+Affected CPU/fake command:
+
+```bash
+PYTHONHOME=/home/richar/projects/Video-WM/framework/.conda \
+PYTHONDONTWRITEBYTECODE=1 \
+/lib64/ld-linux-x86-64.so.2 \
+/home/richar/projects/Video-WM/framework/.conda/bin/python3.13 \
+  -m pytest -q --capture=sys -p no:cacheprovider \
+  tests/test_paper_results_v1_real_eval.py
+```
+
+Result: `21 passed in 0.77s`. This is the prior 17 staged-runner checks plus
+four affected checks for the adopted manifest, native-tie versus strict-tie
+semantics, fixed comparison left joins/source denominators, and reopening a
+legacy strict run state with no comparison manifest. The older 27 reporter and
+workflow tests were not rerun because their paths were unchanged.
+
+The adopted plan expands to the existing 690 artifacts, 1,600 receiver rows,
+180 baseline rows, 70 quality rows, and 110 costs, plus 180 explicit paper
+comparison rows. For each external method, confirmation contains 64 non-FULL
+rows and eight separately labeled FULL controls; pilots contain 16 non-FULL
+rows and two FULL controls and remain outside confirmation summaries. The
+source summary keeps a fixed denominator of eight clustered non-FULL views and
+separately reports observed exact successes, observed errors, unavailable
+main/baseline rows, evaluable pairs, and the paired-difference range compatible
+with unavailable evidence. A missing side never becomes a completed pair.
+
+Static compilation passed for `real_eval.py`, `real_cli.py`, and the affected
+test file. Standard-library JSON/config validation accepted both the new
+adopted config and the historical proposal config. The adopted plan has 180
+comparison rows; the historical proposal has zero, so a legacy strict run is
+not silently reinterpreted as the native-tie paper comparison. The supplied
+source-identity metadata parses with 9,971 enumerated plain-text files, 401 zip
+text entries, and `NO_MATCH_IN_SEARCHED_LOCAL_HISTORY`; its status remains
+unproven. No dependency was installed and no model, weight, source media, VAE,
+codec, GPU, Colab, or Drive operation ran.

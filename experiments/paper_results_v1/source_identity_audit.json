@@ -1,0 +1,104 @@
+{
+  "schema_version": "paper-results-source-identity-audit-v1",
+  "audit_date": "2026-10-09",
+  "result": "NO_MATCH_IN_SEARCHED_LOCAL_HISTORY",
+  "unseen_status": "UNPROVEN_LIMITED_LOCAL_SEARCH",
+  "candidate_count": 10,
+  "candidate_prompt_seed_unique_count": 10,
+  "known_seen_seeds": [
+    2026092501,
+    2026100701
+  ],
+  "known_seen_seed_overlap_count": 0,
+  "candidate_case_ids": [
+    "pilot_01",
+    "pilot_02",
+    "confirm_01",
+    "confirm_02",
+    "confirm_03",
+    "confirm_04",
+    "confirm_05",
+    "confirm_06",
+    "confirm_07",
+    "confirm_08"
+  ],
+  "plain_text_scan": {
+    "tool": "rg -uu -n -o -i -U",
+    "enumerated_text_files": 9971,
+    "exit_code": 1,
+    "stderr_empty": true,
+    "match_count": 0,
+    "extensions": [
+      "json",
+      "jsonl",
+      "md",
+      "txt",
+      "yaml",
+      "yml",
+      "toml",
+      "py",
+      "ipynb",
+      "csv",
+      "tsv",
+      "log"
+    ],
+    "root_file_counts": {
+      "alive": 101,
+      "archive": 1392,
+      "datasets": 4,
+      "diagnostics": 3293,
+      "memory": 6,
+      "other": 6,
+      "release-candidates": 62,
+      "session": 9,
+      "worktrees": 5097,
+      "README": 1
+    },
+    "excluded": [
+      "current Paper-Results-V1 worktree to avoid matching its own roster",
+      ".git",
+      "framework",
+      "site-packages",
+      "node_modules",
+      "venv",
+      "validation-venv",
+      "cpu_test_env",
+      "test-dependencies",
+      "__pycache__"
+    ],
+    "pattern": "202611010[12]|202611020[1-8]|red\\s+paper\\s+windmill|blue\\s+wooden\\s+tram|white\\s+porcelain\\s+fox|violet\\s+glass\\s+sphere|green\\s+tin\\s+robot|orange\\s+paper\\s+crane|silver\\s+toy\\s+submarine|purple\\s+wool\\s+ball|yellow\\s+wooden\\s+spinning\\s+top|black\\s+ceramic\\s+cat"
+  },
+  "zip_text_scan": {
+    "archive_count": 10,
+    "text_entry_count": 401,
+    "decoded_bytes": 74259656,
+    "match_count": 0,
+    "error_count": 0,
+    "utf_replacement_count": 0,
+    "over_64_mib_text_skip_count": 0,
+    "archives": [
+      {"path": "archive/视频显式时间对齐/SyncTube.zip", "text_entries": 145},
+      {"path": "archive/视频显式时间对齐/SyncTube_results.zip", "text_entries": 96},
+      {"path": "archive/视频显式时间对齐/SyncTube_paper.zip", "text_entries": 25},
+      {"path": "diagnostics/生成端公共关系载体/二维图像统计-持续生成约束/cpu_preparation/history_v1_raw_diagonal/public_statistic_phase1_source.zip", "text_entries": 14},
+      {"path": "diagnostics/生成端公共关系载体/二维图像统计-持续生成约束/cpu_preparation/public_statistic_phase1_source.zip", "text_entries": 14},
+      {"path": "diagnostics/生成端公共关系载体/二维图像统计-持续生成约束/phase2_executable_preparation/public_statistic_phase2_source.zip", "text_entries": 14},
+      {"path": "diagnostics/生成端公共关系载体/二维图像统计-持续生成约束/phase2_executable_preparation/attempt1_source_backup.zip", "text_entries": 14},
+      {"path": "diagnostics/main-portable-release-20261004/published-source.zip", "text_entries": 41},
+      {"path": "diagnostics/阶段二-生成二维位置原语/latent_translation_v1/stage2_latent_translation_source.zip", "text_entries": 15},
+      {"path": "diagnostics/阶段二-生成二维位置原语/timewarp_cpu_preparation/local_temporal_warp_source.zip", "text_entries": 23}
+    ],
+    "scope": "listed text extensions decoded in place; no media, weights, or other binary payload was extracted"
+  },
+  "known_seen_seed_evidence": [
+    "experiments/wan_state_clock/configs/grow_video_reference_v1.json:19-20",
+    "experiments/wan_state_clock/configs/video_trajectory_conditional_joint_v1_preparation.json:18,82"
+  ],
+  "limitations": [
+    "This is not a global or atomic history snapshot; other work continued while the 9971 files were enumerated.",
+    "Git history objects, nonlocal Drive or Colab state, and external session storage were not searched.",
+    "Images, video, weights, PDFs, unlisted binary types, nested archives, and dependencies were not searched.",
+    "A semantic rewrite, different seed, or different description can evade this literal pattern search."
+  ],
+  "interpretation": "The fixed candidates may be used under their adopted roster identities, but this audit does not prove that any candidate is unseen. No candidate is replaced based on this result."
+}

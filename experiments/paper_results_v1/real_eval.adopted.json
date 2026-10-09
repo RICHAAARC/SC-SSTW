@@ -1,0 +1,4623 @@
+{
+  "schema_version": "paper-real-eval-v1",
+  "study_id": "paper_results_v1_method_adopted_local_definition",
+  "adoption": {
+    "status": "ADOPTED_METHOD_DEFINITION_LOCAL_ONLY",
+    "method_decision": "USER_ADOPTED_2026-10-09",
+    "execution_status": "NOT_AUTHORIZED",
+    "scope": "LOCAL_DEFINITION_AND_CPU_FAKE_VALIDATION_ONLY"
+  },
+  "roster_adoption": "FIXED_TWO_PILOT_PLUS_EIGHT_CONFIRMATION_USER_ADOPTED_IDENTITY_LIMITED_LOCAL_NO_MATCH_UNPROVEN",
+  "method": {
+    "name": "trajectory-payload-framewise-sync-v1",
+    "version": "main@527c4800292c296222c2c0533809eccb82a29a65",
+    "claim_ceiling": "Finite predeclared public offset/phase and single-deletion exact recovery for fixed 32-bit tasks; no arbitrary-message capacity, FPR, independence, or population guarantee."
+  },
+  "payload_bits": [
+    1,
+    0,
+    1,
+    0,
+    0,
+    1,
+    1,
+    0,
+    1,
+    1,
+    0,
+    1,
+    0,
+    0,
+    1,
+    1,
+    1,
+    0,
+    0,
+    1,
+    1,
+    1,
+    0,
+    0,
+    0,
+    1,
+    0,
+    1,
+    1,
+    1,
+    1,
+    0
+  ],
+  "payload_hex": "A6D39C5E",
+  "payload_origin": "USER_ADOPTED_FIXED_32BIT_TASK_NOT_HISTORICAL_OKOK_AND_NOT_YET_REAL_VALIDATED",
+  "keys": {
+    "K0": "watermark",
+    "K1": "watermark-wrong"
+  },
+  "models": {
+    "wan": {
+      "upstream_id": "Wan-AI/Wan2.1-T2V-1.3B-Diffusers",
+      "revision": "0fad780a534b6463e45facd96134c9f345acfa5b",
+      "local_snapshot_path": "/ABSOLUTE/LOCAL/Wan2.1-T2V-1.3B-Diffusers"
+    },
+    "framewise": {
+      "upstream_id": "stabilityai/sd-vae-ft-mse",
+      "revision": "31f26fdeee1355a5c34592e401dd41e45d25a493",
+      "local_snapshot_path": "/ABSOLUTE/LOCAL/sd-vae-ft-mse",
+      "batch_frames": 8,
+      "device": "cuda"
+    },
+    "videoseal": {
+      "source_root": "/ABSOLUTE/LOCAL/videoseal",
+      "source_commit": "870ca7fb33578b90f14c602016b6c2788096226e",
+      "source_url": "https://github.com/facebookresearch/videoseal/tree/870ca7fb33578b90f14c602016b6c2788096226e",
+      "card_path": "/ABSOLUTE/LOCAL/videoseal/videoseal/cards/videoseal_1.0.yaml",
+      "card_sha256": "PENDING_LOCAL_FILE_SHA256",
+      "card_url": "https://github.com/facebookresearch/videoseal/blob/870ca7fb33578b90f14c602016b6c2788096226e/videoseal/cards/videoseal_1.0.yaml",
+      "cfg_url": "https://github.com/facebookresearch/videoseal/blob/870ca7fb33578b90f14c602016b6c2788096226e/videoseal/utils/cfg.py",
+      "checkpoint_path": "/ABSOLUTE/LOCAL/videoseal/y_256b_img.pth",
+      "checkpoint_sha256": "PENDING_LOCAL_FILE_SHA256",
+      "checkpoint_source_url": "https://dl.fbaipublicfiles.com/videoseal/y_256b_img.pth",
+      "checkpoint_download_status": "NOT_DOWNLOADED_LOCAL_DIGEST_PENDING",
+      "model_card_name": "videoseal_1.0_256bit",
+      "device": "cuda",
+      "native_message_length": 256,
+      "native_message_bits": [
+        1,
+        0,
+        1,
+        0,
+        0,
+        1,
+        1,
+        0,
+        1,
+        1,
+        0,
+        1,
+        0,
+        0,
+        1,
+        1,
+        1,
+        0,
+        0,
+        1,
+        1,
+        1,
+        0,
+        0,
+        0,
+        1,
+        0,
+        1,
+        1,
+        1,
+        1,
+        0,
+        1,
+        0,
+        1,
+        0,
+        0,
+        1,
+        1,
+        0,
+        1,
+        1,
+        0,
+        1,
+        0,
+        0,
+        1,
+        1,
+        1,
+        0,
+        0,
+        1,
+        1,
+        1,
+        0,
+        0,
+        0,
+        1,
+        0,
+        1,
+        1,
+        1,
+        1,
+        0,
+        1,
+        0,
+        1,
+        0,
+        0,
+        1,
+        1,
+        0,
+        1,
+        1,
+        0,
+        1,
+        0,
+        0,
+        1,
+        1,
+        1,
+        0,
+        0,
+        1,
+        1,
+        1,
+        0,
+        0,
+        0,
+        1,
+        0,
+        1,
+        1,
+        1,
+        1,
+        0,
+        1,
+        0,
+        1,
+        0,
+        0,
+        1,
+        1,
+        0,
+        1,
+        1,
+        0,
+        1,
+        0,
+        0,
+        1,
+        1,
+        1,
+        0,
+        0,
+        1,
+        1,
+        1,
+        0,
+        0,
+        0,
+        1,
+        0,
+        1,
+        1,
+        1,
+        1,
+        0,
+        1,
+        0,
+        1,
+        0,
+        0,
+        1,
+        1,
+        0,
+        1,
+        1,
+        0,
+        1,
+        0,
+        0,
+        1,
+        1,
+        1,
+        0,
+        0,
+        1,
+        1,
+        1,
+        0,
+        0,
+        0,
+        1,
+        0,
+        1,
+        1,
+        1,
+        1,
+        0,
+        1,
+        0,
+        1,
+        0,
+        0,
+        1,
+        1,
+        0,
+        1,
+        1,
+        0,
+        1,
+        0,
+        0,
+        1,
+        1,
+        1,
+        0,
+        0,
+        1,
+        1,
+        1,
+        0,
+        0,
+        0,
+        1,
+        0,
+        1,
+        1,
+        1,
+        1,
+        0,
+        1,
+        0,
+        1,
+        0,
+        0,
+        1,
+        1,
+        0,
+        1,
+        1,
+        0,
+        1,
+        0,
+        0,
+        1,
+        1,
+        1,
+        0,
+        0,
+        1,
+        1,
+        1,
+        0,
+        0,
+        0,
+        1,
+        0,
+        1,
+        1,
+        1,
+        1,
+        0,
+        1,
+        0,
+        1,
+        0,
+        0,
+        1,
+        1,
+        0,
+        1,
+        1,
+        0,
+        1,
+        0,
+        0,
+        1,
+        1,
+        1,
+        0,
+        0,
+        1,
+        1,
+        1,
+        0,
+        0,
+        0,
+        1,
+        0,
+        1,
+        1,
+        1,
+        1,
+        0
+      ],
+      "lowres_attenuation": true,
+      "detect_output_layout": "T,1+K or T,1+K,H,W retained exactly",
+      "interface_reference": "official 870ca7f setup_model(card, local_checkpoint); e00b98c...870ca7f changes only four copyright headers",
+      "historical_compare_url": "https://github.com/facebookresearch/videoseal/compare/e00b98c7ca77eb1fb5b9b68260e7c6c8fc207a84...870ca7fb33578b90f14c602016b6c2788096226e",
+      "checkpoint_adoption": "USER_ADOPTED_NAMED_CARD_OBJECT_LOCAL_FILE_IDENTITY_PENDING"
+    },
+    "rivagan": {
+      "source_root": "/ABSOLUTE/LOCAL/RivaGAN",
+      "source_commit": "efffa72a4ca46d4d5051f6970c96424c2cdab441",
+      "checkpoint_path": "/ABSOLUTE/LOCAL/rivagan_32bit_model.pt",
+      "checkpoint_sha256": "PENDING_LOCAL_FILE_SHA256",
+      "checkpoint_provenance": "Peachypie98/RivaGAN community 32-bit checkpoint; not DAI-Lab official weights",
+      "model_name": "RivaGAN_community_32bit",
+      "device": "cuda",
+      "input_color_layout": "RGB_UINT8_TO_BGR",
+      "native_message_bits": [
+        1,
+        0,
+        1,
+        0,
+        0,
+        1,
+        1,
+        0,
+        1,
+        1,
+        0,
+        1,
+        0,
+        0,
+        1,
+        1,
+        1,
+        0,
+        0,
+        1,
+        1,
+        1,
+        0,
+        0,
+        0,
+        1,
+        0,
+        1,
+        1,
+        1,
+        1,
+        0
+      ],
+      "checkpoint_adoption": "USER_ADOPTED_COMMUNITY_32BIT_PROVENANCE_LOCAL_FILE_IDENTITY_PENDING"
+    }
+  },
+  "codec": {
+    "codec": "libx264",
+    "fps": 8,
+    "crf": 18,
+    "pix_fmt": "yuv420p"
+  },
+  "edit_maps": {
+    "full181": {
+      "kind": "RANGE",
+      "start": 0,
+      "stop": 181
+    },
+    "global01_shift1_177": {
+      "kind": "RANGE",
+      "start": 1,
+      "stop": 178
+    },
+    "global02_center37_89": {
+      "kind": "RANGE",
+      "start": 37,
+      "stop": 126
+    },
+    "global03_shift2_177": {
+      "kind": "RANGE",
+      "start": 2,
+      "stop": 179
+    },
+    "global04_shift3_177": {
+      "kind": "RANGE",
+      "start": 3,
+      "stop": 180
+    },
+    "global05_center38_89": {
+      "kind": "RANGE",
+      "start": 38,
+      "stop": 127
+    },
+    "global06_center39_89": {
+      "kind": "RANGE",
+      "start": 39,
+      "stop": 128
+    },
+    "path00_shift2_177": {
+      "kind": "RANGE",
+      "start": 2,
+      "stop": 179
+    },
+    "path01_drop90_177": {
+      "kind": "RANGE_DROP_ONE",
+      "start": 2,
+      "stop": 180,
+      "drop": 90
+    }
+  },
+  "cases": [
+    {
+      "case_id": "pilot_01",
+      "cohort": "PILOT_EXCLUDED_FROM_CONFIRMATION",
+      "source_status": "USER_ADOPTED_LIMITED_LOCAL_NO_MATCH_UNPROVEN",
+      "prompt": "a matte red paper windmill rotating slowly on a gray slate tile, locked camera, even overcast daylight, one object, no cuts",
+      "negative_prompt": "text, watermark, logo, camera motion, cuts, multiple objects, flicker",
+      "seed": 2026110101,
+      "observations": [
+        {
+          "observation_id": "off_native/global_00",
+          "arm": "OFF_NATIVE",
+          "protocol": "GLOBAL",
+          "map_id": "full181",
+          "modes": [
+            "RAW",
+            "GLOBAL"
+          ],
+          "analysis_role": "FULL_GEOMETRY_CONTROL_EXCLUDED_FROM_SYNC_GAIN"
+        },
+        {
+          "observation_id": "off_native/global_01",
+          "arm": "OFF_NATIVE",
+          "protocol": "GLOBAL",
+          "map_id": "global01_shift1_177",
+          "modes": [
+            "RAW",
+            "GLOBAL"
+          ],
+          "analysis_role": "PRIMARY_SYNC"
+        },
+        {
+          "observation_id": "off_native/global_02",
+          "arm": "OFF_NATIVE",
+          "protocol": "GLOBAL",
+          "map_id": "global02_center37_89",
+          "modes": [
+            "RAW",
+            "GLOBAL"
+          ],
+          "analysis_role": "PRIMARY_SYNC"
+        },
+        {
+          "observation_id": "off_native/global_03",
+          "arm": "OFF_NATIVE",
+          "protocol": "GLOBAL",
+          "map_id": "global03_shift2_177",
+          "modes": [
+            "RAW",
+            "GLOBAL"
+          ],
+          "analysis_role": "PRIMARY_SYNC"
+        },
+        {
+          "observation_id": "off_native/global_04",
+          "arm": "OFF_NATIVE",
+          "protocol": "GLOBAL",
+          "map_id": "global04_shift3_177",
+          "modes": [
+            "RAW",
+            "GLOBAL"
+          ],
+          "analysis_role": "PRIMARY_SYNC"
+        },
+        {
+          "observation_id": "off_native/global_05",
+          "arm": "OFF_NATIVE",
+          "protocol": "GLOBAL",
+          "map_id": "global05_center38_89",
+          "modes": [
+            "RAW",
+            "GLOBAL"
+          ],
+          "analysis_role": "PRIMARY_SYNC"
+        },
+        {
+          "observation_id": "off_native/global_06",
+          "arm": "OFF_NATIVE",
+          "protocol": "GLOBAL",
+          "map_id": "global06_center39_89",
+          "modes": [
+            "RAW",
+            "GLOBAL"
+          ],
+          "analysis_role": "PRIMARY_SYNC"
+        },
+        {
+          "observation_id": "off_native/path_00",
+          "arm": "OFF_NATIVE",
+          "protocol": "SINGLE_JUMP",
+          "map_id": "path00_shift2_177",
+          "modes": [
+            "RAW",
+            "GLOBAL",
+            "PATH"
+          ],
+          "analysis_role": "PRIMARY_SYNC"
+        },
+        {
+          "observation_id": "off_native/path_01",
+          "arm": "OFF_NATIVE",
+          "protocol": "SINGLE_JUMP",
+          "map_id": "path01_drop90_177",
+          "modes": [
+            "RAW",
+            "GLOBAL",
+            "PATH"
+          ],
+          "analysis_role": "PRIMARY_SYNC"
+        },
+        {
+          "observation_id": "payload_native/global_00",
+          "arm": "PAYLOAD_NATIVE",
+          "protocol": "GLOBAL",
+          "map_id": "full181",
+          "modes": [
+            "RAW",
+            "GLOBAL"
+          ],
+          "analysis_role": "FULL_GEOMETRY_CONTROL_EXCLUDED_FROM_SYNC_GAIN"
+        },
+        {
+          "observation_id": "payload_native/global_01",
+          "arm": "PAYLOAD_NATIVE",
+          "protocol": "GLOBAL",
+          "map_id": "global01_shift1_177",
+          "modes": [
+            "RAW",
+            "GLOBAL"
+          ],
+          "analysis_role": "PRIMARY_SYNC"
+        },
+        {
+          "observation_id": "payload_native/global_02",
+          "arm": "PAYLOAD_NATIVE",
+          "protocol": "GLOBAL",
+          "map_id": "global02_center37_89",
+          "modes": [
+            "RAW",
+            "GLOBAL"
+          ],
+          "analysis_role": "PRIMARY_SYNC"
+        },
+        {
+          "observation_id": "payload_native/global_03",
+          "arm": "PAYLOAD_NATIVE",
+          "protocol": "GLOBAL",
+          "map_id": "global03_shift2_177",
+          "modes": [
+            "RAW",
+            "GLOBAL"
+          ],
+          "analysis_role": "PRIMARY_SYNC"
+        },
+        {
+          "observation_id": "payload_native/global_04",
+          "arm": "PAYLOAD_NATIVE",
+          "protocol": "GLOBAL",
+          "map_id": "global04_shift3_177",
+          "modes": [
+            "RAW",
+            "GLOBAL"
+          ],
+          "analysis_role": "PRIMARY_SYNC"
+        },
+        {
+          "observation_id": "payload_native/global_05",
+          "arm": "PAYLOAD_NATIVE",
+          "protocol": "GLOBAL",
+          "map_id": "global05_center38_89",
+          "modes": [
+            "RAW",
+            "GLOBAL"
+          ],
+          "analysis_role": "PRIMARY_SYNC"
+        },
+        {
+          "observation_id": "payload_native/global_06",
+          "arm": "PAYLOAD_NATIVE",
+          "protocol": "GLOBAL",
+          "map_id": "global06_center39_89",
+          "modes": [
+            "RAW",
+            "GLOBAL"
+          ],
+          "analysis_role": "PRIMARY_SYNC"
+        },
+        {
+          "observation_id": "payload_native/path_00",
+          "arm": "PAYLOAD_NATIVE",
+          "protocol": "SINGLE_JUMP",
+          "map_id": "path00_shift2_177",
+          "modes": [
+            "RAW",
+            "GLOBAL",
+            "PATH"
+          ],
+          "analysis_role": "PRIMARY_SYNC"
+        },
+        {
+          "observation_id": "payload_native/path_01",
+          "arm": "PAYLOAD_NATIVE",
+          "protocol": "SINGLE_JUMP",
+          "map_id": "path01_drop90_177",
+          "modes": [
+            "RAW",
+            "GLOBAL",
+            "PATH"
+          ],
+          "analysis_role": "PRIMARY_SYNC"
+        },
+        {
+          "observation_id": "payload_framewise_recon/global_00",
+          "arm": "PAYLOAD_FRAMEWISE_RECON",
+          "protocol": "GLOBAL",
+          "map_id": "full181",
+          "modes": [
+            "RAW",
+            "GLOBAL"
+          ],
+          "analysis_role": "FULL_GEOMETRY_CONTROL_EXCLUDED_FROM_SYNC_GAIN"
+        },
+        {
+          "observation_id": "payload_framewise_recon/global_01",
+          "arm": "PAYLOAD_FRAMEWISE_RECON",
+          "protocol": "GLOBAL",
+          "map_id": "global01_shift1_177",
+          "modes": [
+            "RAW",
+            "GLOBAL"
+          ],
+          "analysis_role": "PRIMARY_SYNC"
+        },
+        {
+          "observation_id": "payload_framewise_recon/global_02",
+          "arm": "PAYLOAD_FRAMEWISE_RECON",
+          "protocol": "GLOBAL",
+          "map_id": "global02_center37_89",
+          "modes": [
+            "RAW",
+            "GLOBAL"
+          ],
+          "analysis_role": "PRIMARY_SYNC"
+        },
+        {
+          "observation_id": "payload_framewise_recon/global_03",
+          "arm": "PAYLOAD_FRAMEWISE_RECON",
+          "protocol": "GLOBAL",
+          "map_id": "global03_shift2_177",
+          "modes": [
+            "RAW",
+            "GLOBAL"
+          ],
+          "analysis_role": "PRIMARY_SYNC"
+        },
+        {
+          "observation_id": "payload_framewise_recon/global_04",
+          "arm": "PAYLOAD_FRAMEWISE_RECON",
+          "protocol": "GLOBAL",
+          "map_id": "global04_shift3_177",
+          "modes": [
+            "RAW",
+            "GLOBAL"
+          ],
+          "analysis_role": "PRIMARY_SYNC"
+        },
+        {
+          "observation_id": "payload_framewise_recon/global_05",
+          "arm": "PAYLOAD_FRAMEWISE_RECON",
+          "protocol": "GLOBAL",
+          "map_id": "global05_center38_89",
+          "modes": [
+            "RAW",
+            "GLOBAL"
+          ],
+          "analysis_role": "PRIMARY_SYNC"
+        },
+        {
+          "observation_id": "payload_framewise_recon/global_06",
+          "arm": "PAYLOAD_FRAMEWISE_RECON",
+          "protocol": "GLOBAL",
+          "map_id": "global06_center39_89",
+          "modes": [
+            "RAW",
+            "GLOBAL"
+          ],
+          "analysis_role": "PRIMARY_SYNC"
+        },
+        {
+          "observation_id": "payload_framewise_recon/path_00",
+          "arm": "PAYLOAD_FRAMEWISE_RECON",
+          "protocol": "SINGLE_JUMP",
+          "map_id": "path00_shift2_177",
+          "modes": [
+            "RAW",
+            "GLOBAL",
+            "PATH"
+          ],
+          "analysis_role": "PRIMARY_SYNC"
+        },
+        {
+          "observation_id": "payload_framewise_recon/path_01",
+          "arm": "PAYLOAD_FRAMEWISE_RECON",
+          "protocol": "SINGLE_JUMP",
+          "map_id": "path01_drop90_177",
+          "modes": [
+            "RAW",
+            "GLOBAL",
+            "PATH"
+          ],
+          "analysis_role": "PRIMARY_SYNC"
+        },
+        {
+          "observation_id": "payload_framewise_m05/global_00",
+          "arm": "PAYLOAD_FRAMEWISE_M05",
+          "protocol": "GLOBAL",
+          "map_id": "full181",
+          "modes": [
+            "RAW",
+            "GLOBAL"
+          ],
+          "analysis_role": "FULL_GEOMETRY_CONTROL_EXCLUDED_FROM_SYNC_GAIN"
+        },
+        {
+          "observation_id": "payload_framewise_m05/global_01",
+          "arm": "PAYLOAD_FRAMEWISE_M05",
+          "protocol": "GLOBAL",
+          "map_id": "global01_shift1_177",
+          "modes": [
+            "RAW",
+            "GLOBAL"
+          ],
+          "analysis_role": "PRIMARY_SYNC"
+        },
+        {
+          "observation_id": "payload_framewise_m05/global_02",
+          "arm": "PAYLOAD_FRAMEWISE_M05",
+          "protocol": "GLOBAL",
+          "map_id": "global02_center37_89",
+          "modes": [
+            "RAW",
+            "GLOBAL"
+          ],
+          "analysis_role": "PRIMARY_SYNC"
+        },
+        {
+          "observation_id": "payload_framewise_m05/global_03",
+          "arm": "PAYLOAD_FRAMEWISE_M05",
+          "protocol": "GLOBAL",
+          "map_id": "global03_shift2_177",
+          "modes": [
+            "RAW",
+            "GLOBAL"
+          ],
+          "analysis_role": "PRIMARY_SYNC"
+        },
+        {
+          "observation_id": "payload_framewise_m05/global_04",
+          "arm": "PAYLOAD_FRAMEWISE_M05",
+          "protocol": "GLOBAL",
+          "map_id": "global04_shift3_177",
+          "modes": [
+            "RAW",
+            "GLOBAL"
+          ],
+          "analysis_role": "PRIMARY_SYNC"
+        },
+        {
+          "observation_id": "payload_framewise_m05/global_05",
+          "arm": "PAYLOAD_FRAMEWISE_M05",
+          "protocol": "GLOBAL",
+          "map_id": "global05_center38_89",
+          "modes": [
+            "RAW",
+            "GLOBAL"
+          ],
+          "analysis_role": "PRIMARY_SYNC"
+        },
+        {
+          "observation_id": "payload_framewise_m05/global_06",
+          "arm": "PAYLOAD_FRAMEWISE_M05",
+          "protocol": "GLOBAL",
+          "map_id": "global06_center39_89",
+          "modes": [
+            "RAW",
+            "GLOBAL"
+          ],
+          "analysis_role": "PRIMARY_SYNC"
+        },
+        {
+          "observation_id": "payload_framewise_m05/path_00",
+          "arm": "PAYLOAD_FRAMEWISE_M05",
+          "protocol": "SINGLE_JUMP",
+          "map_id": "path00_shift2_177",
+          "modes": [
+            "RAW",
+            "GLOBAL",
+            "PATH"
+          ],
+          "analysis_role": "PRIMARY_SYNC"
+        },
+        {
+          "observation_id": "payload_framewise_m05/path_01",
+          "arm": "PAYLOAD_FRAMEWISE_M05",
+          "protocol": "SINGLE_JUMP",
+          "map_id": "path01_drop90_177",
+          "modes": [
+            "RAW",
+            "GLOBAL",
+            "PATH"
+          ],
+          "analysis_role": "PRIMARY_SYNC"
+        }
+      ]
+    },
+    {
+      "case_id": "pilot_02",
+      "cohort": "PILOT_EXCLUDED_FROM_CONFIRMATION",
+      "source_status": "USER_ADOPTED_LIMITED_LOCAL_NO_MATCH_UNPROVEN",
+      "prompt": "a small blue wooden tram rolling slowly along a straight tabletop track, locked camera, diffuse studio light, no people, no cuts",
+      "negative_prompt": "text, watermark, logo, camera motion, cuts, multiple objects, flicker",
+      "seed": 2026110102,
+      "observations": [
+        {
+          "observation_id": "off_native/global_00",
+          "arm": "OFF_NATIVE",
+          "protocol": "GLOBAL",
+          "map_id": "full181",
+          "modes": [
+            "RAW",
+            "GLOBAL"
+          ],
+          "analysis_role": "FULL_GEOMETRY_CONTROL_EXCLUDED_FROM_SYNC_GAIN"
+        },
+        {
+          "observation_id": "off_native/global_01",
+          "arm": "OFF_NATIVE",
+          "protocol": "GLOBAL",
+          "map_id": "global01_shift1_177",
+          "modes": [
+            "RAW",
+            "GLOBAL"
+          ],
+          "analysis_role": "PRIMARY_SYNC"
+        },
+        {
+          "observation_id": "off_native/global_02",
+          "arm": "OFF_NATIVE",
+          "protocol": "GLOBAL",
+          "map_id": "global02_center37_89",
+          "modes": [
+            "RAW",
+            "GLOBAL"
+          ],
+          "analysis_role": "PRIMARY_SYNC"
+        },
+        {
+          "observation_id": "off_native/global_03",
+          "arm": "OFF_NATIVE",
+          "protocol": "GLOBAL",
+          "map_id": "global03_shift2_177",
+          "modes": [
+            "RAW",
+            "GLOBAL"
+          ],
+          "analysis_role": "PRIMARY_SYNC"
+        },
+        {
+          "observation_id": "off_native/global_04",
+          "arm": "OFF_NATIVE",
+          "protocol": "GLOBAL",
+          "map_id": "global04_shift3_177",
+          "modes": [
+            "RAW",
+            "GLOBAL"
+          ],
+          "analysis_role": "PRIMARY_SYNC"
+        },
+        {
+          "observation_id": "off_native/global_05",
+          "arm": "OFF_NATIVE",
+          "protocol": "GLOBAL",
+          "map_id": "global05_center38_89",
+          "modes": [
+            "RAW",
+            "GLOBAL"
+          ],
+          "analysis_role": "PRIMARY_SYNC"
+        },
+        {
+          "observation_id": "off_native/global_06",
+          "arm": "OFF_NATIVE",
+          "protocol": "GLOBAL",
+          "map_id": "global06_center39_89",
+          "modes": [
+            "RAW",
+            "GLOBAL"
+          ],
+          "analysis_role": "PRIMARY_SYNC"
+        },
+        {
+          "observation_id": "off_native/path_00",
+          "arm": "OFF_NATIVE",
+          "protocol": "SINGLE_JUMP",
+          "map_id": "path00_shift2_177",
+          "modes": [
+            "RAW",
+            "GLOBAL",
+            "PATH"
+          ],
+          "analysis_role": "PRIMARY_SYNC"
+        },
+        {
+          "observation_id": "off_native/path_01",
+          "arm": "OFF_NATIVE",
+          "protocol": "SINGLE_JUMP",
+          "map_id": "path01_drop90_177",
+          "modes": [
+            "RAW",
+            "GLOBAL",
+            "PATH"
+          ],
+          "analysis_role": "PRIMARY_SYNC"
+        },
+        {
+          "observation_id": "payload_native/global_00",
+          "arm": "PAYLOAD_NATIVE",
+          "protocol": "GLOBAL",
+          "map_id": "full181",
+          "modes": [
+            "RAW",
+            "GLOBAL"
+          ],
+          "analysis_role": "FULL_GEOMETRY_CONTROL_EXCLUDED_FROM_SYNC_GAIN"
+        },
+        {
+          "observation_id": "payload_native/global_01",
+          "arm": "PAYLOAD_NATIVE",
+          "protocol": "GLOBAL",
+          "map_id": "global01_shift1_177",
+          "modes": [
+            "RAW",
+            "GLOBAL"
+          ],
+          "analysis_role": "PRIMARY_SYNC"
+        },
+        {
+          "observation_id": "payload_native/global_02",
+          "arm": "PAYLOAD_NATIVE",
+          "protocol": "GLOBAL",
+          "map_id": "global02_center37_89",
+          "modes": [
+            "RAW",
+            "GLOBAL"
+          ],
+          "analysis_role": "PRIMARY_SYNC"
+        },
+        {
+          "observation_id": "payload_native/global_03",
+          "arm": "PAYLOAD_NATIVE",
+          "protocol": "GLOBAL",
+          "map_id": "global03_shift2_177",
+          "modes": [
+            "RAW",
+            "GLOBAL"
+          ],
+          "analysis_role": "PRIMARY_SYNC"
+        },
+        {
+          "observation_id": "payload_native/global_04",
+          "arm": "PAYLOAD_NATIVE",
+          "protocol": "GLOBAL",
+          "map_id": "global04_shift3_177",
+          "modes": [
+            "RAW",
+            "GLOBAL"
+          ],
+          "analysis_role": "PRIMARY_SYNC"
+        },
+        {
+          "observation_id": "payload_native/global_05",
+          "arm": "PAYLOAD_NATIVE",
+          "protocol": "GLOBAL",
+          "map_id": "global05_center38_89",
+          "modes": [
+            "RAW",
+            "GLOBAL"
+          ],
+          "analysis_role": "PRIMARY_SYNC"
+        },
+        {
+          "observation_id": "payload_native/global_06",
+          "arm": "PAYLOAD_NATIVE",
+          "protocol": "GLOBAL",
+          "map_id": "global06_center39_89",
+          "modes": [
+            "RAW",
+            "GLOBAL"
+          ],
+          "analysis_role": "PRIMARY_SYNC"
+        },
+        {
+          "observation_id": "payload_native/path_00",
+          "arm": "PAYLOAD_NATIVE",
+          "protocol": "SINGLE_JUMP",
+          "map_id": "path00_shift2_177",
+          "modes": [
+            "RAW",
+            "GLOBAL",
+            "PATH"
+          ],
+          "analysis_role": "PRIMARY_SYNC"
+        },
+        {
+          "observation_id": "payload_native/path_01",
+          "arm": "PAYLOAD_NATIVE",
+          "protocol": "SINGLE_JUMP",
+          "map_id": "path01_drop90_177",
+          "modes": [
+            "RAW",
+            "GLOBAL",
+            "PATH"
+          ],
+          "analysis_role": "PRIMARY_SYNC"
+        },
+        {
+          "observation_id": "payload_framewise_recon/global_00",
+          "arm": "PAYLOAD_FRAMEWISE_RECON",
+          "protocol": "GLOBAL",
+          "map_id": "full181",
+          "modes": [
+            "RAW",
+            "GLOBAL"
+          ],
+          "analysis_role": "FULL_GEOMETRY_CONTROL_EXCLUDED_FROM_SYNC_GAIN"
+        },
+        {
+          "observation_id": "payload_framewise_recon/global_01",
+          "arm": "PAYLOAD_FRAMEWISE_RECON",
+          "protocol": "GLOBAL",
+          "map_id": "global01_shift1_177",
+          "modes": [
+            "RAW",
+            "GLOBAL"
+          ],
+          "analysis_role": "PRIMARY_SYNC"
+        },
+        {
+          "observation_id": "payload_framewise_recon/global_02",
+          "arm": "PAYLOAD_FRAMEWISE_RECON",
+          "protocol": "GLOBAL",
+          "map_id": "global02_center37_89",
+          "modes": [
+            "RAW",
+            "GLOBAL"
+          ],
+          "analysis_role": "PRIMARY_SYNC"
+        },
+        {
+          "observation_id": "payload_framewise_recon/global_03",
+          "arm": "PAYLOAD_FRAMEWISE_RECON",
+          "protocol": "GLOBAL",
+          "map_id": "global03_shift2_177",
+          "modes": [
+            "RAW",
+            "GLOBAL"
+          ],
+          "analysis_role": "PRIMARY_SYNC"
+        },
+        {
+          "observation_id": "payload_framewise_recon/global_04",
+          "arm": "PAYLOAD_FRAMEWISE_RECON",
+          "protocol": "GLOBAL",
+          "map_id": "global04_shift3_177",
+          "modes": [
+            "RAW",
+            "GLOBAL"
+          ],
+          "analysis_role": "PRIMARY_SYNC"
+        },
+        {
+          "observation_id": "payload_framewise_recon/global_05",
+          "arm": "PAYLOAD_FRAMEWISE_RECON",
+          "protocol": "GLOBAL",
+          "map_id": "global05_center38_89",
+          "modes": [
+            "RAW",
+            "GLOBAL"
+          ],
+          "analysis_role": "PRIMARY_SYNC"
+        },
+        {
+          "observation_id": "payload_framewise_recon/global_06",
+          "arm": "PAYLOAD_FRAMEWISE_RECON",
+          "protocol": "GLOBAL",
+          "map_id": "global06_center39_89",
+          "modes": [
+            "RAW",
+            "GLOBAL"
+          ],
+          "analysis_role": "PRIMARY_SYNC"
+        },
+        {
+          "observation_id": "payload_framewise_recon/path_00",
+          "arm": "PAYLOAD_FRAMEWISE_RECON",
+          "protocol": "SINGLE_JUMP",
+          "map_id": "path00_shift2_177",
+          "modes": [
+            "RAW",
+            "GLOBAL",
+            "PATH"
+          ],
+          "analysis_role": "PRIMARY_SYNC"
+        },
+        {
+          "observation_id": "payload_framewise_recon/path_01",
+          "arm": "PAYLOAD_FRAMEWISE_RECON",
+          "protocol": "SINGLE_JUMP",
+          "map_id": "path01_drop90_177",
+          "modes": [
+            "RAW",
+            "GLOBAL",
+            "PATH"
+          ],
+          "analysis_role": "PRIMARY_SYNC"
+        },
+        {
+          "observation_id": "payload_framewise_m05/global_00",
+          "arm": "PAYLOAD_FRAMEWISE_M05",
+          "protocol": "GLOBAL",
+          "map_id": "full181",
+          "modes": [
+            "RAW",
+            "GLOBAL"
+          ],
+          "analysis_role": "FULL_GEOMETRY_CONTROL_EXCLUDED_FROM_SYNC_GAIN"
+        },
+        {
+          "observation_id": "payload_framewise_m05/global_01",
+          "arm": "PAYLOAD_FRAMEWISE_M05",
+          "protocol": "GLOBAL",
+          "map_id": "global01_shift1_177",
+          "modes": [
+            "RAW",
+            "GLOBAL"
+          ],
+          "analysis_role": "PRIMARY_SYNC"
+        },
+        {
+          "observation_id": "payload_framewise_m05/global_02",
+          "arm": "PAYLOAD_FRAMEWISE_M05",
+          "protocol": "GLOBAL",
+          "map_id": "global02_center37_89",
+          "modes": [
+            "RAW",
+            "GLOBAL"
+          ],
+          "analysis_role": "PRIMARY_SYNC"
+        },
+        {
+          "observation_id": "payload_framewise_m05/global_03",
+          "arm": "PAYLOAD_FRAMEWISE_M05",
+          "protocol": "GLOBAL",
+          "map_id": "global03_shift2_177",
+          "modes": [
+            "RAW",
+            "GLOBAL"
+          ],
+          "analysis_role": "PRIMARY_SYNC"
+        },
+        {
+          "observation_id": "payload_framewise_m05/global_04",
+          "arm": "PAYLOAD_FRAMEWISE_M05",
+          "protocol": "GLOBAL",
+          "map_id": "global04_shift3_177",
+          "modes": [
+            "RAW",
+            "GLOBAL"
+          ],
+          "analysis_role": "PRIMARY_SYNC"
+        },
+        {
+          "observation_id": "payload_framewise_m05/global_05",
+          "arm": "PAYLOAD_FRAMEWISE_M05",
+          "protocol": "GLOBAL",
+          "map_id": "global05_center38_89",
+          "modes": [
+            "RAW",
+            "GLOBAL"
+          ],
+          "analysis_role": "PRIMARY_SYNC"
+        },
+        {
+          "observation_id": "payload_framewise_m05/global_06",
+          "arm": "PAYLOAD_FRAMEWISE_M05",
+          "protocol": "GLOBAL",
+          "map_id": "global06_center39_89",
+          "modes": [
+            "RAW",
+            "GLOBAL"
+          ],
+          "analysis_role": "PRIMARY_SYNC"
+        },
+        {
+          "observation_id": "payload_framewise_m05/path_00",
+          "arm": "PAYLOAD_FRAMEWISE_M05",
+          "protocol": "SINGLE_JUMP",
+          "map_id": "path00_shift2_177",
+          "modes": [
+            "RAW",
+            "GLOBAL",
+            "PATH"
+          ],
+          "analysis_role": "PRIMARY_SYNC"
+        },
+        {
+          "observation_id": "payload_framewise_m05/path_01",
+          "arm": "PAYLOAD_FRAMEWISE_M05",
+          "protocol": "SINGLE_JUMP",
+          "map_id": "path01_drop90_177",
+          "modes": [
+            "RAW",
+            "GLOBAL",
+            "PATH"
+          ],
+          "analysis_role": "PRIMARY_SYNC"
+        }
+      ]
+    },
+    {
+      "case_id": "confirm_01",
+      "cohort": "CONFIRMATION_CANDIDATE",
+      "source_status": "USER_ADOPTED_LIMITED_LOCAL_NO_MATCH_UNPROVEN",
+      "prompt": "a white porcelain fox figurine beside a single fern frond on a dark oak shelf, locked camera, gentle leaf motion, no people, no cuts",
+      "negative_prompt": "text, watermark, logo, camera motion, cuts, multiple objects, flicker",
+      "seed": 2026110201,
+      "observations": [
+        {
+          "observation_id": "off_native/global_00",
+          "arm": "OFF_NATIVE",
+          "protocol": "GLOBAL",
+          "map_id": "full181",
+          "modes": [
+            "RAW",
+            "GLOBAL"
+          ],
+          "analysis_role": "FULL_GEOMETRY_CONTROL_EXCLUDED_FROM_SYNC_GAIN"
+        },
+        {
+          "observation_id": "off_native/global_01",
+          "arm": "OFF_NATIVE",
+          "protocol": "GLOBAL",
+          "map_id": "global01_shift1_177",
+          "modes": [
+            "RAW",
+            "GLOBAL"
+          ],
+          "analysis_role": "PRIMARY_SYNC"
+        },
+        {
+          "observation_id": "off_native/global_02",
+          "arm": "OFF_NATIVE",
+          "protocol": "GLOBAL",
+          "map_id": "global02_center37_89",
+          "modes": [
+            "RAW",
+            "GLOBAL"
+          ],
+          "analysis_role": "PRIMARY_SYNC"
+        },
+        {
+          "observation_id": "off_native/global_03",
+          "arm": "OFF_NATIVE",
+          "protocol": "GLOBAL",
+          "map_id": "global03_shift2_177",
+          "modes": [
+            "RAW",
+            "GLOBAL"
+          ],
+          "analysis_role": "PRIMARY_SYNC"
+        },
+        {
+          "observation_id": "off_native/global_04",
+          "arm": "OFF_NATIVE",
+          "protocol": "GLOBAL",
+          "map_id": "global04_shift3_177",
+          "modes": [
+            "RAW",
+            "GLOBAL"
+          ],
+          "analysis_role": "PRIMARY_SYNC"
+        },
+        {
+          "observation_id": "off_native/global_05",
+          "arm": "OFF_NATIVE",
+          "protocol": "GLOBAL",
+          "map_id": "global05_center38_89",
+          "modes": [
+            "RAW",
+            "GLOBAL"
+          ],
+          "analysis_role": "PRIMARY_SYNC"
+        },
+        {
+          "observation_id": "off_native/global_06",
+          "arm": "OFF_NATIVE",
+          "protocol": "GLOBAL",
+          "map_id": "global06_center39_89",
+          "modes": [
+            "RAW",
+            "GLOBAL"
+          ],
+          "analysis_role": "PRIMARY_SYNC"
+        },
+        {
+          "observation_id": "off_native/path_00",
+          "arm": "OFF_NATIVE",
+          "protocol": "SINGLE_JUMP",
+          "map_id": "path00_shift2_177",
+          "modes": [
+            "RAW",
+            "GLOBAL",
+            "PATH"
+          ],
+          "analysis_role": "PRIMARY_SYNC"
+        },
+        {
+          "observation_id": "off_native/path_01",
+          "arm": "OFF_NATIVE",
+          "protocol": "SINGLE_JUMP",
+          "map_id": "path01_drop90_177",
+          "modes": [
+            "RAW",
+            "GLOBAL",
+            "PATH"
+          ],
+          "analysis_role": "PRIMARY_SYNC"
+        },
+        {
+          "observation_id": "payload_native/global_00",
+          "arm": "PAYLOAD_NATIVE",
+          "protocol": "GLOBAL",
+          "map_id": "full181",
+          "modes": [
+            "RAW",
+            "GLOBAL"
+          ],
+          "analysis_role": "FULL_GEOMETRY_CONTROL_EXCLUDED_FROM_SYNC_GAIN"
+        },
+        {
+          "observation_id": "payload_native/global_01",
+          "arm": "PAYLOAD_NATIVE",
+          "protocol": "GLOBAL",
+          "map_id": "global01_shift1_177",
+          "modes": [
+            "RAW",
+            "GLOBAL"
+          ],
+          "analysis_role": "PRIMARY_SYNC"
+        },
+        {
+          "observation_id": "payload_native/global_02",
+          "arm": "PAYLOAD_NATIVE",
+          "protocol": "GLOBAL",
+          "map_id": "global02_center37_89",
+          "modes": [
+            "RAW",
+            "GLOBAL"
+          ],
+          "analysis_role": "PRIMARY_SYNC"
+        },
+        {
+          "observation_id": "payload_native/global_03",
+          "arm": "PAYLOAD_NATIVE",
+          "protocol": "GLOBAL",
+          "map_id": "global03_shift2_177",
+          "modes": [
+            "RAW",
+            "GLOBAL"
+          ],
+          "analysis_role": "PRIMARY_SYNC"
+        },
+        {
+          "observation_id": "payload_native/global_04",
+          "arm": "PAYLOAD_NATIVE",
+          "protocol": "GLOBAL",
+          "map_id": "global04_shift3_177",
+          "modes": [
+            "RAW",
+            "GLOBAL"
+          ],
+          "analysis_role": "PRIMARY_SYNC"
+        },
+        {
+          "observation_id": "payload_native/global_05",
+          "arm": "PAYLOAD_NATIVE",
+          "protocol": "GLOBAL",
+          "map_id": "global05_center38_89",
+          "modes": [
+            "RAW",
+            "GLOBAL"
+          ],
+          "analysis_role": "PRIMARY_SYNC"
+        },
+        {
+          "observation_id": "payload_native/global_06",
+          "arm": "PAYLOAD_NATIVE",
+          "protocol": "GLOBAL",
+          "map_id": "global06_center39_89",
+          "modes": [
+            "RAW",
+            "GLOBAL"
+          ],
+          "analysis_role": "PRIMARY_SYNC"
+        },
+        {
+          "observation_id": "payload_native/path_00",
+          "arm": "PAYLOAD_NATIVE",
+          "protocol": "SINGLE_JUMP",
+          "map_id": "path00_shift2_177",
+          "modes": [
+            "RAW",
+            "GLOBAL",
+            "PATH"
+          ],
+          "analysis_role": "PRIMARY_SYNC"
+        },
+        {
+          "observation_id": "payload_native/path_01",
+          "arm": "PAYLOAD_NATIVE",
+          "protocol": "SINGLE_JUMP",
+          "map_id": "path01_drop90_177",
+          "modes": [
+            "RAW",
+            "GLOBAL",
+            "PATH"
+          ],
+          "analysis_role": "PRIMARY_SYNC"
+        },
+        {
+          "observation_id": "payload_framewise_recon/global_00",
+          "arm": "PAYLOAD_FRAMEWISE_RECON",
+          "protocol": "GLOBAL",
+          "map_id": "full181",
+          "modes": [
+            "RAW",
+            "GLOBAL"
+          ],
+          "analysis_role": "FULL_GEOMETRY_CONTROL_EXCLUDED_FROM_SYNC_GAIN"
+        },
+        {
+          "observation_id": "payload_framewise_recon/global_01",
+          "arm": "PAYLOAD_FRAMEWISE_RECON",
+          "protocol": "GLOBAL",
+          "map_id": "global01_shift1_177",
+          "modes": [
+            "RAW",
+            "GLOBAL"
+          ],
+          "analysis_role": "PRIMARY_SYNC"
+        },
+        {
+          "observation_id": "payload_framewise_recon/global_02",
+          "arm": "PAYLOAD_FRAMEWISE_RECON",
+          "protocol": "GLOBAL",
+          "map_id": "global02_center37_89",
+          "modes": [
+            "RAW",
+            "GLOBAL"
+          ],
+          "analysis_role": "PRIMARY_SYNC"
+        },
+        {
+          "observation_id": "payload_framewise_recon/global_03",
+          "arm": "PAYLOAD_FRAMEWISE_RECON",
+          "protocol": "GLOBAL",
+          "map_id": "global03_shift2_177",
+          "modes": [
+            "RAW",
+            "GLOBAL"
+          ],
+          "analysis_role": "PRIMARY_SYNC"
+        },
+        {
+          "observation_id": "payload_framewise_recon/global_04",
+          "arm": "PAYLOAD_FRAMEWISE_RECON",
+          "protocol": "GLOBAL",
+          "map_id": "global04_shift3_177",
+          "modes": [
+            "RAW",
+            "GLOBAL"
+          ],
+          "analysis_role": "PRIMARY_SYNC"
+        },
+        {
+          "observation_id": "payload_framewise_recon/global_05",
+          "arm": "PAYLOAD_FRAMEWISE_RECON",
+          "protocol": "GLOBAL",
+          "map_id": "global05_center38_89",
+          "modes": [
+            "RAW",
+            "GLOBAL"
+          ],
+          "analysis_role": "PRIMARY_SYNC"
+        },
+        {
+          "observation_id": "payload_framewise_recon/global_06",
+          "arm": "PAYLOAD_FRAMEWISE_RECON",
+          "protocol": "GLOBAL",
+          "map_id": "global06_center39_89",
+          "modes": [
+            "RAW",
+            "GLOBAL"
+          ],
+          "analysis_role": "PRIMARY_SYNC"
+        },
+        {
+          "observation_id": "payload_framewise_recon/path_00",
+          "arm": "PAYLOAD_FRAMEWISE_RECON",
+          "protocol": "SINGLE_JUMP",
+          "map_id": "path00_shift2_177",
+          "modes": [
+            "RAW",
+            "GLOBAL",
+            "PATH"
+          ],
+          "analysis_role": "PRIMARY_SYNC"
+        },
+        {
+          "observation_id": "payload_framewise_recon/path_01",
+          "arm": "PAYLOAD_FRAMEWISE_RECON",
+          "protocol": "SINGLE_JUMP",
+          "map_id": "path01_drop90_177",
+          "modes": [
+            "RAW",
+            "GLOBAL",
+            "PATH"
+          ],
+          "analysis_role": "PRIMARY_SYNC"
+        },
+        {
+          "observation_id": "payload_framewise_m05/global_00",
+          "arm": "PAYLOAD_FRAMEWISE_M05",
+          "protocol": "GLOBAL",
+          "map_id": "full181",
+          "modes": [
+            "RAW",
+            "GLOBAL"
+          ],
+          "analysis_role": "FULL_GEOMETRY_CONTROL_EXCLUDED_FROM_SYNC_GAIN"
+        },
+        {
+          "observation_id": "payload_framewise_m05/global_01",
+          "arm": "PAYLOAD_FRAMEWISE_M05",
+          "protocol": "GLOBAL",
+          "map_id": "global01_shift1_177",
+          "modes": [
+            "RAW",
+            "GLOBAL"
+          ],
+          "analysis_role": "PRIMARY_SYNC"
+        },
+        {
+          "observation_id": "payload_framewise_m05/global_02",
+          "arm": "PAYLOAD_FRAMEWISE_M05",
+          "protocol": "GLOBAL",
+          "map_id": "global02_center37_89",
+          "modes": [
+            "RAW",
+            "GLOBAL"
+          ],
+          "analysis_role": "PRIMARY_SYNC"
+        },
+        {
+          "observation_id": "payload_framewise_m05/global_03",
+          "arm": "PAYLOAD_FRAMEWISE_M05",
+          "protocol": "GLOBAL",
+          "map_id": "global03_shift2_177",
+          "modes": [
+            "RAW",
+            "GLOBAL"
+          ],
+          "analysis_role": "PRIMARY_SYNC"
+        },
+        {
+          "observation_id": "payload_framewise_m05/global_04",
+          "arm": "PAYLOAD_FRAMEWISE_M05",
+          "protocol": "GLOBAL",
+          "map_id": "global04_shift3_177",
+          "modes": [
+            "RAW",
+            "GLOBAL"
+          ],
+          "analysis_role": "PRIMARY_SYNC"
+        },
+        {
+          "observation_id": "payload_framewise_m05/global_05",
+          "arm": "PAYLOAD_FRAMEWISE_M05",
+          "protocol": "GLOBAL",
+          "map_id": "global05_center38_89",
+          "modes": [
+            "RAW",
+            "GLOBAL"
+          ],
+          "analysis_role": "PRIMARY_SYNC"
+        },
+        {
+          "observation_id": "payload_framewise_m05/global_06",
+          "arm": "PAYLOAD_FRAMEWISE_M05",
+          "protocol": "GLOBAL",
+          "map_id": "global06_center39_89",
+          "modes": [
+            "RAW",
+            "GLOBAL"
+          ],
+          "analysis_role": "PRIMARY_SYNC"
+        },
+        {
+          "observation_id": "payload_framewise_m05/path_00",
+          "arm": "PAYLOAD_FRAMEWISE_M05",
+          "protocol": "SINGLE_JUMP",
+          "map_id": "path00_shift2_177",
+          "modes": [
+            "RAW",
+            "GLOBAL",
+            "PATH"
+          ],
+          "analysis_role": "PRIMARY_SYNC"
+        },
+        {
+          "observation_id": "payload_framewise_m05/path_01",
+          "arm": "PAYLOAD_FRAMEWISE_M05",
+          "protocol": "SINGLE_JUMP",
+          "map_id": "path01_drop90_177",
+          "modes": [
+            "RAW",
+            "GLOBAL",
+            "PATH"
+          ],
+          "analysis_role": "PRIMARY_SYNC"
+        }
+      ]
+    },
+    {
+      "case_id": "confirm_02",
+      "cohort": "CONFIRMATION_CANDIDATE",
+      "source_status": "USER_ADOPTED_LIMITED_LOCAL_NO_MATCH_UNPROVEN",
+      "prompt": "a violet glass sphere drifting in a shallow clear acrylic tray, locked camera, soft side light, one object, no cuts",
+      "negative_prompt": "text, watermark, logo, camera motion, cuts, multiple objects, flicker",
+      "seed": 2026110202,
+      "observations": [
+        {
+          "observation_id": "off_native/global_00",
+          "arm": "OFF_NATIVE",
+          "protocol": "GLOBAL",
+          "map_id": "full181",
+          "modes": [
+            "RAW",
+            "GLOBAL"
+          ],
+          "analysis_role": "FULL_GEOMETRY_CONTROL_EXCLUDED_FROM_SYNC_GAIN"
+        },
+        {
+          "observation_id": "off_native/global_01",
+          "arm": "OFF_NATIVE",
+          "protocol": "GLOBAL",
+          "map_id": "global01_shift1_177",
+          "modes": [
+            "RAW",
+            "GLOBAL"
+          ],
+          "analysis_role": "PRIMARY_SYNC"
+        },
+        {
+          "observation_id": "off_native/global_02",
+          "arm": "OFF_NATIVE",
+          "protocol": "GLOBAL",
+          "map_id": "global02_center37_89",
+          "modes": [
+            "RAW",
+            "GLOBAL"
+          ],
+          "analysis_role": "PRIMARY_SYNC"
+        },
+        {
+          "observation_id": "off_native/global_03",
+          "arm": "OFF_NATIVE",
+          "protocol": "GLOBAL",
+          "map_id": "global03_shift2_177",
+          "modes": [
+            "RAW",
+            "GLOBAL"
+          ],
+          "analysis_role": "PRIMARY_SYNC"
+        },
+        {
+          "observation_id": "off_native/global_04",
+          "arm": "OFF_NATIVE",
+          "protocol": "GLOBAL",
+          "map_id": "global04_shift3_177",
+          "modes": [
+            "RAW",
+            "GLOBAL"
+          ],
+          "analysis_role": "PRIMARY_SYNC"
+        },
+        {
+          "observation_id": "off_native/global_05",
+          "arm": "OFF_NATIVE",
+          "protocol": "GLOBAL",
+          "map_id": "global05_center38_89",
+          "modes": [
+            "RAW",
+            "GLOBAL"
+          ],
+          "analysis_role": "PRIMARY_SYNC"
+        },
+        {
+          "observation_id": "off_native/global_06",
+          "arm": "OFF_NATIVE",
+          "protocol": "GLOBAL",
+          "map_id": "global06_center39_89",
+          "modes": [
+            "RAW",
+            "GLOBAL"
+          ],
+          "analysis_role": "PRIMARY_SYNC"
+        },
+        {
+          "observation_id": "off_native/path_00",
+          "arm": "OFF_NATIVE",
+          "protocol": "SINGLE_JUMP",
+          "map_id": "path00_shift2_177",
+          "modes": [
+            "RAW",
+            "GLOBAL",
+            "PATH"
+          ],
+          "analysis_role": "PRIMARY_SYNC"
+        },
+        {
+          "observation_id": "off_native/path_01",
+          "arm": "OFF_NATIVE",
+          "protocol": "SINGLE_JUMP",
+          "map_id": "path01_drop90_177",
+          "modes": [
+            "RAW",
+            "GLOBAL",
+            "PATH"
+          ],
+          "analysis_role": "PRIMARY_SYNC"
+        },
+        {
+          "observation_id": "payload_native/global_00",
+          "arm": "PAYLOAD_NATIVE",
+          "protocol": "GLOBAL",
+          "map_id": "full181",
+          "modes": [
+            "RAW",
+            "GLOBAL"
+          ],
+          "analysis_role": "FULL_GEOMETRY_CONTROL_EXCLUDED_FROM_SYNC_GAIN"
+        },
+        {
+          "observation_id": "payload_native/global_01",
+          "arm": "PAYLOAD_NATIVE",
+          "protocol": "GLOBAL",
+          "map_id": "global01_shift1_177",
+          "modes": [
+            "RAW",
+            "GLOBAL"
+          ],
+          "analysis_role": "PRIMARY_SYNC"
+        },
+        {
+          "observation_id": "payload_native/global_02",
+          "arm": "PAYLOAD_NATIVE",
+          "protocol": "GLOBAL",
+          "map_id": "global02_center37_89",
+          "modes": [
+            "RAW",
+            "GLOBAL"
+          ],
+          "analysis_role": "PRIMARY_SYNC"
+        },
+        {
+          "observation_id": "payload_native/global_03",
+          "arm": "PAYLOAD_NATIVE",
+          "protocol": "GLOBAL",
+          "map_id": "global03_shift2_177",
+          "modes": [
+            "RAW",
+            "GLOBAL"
+          ],
+          "analysis_role": "PRIMARY_SYNC"
+        },
+        {
+          "observation_id": "payload_native/global_04",
+          "arm": "PAYLOAD_NATIVE",
+          "protocol": "GLOBAL",
+          "map_id": "global04_shift3_177",
+          "modes": [
+            "RAW",
+            "GLOBAL"
+          ],
+          "analysis_role": "PRIMARY_SYNC"
+        },
+        {
+          "observation_id": "payload_native/global_05",
+          "arm": "PAYLOAD_NATIVE",
+          "protocol": "GLOBAL",
+          "map_id": "global05_center38_89",
+          "modes": [
+            "RAW",
+            "GLOBAL"
+          ],
+          "analysis_role": "PRIMARY_SYNC"
+        },
+        {
+          "observation_id": "payload_native/global_06",
+          "arm": "PAYLOAD_NATIVE",
+          "protocol": "GLOBAL",
+          "map_id": "global06_center39_89",
+          "modes": [
+            "RAW",
+            "GLOBAL"
+          ],
+          "analysis_role": "PRIMARY_SYNC"
+        },
+        {
+          "observation_id": "payload_native/path_00",
+          "arm": "PAYLOAD_NATIVE",
+          "protocol": "SINGLE_JUMP",
+          "map_id": "path00_shift2_177",
+          "modes": [
+            "RAW",
+            "GLOBAL",
+            "PATH"
+          ],
+          "analysis_role": "PRIMARY_SYNC"
+        },
+        {
+          "observation_id": "payload_native/path_01",
+          "arm": "PAYLOAD_NATIVE",
+          "protocol": "SINGLE_JUMP",
+          "map_id": "path01_drop90_177",
+          "modes": [
+            "RAW",
+            "GLOBAL",
+            "PATH"
+          ],
+          "analysis_role": "PRIMARY_SYNC"
+        },
+        {
+          "observation_id": "payload_framewise_recon/global_00",
+          "arm": "PAYLOAD_FRAMEWISE_RECON",
+          "protocol": "GLOBAL",
+          "map_id": "full181",
+          "modes": [
+            "RAW",
+            "GLOBAL"
+          ],
+          "analysis_role": "FULL_GEOMETRY_CONTROL_EXCLUDED_FROM_SYNC_GAIN"
+        },
+        {
+          "observation_id": "payload_framewise_recon/global_01",
+          "arm": "PAYLOAD_FRAMEWISE_RECON",
+          "protocol": "GLOBAL",
+          "map_id": "global01_shift1_177",
+          "modes": [
+            "RAW",
+            "GLOBAL"
+          ],
+          "analysis_role": "PRIMARY_SYNC"
+        },
+        {
+          "observation_id": "payload_framewise_recon/global_02",
+          "arm": "PAYLOAD_FRAMEWISE_RECON",
+          "protocol": "GLOBAL",
+          "map_id": "global02_center37_89",
+          "modes": [
+            "RAW",
+            "GLOBAL"
+          ],
+          "analysis_role": "PRIMARY_SYNC"
+        },
+        {
+          "observation_id": "payload_framewise_recon/global_03",
+          "arm": "PAYLOAD_FRAMEWISE_RECON",
+          "protocol": "GLOBAL",
+          "map_id": "global03_shift2_177",
+          "modes": [
+            "RAW",
+            "GLOBAL"
+          ],
+          "analysis_role": "PRIMARY_SYNC"
+        },
+        {
+          "observation_id": "payload_framewise_recon/global_04",
+          "arm": "PAYLOAD_FRAMEWISE_RECON",
+          "protocol": "GLOBAL",
+          "map_id": "global04_shift3_177",
+          "modes": [
+            "RAW",
+            "GLOBAL"
+          ],
+          "analysis_role": "PRIMARY_SYNC"
+        },
+        {
+          "observation_id": "payload_framewise_recon/global_05",
+          "arm": "PAYLOAD_FRAMEWISE_RECON",
+          "protocol": "GLOBAL",
+          "map_id": "global05_center38_89",
+          "modes": [
+            "RAW",
+            "GLOBAL"
+          ],
+          "analysis_role": "PRIMARY_SYNC"
+        },
+        {
+          "observation_id": "payload_framewise_recon/global_06",
+          "arm": "PAYLOAD_FRAMEWISE_RECON",
+          "protocol": "GLOBAL",
+          "map_id": "global06_center39_89",
+          "modes": [
+            "RAW",
+            "GLOBAL"
+          ],
+          "analysis_role": "PRIMARY_SYNC"
+        },
+        {
+          "observation_id": "payload_framewise_recon/path_00",
+          "arm": "PAYLOAD_FRAMEWISE_RECON",
+          "protocol": "SINGLE_JUMP",
+          "map_id": "path00_shift2_177",
+          "modes": [
+            "RAW",
+            "GLOBAL",
+            "PATH"
+          ],
+          "analysis_role": "PRIMARY_SYNC"
+        },
+        {
+          "observation_id": "payload_framewise_recon/path_01",
+          "arm": "PAYLOAD_FRAMEWISE_RECON",
+          "protocol": "SINGLE_JUMP",
+          "map_id": "path01_drop90_177",
+          "modes": [
+            "RAW",
+            "GLOBAL",
+            "PATH"
+          ],
+          "analysis_role": "PRIMARY_SYNC"
+        },
+        {
+          "observation_id": "payload_framewise_m05/global_00",
+          "arm": "PAYLOAD_FRAMEWISE_M05",
+          "protocol": "GLOBAL",
+          "map_id": "full181",
+          "modes": [
+            "RAW",
+            "GLOBAL"
+          ],
+          "analysis_role": "FULL_GEOMETRY_CONTROL_EXCLUDED_FROM_SYNC_GAIN"
+        },
+        {
+          "observation_id": "payload_framewise_m05/global_01",
+          "arm": "PAYLOAD_FRAMEWISE_M05",
+          "protocol": "GLOBAL",
+          "map_id": "global01_shift1_177",
+          "modes": [
+            "RAW",
+            "GLOBAL"
+          ],
+          "analysis_role": "PRIMARY_SYNC"
+        },
+        {
+          "observation_id": "payload_framewise_m05/global_02",
+          "arm": "PAYLOAD_FRAMEWISE_M05",
+          "protocol": "GLOBAL",
+          "map_id": "global02_center37_89",
+          "modes": [
+            "RAW",
+            "GLOBAL"
+          ],
+          "analysis_role": "PRIMARY_SYNC"
+        },
+        {
+          "observation_id": "payload_framewise_m05/global_03",
+          "arm": "PAYLOAD_FRAMEWISE_M05",
+          "protocol": "GLOBAL",
+          "map_id": "global03_shift2_177",
+          "modes": [
+            "RAW",
+            "GLOBAL"
+          ],
+          "analysis_role": "PRIMARY_SYNC"
+        },
+        {
+          "observation_id": "payload_framewise_m05/global_04",
+          "arm": "PAYLOAD_FRAMEWISE_M05",
+          "protocol": "GLOBAL",
+          "map_id": "global04_shift3_177",
+          "modes": [
+            "RAW",
+            "GLOBAL"
+          ],
+          "analysis_role": "PRIMARY_SYNC"
+        },
+        {
+          "observation_id": "payload_framewise_m05/global_05",
+          "arm": "PAYLOAD_FRAMEWISE_M05",
+          "protocol": "GLOBAL",
+          "map_id": "global05_center38_89",
+          "modes": [
+            "RAW",
+            "GLOBAL"
+          ],
+          "analysis_role": "PRIMARY_SYNC"
+        },
+        {
+          "observation_id": "payload_framewise_m05/global_06",
+          "arm": "PAYLOAD_FRAMEWISE_M05",
+          "protocol": "GLOBAL",
+          "map_id": "global06_center39_89",
+          "modes": [
+            "RAW",
+            "GLOBAL"
+          ],
+          "analysis_role": "PRIMARY_SYNC"
+        },
+        {
+          "observation_id": "payload_framewise_m05/path_00",
+          "arm": "PAYLOAD_FRAMEWISE_M05",
+          "protocol": "SINGLE_JUMP",
+          "map_id": "path00_shift2_177",
+          "modes": [
+            "RAW",
+            "GLOBAL",
+            "PATH"
+          ],
+          "analysis_role": "PRIMARY_SYNC"
+        },
+        {
+          "observation_id": "payload_framewise_m05/path_01",
+          "arm": "PAYLOAD_FRAMEWISE_M05",
+          "protocol": "SINGLE_JUMP",
+          "map_id": "path01_drop90_177",
+          "modes": [
+            "RAW",
+            "GLOBAL",
+            "PATH"
+          ],
+          "analysis_role": "PRIMARY_SYNC"
+        }
+      ]
+    },
+    {
+      "case_id": "confirm_03",
+      "cohort": "CONFIRMATION_CANDIDATE",
+      "source_status": "USER_ADOPTED_LIMITED_LOCAL_NO_MATCH_UNPROVEN",
+      "prompt": "a green tin robot walking slowly across a plain cork board, locked camera, steady warm light, no people, no cuts",
+      "negative_prompt": "text, watermark, logo, camera motion, cuts, multiple objects, flicker",
+      "seed": 2026110203,
+      "observations": [
+        {
+          "observation_id": "off_native/global_00",
+          "arm": "OFF_NATIVE",
+          "protocol": "GLOBAL",
+          "map_id": "full181",
+          "modes": [
+            "RAW",
+            "GLOBAL"
+          ],
+          "analysis_role": "FULL_GEOMETRY_CONTROL_EXCLUDED_FROM_SYNC_GAIN"
+        },
+        {
+          "observation_id": "off_native/global_01",
+          "arm": "OFF_NATIVE",
+          "protocol": "GLOBAL",
+          "map_id": "global01_shift1_177",
+          "modes": [
+            "RAW",
+            "GLOBAL"
+          ],
+          "analysis_role": "PRIMARY_SYNC"
+        },
+        {
+          "observation_id": "off_native/global_02",
+          "arm": "OFF_NATIVE",
+          "protocol": "GLOBAL",
+          "map_id": "global02_center37_89",
+          "modes": [
+            "RAW",
+            "GLOBAL"
+          ],
+          "analysis_role": "PRIMARY_SYNC"
+        },
+        {
+          "observation_id": "off_native/global_03",
+          "arm": "OFF_NATIVE",
+          "protocol": "GLOBAL",
+          "map_id": "global03_shift2_177",
+          "modes": [
+            "RAW",
+            "GLOBAL"
+          ],
+          "analysis_role": "PRIMARY_SYNC"
+        },
+        {
+          "observation_id": "off_native/global_04",
+          "arm": "OFF_NATIVE",
+          "protocol": "GLOBAL",
+          "map_id": "global04_shift3_177",
+          "modes": [
+            "RAW",
+            "GLOBAL"
+          ],
+          "analysis_role": "PRIMARY_SYNC"
+        },
+        {
+          "observation_id": "off_native/global_05",
+          "arm": "OFF_NATIVE",
+          "protocol": "GLOBAL",
+          "map_id": "global05_center38_89",
+          "modes": [
+            "RAW",
+            "GLOBAL"
+          ],
+          "analysis_role": "PRIMARY_SYNC"
+        },
+        {
+          "observation_id": "off_native/global_06",
+          "arm": "OFF_NATIVE",
+          "protocol": "GLOBAL",
+          "map_id": "global06_center39_89",
+          "modes": [
+            "RAW",
+            "GLOBAL"
+          ],
+          "analysis_role": "PRIMARY_SYNC"
+        },
+        {
+          "observation_id": "off_native/path_00",
+          "arm": "OFF_NATIVE",
+          "protocol": "SINGLE_JUMP",
+          "map_id": "path00_shift2_177",
+          "modes": [
+            "RAW",
+            "GLOBAL",
+            "PATH"
+          ],
+          "analysis_role": "PRIMARY_SYNC"
+        },
+        {
+          "observation_id": "off_native/path_01",
+          "arm": "OFF_NATIVE",
+          "protocol": "SINGLE_JUMP",
+          "map_id": "path01_drop90_177",
+          "modes": [
+            "RAW",
+            "GLOBAL",
+            "PATH"
+          ],
+          "analysis_role": "PRIMARY_SYNC"
+        },
+        {
+          "observation_id": "payload_native/global_00",
+          "arm": "PAYLOAD_NATIVE",
+          "protocol": "GLOBAL",
+          "map_id": "full181",
+          "modes": [
+            "RAW",
+            "GLOBAL"
+          ],
+          "analysis_role": "FULL_GEOMETRY_CONTROL_EXCLUDED_FROM_SYNC_GAIN"
+        },
+        {
+          "observation_id": "payload_native/global_01",
+          "arm": "PAYLOAD_NATIVE",
+          "protocol": "GLOBAL",
+          "map_id": "global01_shift1_177",
+          "modes": [
+            "RAW",
+            "GLOBAL"
+          ],
+          "analysis_role": "PRIMARY_SYNC"
+        },
+        {
+          "observation_id": "payload_native/global_02",
+          "arm": "PAYLOAD_NATIVE",
+          "protocol": "GLOBAL",
+          "map_id": "global02_center37_89",
+          "modes": [
+            "RAW",
+            "GLOBAL"
+          ],
+          "analysis_role": "PRIMARY_SYNC"
+        },
+        {
+          "observation_id": "payload_native/global_03",
+          "arm": "PAYLOAD_NATIVE",
+          "protocol": "GLOBAL",
+          "map_id": "global03_shift2_177",
+          "modes": [
+            "RAW",
+            "GLOBAL"
+          ],
+          "analysis_role": "PRIMARY_SYNC"
+        },
+        {
+          "observation_id": "payload_native/global_04",
+          "arm": "PAYLOAD_NATIVE",
+          "protocol": "GLOBAL",
+          "map_id": "global04_shift3_177",
+          "modes": [
+            "RAW",
+            "GLOBAL"
+          ],
+          "analysis_role": "PRIMARY_SYNC"
+        },
+        {
+          "observation_id": "payload_native/global_05",
+          "arm": "PAYLOAD_NATIVE",
+          "protocol": "GLOBAL",
+          "map_id": "global05_center38_89",
+          "modes": [
+            "RAW",
+            "GLOBAL"
+          ],
+          "analysis_role": "PRIMARY_SYNC"
+        },
+        {
+          "observation_id": "payload_native/global_06",
+          "arm": "PAYLOAD_NATIVE",
+          "protocol": "GLOBAL",
+          "map_id": "global06_center39_89",
+          "modes": [
+            "RAW",
+            "GLOBAL"
+          ],
+          "analysis_role": "PRIMARY_SYNC"
+        },
+        {
+          "observation_id": "payload_native/path_00",
+          "arm": "PAYLOAD_NATIVE",
+          "protocol": "SINGLE_JUMP",
+          "map_id": "path00_shift2_177",
+          "modes": [
+            "RAW",
+            "GLOBAL",
+            "PATH"
+          ],
+          "analysis_role": "PRIMARY_SYNC"
+        },
+        {
+          "observation_id": "payload_native/path_01",
+          "arm": "PAYLOAD_NATIVE",
+          "protocol": "SINGLE_JUMP",
+          "map_id": "path01_drop90_177",
+          "modes": [
+            "RAW",
+            "GLOBAL",
+            "PATH"
+          ],
+          "analysis_role": "PRIMARY_SYNC"
+        },
+        {
+          "observation_id": "payload_framewise_recon/global_00",
+          "arm": "PAYLOAD_FRAMEWISE_RECON",
+          "protocol": "GLOBAL",
+          "map_id": "full181",
+          "modes": [
+            "RAW",
+            "GLOBAL"
+          ],
+          "analysis_role": "FULL_GEOMETRY_CONTROL_EXCLUDED_FROM_SYNC_GAIN"
+        },
+        {
+          "observation_id": "payload_framewise_recon/global_01",
+          "arm": "PAYLOAD_FRAMEWISE_RECON",
+          "protocol": "GLOBAL",
+          "map_id": "global01_shift1_177",
+          "modes": [
+            "RAW",
+            "GLOBAL"
+          ],
+          "analysis_role": "PRIMARY_SYNC"
+        },
+        {
+          "observation_id": "payload_framewise_recon/global_02",
+          "arm": "PAYLOAD_FRAMEWISE_RECON",
+          "protocol": "GLOBAL",
+          "map_id": "global02_center37_89",
+          "modes": [
+            "RAW",
+            "GLOBAL"
+          ],
+          "analysis_role": "PRIMARY_SYNC"
+        },
+        {
+          "observation_id": "payload_framewise_recon/global_03",
+          "arm": "PAYLOAD_FRAMEWISE_RECON",
+          "protocol": "GLOBAL",
+          "map_id": "global03_shift2_177",
+          "modes": [
+            "RAW",
+            "GLOBAL"
+          ],
+          "analysis_role": "PRIMARY_SYNC"
+        },
+        {
+          "observation_id": "payload_framewise_recon/global_04",
+          "arm": "PAYLOAD_FRAMEWISE_RECON",
+          "protocol": "GLOBAL",
+          "map_id": "global04_shift3_177",
+          "modes": [
+            "RAW",
+            "GLOBAL"
+          ],
+          "analysis_role": "PRIMARY_SYNC"
+        },
+        {
+          "observation_id": "payload_framewise_recon/global_05",
+          "arm": "PAYLOAD_FRAMEWISE_RECON",
+          "protocol": "GLOBAL",
+          "map_id": "global05_center38_89",
+          "modes": [
+            "RAW",
+            "GLOBAL"
+          ],
+          "analysis_role": "PRIMARY_SYNC"
+        },
+        {
+          "observation_id": "payload_framewise_recon/global_06",
+          "arm": "PAYLOAD_FRAMEWISE_RECON",
+          "protocol": "GLOBAL",
+          "map_id": "global06_center39_89",
+          "modes": [
+            "RAW",
+            "GLOBAL"
+          ],
+          "analysis_role": "PRIMARY_SYNC"
+        },
+        {
+          "observation_id": "payload_framewise_recon/path_00",
+          "arm": "PAYLOAD_FRAMEWISE_RECON",
+          "protocol": "SINGLE_JUMP",
+          "map_id": "path00_shift2_177",
+          "modes": [
+            "RAW",
+            "GLOBAL",
+            "PATH"
+          ],
+          "analysis_role": "PRIMARY_SYNC"
+        },
+        {
+          "observation_id": "payload_framewise_recon/path_01",
+          "arm": "PAYLOAD_FRAMEWISE_RECON",
+          "protocol": "SINGLE_JUMP",
+          "map_id": "path01_drop90_177",
+          "modes": [
+            "RAW",
+            "GLOBAL",
+            "PATH"
+          ],
+          "analysis_role": "PRIMARY_SYNC"
+        },
+        {
+          "observation_id": "payload_framewise_m05/global_00",
+          "arm": "PAYLOAD_FRAMEWISE_M05",
+          "protocol": "GLOBAL",
+          "map_id": "full181",
+          "modes": [
+            "RAW",
+            "GLOBAL"
+          ],
+          "analysis_role": "FULL_GEOMETRY_CONTROL_EXCLUDED_FROM_SYNC_GAIN"
+        },
+        {
+          "observation_id": "payload_framewise_m05/global_01",
+          "arm": "PAYLOAD_FRAMEWISE_M05",
+          "protocol": "GLOBAL",
+          "map_id": "global01_shift1_177",
+          "modes": [
+            "RAW",
+            "GLOBAL"
+          ],
+          "analysis_role": "PRIMARY_SYNC"
+        },
+        {
+          "observation_id": "payload_framewise_m05/global_02",
+          "arm": "PAYLOAD_FRAMEWISE_M05",
+          "protocol": "GLOBAL",
+          "map_id": "global02_center37_89",
+          "modes": [
+            "RAW",
+            "GLOBAL"
+          ],
+          "analysis_role": "PRIMARY_SYNC"
+        },
+        {
+          "observation_id": "payload_framewise_m05/global_03",
+          "arm": "PAYLOAD_FRAMEWISE_M05",
+          "protocol": "GLOBAL",
+          "map_id": "global03_shift2_177",
+          "modes": [
+            "RAW",
+            "GLOBAL"
+          ],
+          "analysis_role": "PRIMARY_SYNC"
+        },
+        {
+          "observation_id": "payload_framewise_m05/global_04",
+          "arm": "PAYLOAD_FRAMEWISE_M05",
+          "protocol": "GLOBAL",
+          "map_id": "global04_shift3_177",
+          "modes": [
+            "RAW",
+            "GLOBAL"
+          ],
+          "analysis_role": "PRIMARY_SYNC"
+        },
+        {
+          "observation_id": "payload_framewise_m05/global_05",
+          "arm": "PAYLOAD_FRAMEWISE_M05",
+          "protocol": "GLOBAL",
+          "map_id": "global05_center38_89",
+          "modes": [
+            "RAW",
+            "GLOBAL"
+          ],
+          "analysis_role": "PRIMARY_SYNC"
+        },
+        {
+          "observation_id": "payload_framewise_m05/global_06",
+          "arm": "PAYLOAD_FRAMEWISE_M05",
+          "protocol": "GLOBAL",
+          "map_id": "global06_center39_89",
+          "modes": [
+            "RAW",
+            "GLOBAL"
+          ],
+          "analysis_role": "PRIMARY_SYNC"
+        },
+        {
+          "observation_id": "payload_framewise_m05/path_00",
+          "arm": "PAYLOAD_FRAMEWISE_M05",
+          "protocol": "SINGLE_JUMP",
+          "map_id": "path00_shift2_177",
+          "modes": [
+            "RAW",
+            "GLOBAL",
+            "PATH"
+          ],
+          "analysis_role": "PRIMARY_SYNC"
+        },
+        {
+          "observation_id": "payload_framewise_m05/path_01",
+          "arm": "PAYLOAD_FRAMEWISE_M05",
+          "protocol": "SINGLE_JUMP",
+          "map_id": "path01_drop90_177",
+          "modes": [
+            "RAW",
+            "GLOBAL",
+            "PATH"
+          ],
+          "analysis_role": "PRIMARY_SYNC"
+        }
+      ]
+    },
+    {
+      "case_id": "confirm_04",
+      "cohort": "CONFIRMATION_CANDIDATE",
+      "source_status": "USER_ADOPTED_LIMITED_LOCAL_NO_MATCH_UNPROVEN",
+      "prompt": "a folded orange paper crane turning slowly on a black felt surface, locked camera, steady neutral light, no hands, no cuts",
+      "negative_prompt": "text, watermark, logo, camera motion, cuts, multiple objects, flicker",
+      "seed": 2026110204,
+      "observations": [
+        {
+          "observation_id": "off_native/global_00",
+          "arm": "OFF_NATIVE",
+          "protocol": "GLOBAL",
+          "map_id": "full181",
+          "modes": [
+            "RAW",
+            "GLOBAL"
+          ],
+          "analysis_role": "FULL_GEOMETRY_CONTROL_EXCLUDED_FROM_SYNC_GAIN"
+        },
+        {
+          "observation_id": "off_native/global_01",
+          "arm": "OFF_NATIVE",
+          "protocol": "GLOBAL",
+          "map_id": "global01_shift1_177",
+          "modes": [
+            "RAW",
+            "GLOBAL"
+          ],
+          "analysis_role": "PRIMARY_SYNC"
+        },
+        {
+          "observation_id": "off_native/global_02",
+          "arm": "OFF_NATIVE",
+          "protocol": "GLOBAL",
+          "map_id": "global02_center37_89",
+          "modes": [
+            "RAW",
+            "GLOBAL"
+          ],
+          "analysis_role": "PRIMARY_SYNC"
+        },
+        {
+          "observation_id": "off_native/global_03",
+          "arm": "OFF_NATIVE",
+          "protocol": "GLOBAL",
+          "map_id": "global03_shift2_177",
+          "modes": [
+            "RAW",
+            "GLOBAL"
+          ],
+          "analysis_role": "PRIMARY_SYNC"
+        },
+        {
+          "observation_id": "off_native/global_04",
+          "arm": "OFF_NATIVE",
+          "protocol": "GLOBAL",
+          "map_id": "global04_shift3_177",
+          "modes": [
+            "RAW",
+            "GLOBAL"
+          ],
+          "analysis_role": "PRIMARY_SYNC"
+        },
+        {
+          "observation_id": "off_native/global_05",
+          "arm": "OFF_NATIVE",
+          "protocol": "GLOBAL",
+          "map_id": "global05_center38_89",
+          "modes": [
+            "RAW",
+            "GLOBAL"
+          ],
+          "analysis_role": "PRIMARY_SYNC"
+        },
+        {
+          "observation_id": "off_native/global_06",
+          "arm": "OFF_NATIVE",
+          "protocol": "GLOBAL",
+          "map_id": "global06_center39_89",
+          "modes": [
+            "RAW",
+            "GLOBAL"
+          ],
+          "analysis_role": "PRIMARY_SYNC"
+        },
+        {
+          "observation_id": "off_native/path_00",
+          "arm": "OFF_NATIVE",
+          "protocol": "SINGLE_JUMP",
+          "map_id": "path00_shift2_177",
+          "modes": [
+            "RAW",
+            "GLOBAL",
+            "PATH"
+          ],
+          "analysis_role": "PRIMARY_SYNC"
+        },
+        {
+          "observation_id": "off_native/path_01",
+          "arm": "OFF_NATIVE",
+          "protocol": "SINGLE_JUMP",
+          "map_id": "path01_drop90_177",
+          "modes": [
+            "RAW",
+            "GLOBAL",
+            "PATH"
+          ],
+          "analysis_role": "PRIMARY_SYNC"
+        },
+        {
+          "observation_id": "payload_native/global_00",
+          "arm": "PAYLOAD_NATIVE",
+          "protocol": "GLOBAL",
+          "map_id": "full181",
+          "modes": [
+            "RAW",
+            "GLOBAL"
+          ],
+          "analysis_role": "FULL_GEOMETRY_CONTROL_EXCLUDED_FROM_SYNC_GAIN"
+        },
+        {
+          "observation_id": "payload_native/global_01",
+          "arm": "PAYLOAD_NATIVE",
+          "protocol": "GLOBAL",
+          "map_id": "global01_shift1_177",
+          "modes": [
+            "RAW",
+            "GLOBAL"
+          ],
+          "analysis_role": "PRIMARY_SYNC"
+        },
+        {
+          "observation_id": "payload_native/global_02",
+          "arm": "PAYLOAD_NATIVE",
+          "protocol": "GLOBAL",
+          "map_id": "global02_center37_89",
+          "modes": [
+            "RAW",
+            "GLOBAL"
+          ],
+          "analysis_role": "PRIMARY_SYNC"
+        },
+        {
+          "observation_id": "payload_native/global_03",
+          "arm": "PAYLOAD_NATIVE",
+          "protocol": "GLOBAL",
+          "map_id": "global03_shift2_177",
+          "modes": [
+            "RAW",
+            "GLOBAL"
+          ],
+          "analysis_role": "PRIMARY_SYNC"
+        },
+        {
+          "observation_id": "payload_native/global_04",
+          "arm": "PAYLOAD_NATIVE",
+          "protocol": "GLOBAL",
+          "map_id": "global04_shift3_177",
+          "modes": [
+            "RAW",
+            "GLOBAL"
+          ],
+          "analysis_role": "PRIMARY_SYNC"
+        },
+        {
+          "observation_id": "payload_native/global_05",
+          "arm": "PAYLOAD_NATIVE",
+          "protocol": "GLOBAL",
+          "map_id": "global05_center38_89",
+          "modes": [
+            "RAW",
+            "GLOBAL"
+          ],
+          "analysis_role": "PRIMARY_SYNC"
+        },
+        {
+          "observation_id": "payload_native/global_06",
+          "arm": "PAYLOAD_NATIVE",
+          "protocol": "GLOBAL",
+          "map_id": "global06_center39_89",
+          "modes": [
+            "RAW",
+            "GLOBAL"
+          ],
+          "analysis_role": "PRIMARY_SYNC"
+        },
+        {
+          "observation_id": "payload_native/path_00",
+          "arm": "PAYLOAD_NATIVE",
+          "protocol": "SINGLE_JUMP",
+          "map_id": "path00_shift2_177",
+          "modes": [
+            "RAW",
+            "GLOBAL",
+            "PATH"
+          ],
+          "analysis_role": "PRIMARY_SYNC"
+        },
+        {
+          "observation_id": "payload_native/path_01",
+          "arm": "PAYLOAD_NATIVE",
+          "protocol": "SINGLE_JUMP",
+          "map_id": "path01_drop90_177",
+          "modes": [
+            "RAW",
+            "GLOBAL",
+            "PATH"
+          ],
+          "analysis_role": "PRIMARY_SYNC"
+        },
+        {
+          "observation_id": "payload_framewise_recon/global_00",
+          "arm": "PAYLOAD_FRAMEWISE_RECON",
+          "protocol": "GLOBAL",
+          "map_id": "full181",
+          "modes": [
+            "RAW",
+            "GLOBAL"
+          ],
+          "analysis_role": "FULL_GEOMETRY_CONTROL_EXCLUDED_FROM_SYNC_GAIN"
+        },
+        {
+          "observation_id": "payload_framewise_recon/global_01",
+          "arm": "PAYLOAD_FRAMEWISE_RECON",
+          "protocol": "GLOBAL",
+          "map_id": "global01_shift1_177",
+          "modes": [
+            "RAW",
+            "GLOBAL"
+          ],
+          "analysis_role": "PRIMARY_SYNC"
+        },
+        {
+          "observation_id": "payload_framewise_recon/global_02",
+          "arm": "PAYLOAD_FRAMEWISE_RECON",
+          "protocol": "GLOBAL",
+          "map_id": "global02_center37_89",
+          "modes": [
+            "RAW",
+            "GLOBAL"
+          ],
+          "analysis_role": "PRIMARY_SYNC"
+        },
+        {
+          "observation_id": "payload_framewise_recon/global_03",
+          "arm": "PAYLOAD_FRAMEWISE_RECON",
+          "protocol": "GLOBAL",
+          "map_id": "global03_shift2_177",
+          "modes": [
+            "RAW",
+            "GLOBAL"
+          ],
+          "analysis_role": "PRIMARY_SYNC"
+        },
+        {
+          "observation_id": "payload_framewise_recon/global_04",
+          "arm": "PAYLOAD_FRAMEWISE_RECON",
+          "protocol": "GLOBAL",
+          "map_id": "global04_shift3_177",
+          "modes": [
+            "RAW",
+            "GLOBAL"
+          ],
+          "analysis_role": "PRIMARY_SYNC"
+        },
+        {
+          "observation_id": "payload_framewise_recon/global_05",
+          "arm": "PAYLOAD_FRAMEWISE_RECON",
+          "protocol": "GLOBAL",
+          "map_id": "global05_center38_89",
+          "modes": [
+            "RAW",
+            "GLOBAL"
+          ],
+          "analysis_role": "PRIMARY_SYNC"
+        },
+        {
+          "observation_id": "payload_framewise_recon/global_06",
+          "arm": "PAYLOAD_FRAMEWISE_RECON",
+          "protocol": "GLOBAL",
+          "map_id": "global06_center39_89",
+          "modes": [
+            "RAW",
+            "GLOBAL"
+          ],
+          "analysis_role": "PRIMARY_SYNC"
+        },
+        {
+          "observation_id": "payload_framewise_recon/path_00",
+          "arm": "PAYLOAD_FRAMEWISE_RECON",
+          "protocol": "SINGLE_JUMP",
+          "map_id": "path00_shift2_177",
+          "modes": [
+            "RAW",
+            "GLOBAL",
+            "PATH"
+          ],
+          "analysis_role": "PRIMARY_SYNC"
+        },
+        {
+          "observation_id": "payload_framewise_recon/path_01",
+          "arm": "PAYLOAD_FRAMEWISE_RECON",
+          "protocol": "SINGLE_JUMP",
+          "map_id": "path01_drop90_177",
+          "modes": [
+            "RAW",
+            "GLOBAL",
+            "PATH"
+          ],
+          "analysis_role": "PRIMARY_SYNC"
+        },
+        {
+          "observation_id": "payload_framewise_m05/global_00",
+          "arm": "PAYLOAD_FRAMEWISE_M05",
+          "protocol": "GLOBAL",
+          "map_id": "full181",
+          "modes": [
+            "RAW",
+            "GLOBAL"
+          ],
+          "analysis_role": "FULL_GEOMETRY_CONTROL_EXCLUDED_FROM_SYNC_GAIN"
+        },
+        {
+          "observation_id": "payload_framewise_m05/global_01",
+          "arm": "PAYLOAD_FRAMEWISE_M05",
+          "protocol": "GLOBAL",
+          "map_id": "global01_shift1_177",
+          "modes": [
+            "RAW",
+            "GLOBAL"
+          ],
+          "analysis_role": "PRIMARY_SYNC"
+        },
+        {
+          "observation_id": "payload_framewise_m05/global_02",
+          "arm": "PAYLOAD_FRAMEWISE_M05",
+          "protocol": "GLOBAL",
+          "map_id": "global02_center37_89",
+          "modes": [
+            "RAW",
+            "GLOBAL"
+          ],
+          "analysis_role": "PRIMARY_SYNC"
+        },
+        {
+          "observation_id": "payload_framewise_m05/global_03",
+          "arm": "PAYLOAD_FRAMEWISE_M05",
+          "protocol": "GLOBAL",
+          "map_id": "global03_shift2_177",
+          "modes": [
+            "RAW",
+            "GLOBAL"
+          ],
+          "analysis_role": "PRIMARY_SYNC"
+        },
+        {
+          "observation_id": "payload_framewise_m05/global_04",
+          "arm": "PAYLOAD_FRAMEWISE_M05",
+          "protocol": "GLOBAL",
+          "map_id": "global04_shift3_177",
+          "modes": [
+            "RAW",
+            "GLOBAL"
+          ],
+          "analysis_role": "PRIMARY_SYNC"
+        },
+        {
+          "observation_id": "payload_framewise_m05/global_05",
+          "arm": "PAYLOAD_FRAMEWISE_M05",
+          "protocol": "GLOBAL",
+          "map_id": "global05_center38_89",
+          "modes": [
+            "RAW",
+            "GLOBAL"
+          ],
+          "analysis_role": "PRIMARY_SYNC"
+        },
+        {
+          "observation_id": "payload_framewise_m05/global_06",
+          "arm": "PAYLOAD_FRAMEWISE_M05",
+          "protocol": "GLOBAL",
+          "map_id": "global06_center39_89",
+          "modes": [
+            "RAW",
+            "GLOBAL"
+          ],
+          "analysis_role": "PRIMARY_SYNC"
+        },
+        {
+          "observation_id": "payload_framewise_m05/path_00",
+          "arm": "PAYLOAD_FRAMEWISE_M05",
+          "protocol": "SINGLE_JUMP",
+          "map_id": "path00_shift2_177",
+          "modes": [
+            "RAW",
+            "GLOBAL",
+            "PATH"
+          ],
+          "analysis_role": "PRIMARY_SYNC"
+        },
+        {
+          "observation_id": "payload_framewise_m05/path_01",
+          "arm": "PAYLOAD_FRAMEWISE_M05",
+          "protocol": "SINGLE_JUMP",
+          "map_id": "path01_drop90_177",
+          "modes": [
+            "RAW",
+            "GLOBAL",
+            "PATH"
+          ],
+          "analysis_role": "PRIMARY_SYNC"
+        }
+      ]
+    },
+    {
+      "case_id": "confirm_05",
+      "cohort": "CONFIRMATION_CANDIDATE",
+      "source_status": "USER_ADOPTED_LIMITED_LOCAL_NO_MATCH_UNPROVEN",
+      "prompt": "a silver toy submarine gliding through a clear rectangular water tank, locked camera, steady cool light, no bubbles, no cuts",
+      "negative_prompt": "text, watermark, logo, camera motion, cuts, multiple objects, flicker",
+      "seed": 2026110205,
+      "observations": [
+        {
+          "observation_id": "off_native/global_00",
+          "arm": "OFF_NATIVE",
+          "protocol": "GLOBAL",
+          "map_id": "full181",
+          "modes": [
+            "RAW",
+            "GLOBAL"
+          ],
+          "analysis_role": "FULL_GEOMETRY_CONTROL_EXCLUDED_FROM_SYNC_GAIN"
+        },
+        {
+          "observation_id": "off_native/global_01",
+          "arm": "OFF_NATIVE",
+          "protocol": "GLOBAL",
+          "map_id": "global01_shift1_177",
+          "modes": [
+            "RAW",
+            "GLOBAL"
+          ],
+          "analysis_role": "PRIMARY_SYNC"
+        },
+        {
+          "observation_id": "off_native/global_02",
+          "arm": "OFF_NATIVE",
+          "protocol": "GLOBAL",
+          "map_id": "global02_center37_89",
+          "modes": [
+            "RAW",
+            "GLOBAL"
+          ],
+          "analysis_role": "PRIMARY_SYNC"
+        },
+        {
+          "observation_id": "off_native/global_03",
+          "arm": "OFF_NATIVE",
+          "protocol": "GLOBAL",
+          "map_id": "global03_shift2_177",
+          "modes": [
+            "RAW",
+            "GLOBAL"
+          ],
+          "analysis_role": "PRIMARY_SYNC"
+        },
+        {
+          "observation_id": "off_native/global_04",
+          "arm": "OFF_NATIVE",
+          "protocol": "GLOBAL",
+          "map_id": "global04_shift3_177",
+          "modes": [
+            "RAW",
+            "GLOBAL"
+          ],
+          "analysis_role": "PRIMARY_SYNC"
+        },
+        {
+          "observation_id": "off_native/global_05",
+          "arm": "OFF_NATIVE",
+          "protocol": "GLOBAL",
+          "map_id": "global05_center38_89",
+          "modes": [
+            "RAW",
+            "GLOBAL"
+          ],
+          "analysis_role": "PRIMARY_SYNC"
+        },
+        {
+          "observation_id": "off_native/global_06",
+          "arm": "OFF_NATIVE",
+          "protocol": "GLOBAL",
+          "map_id": "global06_center39_89",
+          "modes": [
+            "RAW",
+            "GLOBAL"
+          ],
+          "analysis_role": "PRIMARY_SYNC"
+        },
+        {
+          "observation_id": "off_native/path_00",
+          "arm": "OFF_NATIVE",
+          "protocol": "SINGLE_JUMP",
+          "map_id": "path00_shift2_177",
+          "modes": [
+            "RAW",
+            "GLOBAL",
+            "PATH"
+          ],
+          "analysis_role": "PRIMARY_SYNC"
+        },
+        {
+          "observation_id": "off_native/path_01",
+          "arm": "OFF_NATIVE",
+          "protocol": "SINGLE_JUMP",
+          "map_id": "path01_drop90_177",
+          "modes": [
+            "RAW",
+            "GLOBAL",
+            "PATH"
+          ],
+          "analysis_role": "PRIMARY_SYNC"
+        },
+        {
+          "observation_id": "payload_native/global_00",
+          "arm": "PAYLOAD_NATIVE",
+          "protocol": "GLOBAL",
+          "map_id": "full181",
+          "modes": [
+            "RAW",
+            "GLOBAL"
+          ],
+          "analysis_role": "FULL_GEOMETRY_CONTROL_EXCLUDED_FROM_SYNC_GAIN"
+        },
+        {
+          "observation_id": "payload_native/global_01",
+          "arm": "PAYLOAD_NATIVE",
+          "protocol": "GLOBAL",
+          "map_id": "global01_shift1_177",
+          "modes": [
+            "RAW",
+            "GLOBAL"
+          ],
+          "analysis_role": "PRIMARY_SYNC"
+        },
+        {
+          "observation_id": "payload_native/global_02",
+          "arm": "PAYLOAD_NATIVE",
+          "protocol": "GLOBAL",
+          "map_id": "global02_center37_89",
+          "modes": [
+            "RAW",
+            "GLOBAL"
+          ],
+          "analysis_role": "PRIMARY_SYNC"
+        },
+        {
+          "observation_id": "payload_native/global_03",
+          "arm": "PAYLOAD_NATIVE",
+          "protocol": "GLOBAL",
+          "map_id": "global03_shift2_177",
+          "modes": [
+            "RAW",
+            "GLOBAL"
+          ],
+          "analysis_role": "PRIMARY_SYNC"
+        },
+        {
+          "observation_id": "payload_native/global_04",
+          "arm": "PAYLOAD_NATIVE",
+          "protocol": "GLOBAL",
+          "map_id": "global04_shift3_177",
+          "modes": [
+            "RAW",
+            "GLOBAL"
+          ],
+          "analysis_role": "PRIMARY_SYNC"
+        },
+        {
+          "observation_id": "payload_native/global_05",
+          "arm": "PAYLOAD_NATIVE",
+          "protocol": "GLOBAL",
+          "map_id": "global05_center38_89",
+          "modes": [
+            "RAW",
+            "GLOBAL"
+          ],
+          "analysis_role": "PRIMARY_SYNC"
+        },
+        {
+          "observation_id": "payload_native/global_06",
+          "arm": "PAYLOAD_NATIVE",
+          "protocol": "GLOBAL",
+          "map_id": "global06_center39_89",
+          "modes": [
+            "RAW",
+            "GLOBAL"
+          ],
+          "analysis_role": "PRIMARY_SYNC"
+        },
+        {
+          "observation_id": "payload_native/path_00",
+          "arm": "PAYLOAD_NATIVE",
+          "protocol": "SINGLE_JUMP",
+          "map_id": "path00_shift2_177",
+          "modes": [
+            "RAW",
+            "GLOBAL",
+            "PATH"
+          ],
+          "analysis_role": "PRIMARY_SYNC"
+        },
+        {
+          "observation_id": "payload_native/path_01",
+          "arm": "PAYLOAD_NATIVE",
+          "protocol": "SINGLE_JUMP",
+          "map_id": "path01_drop90_177",
+          "modes": [
+            "RAW",
+            "GLOBAL",
+            "PATH"
+          ],
+          "analysis_role": "PRIMARY_SYNC"
+        },
+        {
+          "observation_id": "payload_framewise_recon/global_00",
+          "arm": "PAYLOAD_FRAMEWISE_RECON",
+          "protocol": "GLOBAL",
+          "map_id": "full181",
+          "modes": [
+            "RAW",
+            "GLOBAL"
+          ],
+          "analysis_role": "FULL_GEOMETRY_CONTROL_EXCLUDED_FROM_SYNC_GAIN"
+        },
+        {
+          "observation_id": "payload_framewise_recon/global_01",
+          "arm": "PAYLOAD_FRAMEWISE_RECON",
+          "protocol": "GLOBAL",
+          "map_id": "global01_shift1_177",
+          "modes": [
+            "RAW",
+            "GLOBAL"
+          ],
+          "analysis_role": "PRIMARY_SYNC"
+        },
+        {
+          "observation_id": "payload_framewise_recon/global_02",
+          "arm": "PAYLOAD_FRAMEWISE_RECON",
+          "protocol": "GLOBAL",
+          "map_id": "global02_center37_89",
+          "modes": [
+            "RAW",
+            "GLOBAL"
+          ],
+          "analysis_role": "PRIMARY_SYNC"
+        },
+        {
+          "observation_id": "payload_framewise_recon/global_03",
+          "arm": "PAYLOAD_FRAMEWISE_RECON",
+          "protocol": "GLOBAL",
+          "map_id": "global03_shift2_177",
+          "modes": [
+            "RAW",
+            "GLOBAL"
+          ],
+          "analysis_role": "PRIMARY_SYNC"
+        },
+        {
+          "observation_id": "payload_framewise_recon/global_04",
+          "arm": "PAYLOAD_FRAMEWISE_RECON",
+          "protocol": "GLOBAL",
+          "map_id": "global04_shift3_177",
+          "modes": [
+            "RAW",
+            "GLOBAL"
+          ],
+          "analysis_role": "PRIMARY_SYNC"
+        },
+        {
+          "observation_id": "payload_framewise_recon/global_05",
+          "arm": "PAYLOAD_FRAMEWISE_RECON",
+          "protocol": "GLOBAL",
+          "map_id": "global05_center38_89",
+          "modes": [
+            "RAW",
+            "GLOBAL"
+          ],
+          "analysis_role": "PRIMARY_SYNC"
+        },
+        {
+          "observation_id": "payload_framewise_recon/global_06",
+          "arm": "PAYLOAD_FRAMEWISE_RECON",
+          "protocol": "GLOBAL",
+          "map_id": "global06_center39_89",
+          "modes": [
+            "RAW",
+            "GLOBAL"
+          ],
+          "analysis_role": "PRIMARY_SYNC"
+        },
+        {
+          "observation_id": "payload_framewise_recon/path_00",
+          "arm": "PAYLOAD_FRAMEWISE_RECON",
+          "protocol": "SINGLE_JUMP",
+          "map_id": "path00_shift2_177",
+          "modes": [
+            "RAW",
+            "GLOBAL",
+            "PATH"
+          ],
+          "analysis_role": "PRIMARY_SYNC"
+        },
+        {
+          "observation_id": "payload_framewise_recon/path_01",
+          "arm": "PAYLOAD_FRAMEWISE_RECON",
+          "protocol": "SINGLE_JUMP",
+          "map_id": "path01_drop90_177",
+          "modes": [
+            "RAW",
+            "GLOBAL",
+            "PATH"
+          ],
+          "analysis_role": "PRIMARY_SYNC"
+        },
+        {
+          "observation_id": "payload_framewise_m05/global_00",
+          "arm": "PAYLOAD_FRAMEWISE_M05",
+          "protocol": "GLOBAL",
+          "map_id": "full181",
+          "modes": [
+            "RAW",
+            "GLOBAL"
+          ],
+          "analysis_role": "FULL_GEOMETRY_CONTROL_EXCLUDED_FROM_SYNC_GAIN"
+        },
+        {
+          "observation_id": "payload_framewise_m05/global_01",
+          "arm": "PAYLOAD_FRAMEWISE_M05",
+          "protocol": "GLOBAL",
+          "map_id": "global01_shift1_177",
+          "modes": [
+            "RAW",
+            "GLOBAL"
+          ],
+          "analysis_role": "PRIMARY_SYNC"
+        },
+        {
+          "observation_id": "payload_framewise_m05/global_02",
+          "arm": "PAYLOAD_FRAMEWISE_M05",
+          "protocol": "GLOBAL",
+          "map_id": "global02_center37_89",
+          "modes": [
+            "RAW",
+            "GLOBAL"
+          ],
+          "analysis_role": "PRIMARY_SYNC"
+        },
+        {
+          "observation_id": "payload_framewise_m05/global_03",
+          "arm": "PAYLOAD_FRAMEWISE_M05",
+          "protocol": "GLOBAL",
+          "map_id": "global03_shift2_177",
+          "modes": [
+            "RAW",
+            "GLOBAL"
+          ],
+          "analysis_role": "PRIMARY_SYNC"
+        },
+        {
+          "observation_id": "payload_framewise_m05/global_04",
+          "arm": "PAYLOAD_FRAMEWISE_M05",
+          "protocol": "GLOBAL",
+          "map_id": "global04_shift3_177",
+          "modes": [
+            "RAW",
+            "GLOBAL"
+          ],
+          "analysis_role": "PRIMARY_SYNC"
+        },
+        {
+          "observation_id": "payload_framewise_m05/global_05",
+          "arm": "PAYLOAD_FRAMEWISE_M05",
+          "protocol": "GLOBAL",
+          "map_id": "global05_center38_89",
+          "modes": [
+            "RAW",
+            "GLOBAL"
+          ],
+          "analysis_role": "PRIMARY_SYNC"
+        },
+        {
+          "observation_id": "payload_framewise_m05/global_06",
+          "arm": "PAYLOAD_FRAMEWISE_M05",
+          "protocol": "GLOBAL",
+          "map_id": "global06_center39_89",
+          "modes": [
+            "RAW",
+            "GLOBAL"
+          ],
+          "analysis_role": "PRIMARY_SYNC"
+        },
+        {
+          "observation_id": "payload_framewise_m05/path_00",
+          "arm": "PAYLOAD_FRAMEWISE_M05",
+          "protocol": "SINGLE_JUMP",
+          "map_id": "path00_shift2_177",
+          "modes": [
+            "RAW",
+            "GLOBAL",
+            "PATH"
+          ],
+          "analysis_role": "PRIMARY_SYNC"
+        },
+        {
+          "observation_id": "payload_framewise_m05/path_01",
+          "arm": "PAYLOAD_FRAMEWISE_M05",
+          "protocol": "SINGLE_JUMP",
+          "map_id": "path01_drop90_177",
+          "modes": [
+            "RAW",
+            "GLOBAL",
+            "PATH"
+          ],
+          "analysis_role": "PRIMARY_SYNC"
+        }
+      ]
+    },
+    {
+      "case_id": "confirm_06",
+      "cohort": "CONFIRMATION_CANDIDATE",
+      "source_status": "USER_ADOPTED_LIMITED_LOCAL_NO_MATCH_UNPROVEN",
+      "prompt": "a purple wool ball rolling slowly along a pale concrete channel, locked camera, constant daylight, no people, no cuts",
+      "negative_prompt": "text, watermark, logo, camera motion, cuts, multiple objects, flicker",
+      "seed": 2026110206,
+      "observations": [
+        {
+          "observation_id": "off_native/global_00",
+          "arm": "OFF_NATIVE",
+          "protocol": "GLOBAL",
+          "map_id": "full181",
+          "modes": [
+            "RAW",
+            "GLOBAL"
+          ],
+          "analysis_role": "FULL_GEOMETRY_CONTROL_EXCLUDED_FROM_SYNC_GAIN"
+        },
+        {
+          "observation_id": "off_native/global_01",
+          "arm": "OFF_NATIVE",
+          "protocol": "GLOBAL",
+          "map_id": "global01_shift1_177",
+          "modes": [
+            "RAW",
+            "GLOBAL"
+          ],
+          "analysis_role": "PRIMARY_SYNC"
+        },
+        {
+          "observation_id": "off_native/global_02",
+          "arm": "OFF_NATIVE",
+          "protocol": "GLOBAL",
+          "map_id": "global02_center37_89",
+          "modes": [
+            "RAW",
+            "GLOBAL"
+          ],
+          "analysis_role": "PRIMARY_SYNC"
+        },
+        {
+          "observation_id": "off_native/global_03",
+          "arm": "OFF_NATIVE",
+          "protocol": "GLOBAL",
+          "map_id": "global03_shift2_177",
+          "modes": [
+            "RAW",
+            "GLOBAL"
+          ],
+          "analysis_role": "PRIMARY_SYNC"
+        },
+        {
+          "observation_id": "off_native/global_04",
+          "arm": "OFF_NATIVE",
+          "protocol": "GLOBAL",
+          "map_id": "global04_shift3_177",
+          "modes": [
+            "RAW",
+            "GLOBAL"
+          ],
+          "analysis_role": "PRIMARY_SYNC"
+        },
+        {
+          "observation_id": "off_native/global_05",
+          "arm": "OFF_NATIVE",
+          "protocol": "GLOBAL",
+          "map_id": "global05_center38_89",
+          "modes": [
+            "RAW",
+            "GLOBAL"
+          ],
+          "analysis_role": "PRIMARY_SYNC"
+        },
+        {
+          "observation_id": "off_native/global_06",
+          "arm": "OFF_NATIVE",
+          "protocol": "GLOBAL",
+          "map_id": "global06_center39_89",
+          "modes": [
+            "RAW",
+            "GLOBAL"
+          ],
+          "analysis_role": "PRIMARY_SYNC"
+        },
+        {
+          "observation_id": "off_native/path_00",
+          "arm": "OFF_NATIVE",
+          "protocol": "SINGLE_JUMP",
+          "map_id": "path00_shift2_177",
+          "modes": [
+            "RAW",
+            "GLOBAL",
+            "PATH"
+          ],
+          "analysis_role": "PRIMARY_SYNC"
+        },
+        {
+          "observation_id": "off_native/path_01",
+          "arm": "OFF_NATIVE",
+          "protocol": "SINGLE_JUMP",
+          "map_id": "path01_drop90_177",
+          "modes": [
+            "RAW",
+            "GLOBAL",
+            "PATH"
+          ],
+          "analysis_role": "PRIMARY_SYNC"
+        },
+        {
+          "observation_id": "payload_native/global_00",
+          "arm": "PAYLOAD_NATIVE",
+          "protocol": "GLOBAL",
+          "map_id": "full181",
+          "modes": [
+            "RAW",
+            "GLOBAL"
+          ],
+          "analysis_role": "FULL_GEOMETRY_CONTROL_EXCLUDED_FROM_SYNC_GAIN"
+        },
+        {
+          "observation_id": "payload_native/global_01",
+          "arm": "PAYLOAD_NATIVE",
+          "protocol": "GLOBAL",
+          "map_id": "global01_shift1_177",
+          "modes": [
+            "RAW",
+            "GLOBAL"
+          ],
+          "analysis_role": "PRIMARY_SYNC"
+        },
+        {
+          "observation_id": "payload_native/global_02",
+          "arm": "PAYLOAD_NATIVE",
+          "protocol": "GLOBAL",
+          "map_id": "global02_center37_89",
+          "modes": [
+            "RAW",
+            "GLOBAL"
+          ],
+          "analysis_role": "PRIMARY_SYNC"
+        },
+        {
+          "observation_id": "payload_native/global_03",
+          "arm": "PAYLOAD_NATIVE",
+          "protocol": "GLOBAL",
+          "map_id": "global03_shift2_177",
+          "modes": [
+            "RAW",
+            "GLOBAL"
+          ],
+          "analysis_role": "PRIMARY_SYNC"
+        },
+        {
+          "observation_id": "payload_native/global_04",
+          "arm": "PAYLOAD_NATIVE",
+          "protocol": "GLOBAL",
+          "map_id": "global04_shift3_177",
+          "modes": [
+            "RAW",
+            "GLOBAL"
+          ],
+          "analysis_role": "PRIMARY_SYNC"
+        },
+        {
+          "observation_id": "payload_native/global_05",
+          "arm": "PAYLOAD_NATIVE",
+          "protocol": "GLOBAL",
+          "map_id": "global05_center38_89",
+          "modes": [
+            "RAW",
+            "GLOBAL"
+          ],
+          "analysis_role": "PRIMARY_SYNC"
+        },
+        {
+          "observation_id": "payload_native/global_06",
+          "arm": "PAYLOAD_NATIVE",
+          "protocol": "GLOBAL",
+          "map_id": "global06_center39_89",
+          "modes": [
+            "RAW",
+            "GLOBAL"
+          ],
+          "analysis_role": "PRIMARY_SYNC"
+        },
+        {
+          "observation_id": "payload_native/path_00",
+          "arm": "PAYLOAD_NATIVE",
+          "protocol": "SINGLE_JUMP",
+          "map_id": "path00_shift2_177",
+          "modes": [
+            "RAW",
+            "GLOBAL",
+            "PATH"
+          ],
+          "analysis_role": "PRIMARY_SYNC"
+        },
+        {
+          "observation_id": "payload_native/path_01",
+          "arm": "PAYLOAD_NATIVE",
+          "protocol": "SINGLE_JUMP",
+          "map_id": "path01_drop90_177",
+          "modes": [
+            "RAW",
+            "GLOBAL",
+            "PATH"
+          ],
+          "analysis_role": "PRIMARY_SYNC"
+        },
+        {
+          "observation_id": "payload_framewise_recon/global_00",
+          "arm": "PAYLOAD_FRAMEWISE_RECON",
+          "protocol": "GLOBAL",
+          "map_id": "full181",
+          "modes": [
+            "RAW",
+            "GLOBAL"
+          ],
+          "analysis_role": "FULL_GEOMETRY_CONTROL_EXCLUDED_FROM_SYNC_GAIN"
+        },
+        {
+          "observation_id": "payload_framewise_recon/global_01",
+          "arm": "PAYLOAD_FRAMEWISE_RECON",
+          "protocol": "GLOBAL",
+          "map_id": "global01_shift1_177",
+          "modes": [
+            "RAW",
+            "GLOBAL"
+          ],
+          "analysis_role": "PRIMARY_SYNC"
+        },
+        {
+          "observation_id": "payload_framewise_recon/global_02",
+          "arm": "PAYLOAD_FRAMEWISE_RECON",
+          "protocol": "GLOBAL",
+          "map_id": "global02_center37_89",
+          "modes": [
+            "RAW",
+            "GLOBAL"
+          ],
+          "analysis_role": "PRIMARY_SYNC"
+        },
+        {
+          "observation_id": "payload_framewise_recon/global_03",
+          "arm": "PAYLOAD_FRAMEWISE_RECON",
+          "protocol": "GLOBAL",
+          "map_id": "global03_shift2_177",
+          "modes": [
+            "RAW",
+            "GLOBAL"
+          ],
+          "analysis_role": "PRIMARY_SYNC"
+        },
+        {
+          "observation_id": "payload_framewise_recon/global_04",
+          "arm": "PAYLOAD_FRAMEWISE_RECON",
+          "protocol": "GLOBAL",
+          "map_id": "global04_shift3_177",
+          "modes": [
+            "RAW",
+            "GLOBAL"
+          ],
+          "analysis_role": "PRIMARY_SYNC"
+        },
+        {
+          "observation_id": "payload_framewise_recon/global_05",
+          "arm": "PAYLOAD_FRAMEWISE_RECON",
+          "protocol": "GLOBAL",
+          "map_id": "global05_center38_89",
+          "modes": [
+            "RAW",
+            "GLOBAL"
+          ],
+          "analysis_role": "PRIMARY_SYNC"
+        },
+        {
+          "observation_id": "payload_framewise_recon/global_06",
+          "arm": "PAYLOAD_FRAMEWISE_RECON",
+          "protocol": "GLOBAL",
+          "map_id": "global06_center39_89",
+          "modes": [
+            "RAW",
+            "GLOBAL"
+          ],
+          "analysis_role": "PRIMARY_SYNC"
+        },
+        {
+          "observation_id": "payload_framewise_recon/path_00",
+          "arm": "PAYLOAD_FRAMEWISE_RECON",
+          "protocol": "SINGLE_JUMP",
+          "map_id": "path00_shift2_177",
+          "modes": [
+            "RAW",
+            "GLOBAL",
+            "PATH"
+          ],
+          "analysis_role": "PRIMARY_SYNC"
+        },
+        {
+          "observation_id": "payload_framewise_recon/path_01",
+          "arm": "PAYLOAD_FRAMEWISE_RECON",
+          "protocol": "SINGLE_JUMP",
+          "map_id": "path01_drop90_177",
+          "modes": [
+            "RAW",
+            "GLOBAL",
+            "PATH"
+          ],
+          "analysis_role": "PRIMARY_SYNC"
+        },
+        {
+          "observation_id": "payload_framewise_m05/global_00",
+          "arm": "PAYLOAD_FRAMEWISE_M05",
+          "protocol": "GLOBAL",
+          "map_id": "full181",
+          "modes": [
+            "RAW",
+            "GLOBAL"
+          ],
+          "analysis_role": "FULL_GEOMETRY_CONTROL_EXCLUDED_FROM_SYNC_GAIN"
+        },
+        {
+          "observation_id": "payload_framewise_m05/global_01",
+          "arm": "PAYLOAD_FRAMEWISE_M05",
+          "protocol": "GLOBAL",
+          "map_id": "global01_shift1_177",
+          "modes": [
+            "RAW",
+            "GLOBAL"
+          ],
+          "analysis_role": "PRIMARY_SYNC"
+        },
+        {
+          "observation_id": "payload_framewise_m05/global_02",
+          "arm": "PAYLOAD_FRAMEWISE_M05",
+          "protocol": "GLOBAL",
+          "map_id": "global02_center37_89",
+          "modes": [
+            "RAW",
+            "GLOBAL"
+          ],
+          "analysis_role": "PRIMARY_SYNC"
+        },
+        {
+          "observation_id": "payload_framewise_m05/global_03",
+          "arm": "PAYLOAD_FRAMEWISE_M05",
+          "protocol": "GLOBAL",
+          "map_id": "global03_shift2_177",
+          "modes": [
+            "RAW",
+            "GLOBAL"
+          ],
+          "analysis_role": "PRIMARY_SYNC"
+        },
+        {
+          "observation_id": "payload_framewise_m05/global_04",
+          "arm": "PAYLOAD_FRAMEWISE_M05",
+          "protocol": "GLOBAL",
+          "map_id": "global04_shift3_177",
+          "modes": [
+            "RAW",
+            "GLOBAL"
+          ],
+          "analysis_role": "PRIMARY_SYNC"
+        },
+        {
+          "observation_id": "payload_framewise_m05/global_05",
+          "arm": "PAYLOAD_FRAMEWISE_M05",
+          "protocol": "GLOBAL",
+          "map_id": "global05_center38_89",
+          "modes": [
+            "RAW",
+            "GLOBAL"
+          ],
+          "analysis_role": "PRIMARY_SYNC"
+        },
+        {
+          "observation_id": "payload_framewise_m05/global_06",
+          "arm": "PAYLOAD_FRAMEWISE_M05",
+          "protocol": "GLOBAL",
+          "map_id": "global06_center39_89",
+          "modes": [
+            "RAW",
+            "GLOBAL"
+          ],
+          "analysis_role": "PRIMARY_SYNC"
+        },
+        {
+          "observation_id": "payload_framewise_m05/path_00",
+          "arm": "PAYLOAD_FRAMEWISE_M05",
+          "protocol": "SINGLE_JUMP",
+          "map_id": "path00_shift2_177",
+          "modes": [
+            "RAW",
+            "GLOBAL",
+            "PATH"
+          ],
+          "analysis_role": "PRIMARY_SYNC"
+        },
+        {
+          "observation_id": "payload_framewise_m05/path_01",
+          "arm": "PAYLOAD_FRAMEWISE_M05",
+          "protocol": "SINGLE_JUMP",
+          "map_id": "path01_drop90_177",
+          "modes": [
+            "RAW",
+            "GLOBAL",
+            "PATH"
+          ],
+          "analysis_role": "PRIMARY_SYNC"
+        }
+      ]
+    },
+    {
+      "case_id": "confirm_07",
+      "cohort": "CONFIRMATION_CANDIDATE",
+      "source_status": "USER_ADOPTED_LIMITED_LOCAL_NO_MATCH_UNPROVEN",
+      "prompt": "a yellow wooden spinning top rotating on a matte blue tabletop, locked camera, constant soft light, no people, no cuts",
+      "negative_prompt": "text, watermark, logo, camera motion, cuts, multiple objects, flicker",
+      "seed": 2026110207,
+      "observations": [
+        {
+          "observation_id": "off_native/global_00",
+          "arm": "OFF_NATIVE",
+          "protocol": "GLOBAL",
+          "map_id": "full181",
+          "modes": [
+            "RAW",
+            "GLOBAL"
+          ],
+          "analysis_role": "FULL_GEOMETRY_CONTROL_EXCLUDED_FROM_SYNC_GAIN"
+        },
+        {
+          "observation_id": "off_native/global_01",
+          "arm": "OFF_NATIVE",
+          "protocol": "GLOBAL",
+          "map_id": "global01_shift1_177",
+          "modes": [
+            "RAW",
+            "GLOBAL"
+          ],
+          "analysis_role": "PRIMARY_SYNC"
+        },
+        {
+          "observation_id": "off_native/global_02",
+          "arm": "OFF_NATIVE",
+          "protocol": "GLOBAL",
+          "map_id": "global02_center37_89",
+          "modes": [
+            "RAW",
+            "GLOBAL"
+          ],
+          "analysis_role": "PRIMARY_SYNC"
+        },
+        {
+          "observation_id": "off_native/global_03",
+          "arm": "OFF_NATIVE",
+          "protocol": "GLOBAL",
+          "map_id": "global03_shift2_177",
+          "modes": [
+            "RAW",
+            "GLOBAL"
+          ],
+          "analysis_role": "PRIMARY_SYNC"
+        },
+        {
+          "observation_id": "off_native/global_04",
+          "arm": "OFF_NATIVE",
+          "protocol": "GLOBAL",
+          "map_id": "global04_shift3_177",
+          "modes": [
+            "RAW",
+            "GLOBAL"
+          ],
+          "analysis_role": "PRIMARY_SYNC"
+        },
+        {
+          "observation_id": "off_native/global_05",
+          "arm": "OFF_NATIVE",
+          "protocol": "GLOBAL",
+          "map_id": "global05_center38_89",
+          "modes": [
+            "RAW",
+            "GLOBAL"
+          ],
+          "analysis_role": "PRIMARY_SYNC"
+        },
+        {
+          "observation_id": "off_native/global_06",
+          "arm": "OFF_NATIVE",
+          "protocol": "GLOBAL",
+          "map_id": "global06_center39_89",
+          "modes": [
+            "RAW",
+            "GLOBAL"
+          ],
+          "analysis_role": "PRIMARY_SYNC"
+        },
+        {
+          "observation_id": "off_native/path_00",
+          "arm": "OFF_NATIVE",
+          "protocol": "SINGLE_JUMP",
+          "map_id": "path00_shift2_177",
+          "modes": [
+            "RAW",
+            "GLOBAL",
+            "PATH"
+          ],
+          "analysis_role": "PRIMARY_SYNC"
+        },
+        {
+          "observation_id": "off_native/path_01",
+          "arm": "OFF_NATIVE",
+          "protocol": "SINGLE_JUMP",
+          "map_id": "path01_drop90_177",
+          "modes": [
+            "RAW",
+            "GLOBAL",
+            "PATH"
+          ],
+          "analysis_role": "PRIMARY_SYNC"
+        },
+        {
+          "observation_id": "payload_native/global_00",
+          "arm": "PAYLOAD_NATIVE",
+          "protocol": "GLOBAL",
+          "map_id": "full181",
+          "modes": [
+            "RAW",
+            "GLOBAL"
+          ],
+          "analysis_role": "FULL_GEOMETRY_CONTROL_EXCLUDED_FROM_SYNC_GAIN"
+        },
+        {
+          "observation_id": "payload_native/global_01",
+          "arm": "PAYLOAD_NATIVE",
+          "protocol": "GLOBAL",
+          "map_id": "global01_shift1_177",
+          "modes": [
+            "RAW",
+            "GLOBAL"
+          ],
+          "analysis_role": "PRIMARY_SYNC"
+        },
+        {
+          "observation_id": "payload_native/global_02",
+          "arm": "PAYLOAD_NATIVE",
+          "protocol": "GLOBAL",
+          "map_id": "global02_center37_89",
+          "modes": [
+            "RAW",
+            "GLOBAL"
+          ],
+          "analysis_role": "PRIMARY_SYNC"
+        },
+        {
+          "observation_id": "payload_native/global_03",
+          "arm": "PAYLOAD_NATIVE",
+          "protocol": "GLOBAL",
+          "map_id": "global03_shift2_177",
+          "modes": [
+            "RAW",
+            "GLOBAL"
+          ],
+          "analysis_role": "PRIMARY_SYNC"
+        },
+        {
+          "observation_id": "payload_native/global_04",
+          "arm": "PAYLOAD_NATIVE",
+          "protocol": "GLOBAL",
+          "map_id": "global04_shift3_177",
+          "modes": [
+            "RAW",
+            "GLOBAL"
+          ],
+          "analysis_role": "PRIMARY_SYNC"
+        },
+        {
+          "observation_id": "payload_native/global_05",
+          "arm": "PAYLOAD_NATIVE",
+          "protocol": "GLOBAL",
+          "map_id": "global05_center38_89",
+          "modes": [
+            "RAW",
+            "GLOBAL"
+          ],
+          "analysis_role": "PRIMARY_SYNC"
+        },
+        {
+          "observation_id": "payload_native/global_06",
+          "arm": "PAYLOAD_NATIVE",
+          "protocol": "GLOBAL",
+          "map_id": "global06_center39_89",
+          "modes": [
+            "RAW",
+            "GLOBAL"
+          ],
+          "analysis_role": "PRIMARY_SYNC"
+        },
+        {
+          "observation_id": "payload_native/path_00",
+          "arm": "PAYLOAD_NATIVE",
+          "protocol": "SINGLE_JUMP",
+          "map_id": "path00_shift2_177",
+          "modes": [
+            "RAW",
+            "GLOBAL",
+            "PATH"
+          ],
+          "analysis_role": "PRIMARY_SYNC"
+        },
+        {
+          "observation_id": "payload_native/path_01",
+          "arm": "PAYLOAD_NATIVE",
+          "protocol": "SINGLE_JUMP",
+          "map_id": "path01_drop90_177",
+          "modes": [
+            "RAW",
+            "GLOBAL",
+            "PATH"
+          ],
+          "analysis_role": "PRIMARY_SYNC"
+        },
+        {
+          "observation_id": "payload_framewise_recon/global_00",
+          "arm": "PAYLOAD_FRAMEWISE_RECON",
+          "protocol": "GLOBAL",
+          "map_id": "full181",
+          "modes": [
+            "RAW",
+            "GLOBAL"
+          ],
+          "analysis_role": "FULL_GEOMETRY_CONTROL_EXCLUDED_FROM_SYNC_GAIN"
+        },
+        {
+          "observation_id": "payload_framewise_recon/global_01",
+          "arm": "PAYLOAD_FRAMEWISE_RECON",
+          "protocol": "GLOBAL",
+          "map_id": "global01_shift1_177",
+          "modes": [
+            "RAW",
+            "GLOBAL"
+          ],
+          "analysis_role": "PRIMARY_SYNC"
+        },
+        {
+          "observation_id": "payload_framewise_recon/global_02",
+          "arm": "PAYLOAD_FRAMEWISE_RECON",
+          "protocol": "GLOBAL",
+          "map_id": "global02_center37_89",
+          "modes": [
+            "RAW",
+            "GLOBAL"
+          ],
+          "analysis_role": "PRIMARY_SYNC"
+        },
+        {
+          "observation_id": "payload_framewise_recon/global_03",
+          "arm": "PAYLOAD_FRAMEWISE_RECON",
+          "protocol": "GLOBAL",
+          "map_id": "global03_shift2_177",
+          "modes": [
+            "RAW",
+            "GLOBAL"
+          ],
+          "analysis_role": "PRIMARY_SYNC"
+        },
+        {
+          "observation_id": "payload_framewise_recon/global_04",
+          "arm": "PAYLOAD_FRAMEWISE_RECON",
+          "protocol": "GLOBAL",
+          "map_id": "global04_shift3_177",
+          "modes": [
+            "RAW",
+            "GLOBAL"
+          ],
+          "analysis_role": "PRIMARY_SYNC"
+        },
+        {
+          "observation_id": "payload_framewise_recon/global_05",
+          "arm": "PAYLOAD_FRAMEWISE_RECON",
+          "protocol": "GLOBAL",
+          "map_id": "global05_center38_89",
+          "modes": [
+            "RAW",
+            "GLOBAL"
+          ],
+          "analysis_role": "PRIMARY_SYNC"
+        },
+        {
+          "observation_id": "payload_framewise_recon/global_06",
+          "arm": "PAYLOAD_FRAMEWISE_RECON",
+          "protocol": "GLOBAL",
+          "map_id": "global06_center39_89",
+          "modes": [
+            "RAW",
+            "GLOBAL"
+          ],
+          "analysis_role": "PRIMARY_SYNC"
+        },
+        {
+          "observation_id": "payload_framewise_recon/path_00",
+          "arm": "PAYLOAD_FRAMEWISE_RECON",
+          "protocol": "SINGLE_JUMP",
+          "map_id": "path00_shift2_177",
+          "modes": [
+            "RAW",
+            "GLOBAL",
+            "PATH"
+          ],
+          "analysis_role": "PRIMARY_SYNC"
+        },
+        {
+          "observation_id": "payload_framewise_recon/path_01",
+          "arm": "PAYLOAD_FRAMEWISE_RECON",
+          "protocol": "SINGLE_JUMP",
+          "map_id": "path01_drop90_177",
+          "modes": [
+            "RAW",
+            "GLOBAL",
+            "PATH"
+          ],
+          "analysis_role": "PRIMARY_SYNC"
+        },
+        {
+          "observation_id": "payload_framewise_m05/global_00",
+          "arm": "PAYLOAD_FRAMEWISE_M05",
+          "protocol": "GLOBAL",
+          "map_id": "full181",
+          "modes": [
+            "RAW",
+            "GLOBAL"
+          ],
+          "analysis_role": "FULL_GEOMETRY_CONTROL_EXCLUDED_FROM_SYNC_GAIN"
+        },
+        {
+          "observation_id": "payload_framewise_m05/global_01",
+          "arm": "PAYLOAD_FRAMEWISE_M05",
+          "protocol": "GLOBAL",
+          "map_id": "global01_shift1_177",
+          "modes": [
+            "RAW",
+            "GLOBAL"
+          ],
+          "analysis_role": "PRIMARY_SYNC"
+        },
+        {
+          "observation_id": "payload_framewise_m05/global_02",
+          "arm": "PAYLOAD_FRAMEWISE_M05",
+          "protocol": "GLOBAL",
+          "map_id": "global02_center37_89",
+          "modes": [
+            "RAW",
+            "GLOBAL"
+          ],
+          "analysis_role": "PRIMARY_SYNC"
+        },
+        {
+          "observation_id": "payload_framewise_m05/global_03",
+          "arm": "PAYLOAD_FRAMEWISE_M05",
+          "protocol": "GLOBAL",
+          "map_id": "global03_shift2_177",
+          "modes": [
+            "RAW",
+            "GLOBAL"
+          ],
+          "analysis_role": "PRIMARY_SYNC"
+        },
+        {
+          "observation_id": "payload_framewise_m05/global_04",
+          "arm": "PAYLOAD_FRAMEWISE_M05",
+          "protocol": "GLOBAL",
+          "map_id": "global04_shift3_177",
+          "modes": [
+            "RAW",
+            "GLOBAL"
+          ],
+          "analysis_role": "PRIMARY_SYNC"
+        },
+        {
+          "observation_id": "payload_framewise_m05/global_05",
+          "arm": "PAYLOAD_FRAMEWISE_M05",
+          "protocol": "GLOBAL",
+          "map_id": "global05_center38_89",
+          "modes": [
+            "RAW",
+            "GLOBAL"
+          ],
+          "analysis_role": "PRIMARY_SYNC"
+        },
+        {
+          "observation_id": "payload_framewise_m05/global_06",
+          "arm": "PAYLOAD_FRAMEWISE_M05",
+          "protocol": "GLOBAL",
+          "map_id": "global06_center39_89",
+          "modes": [
+            "RAW",
+            "GLOBAL"
+          ],
+          "analysis_role": "PRIMARY_SYNC"
+        },
+        {
+          "observation_id": "payload_framewise_m05/path_00",
+          "arm": "PAYLOAD_FRAMEWISE_M05",
+          "protocol": "SINGLE_JUMP",
+          "map_id": "path00_shift2_177",
+          "modes": [
+            "RAW",
+            "GLOBAL",
+            "PATH"
+          ],
+          "analysis_role": "PRIMARY_SYNC"
+        },
+        {
+          "observation_id": "payload_framewise_m05/path_01",
+          "arm": "PAYLOAD_FRAMEWISE_M05",
+          "protocol": "SINGLE_JUMP",
+          "map_id": "path01_drop90_177",
+          "modes": [
+            "RAW",
+            "GLOBAL",
+            "PATH"
+          ],
+          "analysis_role": "PRIMARY_SYNC"
+        }
+      ]
+    },
+    {
+      "case_id": "confirm_08",
+      "cohort": "CONFIRMATION_CANDIDATE",
+      "source_status": "USER_ADOPTED_LIMITED_LOCAL_NO_MATCH_UNPROVEN",
+      "prompt": "a black ceramic cat figurine on a slowly rotating white platform, locked camera, diffuse daylight, no people, no cuts",
+      "negative_prompt": "text, watermark, logo, camera motion, cuts, multiple objects, flicker",
+      "seed": 2026110208,
+      "observations": [
+        {
+          "observation_id": "off_native/global_00",
+          "arm": "OFF_NATIVE",
+          "protocol": "GLOBAL",
+          "map_id": "full181",
+          "modes": [
+            "RAW",
+            "GLOBAL"
+          ],
+          "analysis_role": "FULL_GEOMETRY_CONTROL_EXCLUDED_FROM_SYNC_GAIN"
+        },
+        {
+          "observation_id": "off_native/global_01",
+          "arm": "OFF_NATIVE",
+          "protocol": "GLOBAL",
+          "map_id": "global01_shift1_177",
+          "modes": [
+            "RAW",
+            "GLOBAL"
+          ],
+          "analysis_role": "PRIMARY_SYNC"
+        },
+        {
+          "observation_id": "off_native/global_02",
+          "arm": "OFF_NATIVE",
+          "protocol": "GLOBAL",
+          "map_id": "global02_center37_89",
+          "modes": [
+            "RAW",
+            "GLOBAL"
+          ],
+          "analysis_role": "PRIMARY_SYNC"
+        },
+        {
+          "observation_id": "off_native/global_03",
+          "arm": "OFF_NATIVE",
+          "protocol": "GLOBAL",
+          "map_id": "global03_shift2_177",
+          "modes": [
+            "RAW",
+            "GLOBAL"
+          ],
+          "analysis_role": "PRIMARY_SYNC"
+        },
+        {
+          "observation_id": "off_native/global_04",
+          "arm": "OFF_NATIVE",
+          "protocol": "GLOBAL",
+          "map_id": "global04_shift3_177",
+          "modes": [
+            "RAW",
+            "GLOBAL"
+          ],
+          "analysis_role": "PRIMARY_SYNC"
+        },
+        {
+          "observation_id": "off_native/global_05",
+          "arm": "OFF_NATIVE",
+          "protocol": "GLOBAL",
+          "map_id": "global05_center38_89",
+          "modes": [
+            "RAW",
+            "GLOBAL"
+          ],
+          "analysis_role": "PRIMARY_SYNC"
+        },
+        {
+          "observation_id": "off_native/global_06",
+          "arm": "OFF_NATIVE",
+          "protocol": "GLOBAL",
+          "map_id": "global06_center39_89",
+          "modes": [
+            "RAW",
+            "GLOBAL"
+          ],
+          "analysis_role": "PRIMARY_SYNC"
+        },
+        {
+          "observation_id": "off_native/path_00",
+          "arm": "OFF_NATIVE",
+          "protocol": "SINGLE_JUMP",
+          "map_id": "path00_shift2_177",
+          "modes": [
+            "RAW",
+            "GLOBAL",
+            "PATH"
+          ],
+          "analysis_role": "PRIMARY_SYNC"
+        },
+        {
+          "observation_id": "off_native/path_01",
+          "arm": "OFF_NATIVE",
+          "protocol": "SINGLE_JUMP",
+          "map_id": "path01_drop90_177",
+          "modes": [
+            "RAW",
+            "GLOBAL",
+            "PATH"
+          ],
+          "analysis_role": "PRIMARY_SYNC"
+        },
+        {
+          "observation_id": "payload_native/global_00",
+          "arm": "PAYLOAD_NATIVE",
+          "protocol": "GLOBAL",
+          "map_id": "full181",
+          "modes": [
+            "RAW",
+            "GLOBAL"
+          ],
+          "analysis_role": "FULL_GEOMETRY_CONTROL_EXCLUDED_FROM_SYNC_GAIN"
+        },
+        {
+          "observation_id": "payload_native/global_01",
+          "arm": "PAYLOAD_NATIVE",
+          "protocol": "GLOBAL",
+          "map_id": "global01_shift1_177",
+          "modes": [
+            "RAW",
+            "GLOBAL"
+          ],
+          "analysis_role": "PRIMARY_SYNC"
+        },
+        {
+          "observation_id": "payload_native/global_02",
+          "arm": "PAYLOAD_NATIVE",
+          "protocol": "GLOBAL",
+          "map_id": "global02_center37_89",
+          "modes": [
+            "RAW",
+            "GLOBAL"
+          ],
+          "analysis_role": "PRIMARY_SYNC"
+        },
+        {
+          "observation_id": "payload_native/global_03",
+          "arm": "PAYLOAD_NATIVE",
+          "protocol": "GLOBAL",
+          "map_id": "global03_shift2_177",
+          "modes": [
+            "RAW",
+            "GLOBAL"
+          ],
+          "analysis_role": "PRIMARY_SYNC"
+        },
+        {
+          "observation_id": "payload_native/global_04",
+          "arm": "PAYLOAD_NATIVE",
+          "protocol": "GLOBAL",
+          "map_id": "global04_shift3_177",
+          "modes": [
+            "RAW",
+            "GLOBAL"
+          ],
+          "analysis_role": "PRIMARY_SYNC"
+        },
+        {
+          "observation_id": "payload_native/global_05",
+          "arm": "PAYLOAD_NATIVE",
+          "protocol": "GLOBAL",
+          "map_id": "global05_center38_89",
+          "modes": [
+            "RAW",
+            "GLOBAL"
+          ],
+          "analysis_role": "PRIMARY_SYNC"
+        },
+        {
+          "observation_id": "payload_native/global_06",
+          "arm": "PAYLOAD_NATIVE",
+          "protocol": "GLOBAL",
+          "map_id": "global06_center39_89",
+          "modes": [
+            "RAW",
+            "GLOBAL"
+          ],
+          "analysis_role": "PRIMARY_SYNC"
+        },
+        {
+          "observation_id": "payload_native/path_00",
+          "arm": "PAYLOAD_NATIVE",
+          "protocol": "SINGLE_JUMP",
+          "map_id": "path00_shift2_177",
+          "modes": [
+            "RAW",
+            "GLOBAL",
+            "PATH"
+          ],
+          "analysis_role": "PRIMARY_SYNC"
+        },
+        {
+          "observation_id": "payload_native/path_01",
+          "arm": "PAYLOAD_NATIVE",
+          "protocol": "SINGLE_JUMP",
+          "map_id": "path01_drop90_177",
+          "modes": [
+            "RAW",
+            "GLOBAL",
+            "PATH"
+          ],
+          "analysis_role": "PRIMARY_SYNC"
+        },
+        {
+          "observation_id": "payload_framewise_recon/global_00",
+          "arm": "PAYLOAD_FRAMEWISE_RECON",
+          "protocol": "GLOBAL",
+          "map_id": "full181",
+          "modes": [
+            "RAW",
+            "GLOBAL"
+          ],
+          "analysis_role": "FULL_GEOMETRY_CONTROL_EXCLUDED_FROM_SYNC_GAIN"
+        },
+        {
+          "observation_id": "payload_framewise_recon/global_01",
+          "arm": "PAYLOAD_FRAMEWISE_RECON",
+          "protocol": "GLOBAL",
+          "map_id": "global01_shift1_177",
+          "modes": [
+            "RAW",
+            "GLOBAL"
+          ],
+          "analysis_role": "PRIMARY_SYNC"
+        },
+        {
+          "observation_id": "payload_framewise_recon/global_02",
+          "arm": "PAYLOAD_FRAMEWISE_RECON",
+          "protocol": "GLOBAL",
+          "map_id": "global02_center37_89",
+          "modes": [
+            "RAW",
+            "GLOBAL"
+          ],
+          "analysis_role": "PRIMARY_SYNC"
+        },
+        {
+          "observation_id": "payload_framewise_recon/global_03",
+          "arm": "PAYLOAD_FRAMEWISE_RECON",
+          "protocol": "GLOBAL",
+          "map_id": "global03_shift2_177",
+          "modes": [
+            "RAW",
+            "GLOBAL"
+          ],
+          "analysis_role": "PRIMARY_SYNC"
+        },
+        {
+          "observation_id": "payload_framewise_recon/global_04",
+          "arm": "PAYLOAD_FRAMEWISE_RECON",
+          "protocol": "GLOBAL",
+          "map_id": "global04_shift3_177",
+          "modes": [
+            "RAW",
+            "GLOBAL"
+          ],
+          "analysis_role": "PRIMARY_SYNC"
+        },
+        {
+          "observation_id": "payload_framewise_recon/global_05",
+          "arm": "PAYLOAD_FRAMEWISE_RECON",
+          "protocol": "GLOBAL",
+          "map_id": "global05_center38_89",
+          "modes": [
+            "RAW",
+            "GLOBAL"
+          ],
+          "analysis_role": "PRIMARY_SYNC"
+        },
+        {
+          "observation_id": "payload_framewise_recon/global_06",
+          "arm": "PAYLOAD_FRAMEWISE_RECON",
+          "protocol": "GLOBAL",
+          "map_id": "global06_center39_89",
+          "modes": [
+            "RAW",
+            "GLOBAL"
+          ],
+          "analysis_role": "PRIMARY_SYNC"
+        },
+        {
+          "observation_id": "payload_framewise_recon/path_00",
+          "arm": "PAYLOAD_FRAMEWISE_RECON",
+          "protocol": "SINGLE_JUMP",
+          "map_id": "path00_shift2_177",
+          "modes": [
+            "RAW",
+            "GLOBAL",
+            "PATH"
+          ],
+          "analysis_role": "PRIMARY_SYNC"
+        },
+        {
+          "observation_id": "payload_framewise_recon/path_01",
+          "arm": "PAYLOAD_FRAMEWISE_RECON",
+          "protocol": "SINGLE_JUMP",
+          "map_id": "path01_drop90_177",
+          "modes": [
+            "RAW",
+            "GLOBAL",
+            "PATH"
+          ],
+          "analysis_role": "PRIMARY_SYNC"
+        },
+        {
+          "observation_id": "payload_framewise_m05/global_00",
+          "arm": "PAYLOAD_FRAMEWISE_M05",
+          "protocol": "GLOBAL",
+          "map_id": "full181",
+          "modes": [
+            "RAW",
+            "GLOBAL"
+          ],
+          "analysis_role": "FULL_GEOMETRY_CONTROL_EXCLUDED_FROM_SYNC_GAIN"
+        },
+        {
+          "observation_id": "payload_framewise_m05/global_01",
+          "arm": "PAYLOAD_FRAMEWISE_M05",
+          "protocol": "GLOBAL",
+          "map_id": "global01_shift1_177",
+          "modes": [
+            "RAW",
+            "GLOBAL"
+          ],
+          "analysis_role": "PRIMARY_SYNC"
+        },
+        {
+          "observation_id": "payload_framewise_m05/global_02",
+          "arm": "PAYLOAD_FRAMEWISE_M05",
+          "protocol": "GLOBAL",
+          "map_id": "global02_center37_89",
+          "modes": [
+            "RAW",
+            "GLOBAL"
+          ],
+          "analysis_role": "PRIMARY_SYNC"
+        },
+        {
+          "observation_id": "payload_framewise_m05/global_03",
+          "arm": "PAYLOAD_FRAMEWISE_M05",
+          "protocol": "GLOBAL",
+          "map_id": "global03_shift2_177",
+          "modes": [
+            "RAW",
+            "GLOBAL"
+          ],
+          "analysis_role": "PRIMARY_SYNC"
+        },
+        {
+          "observation_id": "payload_framewise_m05/global_04",
+          "arm": "PAYLOAD_FRAMEWISE_M05",
+          "protocol": "GLOBAL",
+          "map_id": "global04_shift3_177",
+          "modes": [
+            "RAW",
+            "GLOBAL"
+          ],
+          "analysis_role": "PRIMARY_SYNC"
+        },
+        {
+          "observation_id": "payload_framewise_m05/global_05",
+          "arm": "PAYLOAD_FRAMEWISE_M05",
+          "protocol": "GLOBAL",
+          "map_id": "global05_center38_89",
+          "modes": [
+            "RAW",
+            "GLOBAL"
+          ],
+          "analysis_role": "PRIMARY_SYNC"
+        },
+        {
+          "observation_id": "payload_framewise_m05/global_06",
+          "arm": "PAYLOAD_FRAMEWISE_M05",
+          "protocol": "GLOBAL",
+          "map_id": "global06_center39_89",
+          "modes": [
+            "RAW",
+            "GLOBAL"
+          ],
+          "analysis_role": "PRIMARY_SYNC"
+        },
+        {
+          "observation_id": "payload_framewise_m05/path_00",
+          "arm": "PAYLOAD_FRAMEWISE_M05",
+          "protocol": "SINGLE_JUMP",
+          "map_id": "path00_shift2_177",
+          "modes": [
+            "RAW",
+            "GLOBAL",
+            "PATH"
+          ],
+          "analysis_role": "PRIMARY_SYNC"
+        },
+        {
+          "observation_id": "payload_framewise_m05/path_01",
+          "arm": "PAYLOAD_FRAMEWISE_M05",
+          "protocol": "SINGLE_JUMP",
+          "map_id": "path01_drop90_177",
+          "modes": [
+            "RAW",
+            "GLOBAL",
+            "PATH"
+          ],
+          "analysis_role": "PRIMARY_SYNC"
+        }
+      ]
+    }
+  ],
+  "evaluation_rules": {
+    "videoseal_32": {
+      "status": "ADOPTED_METHOD_DEFINITION",
+      "rule": "CHANNEL_J_MOD_32_REPEAT_MEAN_STRICT_GT_ZERO_NATIVE_TIE_RETAINED",
+      "zero_tie_semantics": "KEEP_NATIVE_GT_ZERO_BIT_AND_REPORT_TIE_COUNT",
+      "strict_compatibility_rule": "CHANNEL_J_MOD_32_REPEAT_MEAN_STRICT_GT_ZERO_ZERO_TIE_UNEVALUABLE"
+    },
+    "rivagan_sequence": {
+      "status": "ADOPTED_METHOD_DEFINITION",
+      "rule": "ALL_DECLARED_FRAMES_EQUAL_LOGIT_MEAN_GE_ZERO_NATIVE_TIE_RETAINED",
+      "zero_tie_semantics": "KEEP_NATIVE_GE_ZERO_BIT_AND_REPORT_TIE_COUNT",
+      "strict_compatibility_rule": "ALL_DECLARED_FRAMES_EQUAL_LOGIT_MEAN_GE_ZERO_ZERO_TIE_UNEVALUABLE"
+    }
+  },
+  "proposal_only": false,
+  "method_definition_only": true,
+  "real_execution_authorized": false,
+  "source_identity_audit": {
+    "status": "LIMITED_LOCAL_SEARCH_NO_MATCH_NOT_UNSEEN_PROOF",
+    "metadata_path": "experiments/paper_results_v1/source_identity_audit.json",
+    "searched_date": "2026-10-09",
+    "candidate_count": 10,
+    "known_seen_seed_overlap": 0
+  },
+  "paper_comparison": {
+    "status": "ADOPTED_METHOD_DEFINITION",
+    "main_arm": "PAYLOAD_FRAMEWISE_M05",
+    "main_key_label": "K0",
+    "global_mode": "GLOBAL",
+    "single_jump_mode": "PATH",
+    "full_mode": "RAW",
+    "full_separate_control": true
+  }
+}

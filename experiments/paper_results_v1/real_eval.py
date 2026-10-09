@@ -31,6 +31,11 @@ from experiments.paper_results_v1.report import read_json
 SCHEMA_VERSION = "paper-real-eval-v1"
 MAIN_ARMS = ("OFF_NATIVE", "PAYLOAD_NATIVE", "PAYLOAD_FRAMEWISE_RECON", "PAYLOAD_FRAMEWISE_M05")
 BASELINES = ("videoseal", "rivagan")
+RULE_STATUS_ACTIVE = ("ADOPTED_FOR_EXECUTION", "ADOPTED_METHOD_DEFINITION")
+VIDEOSEAL_STRICT_RULE = "CHANNEL_J_MOD_32_REPEAT_MEAN_STRICT_GT_ZERO_ZERO_TIE_UNEVALUABLE"
+VIDEOSEAL_NATIVE_TIE_RULE = "CHANNEL_J_MOD_32_REPEAT_MEAN_STRICT_GT_ZERO_NATIVE_TIE_RETAINED"
+RIVAGAN_STRICT_RULE = "ALL_DECLARED_FRAMES_EQUAL_LOGIT_MEAN_GE_ZERO_ZERO_TIE_UNEVALUABLE"
+RIVAGAN_NATIVE_TIE_RULE = "ALL_DECLARED_FRAMES_EQUAL_LOGIT_MEAN_GE_ZERO_NATIVE_TIE_RETAINED"
 PHASES = (
     "generate", "decode", "framewise", "baseline-embed-videoseal",
     "baseline-embed-rivagan", "codec", "quality", "baseline-extract-videoseal",
@@ -111,8 +116,10 @@ def validate_real_config(config):
         raise RealEvalConfigError(f"schema_version must be {SCHEMA_VERSION}")
     _identifier(config["study_id"], "study_id")
     _require(config["adoption"], ("status",), "adoption")
-    if config["adoption"]["status"] not in ("PENDING_USER_ADOPTION", "ADOPTED_FOR_EXECUTION"):
-        raise RealEvalConfigError("adoption.status must be pending or adopted")
+    if config["adoption"]["status"] not in (
+        "PENDING_USER_ADOPTION", "ADOPTED_FOR_EXECUTION", "ADOPTED_METHOD_DEFINITION_LOCAL_ONLY",
+    ):
+        raise RealEvalConfigError("adoption.status is invalid")
     _require(config["method"], ("name", "version", "claim_ceiling"), "method")
     if config["method"]["name"] != "trajectory-payload-framewise-sync-v1":
         raise RealEvalConfigError("method.name must identify the frozen current main method")
@@ -189,7 +196,11 @@ def validate_real_config(config):
         case_ids.add(case["case_id"])
         if case["cohort"] not in ("PILOT_EXCLUDED_FROM_CONFIRMATION", "CONFIRMATION_CANDIDATE"):
             raise RealEvalConfigError(f"{where}.cohort is invalid")
-        if case["source_status"] not in ("USER_ADOPTED", "PROPOSAL_UNSEEN_STATUS_UNVERIFIED"):
+        if case["source_status"] not in (
+            "USER_ADOPTED",
+            "PROPOSAL_UNSEEN_STATUS_UNVERIFIED",
+            "USER_ADOPTED_LIMITED_LOCAL_NO_MATCH_UNPROVEN",
+        ):
             raise RealEvalConfigError(f"{where}.source_status is invalid")
         if type(case["seed"]) is not int:
             raise RealEvalConfigError(f"{where}.seed must be integer")
@@ -224,21 +235,43 @@ def validate_real_config(config):
     _require(rules, ("videoseal_32", "rivagan_sequence"), "evaluation_rules")
     for name in ("videoseal_32", "rivagan_sequence"):
         _require(rules[name], ("status", "rule"), f"evaluation_rules.{name}")
-        if rules[name]["status"] not in ("PENDING_USER_ADOPTION", "ADOPTED_FOR_EXECUTION"):
+        if rules[name]["status"] not in ("PENDING_USER_ADOPTION", *RULE_STATUS_ACTIVE):
             raise RealEvalConfigError(f"evaluation_rules.{name}.status is invalid")
-    if rules["videoseal_32"]["rule"] != "CHANNEL_J_MOD_32_REPEAT_MEAN_STRICT_GT_ZERO_ZERO_TIE_UNEVALUABLE":
+    if rules["videoseal_32"]["rule"] not in (VIDEOSEAL_STRICT_RULE, VIDEOSEAL_NATIVE_TIE_RULE):
         raise RealEvalConfigError("unrecognized VideoSeal 32-task rule")
-    if rules["rivagan_sequence"]["rule"] != "ALL_DECLARED_FRAMES_EQUAL_LOGIT_MEAN_GE_ZERO_ZERO_TIE_UNEVALUABLE":
+    if rules["rivagan_sequence"]["rule"] not in (RIVAGAN_STRICT_RULE, RIVAGAN_NATIVE_TIE_RULE):
         raise RealEvalConfigError("unrecognized RivaGAN sequence rule")
-    if rules["videoseal_32"]["status"] == "ADOPTED_FOR_EXECUTION":
+    if rules["videoseal_32"]["status"] in RULE_STATUS_ACTIVE:
         length = vs["native_message_length"]
         if length % 32 or vs["native_message_bits"] != [config["payload_bits"][index % 32] for index in range(length)]:
             raise RealEvalConfigError("adopted VideoSeal 32-task rule requires exact j mod 32 repeated message and K divisible by 32")
     if (
-        rules["rivagan_sequence"]["status"] == "ADOPTED_FOR_EXECUTION"
+        rules["rivagan_sequence"]["status"] in RULE_STATUS_ACTIVE
         and riva["native_message_bits"] != config["payload_bits"]
     ):
         raise RealEvalConfigError("adopted RivaGAN sequence rule requires the same explicit 32-bit task")
+    comparison = config.get("paper_comparison")
+    if comparison is not None:
+        _require(
+            comparison,
+            (
+                "status", "main_arm", "main_key_label", "global_mode",
+                "single_jump_mode", "full_mode", "full_separate_control",
+            ),
+            "paper_comparison",
+        )
+        if comparison["status"] not in ("PENDING_USER_ADOPTION", *RULE_STATUS_ACTIVE):
+            raise RealEvalConfigError("paper_comparison.status is invalid")
+        expected = {
+            "main_arm": "PAYLOAD_FRAMEWISE_M05",
+            "main_key_label": "K0",
+            "global_mode": "GLOBAL",
+            "single_jump_mode": "PATH",
+            "full_mode": "RAW",
+            "full_separate_control": True,
+        }
+        if any(comparison.get(key) != value for key, value in expected.items()):
+            raise RealEvalConfigError("paper_comparison must match the adopted fixed M05/K0 readout")
     return config
 
 
@@ -279,6 +312,50 @@ def _baseline_soft_artifact_id(case_id, method, view_id):
     return f"{case_id}/{method}/NATIVE_SOFT/{view_id}"
 
 
+def _main_comparison_mode(observation):
+    if observation["map_id"] == "full181":
+        return "RAW"
+    if observation["protocol"] == "GLOBAL":
+        return "GLOBAL"
+    if observation["protocol"] == "SINGLE_JUMP":
+        return "PATH"
+    raise RealEvalConfigError("unsupported comparison protocol")
+
+
+def _build_comparison_slots(config):
+    rows = []
+    for case in config["cases"]:
+        case_id = case["case_id"]
+        for baseline in BASELINES:
+            for observation in _baseline_views(case):
+                view_id = observation["observation_id"].split("/", 1)[1]
+                main_observation_id = f"payload_framewise_m05/{view_id}"
+                mode = _main_comparison_mode(observation)
+                rows.append({
+                    "comparison_id": f"{case_id}/{baseline}/{view_id}",
+                    "case_id": case_id,
+                    "cohort": case["cohort"],
+                    "source_status": case["source_status"],
+                    "baseline_method": baseline,
+                    "view_id": view_id,
+                    "map_id": observation["map_id"],
+                    "protocol": observation["protocol"],
+                    "analysis_role": observation.get("analysis_role", "UNSPECIFIED"),
+                    "main_arm": "PAYLOAD_FRAMEWISE_M05",
+                    "main_key_label": "K0",
+                    "main_mode": mode,
+                    "main_slot_id": f"{case_id}/{main_observation_id}/K0/{mode}",
+                    "baseline_slot_id": f"{case_id}/{baseline}/{view_id}",
+                    "status": "PLANNED",
+                })
+    return rows
+
+
+def _comparison_enabled(config):
+    comparison = config.get("paper_comparison")
+    return isinstance(comparison, dict) and comparison.get("status") in RULE_STATUS_ACTIVE
+
+
 def _receiver_resource_plan(config, case_ids=None):
     selected = [
         case for case in config["cases"]
@@ -316,6 +393,7 @@ def build_plan(config):
     costs = []
     receiver_slots = []
     baseline_slots = []
+    comparison_slots = []
     quality_rows = []
     for case in config["cases"]:
         case_id = case["case_id"]
@@ -396,11 +474,14 @@ def build_plan(config):
                 codec=config["codec"],
                 cohort=case["cohort"],
             )
+    if _comparison_enabled(config):
+        comparison_slots.extend(_build_comparison_slots(config))
     return {
         "artifacts": artifacts,
         "costs": costs,
         "receiver_slots": receiver_slots,
         "baseline_slots": baseline_slots,
+        "comparison_slots": comparison_slots,
         "quality_rows": quality_rows,
         "receiver_resource_plan": _receiver_resource_plan(config),
     }
@@ -1304,7 +1385,7 @@ def _load_json_receipt(receipt):
     return value
 
 
-def _effective32_decision(soft, expected, *, rule, zero_decodes_one):
+def _effective32_decision(soft, expected, *, rule, zero_decodes_one, strict_zero_tie):
     values = [float(value) for value in soft]
     if len(values) != 32 or any(not math.isfinite(value) for value in values):
         return {"status": "FAILED", "reason": "effective soft output must be 32 finite values"}
@@ -1315,9 +1396,10 @@ def _effective32_decision(soft, expected, *, rule, zero_decodes_one):
         "native_decoded_bits": native_bits,
         "native_bit_errors": sum(a != b for a, b in zip(native_bits, expected)),
         "tie_count": ties,
+        "tie_policy": "UNEVALUABLE" if strict_zero_tie else "NATIVE_BIT_RETAINED",
         "effective_soft": values,
     }
-    if ties:
+    if ties and strict_zero_tie:
         return {
             **base,
             "status": "UNEVALUABLE_ZERO_TIE",
@@ -1335,7 +1417,7 @@ def _effective32_decision(soft, expected, *, rule, zero_decodes_one):
     }
 
 
-def _videoseal_32_result(record, expected, native_length, expected_frames):
+def _videoseal_32_result(record, expected, native_length, expected_frames, rule):
     if native_length % 32:
         return {"status": "FAILED", "reason": "native K is not divisible by 32"}
     sidecar = record.get("lossless_native_output")
@@ -1368,8 +1450,9 @@ def _videoseal_32_result(record, expected, native_length, expected_frames):
     return {
         **_effective32_decision(
             task_soft.tolist(), expected,
-            rule="CHANNEL_J_MOD_32_REPEAT_MEAN_STRICT_GT_ZERO_ZERO_TIE_UNEVALUABLE",
+            rule=rule,
             zero_decodes_one=False,
+            strict_zero_tie=rule == VIDEOSEAL_STRICT_RULE,
         ),
         "effective_bits": 32,
         "native_channels": native_length,
@@ -1378,7 +1461,7 @@ def _videoseal_32_result(record, expected, native_length, expected_frames):
     }
 
 
-def _rivagan_sequence_result(record, expected, expected_frames):
+def _rivagan_sequence_result(record, expected, expected_frames, rule=RIVAGAN_STRICT_RULE):
     frames = record.get("frame_soft_outputs")
     if not isinstance(frames, list) or len(frames) != expected_frames:
         return {"status": "FAILED", "reason": "missing or extra RivaGAN decoded frame"}
@@ -1390,11 +1473,124 @@ def _rivagan_sequence_result(record, expected, expected_frames):
     return {
         **_effective32_decision(
             means, expected,
-            rule="ALL_DECLARED_FRAMES_EQUAL_LOGIT_MEAN_GE_ZERO_ZERO_TIE_UNEVALUABLE",
+            rule=rule,
             zero_decodes_one=True,
+            strict_zero_tie=rule == RIVAGAN_STRICT_RULE,
         ),
         "expected_frames": expected_frames,
     }
+
+
+def _evaluate_comparison_rows(comparison_slots, receiver_rows, baseline_rows):
+    main_by_id = {row["slot_id"]: row for row in receiver_rows}
+    baseline_by_id = {row["slot_id"]: row for row in baseline_rows}
+    rows = []
+    for slot in comparison_slots:
+        main = main_by_id.get(slot["main_slot_id"])
+        baseline = baseline_by_id.get(slot["baseline_slot_id"])
+        main_status = main.get("status") if isinstance(main, dict) else "MISSING_ROW"
+        baseline_status = baseline.get("status") if isinstance(baseline, dict) else "MISSING_ROW"
+        row = {
+            **slot,
+            "main_status": main_status,
+            "main_reason": main.get("reason") if isinstance(main, dict) else "main fixed row missing",
+            "baseline_status": baseline_status,
+            "baseline_reason": baseline.get("reason") if isinstance(baseline, dict) else "baseline fixed row missing",
+            "main_exact_recovery": main.get("exact_recovery") if isinstance(main, dict) else None,
+            "baseline_exact_recovery": baseline.get("exact_recovery") if isinstance(baseline, dict) else None,
+            "main_bit_errors": main.get("bit_errors") if isinstance(main, dict) else None,
+            "baseline_bit_errors": baseline.get("bit_errors") if isinstance(baseline, dict) else None,
+        }
+        if main_status == "EVALUATED_TRUTH" and baseline_status == "EVALUATED":
+            main_exact = int(main["exact_recovery"] is True)
+            baseline_exact = int(baseline["exact_recovery"] is True)
+            row.update(
+                status="EVALUATED_PAIR",
+                exact_success_difference_main_minus_baseline=main_exact - baseline_exact,
+                bit_error_difference_main_minus_baseline=main["bit_errors"] - baseline["bit_errors"],
+            )
+        else:
+            row.update(
+                status="UNEVALUABLE_PAIR",
+                exact_success_difference_main_minus_baseline=None,
+                bit_error_difference_main_minus_baseline=None,
+                reason=f"main={main_status}; baseline={baseline_status}",
+            )
+        rows.append(row)
+    return rows
+
+
+def _comparison_source_summaries(comparison_rows):
+    summaries = []
+    keys = sorted({(row["cohort"], row["case_id"], row["baseline_method"]) for row in comparison_rows})
+    for cohort, case_id, method in keys:
+        rows = [
+            row for row in comparison_rows
+            if row["cohort"] == cohort and row["case_id"] == case_id and row["baseline_method"] == method
+        ]
+        nonfull = [row for row in rows if row["analysis_role"] != "FULL_GEOMETRY_CONTROL_EXCLUDED_FROM_SYNC_GAIN"]
+        full = [row for row in rows if row["analysis_role"] == "FULL_GEOMETRY_CONTROL_EXCLUDED_FROM_SYNC_GAIN"]
+        evaluable = [row for row in nonfull if row["status"] == "EVALUATED_PAIR"]
+        unavailable = len(nonfull) - len(evaluable)
+        observed_difference = sum(row["exact_success_difference_main_minus_baseline"] for row in evaluable)
+        summaries.append({
+            "source_summary_id": f"{case_id}/{method}",
+            "cohort": cohort,
+            "case_id": case_id,
+            "baseline_method": method,
+            "fixed_nonfull_view_denominator": len(nonfull),
+            "evaluable_nonfull_pairs": len(evaluable),
+            "unavailable_nonfull_pairs": unavailable,
+            "main_failed_or_missing_nonfull": sum(row["main_status"] != "EVALUATED_TRUTH" for row in nonfull),
+            "baseline_failed_or_missing_nonfull": sum(row["baseline_status"] != "EVALUATED" for row in nonfull),
+            "main_unavailable_nonfull": sum(row["main_status"] != "EVALUATED_TRUTH" for row in nonfull),
+            "baseline_unavailable_nonfull": sum(row["baseline_status"] != "EVALUATED" for row in nonfull),
+            "main_exact_successes_fixed_nonfull": sum(row["main_exact_recovery"] is True for row in nonfull),
+            "baseline_exact_successes_fixed_nonfull": sum(row["baseline_exact_recovery"] is True for row in nonfull),
+            "main_observed_errors_nonfull": sum(
+                row["main_status"] == "EVALUATED_TRUTH" and row["main_exact_recovery"] is False
+                for row in nonfull
+            ),
+            "baseline_observed_errors_nonfull": sum(
+                row["baseline_status"] == "EVALUATED" and row["baseline_exact_recovery"] is False
+                for row in nonfull
+            ),
+            "observed_exact_success_difference_sum": observed_difference,
+            "exact_success_difference_compatible_range": [
+                observed_difference - unavailable, observed_difference + unavailable,
+            ],
+            "exact_success_difference_lower_bound": observed_difference - unavailable,
+            "exact_success_difference_upper_bound": observed_difference + unavailable,
+            "complete_fixed_nonfull_pairs": unavailable == 0,
+            "full_control_planned": len(full),
+            "full_control_evaluable": sum(row["status"] == "EVALUATED_PAIR" for row in full),
+            "independence_unit": "SOURCE_WITH_EIGHT_CLUSTERED_NONFULL_VIEWS",
+        })
+    return summaries
+
+
+def _comparison_cohort_summaries(source_summaries):
+    output = {}
+    keys = sorted({(row["cohort"], row["baseline_method"]) for row in source_summaries})
+    for cohort, method in keys:
+        rows = [row for row in source_summaries if row["cohort"] == cohort and row["baseline_method"] == method]
+        observed = sum(row["observed_exact_success_difference_sum"] for row in rows)
+        unavailable = sum(row["unavailable_nonfull_pairs"] for row in rows)
+        output[f"{cohort}|{method}"] = {
+            "cohort": cohort,
+            "baseline_method": method,
+            "fixed_source_denominator": len(rows),
+            "complete_sources": sum(row["complete_fixed_nonfull_pairs"] for row in rows),
+            "fixed_nonfull_row_denominator": sum(row["fixed_nonfull_view_denominator"] for row in rows),
+            "evaluable_nonfull_pairs": sum(row["evaluable_nonfull_pairs"] for row in rows),
+            "unavailable_nonfull_pairs": unavailable,
+            "observed_exact_success_difference_sum": observed,
+            "exact_success_difference_compatible_range": [observed - unavailable, observed + unavailable],
+            "full_control_rows": sum(row["full_control_planned"] for row in rows),
+            "evaluable_full_controls": sum(row["full_control_evaluable"] for row in rows),
+            "independence_unit": "SOURCE; VIEW_ROWS_ARE_CLUSTERED",
+        }
+    return output
 
 
 def phase_evaluate(store, config):
@@ -1461,7 +1657,7 @@ def phase_evaluate(store, config):
                 "videoseal_32" if slot["method"] == "videoseal" else "rivagan_sequence"
             ]
             base = {**slot, "rule_status": rule["status"]}
-            if rule["status"] != "ADOPTED_FOR_EXECUTION":
+            if rule["status"] not in RULE_STATUS_ACTIVE:
                 baseline_rows.append({**base, "status": "PENDING_RULE_NOT_ADOPTED"})
                 continue
             receipt = slot.get("record")
@@ -1473,13 +1669,22 @@ def phase_evaluate(store, config):
                 if slot["method"] == "videoseal":
                     result = _videoseal_32_result(
                         record, expected, config["models"]["videoseal"]["native_message_length"],
-                        slot["frames"],
+                        slot["frames"], rule["rule"],
                     )
                 else:
-                    result = _rivagan_sequence_result(record, expected, slot["frames"])
+                    result = _rivagan_sequence_result(record, expected, slot["frames"], rule["rule"])
             except Exception as exc:
                 result = {"status": "FAILED", "reason": f"{type(exc).__name__}: {exc}"}
             baseline_rows.append({**base, **result})
+        if "comparison_slots" in store.data:
+            comparison_slots = store.data["comparison_slots"]
+        elif _comparison_enabled(config):
+            comparison_slots = _build_comparison_slots(config)
+        else:
+            comparison_slots = []
+        comparison_rows = _evaluate_comparison_rows(comparison_slots, receiver_rows, baseline_rows)
+        comparison_source_summaries = _comparison_source_summaries(comparison_rows)
+        comparison_cohort_summaries = _comparison_cohort_summaries(comparison_source_summaries)
         counts = Counter(row["status"] for row in receiver_rows)
         artifact_counts = Counter(row["status"] for row in store.data["artifacts"])
         baseline_issues = any(row["status"] != "EVALUATED" for row in baseline_rows)
@@ -1537,12 +1742,16 @@ def phase_evaluate(store, config):
                 "planned_receiver_slots": len(store.data["receiver_slots"]),
                 "planned_receiver_bits": 32 * len(store.data["receiver_slots"]),
                 "planned_baseline_rows": len(store.data["baseline_slots"]),
+                "planned_comparison_rows": len(comparison_slots),
                 "planned_quality_rows": len(store.data["quality_rows"]),
             },
             "artifact_state_counts": dict(sorted(artifact_counts.items())),
             "receiver_state_counts": dict(sorted(counts.items())),
             "receiver_rows": receiver_rows,
             "baseline_rows": baseline_rows,
+            "comparison_rows": comparison_rows,
+            "comparison_source_summaries": comparison_source_summaries,
+            "comparison_cohort_summaries": comparison_cohort_summaries,
             "quality_rows": store.data["quality_rows"],
             "cohort_summaries": cohort_summaries,
             "receiver_resource_counts": {
@@ -1565,7 +1774,12 @@ def phase_evaluate(store, config):
             writer.writeheader()
             writer.writerows(receiver_rows)
         with (store.output / "baseline_rows.csv").open("w", newline="", encoding="utf-8") as stream:
-            fields = ("slot_id", "case_id", "cohort", "method", "view_id", "protocol", "map_id", "analysis_role", "frames", "rule_status", "status", "bit_errors", "exact_recovery", "tie_count", "reason")
+            fields = (
+                "slot_id", "case_id", "cohort", "method", "view_id", "protocol", "map_id",
+                "analysis_role", "frames", "rule_status", "rule", "status", "decoded_bits",
+                "native_decoded_bits", "native_bit_errors", "bit_errors", "exact_recovery",
+                "tie_count", "tie_policy", "reason",
+            )
             writer = csv.DictWriter(stream, fieldnames=fields, lineterminator="\n", extrasaction="ignore")
             writer.writeheader()
             writer.writerows(baseline_rows)
@@ -1574,6 +1788,34 @@ def phase_evaluate(store, config):
             writer = csv.DictWriter(stream, fieldnames=fields, lineterminator="\n", extrasaction="ignore")
             writer.writeheader()
             writer.writerows(store.data["quality_rows"])
+        with (store.output / "comparison_rows.csv").open("w", newline="", encoding="utf-8") as stream:
+            fields = (
+                "comparison_id", "case_id", "cohort", "baseline_method", "view_id", "map_id",
+                "protocol", "analysis_role", "main_arm", "main_key_label", "main_mode",
+                "main_status", "baseline_status", "status", "main_exact_recovery",
+                "baseline_exact_recovery", "main_bit_errors", "baseline_bit_errors",
+                "exact_success_difference_main_minus_baseline",
+                "bit_error_difference_main_minus_baseline", "reason", "main_reason", "baseline_reason",
+            )
+            writer = csv.DictWriter(stream, fieldnames=fields, lineterminator="\n", extrasaction="ignore")
+            writer.writeheader()
+            writer.writerows(comparison_rows)
+        with (store.output / "comparison_source_summaries.csv").open("w", newline="", encoding="utf-8") as stream:
+            fields = (
+                "source_summary_id", "cohort", "case_id", "baseline_method",
+                "fixed_nonfull_view_denominator", "evaluable_nonfull_pairs",
+                "unavailable_nonfull_pairs", "main_failed_or_missing_nonfull",
+                "baseline_failed_or_missing_nonfull", "main_unavailable_nonfull",
+                "baseline_unavailable_nonfull", "main_exact_successes_fixed_nonfull",
+                "baseline_exact_successes_fixed_nonfull", "main_observed_errors_nonfull",
+                "baseline_observed_errors_nonfull", "observed_exact_success_difference_sum",
+                "exact_success_difference_lower_bound", "exact_success_difference_upper_bound",
+                "complete_fixed_nonfull_pairs",
+                "full_control_planned", "full_control_evaluable", "independence_unit",
+            )
+            writer = csv.DictWriter(stream, fieldnames=fields, lineterminator="\n", extrasaction="ignore")
+            writer.writeheader()
+            writer.writerows(comparison_source_summaries)
         elapsed = time.perf_counter() - started
         store.data["phases"]["evaluate"].update(status="COMPLETE", finished_at_unix=time.time(), seconds=elapsed)
         report["phase_records"] = copy.deepcopy(store.data["phases"])

@@ -78,6 +78,12 @@ and the RivaGAN local community checkpoint. It never downloads a model and it
 has no default config. The checked
 `real_eval.proposal.json` is explicitly unadopted; its ten cases are two
 excluded pilots plus eight confirmation candidates.
+`real_eval.adopted.json` freezes the user-adopted local method definition,
+including the 2+8 roster, `A6D39C5E`, original `watermark`/`watermark-wrong`
+keys, native-tie reducers, and paper-facing M05/K0 comparison rows. Its
+`real_execution_authorized=false` field records that local method adoption is
+not permission to run models or media. Local paths and file digests remain
+explicit required execution inputs.
 
 The standard-library-only phases are safe to run in a source copy without
 `.git` and do not import torch or load media:
@@ -126,9 +132,12 @@ RivaGAN frame logits, and complete VideoSeal detector arrays in a forced
 lossless NPZ sidecar. Each baseline retains nine logical edit rows over eight
 unique index maps. Blind receiver plans/readouts are persisted incrementally
 before truth evaluation. Pilot and confirmation summaries remain separate.
-See [evaluation_proposal_v1.md](evaluation_proposal_v1.md) for the proposed
-roster, exact edit denominator, effective-32 baseline rules, costs, claim
-ceiling, and the decisions that remain with the user.
+See [evaluation_method_v1.md](evaluation_method_v1.md) for the adopted local
+method, fixed denominator, effective-32 rules, cost accounting, and claim
+ceiling. The bounded roster-history evidence is in
+[source_identity_audit.md](source_identity_audit.md). The older
+[evaluation_proposal_v1.md](evaluation_proposal_v1.md) and strict config remain
+unchanged compatibility records.
 
 `historical_conditional_joint.manifest.json` is a static 44-slot import map for
 the already-audited conditional-joint development result. It was declared from
@@ -163,6 +172,13 @@ declared, it also writes the unchanged strict 32-bit reporter under
 and cost row stays in its fixed denominator when its source or backend is
 missing.
 
+The staged real evaluator additionally writes `comparison_rows.csv` and
+`comparison_source_summaries.csv`. These left-join every predeclared
+source/view/baseline row to the single selected M05/K0 main readout and retain
+missing or failed evidence. Confirmation summaries use eight sources as the
+independence denominator; their eight non-FULL view rows are clustered within
+each source. FULL is reported separately as a geometry control.
+
 The six slot states are `OBSERVED`, `FAILED`, `MISSING`, `EXCLUDED`,
 `UNSUPPORTED`, and `CONFLICT`. The full fixed denominator is every manifest
 slot, including excluded and unsupported rows. Conditional tables separately
@@ -179,9 +195,9 @@ contains generation payload, so P1/P0 and M05/P0 quality rows are not an OFF
 watermark distortion measurement.
 
 The historical 32-bit rows recover the fixed configured `OKOK` message. They
-do not establish arbitrary 32-bit message capacity. A future message or
-identity roster remains pending; this package does not randomize or replace the
-payload when importing old evidence.
+do not establish arbitrary 32-bit message capacity. The separately adopted
+new evaluation message and roster do not randomize, replace, or retroactively
+reinterpret the payload when importing that old evidence.
 
 ## Implemented paired-control workflow boundary
 
@@ -278,9 +294,10 @@ model tensors, and `[1,32]` messages. It clamps encoder output to `[-1,1]` and
 uses the pinned implementation's `(x+1)*127.5` uint8 truncation, without a
 hidden file codec. Extraction detaches and returns each frame immediately so a
 video does not retain every autograd graph. Neither adapter receives truth
-during extract, and no sequence reducer is selected. RivaGAN construction
-requires explicit source, model, weight, color, normalization, transport, and
-codec-comparability metadata.
+during extract, and the adapter output itself remains unreduced; the staged
+evaluator applies the separately selected native-tie rule afterward. RivaGAN
+construction requires explicit source, model, weight, color, normalization,
+transport, and codec-comparability metadata.
 
 `archive/SSTW/external_baseline/source_registry.json` and its
 `official_eval_adapters` directory also declare VidSig, VideoShield, VideoMark,
@@ -291,26 +308,26 @@ by itself establish a complete VideoSeal baseline. Cross-model generation and
 inversion cost and their intended use remain pending, so these entries are not
 added to the default minimal comparison set.
 
-## Concrete recommendation pending adoption
+## Adopted local evaluation definition
 
 The earlier inventory stage identified eight confirmation sources and 48
 shared-codec roundtrips as a possible engineering batch, while leaving the
 capacity mapping unresolved. It remains historical planning context, not an
 active default.
 
-The current, still unadopted recommendation is specified in
-[`evaluation_proposal_v1.md`](evaluation_proposal_v1.md): two excluded pilots,
-eight separately summarized confirmation candidates, VideoSeal effective-32
-`j mod 32` channel repetition as the primary 32-information-bit comparison,
-RivaGAN all-frame soft means, and an optional separate VideoSeal native-K
-table. Both reducers preserve their native zero-bit convention but mark an
-exact reduced zero as `UNEVALUABLE_ZERO_TIE` in the currently implemented
-candidate. The paper-facing recommendation instead keeps each native bit and
-reports `tie_count`; that option still needs explicit minimal wiring and review
-if selected. The same proposal fixes the paper-facing main row to M05/K0:
-GLOBAL for non-FULL GLOBAL views, PATH for SINGLE_JUMP, and RAW FULL in a
-separate table, giving 64 non-FULL pairs per external method and eight FULL
-controls over the eight confirmation sources. The complete 160 rows per source
-remain controls and ablations. The proposal does not select a roster, mapping,
-reducer, budget, threshold, or execution by default, and no real model run or
-publication notebook is produced by this package.
+The adopted definition is specified in
+[`evaluation_method_v1.md`](evaluation_method_v1.md): two excluded pilots,
+eight separately summarized confirmation sources, VideoSeal effective-32
+`j mod 32` channel repetition, and RivaGAN all-frame soft means. Exact zero
+keeps each baseline's native decision and records `tie_count`; the old strict
+`UNEVALUABLE_ZERO_TIE` rules remain available only through the historical
+proposal config and do not change old saved-run meaning. The paper-facing main
+row is M05/K0: GLOBAL for non-FULL GLOBAL views, PATH for SINGLE_JUMP, and RAW
+FULL in a separate table, giving 64 non-FULL pairs per external method and
+eight FULL controls over the eight confirmation sources. The complete 160 rows
+per source remain controls and ablations.
+
+This local method adoption does not authorize execution. VideoSeal native-K,
+threshold/FPR work, strength or reducer scans, extra attacks/baselines, and
+automatic execution remain outside the adopted method. No real model run or
+publication notebook was produced by this package.

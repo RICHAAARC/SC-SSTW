@@ -24,6 +24,10 @@ def proposal():
     return report.read_json(PACKAGE / "real_eval.proposal.json")
 
 
+def adopted():
+    return report.read_json(PACKAGE / "real_eval.adopted.json")
+
+
 def one_case_config():
     value = proposal()
     value["study_id"] = "synthetic_real_runner_state_fixture"
@@ -46,6 +50,7 @@ def test_proposal_plan_has_separate_pilot_and_confirmation_fixed_denominators():
     assert len(plan["costs"]) == 110
     assert len(plan["receiver_slots"]) == 1600
     assert len(plan["baseline_slots"]) == 180
+    assert len(plan["comparison_slots"]) == 0
     assert len(plan["quality_rows"]) == 70
     assert plan["receiver_resource_plan"] == {
         "sync_framewise_encodes": 360,
@@ -62,6 +67,44 @@ def test_proposal_plan_has_separate_pilot_and_confirmation_fixed_denominators():
     assert all(row["analysis_role"] == "FULL_GEOMETRY_CONTROL_EXCLUDED_FROM_SYNC_GAIN" for row in full)
     assert config["payload_hex"] == "A6D39C5E"
     assert config["payload_bits"] != [int(bit) for byte in b"OKOK" for bit in f"{byte:08b}"]
+
+
+def test_adopted_plan_freezes_native_tie_rules_and_paper_comparison_denominators():
+    config = real_eval.validate_real_config(adopted())
+    plan = real_eval.build_plan(config)
+    audit = report.read_json(PACKAGE / "source_identity_audit.json")
+    assert config["adoption"]["status"] == "ADOPTED_METHOD_DEFINITION_LOCAL_ONLY"
+    assert config["real_execution_authorized"] is False
+    assert config["keys"] == {"K0": "watermark", "K1": "watermark-wrong"}
+    assert config["roster_adoption"].startswith("FIXED_TWO_PILOT_PLUS_EIGHT_CONFIRMATION_USER_ADOPTED")
+    assert {case["source_status"] for case in config["cases"]} == {
+        "USER_ADOPTED_LIMITED_LOCAL_NO_MATCH_UNPROVEN"
+    }
+    assert audit["candidate_case_ids"] == [case["case_id"] for case in config["cases"]]
+    assert audit["result"] == "NO_MATCH_IN_SEARCHED_LOCAL_HISTORY"
+    assert audit["unseen_status"] == "UNPROVEN_LIMITED_LOCAL_SEARCH"
+    assert config["evaluation_rules"]["videoseal_32"]["rule"] == real_eval.VIDEOSEAL_NATIVE_TIE_RULE
+    assert config["evaluation_rules"]["rivagan_sequence"]["rule"] == real_eval.RIVAGAN_NATIVE_TIE_RULE
+    assert len(plan["comparison_slots"]) == 180
+
+    for method in real_eval.BASELINES:
+        confirmation = [
+            row for row in plan["comparison_slots"]
+            if row["cohort"] == "CONFIRMATION_CANDIDATE" and row["baseline_method"] == method
+        ]
+        nonfull = [row for row in confirmation if row["analysis_role"] == "PRIMARY_SYNC"]
+        full = [row for row in confirmation if row["analysis_role"] != "PRIMARY_SYNC"]
+        assert len(nonfull) == 64 and len(full) == 8
+        assert all(row["main_arm"] == "PAYLOAD_FRAMEWISE_M05" for row in confirmation)
+        assert all(row["main_key_label"] == "K0" for row in confirmation)
+        assert all(row["main_mode"] == "GLOBAL" for row in nonfull if row["protocol"] == "GLOBAL")
+        assert all(row["main_mode"] == "PATH" for row in nonfull if row["protocol"] == "SINGLE_JUMP")
+        assert all(row["main_mode"] == "RAW" for row in full)
+        pilot = [
+            row for row in plan["comparison_slots"]
+            if row["cohort"] == "PILOT_EXCLUDED_FROM_CONFIRMATION" and row["baseline_method"] == method
+        ]
+        assert len(pilot) == 18
 
 
 def test_run_store_failure_retains_all_planned_rows_and_per_case_phase_state(tmp_path):
@@ -110,7 +153,8 @@ def test_real_cli_preflight_plan_and_init_work_from_no_git_copy(tmp_path):
     summary = json.loads(completed.stdout)
     assert summary["fixed_denominator"] == {
         "artifacts": 690, "baseline_slots": 180, "cases": 10, "cost_rows": 110,
-        "quality_rows": 70, "receiver_bits": 51200, "receiver_slots": 1600,
+        "comparison_slots": 0, "quality_rows": 70, "receiver_bits": 51200,
+        "receiver_slots": 1600,
     }
 
     preflight_output = tmp_path / "preflight"
@@ -138,6 +182,7 @@ def test_real_cli_preflight_plan_and_init_work_from_no_git_copy(tmp_path):
     state = json.loads((init_output / "run_state.json").read_text(encoding="utf-8"))
     assert len(state["artifacts"]) == 690 and len(state["receiver_slots"]) == 1600
     assert len(state["baseline_slots"]) == 180 and len(state["quality_rows"]) == 70
+    assert len(state["comparison_slots"]) == 0
     assert all(row["status"] == "PLANNED" for row in state["receiver_slots"])
 
 
@@ -380,15 +425,81 @@ def test_rivagan_sequence_rule_keeps_zero_and_failure_semantics(frames, expected
 
 def test_effective32_zero_tie_preserves_each_native_zero_rule_but_is_not_exact():
     videoseal = real_eval._effective32_decision(
-        [0.0] * 32, [0] * 32, rule="vs", zero_decodes_one=False,
+        [0.0] * 32, [0] * 32, rule="vs", zero_decodes_one=False, strict_zero_tie=True,
     )
     rivagan = real_eval._effective32_decision(
-        [0.0] * 32, [1] * 32, rule="riva", zero_decodes_one=True,
+        [0.0] * 32, [1] * 32, rule="riva", zero_decodes_one=True, strict_zero_tie=True,
     )
     assert videoseal["native_decoded_bits"] == [0] * 32
     assert rivagan["native_decoded_bits"] == [1] * 32
     assert videoseal["status"] == rivagan["status"] == "UNEVALUABLE_ZERO_TIE"
     assert videoseal["exact_recovery"] is rivagan["exact_recovery"] is False
+
+
+def test_adopted_native_tie_rules_keep_native_bits_while_strict_rules_remain_unevaluable():
+    vs_native = real_eval._effective32_decision(
+        [0.0] * 32, [0] * 32, rule=real_eval.VIDEOSEAL_NATIVE_TIE_RULE,
+        zero_decodes_one=False, strict_zero_tie=False,
+    )
+    riva_native = real_eval._rivagan_sequence_result(
+        {"frame_soft_outputs": [[0.0] * 32, [0.0] * 32]},
+        [1] * 32,
+        expected_frames=2,
+        rule=real_eval.RIVAGAN_NATIVE_TIE_RULE,
+    )
+    assert vs_native["status"] == riva_native["status"] == "EVALUATED"
+    assert vs_native["decoded_bits"] == [0] * 32
+    assert riva_native["decoded_bits"] == [1] * 32
+    assert vs_native["exact_recovery"] is riva_native["exact_recovery"] is True
+    assert vs_native["tie_count"] == riva_native["tie_count"] == 32
+    assert vs_native["tie_policy"] == riva_native["tie_policy"] == "NATIVE_BIT_RETAINED"
+
+    strict = real_eval._rivagan_sequence_result(
+        {"frame_soft_outputs": [[0.0] * 32, [0.0] * 32]},
+        [1] * 32,
+        expected_frames=2,
+        rule=real_eval.RIVAGAN_STRICT_RULE,
+    )
+    assert strict["status"] == "UNEVALUABLE_ZERO_TIE"
+    assert strict["native_decoded_bits"] == [1] * 32
+    assert strict["decoded_bits"] is None
+
+
+def test_fixed_comparison_left_join_keeps_missing_rows_and_source_denominator():
+    config = real_eval.validate_real_config(adopted())
+    slots = [
+        row for row in real_eval.build_plan(config)["comparison_slots"]
+        if row["case_id"] == "confirm_01" and row["baseline_method"] == "videoseal"
+    ]
+    global_01 = next(row for row in slots if row["view_id"] == "global_01")
+    global_02 = next(row for row in slots if row["view_id"] == "global_02")
+    receiver_rows = [
+        {"slot_id": global_01["main_slot_id"], "status": "EVALUATED_TRUTH", "exact_recovery": True, "bit_errors": 0},
+        {"slot_id": global_02["main_slot_id"], "status": "EVALUATED_TRUTH", "exact_recovery": False, "bit_errors": 2},
+    ]
+    baseline_rows = [
+        {"slot_id": global_01["baseline_slot_id"], "status": "EVALUATED", "exact_recovery": False, "bit_errors": 1},
+    ]
+    rows = real_eval._evaluate_comparison_rows(slots, receiver_rows, baseline_rows)
+    assert len(rows) == 9
+    assert next(row for row in rows if row["view_id"] == "global_01")["status"] == "EVALUATED_PAIR"
+    incomplete = next(row for row in rows if row["view_id"] == "global_02")
+    assert incomplete["status"] == "UNEVALUABLE_PAIR"
+    assert incomplete["baseline_status"] == "MISSING_ROW"
+    assert incomplete["exact_success_difference_main_minus_baseline"] is None
+
+    summary = real_eval._comparison_source_summaries(rows)[0]
+    assert summary["fixed_nonfull_view_denominator"] == 8
+    assert summary["evaluable_nonfull_pairs"] == 1
+    assert summary["unavailable_nonfull_pairs"] == 7
+    assert summary["main_unavailable_nonfull"] == 6
+    assert summary["baseline_unavailable_nonfull"] == 7
+    assert summary["main_exact_successes_fixed_nonfull"] == 1
+    assert summary["main_observed_errors_nonfull"] == 1
+    assert summary["baseline_observed_errors_nonfull"] == 1
+    assert summary["observed_exact_success_difference_sum"] == 1
+    assert summary["exact_success_difference_compatible_range"] == [-6, 8]
+    assert summary["full_control_planned"] == 1
 
 
 @pytest.mark.parametrize("frames", [180, 182])
@@ -427,6 +538,7 @@ def test_videoseal_reducer_rejects_missing_or_extra_frames(monkeypatch, tmp_path
         [0] * 32,
         native_length=256,
         expected_frames=181,
+        rule=real_eval.VIDEOSEAL_STRICT_RULE,
     )
     assert result["status"] == "FAILED"
     assert "shape" in result["reason"]
@@ -532,3 +644,20 @@ def test_evaluate_isolates_bad_receiver_baseline_and_sidecar_receipts(tmp_path):
     assert (store.output / "evaluation_report.json").is_file()
     assert (store.output / "receiver_rows.csv").is_file()
     assert (store.output / "baseline_rows.csv").is_file()
+
+
+def test_legacy_strict_run_state_without_comparison_manifest_reopens_without_reinterpretation(tmp_path):
+    config = one_case_config()
+    output = tmp_path / "legacy-strict-run"
+    store = real_eval.RunStore(output, config, create=True)
+    assert store.data["comparison_slots"] == []
+    store.data.pop("comparison_slots")
+    store.save()
+
+    reopened = real_eval.RunStore(output, config)
+    report_value = real_eval.phase_evaluate(reopened, config)
+    assert report_value["fixed_denominator"]["planned_comparison_rows"] == 0
+    assert report_value["comparison_rows"] == []
+    assert report_value["comparison_source_summaries"] == []
+    assert report_value["comparison_cohort_summaries"] == {}
+    assert {row["status"] for row in report_value["baseline_rows"]} == {"PENDING_RULE_NOT_ADOPTED"}
