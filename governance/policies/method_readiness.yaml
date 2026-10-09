@@ -1,16 +1,61 @@
-implementation_status: standalone_conditional_joint_v1_release
-evidence_status: fixed_conditional_cases_verified_at_original_source
+status_as_of: '2026-10-09'
 active_method: trajectory_sampling_embedding_video_watermark
-new_gpu_execution: false
+checkout_branch: dev/trajectory-attribution-v1
+implementation_status: trajectory_attribution_and_uncertainty_v1_published
+evidence_status: fixed_accept_reject_verified_uncertainty_complete_but_not_covered
+main_implementation_baseline: 41120d7ac8261b24b950fff38886de0439fdaf88
+research_implementation_baseline: c8dda3ef18bd9df3af8b677d1befeb5e4489a1de
+attribution_implementation_in_main: false
+uncertainty_implementation_in_main: false
+new_gpu_execution_during_documentation_task: false
+original_research_complete: false
+current_evidence_index: docs/evidence/temporal_mechanisms.json
+formal_requirement_comparison: docs/research_status_2026-10-09.md
+attribution_confirmation:
+  independent_sources: 2
+  queries: 128
+  accept: 16
+  reject: 112
+  uncertain: 0
+  technical_missing: 0
+  implemented: true
+  real_run_completed: true
+  audited: true
+  published: true
+uncertainty_followup:
+  queries: 22
+  accept: 16
+  reject: 6
+  uncertain: 0
+  technical_missing: 0
+  reused_sources: 2
+  new_independent_sources: 0
+  shared_primary_denominator: 10
+  sync_coverage: 0
+  weak_identity_coverage: 0
+  status: COMPLETE_BUT_NOT_COVERED
+  implemented: true
+  real_run_completed: true
+  audited: true
+  published: true
+retained_constraints:
+  - stage1_177_null_accept_1_of_6
+  - stage1_89_null_uncertain_6_of_6
+  - known_dev_calibration_is_not_unseen_counterexample_repair
+  - full181_is_geometry_only
 claims_not_established:
-  - arbitrary_video_presence_detection
-  - wrong_key_rejection
-  - broad_blind_temporal_synchronization
+  - arbitrary_video_presence_or_general_wrong_key_rejection
+  - real_sync_uncertainty_and_weak_identity_abstention
+  - generation_time_joint_state_and_payload_embedding
+  - spatial_local_identity_payload
   - time_dependent_segment_payload
-  - segment_sequence_aggregation_and_rejection
+  - segment_sequence_overlap_erasure_and_conflict_handling
+  - repeated_frame_and_declared_speed_state_paths
   - unknown_temporal_edit_robustness
   - calibrated_population_fpr
   - independent_source_generalization
   - payload_off_quality_cost
   - imperceptibility
   - scientific_pass
+optional_extensions:
+  - affine_invariant_synchronization

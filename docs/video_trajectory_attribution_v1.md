@@ -1,5 +1,7 @@
 # Trajectory Attribution V1
 
+> 当前状态已更新至文末 2026-10-09 后续审计；下文原协议和发布阶段说明按当时语境保留。
+
 本研究分支实现“基于轨迹采样嵌入思想的视频水印方法”的归属判定。它复用当前 main 已发布的 trajectory payload、M05、时间编辑搜索和稳定 payload reader，不导入退役 Stage1 runner，也不改变旧数学文件。GROW 仍是具体实现来源；总体方法名不再写成 GROW 扩展。
 
 ## 固定数据与资源层
@@ -52,3 +54,9 @@ K1 不能因为标签而直接拒绝。OFF、wrong key、other identity 与自�
 ## 发布与证据边界
 
 新 Notebook 是独立研究分支的固定 Run-all，自带配置，不读取 Drive 历史输入。首代码 cell 只挂载 Drive；源码候选先以 SOURCE_SHA=None 静态审查并发布 S，再单独重建此 Notebook 绑定 S 为 N。现有五份 main Notebook 保持各自已发布的 9054f67 绑定，不重写。本实现阶段只执行 CPU/fake/schema/portability 检查（portability 套件包含 synthetic CPU FFmpeg fixture），不自动运行新的真实视频/模型、GPU、Colab 或 Drive；因此独立确认是否完成仍是明确的真实执行 gap。
+
+## 2026-10-09 后续真实审计（当前状态）
+
+上节“实现阶段／待执行”是发布时说明，保留当时记录；独立确认现已完成。运行 `20261008T085244020205Z` 绑定 source `cd5e21221cb3c4bc95727a2a0ba15ea94b5aea83`，Notebook 发布 `e1a201766f42733c9ca4ac28234bc0d3d34110ee`。DEV64 冻结后，C1/C2 两个确认源合计 128 查询：**16 ACCEPT、112 REJECT、0 UNCERTAIN、0 技术缺失**。接受与拒绝已有有限真实验证；两类方法不确定未覆盖。查询及候选不等于独立来源数，零观察错误不等于总体 FPR 为零。
+
+已知 Stage1 反例保持原结论；后续 DEV 对该已知输入的校准不是新的未见反例修复。最新的[要求与审计对照](research_status_2026-10-09.md)及[机器证据](evidence/temporal_mechanisms.json)连接完整收据。实现已发布在研究分支，尚未进入 main。原冻结公式、阈值与协议正文不变。

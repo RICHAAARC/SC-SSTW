@@ -1,5 +1,7 @@
 # Trajectory attribution uncertainty follow-up V1
 
+> 当前状态已更新至文末 2026-10-09 后续审计；下文原协议和发布阶段说明按当时语境保留。
+
 This research-branch follow-up asks whether the already frozen trajectory-attribution V1 decision rule produces two scientific uncertainty outcomes on a small preregistered set of real saved observations:
 
 1. synchronization is strong enough to continue, but the action is unreliable; or
@@ -53,3 +55,13 @@ Across all 22 rows, an ACCEPT on a negative row or an ACCEPT on a positive row w
 ## Evidence ceiling
 
 The source candidate is validated with static, CPU and fake fixtures only. The notebook is delivered for user execution and contains no agent-run real result. It reuses two previously seen confirmation sources, so even a successful uncertainty trigger would establish only the behavior of the frozen rule on this fixed roster. It would not establish population false-positive rate, unknown-attack robustness, new-source generalization, or a guaranteed uncertainty-triggering construction.
+
+## 2026-10-09 completed real audit (current state)
+
+The source-candidate paragraph above describes the original delivery stage. The user run and audit are now complete: run `20261008T225339511895Z`, source `1fb1b129ba27b58705e407c7ef2d7627aaf47b1e`, published Notebook `c8dda3ef18bd9df3af8b677d1befeb5e4489a1de`.
+
+**22/22 complete: 16 ACCEPT / 6 REJECT / 0 UNCERTAIN / 0 technical missing. Both uncertainty branches use the same ten primary probes and each has 0/10 coverage (`NOT_OBSERVED_FIXED_ROSTER`). 完整但未覆盖。** Correct abstention on real method-uncertainty inputs is not established. The four low-sync payload slots are normally NOT_ELIGIBLE, not missing executions; actual payload reads were 18, not the maximum budget of 22.
+
+Positive/negative regression controls remained 2/2 and 6/6; false accepts were 0/22 and unknown queries 0. All four alias controls had one top path and one action, so no actual alias tie was observed. The two sources are reused: zero new independent sources. Technical UNCERTAIN cannot replace method uncertainty coverage. No threshold, input replacement or rerun was used to manufacture a trigger.
+
+The frozen protocol above and immutable Notebook remain unchanged. Implementation is published on the research branch, not main. See [current requirements and scope](research_status_2026-10-09.md) and [machine evidence](evidence/temporal_mechanisms.json) for the final audit receipt and result identities. No population FPR, new-source generalization or complete three-state validation is claimed.
