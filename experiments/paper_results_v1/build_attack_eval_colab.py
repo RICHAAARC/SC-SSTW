@@ -261,7 +261,12 @@ def build_notebook():
     ''')
     notebook = {
         "nbformat": 4, "nbformat_minor": 5,
-        "metadata": {"kernelspec": {"display_name": "Python 3", "language": "python", "name": "python3"}, "colab": {"name": OUTPUT.name}},
+        "metadata": {
+            "accelerator": "GPU",
+            "kernelspec": {"display_name": "Python 3", "language": "python", "name": "python3"},
+            "language_info": {"name": "python", "version": "3"},
+            "colab": {"name": OUTPUT.name},
+        },
         "cells": [
             _cell("code", drive, "drive-mount"),
             _cell("markdown", "# Fixed two-pilot temporal attack evaluation\n\nRun all. The first cell asks you to authorize the Drive mount. This notebook reuses the specified prior two-pilot run and never regenerates a missing main arm.\n", "intro"),

@@ -208,7 +208,7 @@ def build_plan(config):
             "all_quality_rows": 70,
             "attempt_framewise_clock_encodes": 120,
             "attempt_logical_wan_reads": 480,
-            "attempt_physical_wan_encode_upper_bound": 240,
+            "attempt_physical_wan_encode_upper_bound": 360,
             "attempt_new_codec_roundtrips": 172,
             "attempt_edited_and_received_rgb8_bytes": 29727129600,
         },
@@ -596,6 +596,24 @@ def _clock_record_path(store, case_id, arm, attack_id, key_label):
     return _record_path(store, case_id, "clock", arm, attack_id, key_label)
 
 
+def _persist_actual_calls(store, case_id, field, calls):
+    """Persist started calls before, and outcomes immediately after, execution."""
+    records = copy.deepcopy(calls)
+    summary = {
+        "attempted": len(records),
+        "completed": sum(row["status"] == "COMPLETE" for row in records),
+        "failed": sum(row["status"] == "FAILED" for row in records),
+        "unfinished": sum(row["status"] == "RUNNING" for row in records),
+        "records": records,
+    }
+    store.data["records"].setdefault(case_id, {})[field] = summary
+    store.save()
+    atomic_json(_record_path(store, case_id, field + ".json"), {
+        "case_id": case_id, **summary,
+    })
+    return summary
+
+
 def _raw_operation(frames):
     output_frames = ((frames - 1) // 4) * 4 + 1
     support = min(44, (output_frames - 1) // 4)
@@ -640,16 +658,15 @@ def phase_receiver_clock(store, config, case_id):
                                 reason=f"received artifact is {source['status']}",
                             )
                     store.save()
+            clock_calls = []
+            _persist_actual_calls(store, case_id, "framewise_clock_encodes", clock_calls)
             backend = load_local_framewise_backend(config["models"]["framewise"])
             import numpy as np
-            clock_counts = {"attempted": 0, "completed": 0, "failed": 0}
             for arm in MAIN_ARMS:
                 for spec in config["attacks"]:
                     attack_id = spec["attack_id"]
                     source = store.artifact(f"{case_id}/{arm}/{attack_id}/RECEIVED")
                     rows = _receiver_rows(store, case_id, arm=arm, attack_id=attack_id)
-                    encode_attempted = False
-                    encode_completed = False
                     try:
                         if source["status"] != "AVAILABLE":
                             status = "MISSING" if source["status"] == "MISSING" else "FAILED"
@@ -659,68 +676,85 @@ def phase_receiver_clock(store, config, case_id):
                             store.save()
                             continue
                         rgb = _load_rgb8(source)
-                        clock_counts["attempted"] += 1
-                        encode_attempted = True
-                        latent = backend.encode(rgb)
-                        clock_counts["completed"] += 1
-                        encode_completed = True
+                        call = {
+                            "call_id": f"{case_id}/{arm}/{attack_id}",
+                            "artifact_id": source["artifact_id"], "status": "RUNNING",
+                            "started_at_unix": time.time(),
+                        }
+                        clock_calls.append(call)
+                        _persist_actual_calls(store, case_id, "framewise_clock_encodes", clock_calls)
+                        try:
+                            latent = backend.encode(rgb)
+                        except Exception as exc:
+                            call.update(
+                                status="FAILED", finished_at_unix=time.time(),
+                                reason=f"{type(exc).__name__}: {exc}",
+                            )
+                            _persist_actual_calls(store, case_id, "framewise_clock_encodes", clock_calls)
+                            raise
+                        call.update(status="COMPLETE", finished_at_unix=time.time())
+                        _persist_actual_calls(store, case_id, "framewise_clock_encodes", clock_calls)
                         if int(latent.shape[0]) != int(source["shape"][0]):
                             raise ValueError("framewise encoder changed temporal length")
                         for key_label in KEY_LABELS:
-                            root = _clock_record_path(store, case_id, arm, attack_id, key_label)
-                            evidence = method.score_framewise(latent, config["keys"][key_label], method.PUBLIC)
-                            estimate = method.solve_monotone(
-                                evidence["signed_projection"], evidence["rho"], method.PUBLIC,
-                            )
-                            operation = (
-                                method.decode_visible_span(estimate["path"], method.PUBLIC)
-                                if estimate["status"] == "ESTIMATED" else None
-                            )
-                            root.parent.mkdir(parents=True, exist_ok=True)
-                            np.savez_compressed(
-                                root.with_suffix(".npz"),
-                                signed_projection=evidence["signed_projection"], rho=evidence["rho"],
-                            )
-                            estimate_record = atomic_json(root.with_suffix(".json"), {
-                                "case_id": case_id, "arm": arm, "attack_id": attack_id,
-                                "key_label": key_label, "status": estimate["status"],
-                                "estimate": estimate, "operation": operation,
-                                "evidence": {
-                                    "path": str(root.with_suffix(".npz")),
-                                    "shape": [evidence["received_frames"], evidence["source_frames"]],
-                                    "arrays": ["signed_projection", "rho"], "truth_inputs": False,
-                                },
-                            })
-                            for row in _receiver_rows(
+                            key_rows = _receiver_rows(
                                 store, case_id, arm=arm, attack_id=attack_id,
                                 key_label=key_label, mode="BLIND_PATH",
-                            ):
-                                selected = operation
-                                row_status = "CLOCK_READY" if operation is not None and operation["status"] == "SUPPORTED" else (
-                                    "UNSUPPORTED" if operation is not None else "UNRESOLVED"
+                            )
+                            try:
+                                root = _clock_record_path(store, case_id, arm, attack_id, key_label)
+                                evidence = method.score_framewise(latent, config["keys"][key_label], method.PUBLIC)
+                                estimate = method.solve_monotone(
+                                    evidence["signed_projection"], evidence["rho"], method.PUBLIC,
                                 )
-                                row.update(
-                                    status=row_status,
-                                    reason=(None if row_status == "CLOCK_READY" else (
-                                        selected.get("reason") if selected else estimate["reason"]
-                                    )),
-                                    clock_record=estimate_record,
-                                    clock_status=estimate["status"],
-                                    clock_score_gap=estimate.get("score_gap"),
-                                    operation=selected,
-                                    truth_inputs=False,
+                                operation = (
+                                    method.decode_visible_span(estimate["path"], method.PUBLIC)
+                                    if estimate["status"] == "ESTIMATED" else None
                                 )
-                            store.save()
+                                root.parent.mkdir(parents=True, exist_ok=True)
+                                np.savez_compressed(
+                                    root.with_suffix(".npz"),
+                                    signed_projection=evidence["signed_projection"], rho=evidence["rho"],
+                                )
+                                estimate_record = atomic_json(root.with_suffix(".json"), {
+                                    "case_id": case_id, "arm": arm, "attack_id": attack_id,
+                                    "key_label": key_label, "status": estimate["status"],
+                                    "estimate": estimate, "operation": operation,
+                                    "evidence": {
+                                        "path": str(root.with_suffix(".npz")),
+                                        "shape": [evidence["received_frames"], evidence["source_frames"]],
+                                        "arrays": ["signed_projection", "rho"], "truth_inputs": False,
+                                    },
+                                })
+                                for row in key_rows:
+                                    selected = operation
+                                    row_status = "CLOCK_READY" if operation is not None and operation["status"] == "SUPPORTED" else (
+                                        "UNSUPPORTED" if operation is not None else "UNRESOLVED"
+                                    )
+                                    row.update(
+                                        status=row_status,
+                                        reason=(None if row_status == "CLOCK_READY" else (
+                                            selected.get("reason") if selected else estimate["reason"]
+                                        )),
+                                        clock_record=estimate_record,
+                                        clock_status=estimate["status"],
+                                        clock_score_gap=estimate.get("score_gap"),
+                                        operation=selected,
+                                        truth_inputs=False,
+                                    )
+                                store.save()
+                            except Exception as exc:
+                                reason = f"{type(exc).__name__}: {exc}"
+                                for row in key_rows:
+                                    if row["status"] == "PLANNED":
+                                        row.update(status="FAILED", reason=reason)
+                                store.save()
                     except Exception as exc:
-                        if encode_attempted and not encode_completed:
-                            clock_counts["failed"] += 1
                         reason = f"{type(exc).__name__}: {exc}"
                         for row in rows:
                             if row["status"] == "PLANNED":
                                 row.update(status="FAILED", reason=reason)
                         store.save()
-            store.data["records"].setdefault(case_id, {})["framewise_clock_encodes"] = clock_counts
-            store.save()
         finally:
             if backend is not None:
                 backend.close()
@@ -746,6 +780,7 @@ def phase_receiver_read(store, config, case_id):
         cache = {}
         physical = []
         try:
+            _persist_actual_calls(store, case_id, "physical_wan_encodes", physical)
             vae = load_frozen_vae(
                 {"model": {"id": config["models"]["wan"]["local_snapshot_path"]}},
                 device=config["models"]["wan"].get("device", "cuda"),
@@ -766,21 +801,31 @@ def phase_receiver_read(store, config, case_id):
                         try:
                             received = _load_rgb8(source)
                             corrected = operate_map(received, list(map_key)).float().div(255.0)
-                            normalized = reencode_rgb24_readback(vae, corrected).detach().cpu()
-                            cache[cache_key] = ("READY", normalized)
-                            physical.append({
+                            call = {
+                                "call_id": hashlib.sha256(repr(cache_key).encode()).hexdigest(),
                                 "physical_id": hashlib.sha256(repr(cache_key).encode()).hexdigest(),
-                                "artifact_id": source["artifact_id"], "received_index_map": list(map_key),
-                                "output_frames": operation["output_frames"], "status": "COMPLETE",
-                            })
+                                "artifact_id": source["artifact_id"],
+                                "received_index_map": list(map_key),
+                                "output_frames": operation["output_frames"],
+                                "status": "RUNNING", "started_at_unix": time.time(),
+                            }
+                            physical.append(call)
+                            _persist_actual_calls(store, case_id, "physical_wan_encodes", physical)
+                            try:
+                                encoded = reencode_rgb24_readback(vae, corrected)
+                            except Exception as exc:
+                                call.update(
+                                    status="FAILED", finished_at_unix=time.time(),
+                                    reason=f"{type(exc).__name__}: {exc}",
+                                )
+                                _persist_actual_calls(store, case_id, "physical_wan_encodes", physical)
+                                raise
+                            call.update(status="COMPLETE", finished_at_unix=time.time())
+                            _persist_actual_calls(store, case_id, "physical_wan_encodes", physical)
+                            normalized = encoded.detach().cpu()
+                            cache[cache_key] = ("READY", normalized)
                         except Exception as exc:
                             cache[cache_key] = ("FAILED", f"{type(exc).__name__}: {exc}")
-                            physical.append({
-                                "physical_id": hashlib.sha256(repr(cache_key).encode()).hexdigest(),
-                                "artifact_id": source["artifact_id"], "received_index_map": list(map_key),
-                                "output_frames": operation["output_frames"], "status": "FAILED",
-                                "reason": cache[cache_key][1],
-                            })
                     if cache[cache_key][0] != "READY":
                         raise RuntimeError(cache[cache_key][1])
                     result = read_payload_general(
@@ -809,12 +854,7 @@ def phase_receiver_read(store, config, case_id):
                 except Exception as exc:
                     row.update(status="FAILED", reason=f"{type(exc).__name__}: {exc}", missing_bits=32)
                 store.save()
-            record = atomic_json(_record_path(store, case_id, "physical_wan_encodes.json"), {
-                "case_id": case_id, "count": len(physical), "records": physical,
-                "logical_receiver_rows": len(_receiver_rows(store, case_id)),
-            })
-            store.data["records"].setdefault(case_id, {})["physical_wan_encodes"] = record
-            store.save()
+            _persist_actual_calls(store, case_id, "physical_wan_encodes", physical)
         finally:
             vae = None
             cache.clear()
@@ -1262,6 +1302,6 @@ def record_external_failure(config_path, output, failed_phase, case_id, reason, 
     if failed_phase not in PHASES or failed_phase == "evaluate":
         raise AttackEvalError("invalid case phase for external failure")
     target = store.data["phases"][failed_phase]["cases"][case_id]
-    if target["status"] == "PLANNED":
+    if target["status"] in ("PLANNED", "RUNNING"):
         store.phase_failure(failed_phase, RuntimeError(reason), case_id)
     return target

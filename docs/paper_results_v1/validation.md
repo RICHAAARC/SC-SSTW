@@ -444,3 +444,32 @@ network download, or external-baseline checkpoint load was performed. The
 real compatibility, GPU peak, wall time, actual physical Wan-encode aliases,
 MP4 sizes, LPIPS/flow receipts, and scientific recovery/quality results remain
 execution evidence to be returned from the unique notebook run directory.
+
+### Temporal-attack review delta
+
+The strict two-pilot physical Wan-encode upper bound is 360: each of 120
+observations can require one shared RAW map and two independently estimated
+key-specific BLIND_PATH maps. The logical denominator remains 480 rows. Clock
+scoring now isolates K0 and K1 after their shared framewise encode, so a
+score/DP/sidecar failure for one key does not manufacture a failure for the
+other. External failure retention closes both `PLANNED` and `RUNNING` owned
+work while preserving completed rows and an already-recorded, more specific
+internal failure.
+
+Framewise and physical Wan call records are persisted at call start and again
+on return or ordinary exception. The focused fixtures verify a completed first
+call and an unfinished second call survive interruption for both layers. A failure before the
+Wan VAE call is excluded from physical-call counts; a failure while moving an
+already-returned result to CPU leaves the encoding call `COMPLETE`. The
+generated notebook carries Colab `accelerator=GPU` and Python language
+metadata, but this is a runtime hint rather than a GPU model gate.
+
+The read-only saved-run audit at
+`diagnostics/a-line-20261009T123350716100Z-f5e1f880-audit/` is the concrete
+input-reuse evidence for both pilot PRE/POST artifacts. It reports 320 evaluated
+legacy receiver rows and retained external-baseline environment failures. It
+does not show that the new temporal-attack path ran. Delta validation produced
+10 passing tests for the evaluator and generated-notebook boundary suite,
+including an isolated fresh-kernel ordered-cell stub. No model, VAE, GPU,
+codec, media, dependency installation, network, Colab, or Drive operation was
+performed.

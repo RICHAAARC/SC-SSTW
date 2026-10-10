@@ -15,6 +15,8 @@ class AttackNotebookTests(unittest.TestCase):
     def test_notebook_is_fixed_two_pilot_portable_and_clean(self):
         receipt = build_notebook()
         notebook = json.loads(OUTPUT.read_text())
+        self.assertEqual(notebook["metadata"]["accelerator"], "GPU")
+        self.assertEqual(notebook["metadata"]["language_info"]["name"], "python")
         code = ["".join(cell["source"]) for cell in notebook["cells"] if cell["cell_type"] == "code"]
         self.assertEqual(code[0], "from google.colab import drive\ndrive.mount('/content/drive')\n")
         for source in code:
@@ -55,6 +57,8 @@ class AttackNotebookTests(unittest.TestCase):
                 ns={{"__name__":"__main__"}}; os.chdir(sandbox)
                 exec(compile(adapted(cells[0]),"drive","exec"),ns)
                 exec(compile(adapted(cells[1]),"setup","exec"),ns)
+                fixed_plan=json.loads((ns["OUTPUT_ROOT"]/"fixed_plan.json").read_text())
+                assert fixed_plan["fixed_denominator"]["attempt_physical_wan_encode_upper_bound"]==360
                 original_popen=subprocess.Popen; commands=[]
                 def urlretrieve(url,target): Path(target).parent.mkdir(parents=True,exist_ok=True); Path(target).write_bytes(b"stub"); return str(target),None
                 ns["urllib"].request.urlretrieve=urlretrieve
