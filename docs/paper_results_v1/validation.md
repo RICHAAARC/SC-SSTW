@@ -553,3 +553,15 @@ It ran 20 tests with 20 passing and no skips or deselections. `git diff
 --check` also passed. The ordered notebook test executes every generated code
 cell in sequence with Drive, dependency, model, and phase boundaries stubbed;
 it does not execute real media or compute.
+
+A narrow handoff-ledger follow-up ran:
+
+```text
+python3 -B -m unittest tests.test_paper_results_v1_attack_recovery_notebook -v
+```
+
+All three tests passed. The ordered-cell fixture places `RUNNING`, `COMPLETE`,
+and `FAILED` entries in both the baseline temporal-edit codec ledger and the
+per-case baseline extraction ledger, then verifies that
+`handoff_summary.json` exposes both ledgers under `new_actual_calls`. The
+source-run call ledger remains separate. No real computation was performed.

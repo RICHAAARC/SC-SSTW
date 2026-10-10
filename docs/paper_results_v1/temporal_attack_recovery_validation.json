@@ -31,6 +31,18 @@
     "skipped": 0,
     "deselected": 0
   },
+  "handoff_ledger_delta": {
+    "command": "python3 -B -m unittest tests.test_paper_results_v1_attack_recovery_notebook -v",
+    "tests_run": 3,
+    "passed": 3,
+    "failed": 0,
+    "errors": 0,
+    "assertions": [
+      "baseline_edit_codecs retains RUNNING, COMPLETE, and FAILED records in handoff_summary.new_actual_calls",
+      "baseline_extracts_by_case retains RUNNING, COMPLETE, and FAILED records in handoff_summary.new_actual_calls",
+      "source_actual_calls remains separate"
+    ]
+  },
   "diff_check": "PASS",
   "execution_ceiling": "CPU/static/stub only; no real MP4 decode, codec, model, VAE, GPU, Colab, Drive, package installation, or network execution"
 }

@@ -106,11 +106,35 @@ class RecoveryNotebookTests(unittest.TestCase):
                     ns["logged"] = fake_logged
                     with mock.patch.object(subprocess, "check_output", return_value=""):
                         exec(compile(adapted(cells[2]), "environment", "exec"), ns)
+                    seeded = json.loads((ns["RUN_OUTPUT"] / "attack_run_state.json").read_text())
+                    seeded["recovery"]["actual_calls"] = {"baseline_edit_codecs": [
+                        {"call_id": "codec-running", "status": "RUNNING"},
+                        {"call_id": "codec-complete", "status": "COMPLETE"},
+                        {"call_id": "codec-failed", "status": "FAILED"},
+                    ]}
+                    seeded["records"].setdefault("pilot_01", {})["baseline_extract_calls"] = {
+                        "attempted": 3, "completed": 1, "failed": 1, "unfinished": 1,
+                        "records": [
+                            {"call_id": "extract-running", "status": "RUNNING"},
+                            {"call_id": "extract-complete", "status": "COMPLETE"},
+                            {"call_id": "extract-failed", "status": "FAILED"},
+                        ],
+                    }
+                    ns["atomic_json"](ns["RUN_OUTPUT"] / "attack_run_state.json", seeded)
                     exec(compile(adapted(cells[3]), "execute", "exec"), ns)
                     exec(compile(adapted(cells[4]), "handoff", "exec"), ns)
                 self.assertEqual(len([row for row in commands if ":index-saved-media" in row[0]]), 2)
                 self.assertEqual(len([row for row in commands if ":receiver-clock" in row[0]]), 2)
                 self.assertTrue((ns["OUTPUT_ROOT"] / "handoff_summary.json").is_file())
+                handoff = json.loads((ns["OUTPUT_ROOT"] / "handoff_summary.json").read_text())
+                self.assertEqual(
+                    [row["status"] for row in handoff["new_actual_calls"]["baseline_edit_codecs"]],
+                    ["RUNNING", "COMPLETE", "FAILED"],
+                )
+                self.assertEqual(
+                    [row["status"] for row in handoff["new_actual_calls"]["baseline_extracts_by_case"]["pilot_01"]["records"]],
+                    ["RUNNING", "COMPLETE", "FAILED"],
+                )
                 self.assertNotIn("torch", sys.modules)
             finally:
                 os.chdir(old_cwd); urllib.request.urlretrieve = original_urlretrieve
