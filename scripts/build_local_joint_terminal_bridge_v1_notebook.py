@@ -175,6 +175,7 @@ print(result['ceiling'])
 print('Return the entire output directory, including failures:', OUTPUT)
 '''
     return dict(nbformat=4, nbformat_minor=5, metadata=dict(
+        accelerator="GPU",
         kernelspec=dict(display_name="Python 3", language="python", name="python3"),
         language_info=dict(name="python", version="3"), colab=dict(name=NAME+"_colab.ipynb", provenance=[])),
         cells=[c("from google.colab import drive\ndrive.mount('/content/drive')"), m('''

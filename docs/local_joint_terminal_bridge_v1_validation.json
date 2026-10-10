@@ -78,5 +78,29 @@
     "dependency_installations": 0,
     "scientific_pass": false,
     "push_performed": false
+  },
+  "delivery_metadata_fix": {
+    "finding": "B5-01",
+    "predecessor_commit": "5b99264299355d2ac57f4563ba28a89186e82f43",
+    "scope": "metadata-only static artifact checks",
+    "accelerator": "GPU",
+    "code_cells": 6,
+    "code_cell_bytes_unchanged": true,
+    "all_cells_otherwise_unchanged": true,
+    "embedded_source_files": 27,
+    "embedded_source_and_config_bytes_unchanged": true,
+    "new_companion_zip_unchanged": true,
+    "old_B_notebook_and_zip_unchanged": true,
+    "new_notebook_matches_builder": true,
+    "code_cells_AST_parse": true,
+    "outputs_empty_execution_counts_null": true,
+    "notebook_sha256": "cc2e29aa969e257a014425a95461838304fe828e7f8b5ae68482c599bce89999",
+    "companion_zip_sha256": "9af3d7d123107d953281c7cc85d7f3e3d2e9d75bf2eb031f40123f665ad7ba5c",
+    "test_suites_run": 0,
+    "real_model_calls": 0,
+    "gpu_calls": 0,
+    "dependency_installations": 0,
+    "push_performed": false,
+    "scientific_pass": false
   }
 }
