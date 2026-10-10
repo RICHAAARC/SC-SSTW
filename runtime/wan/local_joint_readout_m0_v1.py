@@ -160,16 +160,17 @@ def finalize_interrupted(output, reason):
     return result
 
 
-def quality(rgb, base, protocol):
+def quality(rgb, base, protocol, *, include_temporal_framewise=False):
     """Float-RGB quality, per-frame accumulation avoids a full FP64 video copy."""
     import torch
     roi = torch.zeros(rgb.shape[1:3], dtype=torch.bool)
     for y0,y1,x0,x1 in protocol.rois:
         roi[y0:y1,x0:x1] = True
     frames, inside, outside, temporal = [], [], [], []
+    transitions = []
     energy_inside = energy_outside = max_abs = peak_inside = peak_outside = 0.
     previous = None
-    for frame, reference in zip(rgb, base):
+    for index, (frame, reference) in enumerate(zip(rgb, base)):
         difference = frame.double()-reference.double()
         mse = float(difference.square().mean())
         max_abs = max(max_abs, float(difference.abs().max()))
@@ -183,10 +184,14 @@ def quality(rgb, base, protocol):
         inside.append(float(difference[roi].square().mean()))
         outside.append(float(difference[~roi].square().mean()) if bool((~roi).any()) else None)
         if previous is not None:
-            temporal.append(float((difference-previous).square().mean()))
+            change = difference-previous
+            temporal.append(float(change.square().mean()))
+            if include_temporal_framewise:
+                transitions.append(dict(from_frame=index-1, to_frame=index,
+                    rmse=math.sqrt(temporal[-1]), max_abs=float(change.abs().max())))
         previous = difference
     mse = sum(x["rmse"]**2 for x in frames)/len(frames)
-    return dict(rmse=math.sqrt(mse), psnr_db=None if mse == 0 else -10*math.log10(mse),
+    report = dict(rmse=math.sqrt(mse), psnr_db=None if mse == 0 else -10*math.log10(mse),
         max_abs=max_abs, roi_inside_energy=energy_inside, roi_outside_energy=energy_outside,
         roi_inside_max_abs=peak_inside, roi_outside_max_abs=None if not bool((~roi).any()) else peak_outside,
         exact_match=mse == 0, psnr_zero_error_representation="null with exact_match=true means infinity",
@@ -194,13 +199,16 @@ def quality(rgb, base, protocol):
         roi_inside_rmse=math.sqrt(sum(inside)/len(inside)),
         roi_outside_rmse=None if any(x is None for x in outside) else math.sqrt(sum(outside)/len(outside)),
         roi_scope="spatial union over all frames", temporal_scope="consecutive residual-frame differences")
+    if include_temporal_framewise:
+        report["temporal_framewise"] = transitions
+        report["temporal_peak"] = max(transitions, key=lambda row: row["rmse"]) if transitions else None
+    return report
 
 
-def frame_images(output, name, rgb, base):
+def frame_images(output, name, rgb, base, *, indices=(1, 44, 88, 132, 176)):
     from PIL import Image, ImageDraw
-    indices = (1, 44, 88, 132, 176)
     width, height = rgb.shape[2], rgb.shape[1]
-    canvas = Image.new("RGB", (width*5, height*2+40), "white")
+    canvas = Image.new("RGB", (width*len(indices), height*2+40), "white")
     draw = ImageDraw.Draw(canvas)
     for col, index in enumerate(indices):
         frame = (rgb[index].clamp(0, 1)*255).round().byte().numpy()
