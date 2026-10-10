@@ -113,6 +113,14 @@ def test_run_all_sequential_stub_and_failure_takeover(tmp_path, monkeypatch, out
         assert result["counts"]["decode_completed"] == 0
         assert result["model_calls"]["posterior_reconstruction"]["status"] == "INTERRUPTED_COMPLETION_UNKNOWN"
         assert result["stages"]["base"]["views"]["postclip"]["state_gap"] == -.2
+        comparisons = json.loads((ns["RUN_OUTPUT"]/"paired_comparisons.json").read_text())["comparisons"]
+        assert len(comparisons) == 14
+        assert all(len(pair["chips"]) == 1408 and pair["missing_values"] == 55
+                   for pair in comparisons.values())
+        assert all(chip["signed_q_delta_status"] == "MISSING"
+                   for pair in comparisons.values() for chip in pair["chips"])
+        missing = json.loads((ns["RUN_OUTPUT"]/"candidate/postclip_metrics.json").read_text())
+        assert "child exited with return code -9" in missing["engineering_reason"]
     else:
         exec(compile(code(nb, 5), "run", "exec"), ns)
         exec(compile(code(nb, 6), "summary", "exec"), ns)

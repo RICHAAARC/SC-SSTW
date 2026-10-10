@@ -78,7 +78,13 @@ method entry; returned calls are saved before adapter/reader processing. They
 are distinct from valid normalized tensors or completed observations. The
 notebook reaps the child/process group before taking over a leftover RUNNING
 record. It retains completed observations, marks in-flight completion unknown,
-and never fabricates counts. Abrupt loss of the entire Colab kernel cannot run
+and completes all 14 paired reports strictly from persisted raw/metric files.
+An already saved raw read contributes chip deltas even if its metric file was
+not saved; absent summary evidence stays explicitly MISSING and is not
+recomputed. Existing observed raw/metric files are preserved byte-for-byte;
+unfinished view placeholders receive the interruption reason. Counts and model
+or stage completion are never inferred from observation files.
+Abrupt loss of the entire Colab kernel cannot run
 this takeover; the last durable RUNNING record remains available for audit.
 
 The standalone command requires only the embedded/source tree and dependencies:

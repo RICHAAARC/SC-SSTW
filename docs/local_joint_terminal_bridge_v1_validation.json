@@ -42,5 +42,41 @@
   "actual_terminal_cpu_contract": "/home/richar/projects/Video-WM/diagnostics/b-line-terminal-bridge-delivery-20261010/actual_terminal_input_contract.json",
   "source_float_fully_read_locally": false,
   "execution_ceiling": "CPU math/model doubles/notebook sequential stubs/no-Git failure-path CLI only; no real run",
-  "publication": "not pushed; parent review and publication pending"
+  "publication": "not pushed; parent review and publication pending",
+  "initial_validation_head": "220cdf7016497968bf459bd8a16d4a83a81fba3f",
+  "incremental_review_fix": {
+    "finding": "B3-01",
+    "predecessor_commit": "220cdf7016497968bf459bd8a16d4a83a81fba3f",
+    "scope": "live notebook parent takeover after child reap; persisted evidence only",
+    "targeted_tests_passed": 12,
+    "new_sigkill_cases": 3,
+    "elapsed_seconds": 11.8,
+    "initial_98_repeated_wholesale": false,
+    "tests": [
+      "tests/test_local_joint_terminal_bridge_failure_v1.py (5 cases)",
+      "tests/test_local_joint_terminal_bridge_v1_notebook.py (5 cases)",
+      "tests/test_local_joint_terminal_bridge_v1.py::test_external_takeover_preserves_completed_read_and_unknown_call",
+      "tests/test_local_joint_terminal_bridge_v1.py::test_full_fixed_pipeline_saves_all_layers_and_exact_call_order"
+    ],
+    "sigkill_cutpoints": [
+      "initial placeholders only",
+      "raw persisted but summary absent",
+      "metrics persisted before result checkpoint"
+    ],
+    "verified": [
+      "14 fixed pairs, 1408 chip slots and 55 summary slots per pair",
+      "known raw deltas survive absent metrics; absent deltas explicitly MISSING",
+      "completed raw and metrics preserved byte for byte",
+      "unfinished raw/metrics reasons synchronized with result interruption reason",
+      "model counts preserved and running completion unknown",
+      "no model/pixel read/metric recomputation in takeover; repeated callback idempotent",
+      "new notebook and companion rebuilt and source consistency checked",
+      "old B notebook and ZIP rechecked unchanged against original base"
+    ],
+    "real_model_calls": 0,
+    "gpu_calls": 0,
+    "dependency_installations": 0,
+    "scientific_pass": false,
+    "push_performed": false
+  }
 }

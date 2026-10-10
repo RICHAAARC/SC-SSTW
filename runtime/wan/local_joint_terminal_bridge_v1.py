@@ -54,8 +54,30 @@ def initial_result(config: dict) -> dict:
         failures=[], input_contract={}, cleanup_errors=[], actual_model_execution="NOT_STARTED")
 
 
+def _write_comparisons(output, evaluations, raw_rows, *, key, message, protocol=carrier.PUBLIC):
+    """One fixed report directory for normal completion and report-only takeover."""
+    comparisons = [(f"{a}/postclip", f"{b}/postclip")
+                   for a, b in zip(diagnostic.STAGES, diagnostic.STAGES[1:])]
+    comparisons += [("base/postclip", f"{name}/postclip") for name in diagnostic.STAGES[2:]]
+    comparisons += [(f"{name}/preclip", f"{name}/postclip") for name in diagnostic.STAGES[1:]]
+    pairs = {}
+    for left, right in comparisons:
+        pair = diagnostic.paired(evaluations[left], evaluations[right], raw_rows[left], raw_rows[right],
+                                 key=key, message=message, protocol=protocol)
+        for metric in pair["state_correlations"] + pair["payload_signed_means"]:
+            metric["status"] = "MISSING" if metric["value"] is None else "SCORED"
+        pair["state_gap_status"] = "MISSING" if pair["state_gap"] is None else "SCORED"
+        for chip in pair["chips"]:
+            chip["delta_status"] = {name: "MISSING" if value is None else "SCORED"
+                                    for name, value in chip["deltas"].items()}
+            chip["signed_q_delta_status"] = "MISSING" if chip["signed_q_delta"] is None else "SCORED"
+        pairs[left + " -> " + right] = pair
+    write_json(output / "paired_comparisons.json", dict(direction="right_minus_left", comparisons=pairs))
+
+
 def finalize_interrupted(output: Path, reason: str) -> dict | None:
-    """Notebook takeover after the child is reaped; never infer call completion."""
+    """After child reap, finish reports from saved evidence only; never resume execution."""
+    output = Path(output)
     path = output / "result.json"
     if not path.exists():
         return None
@@ -69,12 +91,57 @@ def finalize_interrupted(output: Path, reason: str) -> dict | None:
             call.update(status="INTERRUPTED_COMPLETION_UNKNOWN", reason=reason)
         elif call["status"] == "NOT_RUN":
             call.update(status="MISSING_DEPENDENCY", reason=reason)
-    for stage in result["stages"].values():
+    evaluations, raw_rows = {}, {}
+    for name, stage in result["stages"].items():
         if stage["status"] in ("RUNNING", "NOT_RUN"):
             stage.update(status="INTERRUPTED" if stage["status"] == "RUNNING" else "MISSING_DEPENDENCY", reason=reason)
-        for view in stage["views"].values():
-            if view["status"] in ("RUNNING", "MISSING") and view.get("reason") != "saved_base_preclip_unavailable":
-                view.update(status="MISSING", reason=reason)
+        for view_name, view in stage["views"].items():
+            ident = f"{name}/{view_name}"
+            missing_reason = view.get("reason")
+            if (name, view_name) == ("base", "preclip"):
+                missing_reason = "saved_base_preclip_unavailable"
+            elif not missing_reason or missing_reason == "not_run":
+                missing_reason = "interrupted before observation persistence completed: " + reason
+            raw_path = output / name / f"{view_name}_raw.json"
+            metric_path = output / name / f"{view_name}_metrics.json"
+            raw = json.loads(raw_path.read_text(encoding="utf-8")) if raw_path.exists() else None
+            metric = json.loads(metric_path.read_text(encoding="utf-8")) if metric_path.exists() else None
+            raw_saved = raw is not None and raw.get("status") == "OBSERVED"
+            metric_saved = metric is not None and not metric.get("directory_placeholder", False)
+            if raw_saved:
+                raw_rows[ident] = raw["rows"]
+                view.update(raw_status="SAVED", raw_path=str(raw_path.relative_to(output)),
+                            observed_windows=len(raw["rows"]))
+            else:
+                raw_rows[ident] = []
+                raw = dict(status="MISSING", reason=missing_reason, expected_windows=88,
+                           expected_chips=1408, observed_windows=0, rows=[])
+                write_json(raw_path, raw)
+                view.update(raw_status="MISSING", observed_windows=0)
+            if metric_saved:
+                evaluations[ident] = metric
+                # A metric file can precede its result.json checkpoint. Retain
+                # that evidence, but do not infer model/stage completion from it.
+                view.update(metrics_status="SAVED", metrics_path=str(metric_path.relative_to(output)),
+                    state_gap=metric["state"]["c0_minus_max_other"],
+                    payload_signed_means=[m["signed_mean"] for m in metric["payload"]["metrics"]])
+                for field in ("weakest_bits", "descriptive_condition"):
+                    if field in metric:
+                        view[field] = metric[field]
+            else:
+                # Raw evidence may exist without a metric file. Preserve its
+                # chip deltas; do not fabricate or recompute absent summary evidence.
+                evaluations[ident] = posthoc.missing_evaluation(missing_reason)
+                write_json(metric_path, evaluations[ident])
+                view["metrics_status"] = "MISSING"
+            view.update(status="OBSERVED" if raw_saved and metric_saved else "MISSING",
+                        reason=None if raw_saved and metric_saved else missing_reason)
+    _write_comparisons(output, evaluations, raw_rows, key=KEY, message=bytes.fromhex("8001a55a"))
+    result["interruption_report"] = dict(status="COMPLETE", source="persisted_raw_and_metrics_only",
+        comparisons=14, chips_per_comparison=1408, summary_slots_per_comparison=55,
+        model_execution_resumed=False)
+    # Write terminal status last: if report I/O is interrupted, the existing
+    # RUNNING checkpoint can still be finalized by the live notebook parent.
     write_json(path, result)
     return result
 
@@ -361,15 +428,7 @@ def run(config: dict, output: Path, *, loader=None, protocol=carrier.PUBLIC,
                     if existing.get("status") != "OBSERVED":
                         existing.update(reason=reason)
                         write_json(raw_path, existing)
-        comparisons = [(f"{a}/postclip", f"{b}/postclip")
-                       for a, b in zip(diagnostic.STAGES, diagnostic.STAGES[1:])]
-        comparisons += [("base/postclip", f"{name}/postclip") for name in diagnostic.STAGES[2:]]
-        comparisons += [(f"{name}/preclip", f"{name}/postclip") for name in diagnostic.STAGES[1:]]
-        pairs = {}
-        for left, right in comparisons:
-            pairs[left + " -> " + right] = diagnostic.paired(evaluations[left], evaluations[right],
-                raw_rows[left], raw_rows[right], key=key, message=message, protocol=protocol)
-        write_json(output / "paired_comparisons.json", dict(direction="right_minus_left", comparisons=pairs))
+        _write_comparisons(output, evaluations, raw_rows, key=key, message=message, protocol=protocol)
         result["status"] = "COMPLETE" if (not result["failures"] and not result["cleanup_errors"] and
             all(s["status"] == "COMPLETE" for s in result["stages"].values())) else "ENGINEERING_FAILURE"
         result["completed_utc"] = time.time()
