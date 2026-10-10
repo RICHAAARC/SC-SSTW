@@ -35,6 +35,19 @@ notebook metadata. No real Colab,
 Drive, GPU, model, VAE, codec, media, dependency installation, or model/source
 download was executed.
 
+The two deselected attack-notebook checks were then run directly, without the
+project marker filter:
+
+```text
+PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=. /usr/bin/python3 -B -m unittest \
+  tests.test_paper_results_v1_attack_notebook -v
+```
+
+It completed `Ran 2 tests in 2.372s` with `OK`. This separately exercises the
+generated attack notebook cells in order under the fresh no-model boundary
+stub through final evaluation/handoff and checks the companion-based notebook
+structure. It did not run the other 46 pytest-selected checks again.
+
 Validation is limited to CPU/static reporting behavior. No model, GPU, Colab,
 Drive, media encode/decode, generation, or new scientific experiment ran.
 
