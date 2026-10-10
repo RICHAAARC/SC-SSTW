@@ -68,7 +68,8 @@ notebook 子进程清理后，finalize_interrupted 仅从已持久 raw/metrics �
 
 ## 质量与交付
 
-质量始终相对 BASE：全局/逐帧 RMSE、PSNR、max_abs、ROI内外能量和时间残差变化。
+质量始终相对 BASE：全局 RMSE、PSNR、max_abs；逐帧 RMSE、PSNR；ROI内外能量；
+相邻残差变化的 RMSE 和 max_abs。逐帧像素残差本身未另报 max_abs。
 PNG 固定零基帧 [1,44,88,112,116,120,132,176]，覆盖此前 frame116 峰值邻域；
 残差显示比例全视图一致。quality.json 的 temporal_framewise 固定180行，
 第 i 行是相邻残差 r[t]-r[t-1] 的 RMSE/max_abs；这不是原视频运动量。
