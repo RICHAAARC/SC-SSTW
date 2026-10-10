@@ -134,3 +134,47 @@ def roundtrip(rgb8, output: Path, *, media_output: Path | None = None, event=lam
         "received_rgb": received_receipt,
         "codec": {"codec": "libx264", "fps": FPS, "crf": 18, "pix_fmt": "yuv420p"},
     }
+
+
+def decode_published(mp4_path: Path, output_path: Path, *, expected_frames: int | None = None):
+    """Decode and validate an already-published variable-length MP4.
+
+    Recovery uses this entry point instead of publishing the edited raster a
+    second time.  The returned receipt describes the new local RGB8 cache and
+    keeps the persisted MP4 as its source.
+    """
+    import numpy as np
+
+    mp4_path = Path(mp4_path)
+    if not mp4_path.is_file():
+        raise FileNotFoundError(f"published MP4 is unavailable: {mp4_path}")
+    probe_command = commands(mp4_path, expected_frames or 1)["probe"]
+    probe = subprocess.run(probe_command, capture_output=True, check=False)
+    if probe.returncode:
+        raise RuntimeError(f"variable-length MP4 probe exited {probe.returncode}")
+    metadata = json.loads(probe.stdout)
+    stream = metadata["streams"][0]
+    frames = int(stream["nb_frames"])
+    if (int(stream["height"]), int(stream["width"])) != (HEIGHT, WIDTH):
+        raise ValueError("published MP4 geometry mismatch")
+    if expected_frames is not None and frames != expected_frames:
+        raise ValueError(f"published MP4 frame count {frames} != expected {expected_frames}")
+    read_command = commands(mp4_path, frames)["read"]
+    decoded = subprocess.run(read_command, capture_output=True, check=False)
+    if decoded.returncode:
+        raise RuntimeError(f"variable-length MP4 readback exited {decoded.returncode}")
+    expected_bytes = frames * HEIGHT * WIDTH * CHANNELS
+    if len(decoded.stdout) != expected_bytes:
+        raise ValueError("published MP4 readback byte count mismatch")
+    output_path = Path(output_path)
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    temporary = output_path.with_suffix(output_path.suffix + ".tmp")
+    temporary.write_bytes(decoded.stdout)
+    os.replace(temporary, output_path)
+    receipt = {
+        "status": "SAVED", "path": str(output_path), "bytes": expected_bytes,
+        "shape": [frames, HEIGHT, WIDTH, CHANNELS], "dtype": "uint8",
+        "source_mp4": str(mp4_path), "source_mp4_observation": _identity(mp4_path),
+        **_identity(output_path),
+    }
+    return np.frombuffer(decoded.stdout, np.uint8).reshape(frames, HEIGHT, WIDTH, CHANNELS).copy(), receipt

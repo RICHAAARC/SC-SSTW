@@ -1,0 +1,36 @@
+{
+  "schema_version": "paper-results-v1-temporal-attack-recovery-validation-v1",
+  "source_audit": "/home/richar/projects/Video-WM/diagnostics/a-line-temporal-attack-20261010T031617441784Z-2536172d-audit",
+  "source_run_id": "20261010T031617441784Z-2536172d",
+  "actual_source_state_initialization_probe": {
+    "full_receiver_status_counts": {
+      "EVALUATED": 30,
+      "UNSUPPORTED": 2
+    },
+    "edited_main_rows_reset_to_planned": 448,
+    "baseline_rows_reset_to_planned": 60,
+    "quality_rows_preserved_evaluated": 10,
+    "quality_rows_reset_to_planned": 4,
+    "confirmation_status": "NOT_EXECUTED_BY_NOTEBOOK"
+  },
+  "recovery_budget": {
+    "reused_published_mp4": 116,
+    "new_baseline_temporal_codec_roundtrips": 56,
+    "new_main_framewise_clock_encodes": 112,
+    "new_main_logical_reads": 448,
+    "new_main_physical_wan_encode_upper_bound": 336,
+    "new_baseline_extracts": 60,
+    "new_quality_rows": 4
+  },
+  "focused_test_command": "python3 -B -m unittest tests.test_paper_results_v1_attack_eval tests.test_paper_results_v1_attack_recovery tests.test_paper_results_v1_attack_recovery_notebook -v",
+  "focused_test_result": {
+    "tests_run": 20,
+    "passed": 20,
+    "failed": 0,
+    "errors": 0,
+    "skipped": 0,
+    "deselected": 0
+  },
+  "diff_check": "PASS",
+  "execution_ceiling": "CPU/static/stub only; no real MP4 decode, codec, model, VAE, GPU, Colab, Drive, package installation, or network execution"
+}

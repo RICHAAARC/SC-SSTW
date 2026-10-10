@@ -280,7 +280,7 @@ class AttackRunStore:
         target.update(status="FAILED", finished_at_unix=time.time())
         target.setdefault("failures", []).append(reason)
         row["status"] = "FAILED"
-        if case_id is not None:
+        if case_id is not None and not self.data.get("recovery", {}).get("retain_pending_on_interrupt"):
             for item in self.data["artifacts"]:
                 if item["case_id"] == case_id and item["status"] == "PLANNED" and _phase_owns_artifact(phase, item):
                     item.update(status="FAILED", reason=reason)
@@ -387,6 +387,13 @@ def _save_rgb8(path, value):
         "path": str(path), "bytes": path.stat().st_size, "shape": list(array.shape),
         "dtype": "uint8", "sha256_observation": _observe(path),
     }
+
+
+def _available_media(receipt):
+    """Turn a codec RGB receipt into an AVAILABLE artifact without collision."""
+    media = copy.deepcopy(receipt)
+    media_status = media.pop("status", None)
+    return {"status": "AVAILABLE", **media, "media_receipt_status": media_status}
 
 
 def _record_path(store, case_id, *parts):
@@ -517,9 +524,9 @@ def phase_baseline_codec(store, config, case_id):
                     rgb, store.temp_root / case_id / method / "native_codec",
                     media_output=store.output / "media" / case_id / method / "native_codec",
                 )
-                media = copy.deepcopy(receipt["received_rgb"])
+                media = _available_media(receipt["received_rgb"])
                 record = atomic_json(_record_path(store, case_id, method, "codec.json"), receipt)
-                target.update(status="AVAILABLE", **media, codec_record=record)
+                target.update(**media, codec_record=record)
             except Exception as exc:
                 target.update(status="FAILED", reason=f"{type(exc).__name__}: {exc}")
             store.save()
@@ -561,9 +568,9 @@ def phase_attack_media(store, config, case_id):
                             edited, store.temp_root / case_id / method / attack_id,
                             media_output=store.output / "media" / case_id / method / attack_id,
                         )
-                        media = copy.deepcopy(codec["received_rgb"])
+                        media = _available_media(codec["received_rgb"])
                         target.update(
-                            status="AVAILABLE", **media, publication_count_from_pre=2,
+                            **media, publication_count_from_pre=2,
                             edit_publication_added=True,
                             codec_record=atomic_json(_record_path(store, case_id, method, attack_id, "codec.json"), codec),
                             edited_rgb_path=codec["edited_rgb"]["path"],
@@ -646,6 +653,8 @@ def phase_receiver_clock(store, config, case_id):
                     for row in _receiver_rows(
                         store, case_id, arm=arm, attack_id=spec["attack_id"], mode="RAW",
                     ):
+                        if row["status"] not in ("PLANNED", "RECOVERY_PENDING"):
+                            continue
                         if source["status"] == "AVAILABLE":
                             row.update(
                                 status="CLOCK_READY", reason=None,
@@ -658,8 +667,24 @@ def phase_receiver_clock(store, config, case_id):
                                 reason=f"received artifact is {source['status']}",
                             )
                     store.save()
-            clock_calls = []
+            clock_calls = copy.deepcopy(
+                store.data.get("records", {}).get(case_id, {}).get("framewise_clock_encodes", {}).get("records", [])
+            )
             _persist_actual_calls(store, case_id, "framewise_clock_encodes", clock_calls)
+            prior_clock_ids = {item.get("call_id") for item in clock_calls}
+            for row in _receiver_rows(store, case_id, mode="BLIND_PATH"):
+                call_id = f"{case_id}/{row['arm']}/{row['attack_id']}"
+                if row["status"] in ("PLANNED", "RECOVERY_PENDING") and call_id in prior_clock_ids:
+                    row.update(
+                        status="FAILED", missing_bits=32,
+                        reason="PRIOR_FRAMEWISE_ENCODE_ATTEMPT_RETAINED_NO_REPEAT",
+                    )
+            store.save()
+            if not any(
+                row["mode"] == "BLIND_PATH" and row["status"] in ("PLANNED", "RECOVERY_PENDING")
+                for row in _receiver_rows(store, case_id)
+            ):
+                return
             backend = load_local_framewise_backend(config["models"]["framewise"])
             import numpy as np
             for arm in MAIN_ARMS:
@@ -667,17 +692,32 @@ def phase_receiver_clock(store, config, case_id):
                     attack_id = spec["attack_id"]
                     source = store.artifact(f"{case_id}/{arm}/{attack_id}/RECEIVED")
                     rows = _receiver_rows(store, case_id, arm=arm, attack_id=attack_id)
+                    pending_blind = [
+                        row for row in rows
+                        if row["mode"] == "BLIND_PATH" and row["status"] in ("PLANNED", "RECOVERY_PENDING")
+                    ]
+                    if not pending_blind:
+                        continue
                     try:
                         if source["status"] != "AVAILABLE":
                             status = "MISSING" if source["status"] == "MISSING" else "FAILED"
-                            for row in rows:
-                                if row["mode"] == "BLIND_PATH" and row["status"] == "PLANNED":
-                                    row.update(status=status, reason=f"received artifact is {source['status']}")
+                            for row in pending_blind:
+                                row.update(status=status, reason=f"received artifact is {source['status']}")
+                            store.save()
+                            continue
+                        call_id = f"{case_id}/{arm}/{attack_id}"
+                        previous = next((item for item in clock_calls if item.get("call_id") == call_id), None)
+                        if previous is not None:
+                            for row in pending_blind:
+                                row.update(
+                                    status="FAILED", missing_bits=32,
+                                    reason="PRIOR_FRAMEWISE_ENCODE_ATTEMPT_RETAINED_NO_REPEAT",
+                                )
                             store.save()
                             continue
                         rgb = _load_rgb8(source)
                         call = {
-                            "call_id": f"{case_id}/{arm}/{attack_id}",
+                            "call_id": call_id,
                             "artifact_id": source["artifact_id"], "status": "RUNNING",
                             "started_at_unix": time.time(),
                         }
@@ -701,6 +741,12 @@ def phase_receiver_clock(store, config, case_id):
                                 store, case_id, arm=arm, attack_id=attack_id,
                                 key_label=key_label, mode="BLIND_PATH",
                             )
+                            key_rows = [
+                                row for row in key_rows
+                                if row["status"] in ("PLANNED", "RECOVERY_PENDING")
+                            ]
+                            if not key_rows:
+                                continue
                             try:
                                 root = _clock_record_path(store, case_id, arm, attack_id, key_label)
                                 evidence = method.score_framewise(latent, config["keys"][key_label], method.PUBLIC)
@@ -746,13 +792,13 @@ def phase_receiver_clock(store, config, case_id):
                             except Exception as exc:
                                 reason = f"{type(exc).__name__}: {exc}"
                                 for row in key_rows:
-                                    if row["status"] == "PLANNED":
+                                    if row["status"] in ("PLANNED", "RECOVERY_PENDING"):
                                         row.update(status="FAILED", reason=reason)
                                 store.save()
                     except Exception as exc:
                         reason = f"{type(exc).__name__}: {exc}"
                         for row in rows:
-                            if row["status"] == "PLANNED":
+                            if row["status"] in ("PLANNED", "RECOVERY_PENDING"):
                                 row.update(status="FAILED", reason=reason)
                         store.save()
         finally:
@@ -778,9 +824,25 @@ def phase_receiver_read(store, config, case_id):
 
         vae = None
         cache = {}
-        physical = []
+        physical = copy.deepcopy(
+            store.data.get("records", {}).get(case_id, {}).get("physical_wan_encodes", {}).get("records", [])
+        )
         try:
             _persist_actual_calls(store, case_id, "physical_wan_encodes", physical)
+            prior_physical_ids = {item.get("physical_id") for item in physical}
+            for row in _receiver_rows(store, case_id):
+                if row["status"] != "CLOCK_READY":
+                    continue
+                source = store.artifact(f"{case_id}/{row['arm']}/{row['attack_id']}/RECEIVED")
+                cache_key = (source["artifact_id"], tuple(row["operation"]["received_index_map"]))
+                if hashlib.sha256(repr(cache_key).encode()).hexdigest() in prior_physical_ids:
+                    row.update(
+                        status="FAILED", missing_bits=32,
+                        reason="PRIOR_PHYSICAL_WAN_ENCODE_ATTEMPT_RETAINED_NO_REPEAT",
+                    )
+            store.save()
+            if not any(row["status"] == "CLOCK_READY" for row in _receiver_rows(store, case_id)):
+                return
             vae = load_frozen_vae(
                 {"model": {"id": config["models"]["wan"]["local_snapshot_path"]}},
                 device=config["models"]["wan"].get("device", "cuda"),
@@ -798,12 +860,16 @@ def phase_receiver_read(store, config, case_id):
                         current_artifact = source["artifact_id"]
                     cache_key = (source["artifact_id"], map_key)
                     if cache_key not in cache:
+                        physical_id = hashlib.sha256(repr(cache_key).encode()).hexdigest()
+                        previous = next((item for item in physical if item.get("physical_id") == physical_id), None)
+                        if previous is not None:
+                            raise RuntimeError("PRIOR_PHYSICAL_WAN_ENCODE_ATTEMPT_RETAINED_NO_REPEAT")
                         try:
                             received = _load_rgb8(source)
                             corrected = operate_map(received, list(map_key)).float().div(255.0)
                             call = {
-                                "call_id": hashlib.sha256(repr(cache_key).encode()).hexdigest(),
-                                "physical_id": hashlib.sha256(repr(cache_key).encode()).hexdigest(),
+                                "call_id": physical_id,
+                                "physical_id": physical_id,
                                 "artifact_id": source["artifact_id"],
                                 "received_index_map": list(map_key),
                                 "output_frames": operation["output_frames"],
@@ -867,10 +933,36 @@ def phase_baseline_extract(store, config, case_id, method):
     def execute():
         adapter = None
         try:
+            calls = copy.deepcopy(
+                store.data.get("records", {}).get(case_id, {}).get("baseline_extract_calls", {}).get("records", [])
+            )
+            _persist_actual_calls(store, case_id, "baseline_extract_calls", calls)
+            prior_call_ids = {item.get("call_id") for item in calls}
+            for row in store.data["baseline_rows"]:
+                call_id = f"{case_id}/{method}/{row['attack_id']}"
+                if (
+                    row["case_id"] == case_id and row["method"] == method
+                    and row["status"] in ("PLANNED", "RECOVERY_PENDING")
+                    and call_id in prior_call_ids
+                ):
+                    row.update(
+                        status="FAILED", missing_bits=32,
+                        reason="PRIOR_BASELINE_EXTRACT_ATTEMPT_RETAINED_NO_REPEAT",
+                    )
+            store.save()
+            pending = [
+                row for row in store.data["baseline_rows"]
+                if row["case_id"] == case_id and row["method"] == method
+                and row["status"] in ("PLANNED", "RECOVERY_PENDING")
+            ]
+            if not pending:
+                return
             adapter = _adapter(config, method, _record_path(store, case_id, method, "extract_sidecars"))
             for spec in config["attacks"]:
                 attack_id = spec["attack_id"]
                 row = next(item for item in store.data["baseline_rows"] if item["slot_id"] == f"{case_id}/{method}/{attack_id}")
+                if row["status"] not in ("PLANNED", "RECOVERY_PENDING"):
+                    continue
                 source = store.artifact(f"{case_id}/{method}/{attack_id}/RECEIVED")
                 try:
                     if source["status"] != "AVAILABLE":
@@ -882,7 +974,21 @@ def phase_baseline_extract(store, config, case_id, method):
                     media_input = _load_rgb8(source)
                     if method == "rivagan":
                         media_input = media_input.numpy()
-                    record = adapter.extract(media_input)
+                    call_id = f"{case_id}/{method}/{attack_id}"
+                    previous = next((item for item in calls if item.get("call_id") == call_id), None)
+                    if previous is not None:
+                        raise RuntimeError("PRIOR_BASELINE_EXTRACT_ATTEMPT_RETAINED_NO_REPEAT")
+                    call = {"call_id": call_id, "status": "RUNNING", "started_at_unix": time.time()}
+                    calls.append(call); _persist_actual_calls(store, case_id, "baseline_extract_calls", calls)
+                    try:
+                        record = adapter.extract(media_input)
+                        call.update(status="COMPLETE", finished_at_unix=time.time())
+                        _persist_actual_calls(store, case_id, "baseline_extract_calls", calls)
+                    except BaseException as exc:
+                        if isinstance(exc, Exception):
+                            call.update(status="FAILED", finished_at_unix=time.time(), reason=f"{type(exc).__name__}: {exc}")
+                            _persist_actual_calls(store, case_id, "baseline_extract_calls", calls)
+                        raise
                     receipt = atomic_json(_record_path(store, case_id, method, attack_id, "extract.json"), record)
                     row.update(status="EXTRACTED", reason=None, extract_record=receipt, expected_frames=source["shape"][0])
                 except Exception as exc:
@@ -992,6 +1098,10 @@ def _side_by_side_mp4(reference, candidate, output):
 def phase_quality(store, config, case_id):
     def execute():
         for row in (item for item in store.data["quality_rows"] if item["case_id"] == case_id):
+            if row["status"] not in ("PLANNED", "RECOVERY_PENDING"):
+                continue
+            row.update(status="RECOVERY_RUNNING", attempt_started_at_unix=time.time())
+            store.save()
             try:
                 reference = _load_rgb8(_post_artifact(store, case_id, row["reference"]))
                 candidate = _load_rgb8(_post_artifact(store, case_id, row["candidate"]))

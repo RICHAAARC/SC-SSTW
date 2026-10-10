@@ -521,3 +521,35 @@ does not show that the new temporal-attack path ran. Delta validation produced
 including an isolated fresh-kernel ordered-cell stub. No model, VAE, GPU,
 codec, media, dependency installation, network, Colab, or Drive operation was
 performed.
+
+## Temporal-attack recovery handoff
+
+The recovery implementation fixes the real `status="SAVED"` receipt collision
+without changing the fixed matrix. Focused stdlib tests exercise the actual
+baseline-codec phase, preserve the 30 evaluated and two unsupported FULL rows,
+keep all fixed denominators, isolate an unreadable saved MP4, relocate and open
+a nested sidecar path, traverse every recovery phase dispatch, and retain
+completed plus interrupted codec attempts without repeating either. A separate
+new-kernel fixture marks indexing complete, removes the local RGB cache, then
+proves that indexing decodes the saved
+`<source>/run_state/media/.../published.mp4` again while making zero codec
+calls. Evaluation is exercised twice across an existing COMPLETE marker to
+verify that continuation refreshes aggregation.
+
+The generated recovery notebook has an exact two-line Drive first cell, empty
+outputs, parseable Python cells, editable `SOURCE_REF`, a source-run recovery
+pointer, fixed two-pilot scope, and no embedded B64 or expected-digest gate.
+Its companion ZIP contains both recovery entrypoints. This is CPU/static/stub
+evidence only; no source MP4 was decoded and no real model, GPU, VAE, codec,
+Colab, Drive, package installation, or network operation was performed here.
+
+The final focused command was:
+
+```text
+python3 -B -m unittest tests.test_paper_results_v1_attack_eval tests.test_paper_results_v1_attack_recovery tests.test_paper_results_v1_attack_recovery_notebook -v
+```
+
+It ran 20 tests with 20 passing and no skips or deselections. `git diff
+--check` also passed. The ordered notebook test executes every generated code
+cell in sequence with Drive, dependency, model, and phase boundaries stubbed;
+it does not execute real media or compute.

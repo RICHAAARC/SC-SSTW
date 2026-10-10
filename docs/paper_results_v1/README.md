@@ -353,3 +353,9 @@ quality retains its recorded state. None are treated as attempted model
 failures. See
 [`colab_two_pilot_handoff.md`](colab_two_pilot_handoff.md). This repository pass
 did not execute the notebook, models, media, codec, GPU, Colab, or Drive.
+
+The saved temporal-attack pilot run has a separate, item-resumable recovery
+notebook and handoff at
+[`temporal_attack_recovery_handoff.md`](temporal_attack_recovery_handoff.md).
+It reuses published media and retained FULL evidence in a new Drive directory;
+it does not alter the failed source run or execute confirmation cases.
