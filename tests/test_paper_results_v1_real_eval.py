@@ -191,7 +191,7 @@ def test_timed_failure_retains_original_error_and_every_fixed_phase_row(
     }
 
 
-def test_identity_and_revision_differences_are_recorded_without_changing_the_plan(tmp_path):
+def test_identity_and_revision_metadata_do_not_gate_or_rewrite_the_plan(tmp_path):
     config = one_case_config()
     config["models"]["wan"]["revision"] = "different-local-wan-revision"
     config["models"]["framewise"]["revision"] = "different-local-framewise-revision"
@@ -207,19 +207,46 @@ def test_identity_and_revision_differences_are_recorded_without_changing_the_pla
     changed = copy.deepcopy(config)
     changed["models"]["wan"]["revision"] = "another-recorded-revision"
     reopened = real_eval.RunStore(output, changed)
-    assert reopened.data["config_identity_observation"]["status"] == "RECORDED_DIFFERENCE"
-    assert reopened.data["config_identity_observation"]["blocking"] is False
+    assert reopened.data["config_path_semantics"] == "LOADED_VALUES_USED_WITHOUT_DIGEST_ADMISSION_GATE"
+    assert "config_identity_observation" not in reopened.data
     assert len(reopened.data["receiver_slots"]) == 160
 
 
-def test_file_digest_difference_or_observation_error_does_not_replace_real_file_use(monkeypatch, tmp_path):
+def test_file_digest_metadata_is_not_required_for_real_file_use(monkeypatch, tmp_path):
     path = tmp_path / "usable.bin"
     path.write_bytes(b"usable bytes")
     resolved, actual = real_backends.require_local_file(
         path, expected_sha256="declared-different", label="fixture",
     )
     assert resolved == path.resolve()
-    assert actual == real_backends.file_sha256(path)
+    assert actual is None
+
+
+def test_rgb8_reader_uses_shape_and_byte_count_without_digest_admission(monkeypatch, tmp_path):
+    class Array:
+        def reshape(self, shape):
+            self.shape = tuple(shape)
+            return self
+
+        def copy(self):
+            return self
+
+    fake_numpy = types.SimpleNamespace(
+        uint8="uint8",
+        prod=lambda shape: __import__("math").prod(shape),
+        frombuffer=lambda raw, dtype: Array(),
+    )
+    fake_torch = types.SimpleNamespace(from_numpy=lambda value: value)
+    monkeypatch.setitem(sys.modules, "numpy", fake_numpy)
+    monkeypatch.setitem(sys.modules, "torch", fake_torch)
+    from runtime.wan.rgb8_source import read_rgb8_source
+
+    path = tmp_path / "editable.rgb8"
+    path.write_bytes(b"\x00\x01\x02\x03\x04\x05")
+    result = read_rgb8_source(
+        path, expected_sha256="declared-different", shape=(1, 1, 2, 3),
+    )
+    assert result.shape == (1, 1, 2, 3)
 
     monkeypatch.setattr(
         real_backends, "file_sha256",
@@ -232,7 +259,7 @@ def test_file_digest_difference_or_observation_error_does_not_replace_real_file_
     assert actual is None
 
 
-def test_preflight_keeps_existing_baseline_files_ready_when_only_digests_differ(tmp_path):
+def test_preflight_uses_existing_baseline_files_without_digest_admission(tmp_path):
     config = one_case_config()
     for method, package in (("videoseal", "videoseal/__init__.py"), ("rivagan", "rivagan/rivagan.py")):
         root = tmp_path / method
@@ -252,8 +279,7 @@ def test_preflight_keeps_existing_baseline_files_ready_when_only_digests_differ(
     checks = {row["name"]: row for row in real_eval.static_preflight(config)["checks"]}
     for name in ("videoseal:card_path", "videoseal:checkpoint", "rivagan:checkpoint"):
         assert checks[name]["status"] == "READY"
-        assert checks[name]["sha256_status"] == "RECORDED_DIFFERENCE"
-        assert checks[name]["sha256_blocking"] is False
+        assert "sha256_status" not in checks[name]
 
 
 def test_real_cli_preflight_plan_and_init_work_from_no_git_copy(tmp_path):

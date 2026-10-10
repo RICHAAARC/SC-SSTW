@@ -2,10 +2,7 @@
 from __future__ import annotations
 
 import ast
-import base64
 import copy
-import hashlib
-import io
 import json
 import os
 import subprocess
@@ -23,6 +20,7 @@ from experiments.paper_results_v1.colab_orchestration import (
     prepare_baseline_environment,
 )
 from experiments.paper_results_v1 import real_eval, report as report_io
+from experiments.paper_results_v1.companion_source import OUTPUT as COMPANION
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -76,12 +74,14 @@ def test_notebook_is_clean_fixed_run_all_with_exact_mount_cell():
     }
 
 
-def test_notebook_embeds_verified_no_git_source_closure_and_full_fixed_plan(tmp_path):
+def test_notebook_uses_plain_companion_without_manifest_or_embedded_digest_and_full_fixed_plan(tmp_path):
     notebook = _notebook()
     setup = _code(notebook)[1]
-    raw = base64.b64decode(_assignment(setup, "PORTABLE_B64"))
-    assert hashlib.sha256(raw).hexdigest() == _assignment(setup, "PORTABLE_ZIP_SHA256")
-    with zipfile.ZipFile(io.BytesIO(raw)) as archive:
+    assert "PORTABLE_B64" not in setup
+    assert "PORTABLE_ZIP_SHA256" not in setup
+    assert "portable_manifest" not in setup
+    assert _assignment(setup, "SOURCE_REF") == "dev/paper-results-v1"
+    with zipfile.ZipFile(COMPANION) as archive:
         names = archive.namelist()
         assert not any(".git" in Path(name).parts for name in names)
         assert {
@@ -91,15 +91,12 @@ def test_notebook_embeds_verified_no_git_source_closure_and_full_fixed_plan(tmp_
             "experiments/paper_results_v1/real_eval.adopted.json",
             "main/tube_state/video_trajectory_conditional_joint_v1.py",
             "runtime/wan/video_trajectory_conditional_joint_v1.py",
-            "portable_manifest.json",
         }.issubset(names)
+        assert "portable_manifest.json" not in names
         for name in names:
             if name.endswith(".py"):
                 ast.parse(archive.read(name).decode("utf-8"), filename=name)
         archive.extractall(tmp_path)
-    manifest = json.loads((tmp_path / "portable_manifest.json").read_text(encoding="utf-8"))
-    for name, receipt in manifest["files"].items():
-        assert hashlib.sha256((tmp_path / name).read_bytes()).hexdigest() == receipt["sha256"]
     assert not (tmp_path / ".git").exists()
     config = tmp_path / "experiments/paper_results_v1/real_eval.adopted.json"
     output = tmp_path / "plan"
@@ -123,54 +120,49 @@ def test_notebook_embeds_verified_no_git_source_closure_and_full_fixed_plan(tmp_
     ]
 
 
-def test_portable_identity_differences_are_recorded_but_bad_archives_still_fail(tmp_path):
+def test_companion_without_manifest_and_editable_source_run_but_bad_archives_fail(tmp_path):
     setup = _code(_notebook())[1]
-    original = base64.b64decode(_assignment(setup, "PORTABLE_B64"))
 
-    def variant(*, drop_manifest=False, change_file=False, unsafe=False):
-        stream = io.BytesIO()
-        with zipfile.ZipFile(io.BytesIO(original)) as source, zipfile.ZipFile(stream, "w") as target:
+    def variant(path, *, change_file=False, unsafe=False):
+        with zipfile.ZipFile(COMPANION) as source, zipfile.ZipFile(path, "w") as target:
             for info in source.infolist():
-                if drop_manifest and info.filename == "portable_manifest.json":
-                    continue
                 payload = source.read(info.filename)
                 if change_file and info.filename == "experiments/__init__.py":
-                    payload += b"# recorded difference\n"
+                    payload += b"# editable local change\n"
                 target.writestr(info, payload)
             if unsafe:
                 target.writestr("../escape.txt", b"unsafe")
-        return stream.getvalue()
+        return path
 
-    def extraction_namespace(root, raw):
-        source = setup.split("\ntry:\n    SOURCE_MANIFEST = extract_portable_source()", 1)[0]
+    def extraction_namespace(root, archive):
+        source = setup.split("\ntry:\n    SOURCE_RECEIPT = load_companion_source()", 1)[0]
         content = root / "content"
         drive = root / "drive" / "MyDrive" / "Video-WM"
         source = source.replace("/content/drive/MyDrive/Video-WM", str(drive)).replace("/content", str(content))
         namespace = {"__name__": "__main__"}
-        exec(compile(source, "portable-setup-prefix", "exec"), namespace)
-        namespace["PORTABLE_B64"] = base64.b64encode(raw).decode()
-        namespace["PORTABLE_ZIP_SHA256"] = "declared-different"
+        exec(compile(source, "companion-setup-prefix", "exec"), namespace)
+        namespace["urllib"].request.urlretrieve = lambda _url, target: (Path(target).write_bytes(Path(archive).read_bytes()) or str(target), None)
         return namespace
 
-    changed = extraction_namespace(tmp_path / "changed", variant(change_file=True))
-    changed["extract_portable_source"]()
-    changed_receipt = json.loads((changed["OUTPUT_ROOT"] / "portable_source_receipt.json").read_text())
-    assert changed_receipt["zip_sha256_status"] == "RECORDED_DIFFERENCE"
-    assert changed_receipt["file_observations"]["experiments/__init__.py"]["status"] == "RECORDED_DIFFERENCE"
-    assert changed_receipt["identity_differences_are_blocking"] is False
+    changed_zip = variant(tmp_path / "changed.zip", change_file=True)
+    changed = extraction_namespace(tmp_path / "changed", changed_zip)
+    receipt = changed["load_companion_source"]()
+    assert receipt["status"] == "DOWNLOADED_AND_EXTRACTED"
+    assert receipt["manifest_required"] is False and receipt["digest_required"] is False
+    assert "editable local change" in (changed["PORTABLE_ROOT"] / "experiments/__init__.py").read_text()
 
-    absent = extraction_namespace(tmp_path / "absent", variant(drop_manifest=True))
-    assert absent["extract_portable_source"]() == {"files": {}}
-    absent_receipt = json.loads((absent["OUTPUT_ROOT"] / "portable_source_receipt.json").read_text())
-    assert absent_receipt["manifest_status"] == "ABSENT_OPTIONAL"
+    # A usable edited worktree is used directly and never queried for a digest or clean Git state.
+    (changed["PORTABLE_ROOT"] / "experiments/__init__.py").write_text("# edited again\n")
+    assert changed["load_companion_source"]()["status"] == "REUSED_EDITABLE_WORKING_DIRECTORY"
 
-    corrupt = extraction_namespace(tmp_path / "corrupt", b"not a zip archive")
+    corrupt_path = tmp_path / "corrupt.zip"; corrupt_path.write_bytes(b"not a zip archive")
+    corrupt = extraction_namespace(tmp_path / "corrupt", corrupt_path)
     with pytest.raises(zipfile.BadZipFile):
-        corrupt["extract_portable_source"]()
+        corrupt["load_companion_source"]()
 
-    unsafe = extraction_namespace(tmp_path / "unsafe", variant(unsafe=True))
-    with pytest.raises(RuntimeError, match="unsafe portable archive member"):
-        unsafe["extract_portable_source"]()
+    unsafe = extraction_namespace(tmp_path / "unsafe", variant(tmp_path / "unsafe.zip", unsafe=True))
+    with pytest.raises(RuntimeError, match="unsafe companion archive member"):
+        unsafe["load_companion_source"]()
 
 
 def test_cached_dirty_checkout_is_preserved_and_recorded(tmp_path):
@@ -203,8 +195,8 @@ def test_cached_dirty_checkout_is_preserved_and_recorded(tmp_path):
     receipt = namespace["source_checkout_receipts"]["SOURCE"]
     assert calls == []
     assert receipt["created_now"] is False
-    assert receipt["status"] == "RECORDED_DIFFERENCE"
-    assert receipt["dirty_paths"] == [" M source.py"]
+    assert receipt["status"] == "REUSED_EXISTING_WORKING_DIRECTORY"
+    assert receipt["path"] == str(checkout)
 
 
 def test_notebook_freezes_identity_downloads_stage_order_and_failure_retention():
@@ -517,10 +509,10 @@ def test_generated_code_cells_run_in_order_from_fresh_isolated_kernel_with_bound
         def cached_download(label, url, destination):
             destination = Path(destination); destination.parent.mkdir(parents=True, exist_ok=True)
             destination.write_bytes((label + "-stub").encode())
-            return destination, sha256_file(destination)
+            return destination
     ''')
     script.write_text(textwrap.dedent(f'''\
-        import json, os, subprocess, sys, types
+        import json, os, shutil, subprocess, sys, types, urllib.request
         from pathlib import Path
 
         notebook_path = Path({str(NOTEBOOK)!r})
@@ -562,6 +554,11 @@ def test_generated_code_cells_run_in_order_from_fresh_isolated_kernel_with_bound
 
         notebook = json.loads(notebook_path.read_text(encoding="utf-8"))
         cells = ["".join(cell["source"]) for cell in notebook["cells"] if cell["cell_type"] == "code"]
+        companion = Path({str(COMPANION)!r})
+        def source_download(url, target):
+            shutil.copyfile(companion, target)
+            return str(target), None
+        urllib.request.urlretrieve = source_download
         def adapted(source):
             return source.replace(
                 "/content/drive/MyDrive/Video-WM", str(drive_root)
@@ -663,11 +660,8 @@ def test_generated_code_cells_run_in_order_from_fresh_isolated_kernel_with_bound
         assert handoff["execution_scope"]["attempted"] == ["pilot_01", "pilot_02"]
         assert handoff["confirmation"]["execution_scope_status"] == "NOT_EXECUTED_BY_NOTEBOOK"
         assert (namespace["RUN_OUTPUT"] / "evaluation_report.json").is_file()
-        stages = json.loads(namespace["STAGE_RECEIPTS"].read_text())
-        identity_stage = next(row for row in stages if row["stage"] == "EFFECTIVE_CONFIG_IDENTITY_OBSERVED")
-        assert identity_stage["status"] == "RECORDED_DIFFERENCE"
         state = json.loads((namespace["RUN_OUTPUT"] / "run_state.json").read_text())
-        assert state["config_identity_observation"]["status"] == "RECORDED_DIFFERENCE"
+        assert state["config_path_semantics"] == "LOADED_VALUES_USED_WITHOUT_DIGEST_ADMISSION_GATE"
         assert "torch" not in sys.modules
         print(json.dumps({{"status": "BOUNDARY_STUB_COMPLETE", "phases": len(phase_commands)}}))
     '''), encoding="utf-8")

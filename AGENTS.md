@@ -8,12 +8,12 @@ not import experiments/governance. Stable receiver extraction must preserve
 vote ordering, strict zero and Counter ties; GROW keeps its own 46-time reader.
 Blind selection uses received input/public protocol/key, never truth or writer
 state. Retain all fixed failed/alias rows; semantic truth parsing follows seals.
-Complete CLIs must work without notebook/scripts and from a no-.git source copy;
-record real manifest content identity, never invent a Git SHA or inherit parent
-Git. Model execution/Colab and Git publication require the current user scope.
+Complete CLIs must work without notebook/scripts and from a no-.git source copy.
+Model execution/Colab and Git publication require the current user scope.
 CPU/fixture and release checks are engineering evidence, not scientific PASS.
-For the explicitly authorized Paper Results V1 A-line notebook, source commits,
-dirty state, manifests, file/config digests, and dependency-version differences
-are recorded reproduction metadata rather than execution gates. Missing files,
-unsafe archives/paths, import or model-load failures, invalid shapes/non-finite
-data, truth-layer violations, and fixed-method/denominator violations still fail.
+Project-wide, tamper-proof or strong-reproducibility admission is not required.
+B64 embedding, manifests, source/config/file digests, Git SHA/dirty state and
+exact dependency versions must not be runtime gates, and no strict/override
+mode may reintroduce such a gate. Missing files, unsafe archives/paths, import
+or model-load failures, invalid shapes/non-finite data, truth-layer violations,
+and fixed-method/denominator violations still fail.

@@ -85,8 +85,9 @@ including the 2+8 roster, `A6D39C5E`, original `watermark`/`watermark-wrong`
 keys, native-tie reducers, and paper-facing M05/K0 comparison rows. Its
 `real_execution_authorized=false` field records that local method adoption is
 not permission to run models or media. Usable local model/source paths remain
-required execution inputs; digests and source/version differences are optional
-recorded provenance and do not block solely because they differ or are absent.
+required execution inputs. B64 payloads, manifests, digests, Git state, source
+revisions, and exact dependency versions are not runtime admission gates and
+have no strict/override mode.
 
 The standard-library-only phases are safe to run in a source copy without
 `.git` and do not import torch or load media:
@@ -126,11 +127,10 @@ Wan and framewise entries require usable local snapshot directories. Wan is
 passed to the existing diffusers loader by local directory path; framewise uses
 `local_files_only=True`. VideoSeal requires an explicit usable local source
 tree, model card, and checkpoint; RivaGAN requires an explicit usable local
-source tree and the declared community-checkpoint object. Actual digests,
-declared digests, source commits, and dirty state are recorded when available,
-but differences or missing optional identity metadata do not block a usable
-source. Preflight checks module/path availability and records digest differences
-without importing or deserializing models.
+source tree and the declared community-checkpoint object. Runtime admission
+uses readable paths and model interfaces themselves, without digest, Git state,
+manifest, or exact-version comparison. Preflight checks module/path
+availability without importing or deserializing models.
 
 The real runner saves full RGB8 media with byte SHA-256, Wan/framewise latent
 receipts, codec commands and readbacks, seven fixed POST quality pairs, full
@@ -287,8 +287,8 @@ capacity, or 32-bit reduction. The interface references are pinned
 [`cfg.py`](https://github.com/facebookresearch/videoseal/blob/870ca7fb33578b90f14c602016b6c2788096226e/videoseal/utils/cfg.py),
 and the [256-bit card](https://github.com/facebookresearch/videoseal/blob/870ca7fb33578b90f14c602016b6c2788096226e/videoseal/cards/videoseal_1.0.yaml).
 The card names `y_256b_img.pth`, but this work did not download it or invent a
-digest; every real backend records the actual local file digest when available.
-A declared digest difference is disclosed rather than used as a load gate.
+digest. The real backend requires a readable local card/checkpoint and relies
+on the actual parser/model interface rather than a digest admission check.
 VideoSeal's documented and code-comment layouts have varied; an output such as
 `T,1+K,H,W` is preserved rather than silently reduced. Construction records
 source version, model version, weight identity, and detected-output layout
@@ -343,8 +343,9 @@ This local method adoption does not authorize execution. VideoSeal native-K,
 threshold/FPR work, strength or reducer scans, extra attacks/baselines, and
 automatic confirmation execution remain outside the adopted method. The
 self-contained [`paper_results_v1_two_pilot_colab.ipynb`](../../notebooks/paper_results_v1_two_pilot_colab.ipynb)
-is a fixed Run-all handoff for the two excluded pilots only. It embeds the
-actual evaluator/runtime source closure and all ten adopted cases, but attempts
+is a fixed Run-all handoff for the two excluded pilots only. It downloads the
+public companion source selected by editable `SOURCE_REF` and includes all ten
+adopted cases, but attempts
 only `pilot_01` and `pilot_02`. The eight confirmation cases are not executed
 by this notebook; full-denominator evaluation projects their absent evidence
 for receiver/baseline/comparison to disclosed failure/unevaluable rows, while

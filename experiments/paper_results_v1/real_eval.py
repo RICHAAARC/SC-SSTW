@@ -86,7 +86,7 @@ def _strict_path(value, where):
 
 
 def _observe_file_identity(receipt, *, path_field="path", sha_field="sha256"):
-    """Record a file digest comparison without making provenance a data gate."""
+    """Record an available content token without comparing a declared digest."""
 
     if not isinstance(receipt, dict) or not isinstance(receipt.get(path_field), str):
         raise ValueError(f"saved record receipt must contain string {path_field}")
@@ -96,16 +96,9 @@ def _observe_file_identity(receipt, *, path_field="path", sha_field="sha256"):
     except OSError as exc:
         actual = None
         hash_error = f"{type(exc).__name__}: {exc}"
-    expected = receipt.get(sha_field)
     receipt[f"{sha_field}_observation"] = {
-        "expected": expected,
         "actual": actual,
-        "status": (
-            "OBSERVATION_UNAVAILABLE" if hash_error
-            else "MATCH" if actual and expected == actual
-            else "UNDECLARED" if not isinstance(expected, str) or not expected
-            else "RECORDED_DIFFERENCE"
-        ),
+        "status": "OBSERVATION_UNAVAILABLE" if hash_error else "OBSERVED_FOR_CONTENT_ADDRESSING",
         "observation_error": hash_error,
         "blocking": False,
     }
@@ -531,7 +524,6 @@ class RunStore:
         self.output = Path(output).resolve()
         self.path = self.output / "run_state.json"
         self.config = config
-        config_bytes = json.dumps(config, sort_keys=True, separators=(",", ":"), allow_nan=False).encode()
         if create:
             self.output.mkdir(parents=True, exist_ok=False)
             planned = build_plan(config)
@@ -540,13 +532,7 @@ class RunStore:
                 "schema_version": SCHEMA_VERSION,
                 "study_id": config["study_id"],
                 "status": "INITIALIZED",
-                "config_sha256": hashlib.sha256(config_bytes).hexdigest(),
-                "config_identity_observation": {
-                    "expected": hashlib.sha256(config_bytes).hexdigest(),
-                    "actual": hashlib.sha256(config_bytes).hexdigest(),
-                    "status": "MATCH",
-                    "blocking": False,
-                },
+                "config_path_semantics": "LOADED_VALUES_USED_WITHOUT_DIGEST_ADMISSION_GATE",
                 "method": config["method"],
                 "message_contract": {
                     "bits": config["payload_bits"],
@@ -566,15 +552,10 @@ class RunStore:
             self.save()
         else:
             self.data = json.loads(self.path.read_text(encoding="utf-8"))
-            actual = hashlib.sha256(config_bytes).hexdigest()
-            expected = self.data.get("config_sha256")
-            self.data["config_identity_observation"] = {
-                "expected": expected,
-                "actual": actual,
-                "status": "MATCH" if expected == actual else "RECORDED_DIFFERENCE",
-                "blocking": False,
-            }
-            self.save()
+            self.data.setdefault(
+                "config_path_semantics",
+                "LOADED_VALUES_USED_WITHOUT_DIGEST_ADMISSION_GATE",
+            )
 
     def save(self):
         _json_dump(self.path, self.data)
@@ -845,34 +826,12 @@ def static_preflight(config):
         check(f"{method}:source", package.is_file(), package)
         for field in (("card_path", "card_sha256"),) if method == "videoseal" else ():
             path = Path(row[field[0]]).expanduser()
-            actual, hash_error = observe_digest(path) if path.is_file() else (None, None)
-            expected = row.get(field[1])
             check(
                 f"{method}:{field[0]}", path.is_file(), path,
-                expected_sha256=expected, actual_sha256=actual,
-                sha256_status=(
-                    "MATCH" if expected == actual and actual
-                    else "UNDECLARED" if not expected
-                    else "RECORDED_DIFFERENCE" if actual
-                    else "UNAVAILABLE"
-                ),
-                sha256_observation_error=hash_error,
-                sha256_blocking=False,
             )
         path = Path(row["checkpoint_path"]).expanduser()
-        actual, hash_error = observe_digest(path) if path.is_file() else (None, None)
-        expected = row.get("checkpoint_sha256")
         check(
             f"{method}:checkpoint", path.is_file(), path,
-            expected_sha256=expected, actual_sha256=actual,
-            sha256_status=(
-                "MATCH" if expected == actual and actual
-                else "UNDECLARED" if not expected
-                else "RECORDED_DIFFERENCE" if actual
-                else "UNAVAILABLE"
-            ),
-            sha256_observation_error=hash_error,
-            sha256_blocking=False,
         )
     return {
         "schema_version": SCHEMA_VERSION,
@@ -1462,16 +1421,8 @@ def phase_receiver_read(store, config, case_id):
                         ).encode()
                     ).hexdigest()
                     declared_virtual_identity = observation["artifact"].get("virtual_identity_sha256")
-                    observation["artifact"]["virtual_identity_observation"] = {
-                        "expected": declared_virtual_identity,
-                        "actual": actual_virtual_identity,
-                        "status": (
-                            "MATCH" if declared_virtual_identity == actual_virtual_identity
-                            else "UNDECLARED" if not declared_virtual_identity
-                            else "RECORDED_DIFFERENCE"
-                        ),
-                        "blocking": False,
-                    }
+                    observation["artifact"]["actual_virtual_identity"] = actual_virtual_identity
+                    observation["artifact"]["declared_virtual_identity_is_admission_gate"] = False
                     mapping = planned["operation"]["received_index_map"]
                     token = hashlib.sha256(json.dumps(
                         [actual_virtual_identity, mapping], separators=(",", ":"),

@@ -1,76 +1,20 @@
-"""Build the self-contained, fixed two-pilot Paper Results V1 Colab notebook.
+"""Build the fixed two-pilot Paper Results V1 Colab notebook.
 
-The generated notebook embeds the exact outer evaluator plus its main/runtime
-closure.  It intentionally performs no model import or download while being
-built.  Colab execution records the embedded content manifest as the source
-identity; a Git checkout is not required.
+The notebook downloads an ordinary public companion source archive selected by
+an editable GitHub branch locator.  Building and testing it performs no model
+import or download.
 """
 from __future__ import annotations
 
-import base64
-import hashlib
-import io
 import json
-import subprocess
 import textwrap
-import zipfile
 from pathlib import Path
+
+from experiments.paper_results_v1.companion_source import build_companion_zip
 
 
 ROOT = Path(__file__).resolve().parents[2]
 OUTPUT = ROOT / "notebooks/paper_results_v1_two_pilot_colab.ipynb"
-
-
-def _portable_files():
-    paths = [
-        ROOT / "experiments/__init__.py",
-        ROOT / "main/__init__.py",
-        ROOT / "runtime/__init__.py",
-        ROOT / "experiments/paper_results_v1/real_eval.adopted.json",
-        ROOT / "experiments/paper_results_v1/source_identity_audit.json",
-    ]
-    paths.extend(sorted((ROOT / "experiments/paper_results_v1").glob("*.py")))
-    paths.extend(sorted((ROOT / "main/tube_state").rglob("*.py")))
-    paths.extend(sorted((ROOT / "runtime/wan").rglob("*.py")))
-    unique = {path.relative_to(ROOT).as_posix(): path for path in paths}
-    return [(name, unique[name]) for name in sorted(unique)]
-
-
-def _git_head():
-    try:
-        completed = subprocess.run(
-            ["git", "rev-parse", "HEAD"], cwd=ROOT, text=True,
-            stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, check=False,
-        )
-    except OSError:
-        return None
-    return completed.stdout.strip() if completed.returncode == 0 else None
-
-
-def _payload():
-    files = _portable_files()
-    manifest = {
-        "schema_version": "paper-results-v1-portable-source-v1",
-        "execution_identity": "ZIP_SHA256_PLUS_PER_FILE_SHA256",
-        "built_from_git_head_context_only": _git_head(),
-        "files": {
-            name: {"sha256": hashlib.sha256(path.read_bytes()).hexdigest(), "bytes": path.stat().st_size}
-            for name, path in files
-        },
-    }
-    stream = io.BytesIO()
-    with zipfile.ZipFile(stream, "w", compression=zipfile.ZIP_DEFLATED, compresslevel=9) as archive:
-        for name, path in files:
-            info = zipfile.ZipInfo(name, date_time=(1980, 1, 1, 0, 0, 0))
-            info.compress_type = zipfile.ZIP_DEFLATED
-            info.external_attr = 0o100644 << 16
-            archive.writestr(info, path.read_bytes())
-        info = zipfile.ZipInfo("portable_manifest.json", date_time=(1980, 1, 1, 0, 0, 0))
-        info.compress_type = zipfile.ZIP_DEFLATED
-        info.external_attr = 0o100644 << 16
-        archive.writestr(info, json.dumps(manifest, indent=2, sort_keys=True).encode() + b"\n")
-    value = stream.getvalue()
-    return base64.b64encode(value).decode(), hashlib.sha256(value).hexdigest(), manifest
 
 
 def _source(value):
@@ -85,11 +29,11 @@ def _cell(cell_type, source, cell_id):
 
 
 def build_notebook():
-    payload_b64, payload_sha, manifest = _payload()
+    companion = build_companion_zip()
     setup = textwrap.dedent(f'''\
-        # Fixed scope and self-contained source identity. This cell imports only the standard library.
+        # Fixed scope and ordinary companion source. This cell imports only the standard library.
         from pathlib import Path
-        import base64, datetime, hashlib, importlib, json, os, shutil, signal, subprocess, sys, time, traceback, urllib.request, uuid, zipfile
+        import datetime, importlib, json, os, shutil, signal, subprocess, sys, time, traceback, urllib.request, uuid, zipfile
 
         PILOT_CASES = ("pilot_01", "pilot_02")
         CONFIRMATION_CASES = ("confirm_01", "confirm_02", "confirm_03", "confirm_04", "confirm_05", "confirm_06", "confirm_07", "confirm_08")
@@ -98,9 +42,9 @@ def build_notebook():
             "baseline-embed-rivagan", "codec", "quality", "baseline-extract-videoseal",
             "baseline-extract-rivagan", "receiver-sync", "receiver-read",
         )
-        PORTABLE_ZIP_SHA256 = "{payload_sha}"
-        PORTABLE_B64 = "{payload_b64}"
-        PORTABLE_BASE_COMMIT_CONTEXT = {manifest['built_from_git_head_context_only']!r}
+        SOURCE_REPOSITORY = "https://github.com/RICHAAARC/SC-SSTW"
+        SOURCE_REF = "dev/paper-results-v1"
+        COMPANION_ZIP_URL = SOURCE_REPOSITORY + "/raw/refs/heads/" + SOURCE_REF + "/notebooks/paper_results_v1_companion.zip"
         FIXED_FULL_DENOMINATOR = {{
             "cases": 10, "artifacts": 690, "receiver_slots": 1600,
             "baseline_slots": 180, "comparison_slots": 180,
@@ -123,7 +67,7 @@ def build_notebook():
         OUTPUT_ROOT = Path("/content/drive/MyDrive/Video-WM/Paper-Results-V1-Two-Pilot") / RUN_ID
         OUTPUT_ROOT.mkdir(parents=True, exist_ok=False)
         RUN_OUTPUT = OUTPUT_ROOT / "run_state"
-        PORTABLE_ROOT = Path("/content") / ("paper-results-v1-portable-" + RUN_ID)
+        PORTABLE_ROOT = Path("/content/paper-results-v1-source")
         CACHE_ROOT = Path("/content/drive/MyDrive/Video-WM/Paper-Results-V1-Cache")
         CACHE_ROOT.mkdir(parents=True, exist_ok=True)
         LOG_PATH = OUTPUT_ROOT / "execution.log"
@@ -135,19 +79,6 @@ def build_notebook():
             temporary = path.with_suffix(path.suffix + ".tmp")
             temporary.write_text(json.dumps(value, indent=2, sort_keys=True, allow_nan=False) + "\\n", encoding="utf-8")
             os.replace(temporary, path)
-
-        def sha256_file(path):
-            digest = hashlib.sha256()
-            with Path(path).open("rb") as stream:
-                for chunk in iter(lambda: stream.read(1024 * 1024), b""):
-                    digest.update(chunk)
-            return digest.hexdigest()
-
-        def observe_sha256(path):
-            try:
-                return sha256_file(path), None
-            except OSError as exc:
-                return None, f"{{type(exc).__name__}}: {{exc}}"
 
         stage_receipts = []
         def record_stage(stage, status, **fields):
@@ -213,83 +144,38 @@ def build_notebook():
             print(f"[{{stage}}] returncode={{returncode}}; full output: {{LOG_PATH}}", flush=True)
             return returncode
 
-        def extract_portable_source():
-            raw = base64.b64decode(PORTABLE_B64.encode())
-            actual_zip_sha256 = hashlib.sha256(raw).hexdigest()
-            archive_path = OUTPUT_ROOT / "portable_source.zip"
-            archive_path.write_bytes(raw)
-            PORTABLE_ROOT.mkdir(parents=True, exist_ok=False)
-            with zipfile.ZipFile(archive_path) as archive:
-                for member in archive.infolist():
-                    target = (PORTABLE_ROOT / member.filename).resolve()
-                    if PORTABLE_ROOT.resolve() not in target.parents and target != PORTABLE_ROOT.resolve():
-                        raise RuntimeError("unsafe portable archive member")
-                    archive.extract(member, PORTABLE_ROOT)
-            manifest_path = PORTABLE_ROOT / "portable_manifest.json"
-            source_manifest = {{"files": {{}}}}
-            manifest_status = "ABSENT_OPTIONAL"
-            manifest_error = None
-            if manifest_path.is_file():
-                try:
-                    candidate = json.loads(manifest_path.read_text(encoding="utf-8"))
-                    if not isinstance(candidate, dict) or not isinstance(candidate.get("files"), dict):
-                        raise ValueError("portable manifest files must be an object")
-                    source_manifest = candidate
-                    manifest_status = "LOADED"
-                except Exception as exc:
-                    manifest_status = "INVALID_RECORDED"
-                    manifest_error = f"{{type(exc).__name__}}: {{exc}}"
-            file_observations = {{}}
-            root_resolved = PORTABLE_ROOT.resolve()
-            for name, receipt in source_manifest.get("files", {{}}).items():
-                expected = receipt.get("sha256") if isinstance(receipt, dict) else None
-                path = (PORTABLE_ROOT / name).resolve()
-                if root_resolved not in path.parents and path != root_resolved:
-                    file_observations[name] = {{"status": "INVALID_MANIFEST_PATH", "expected": expected}}
-                    continue
-                actual, hash_error = observe_sha256(path) if path.is_file() else (None, None)
-                file_observations[name] = {{
-                    "expected": expected,
-                    "actual": actual,
-                    "status": (
-                        "MATCH" if expected == actual and actual
-                        else "OBSERVATION_UNAVAILABLE" if hash_error
-                        else "MISSING_FILE_RECORDED" if actual is None
-                        else "UNDECLARED" if not expected
-                        else "RECORDED_DIFFERENCE"
-                    ),
-                    "observation_error": hash_error,
-                    "blocking": False,
-                }}
-            try:
-                git_entries = [str(path.relative_to(PORTABLE_ROOT)) for path in PORTABLE_ROOT.rglob("*") if ".git" in path.parts]
-                git_observation_error = None
-            except OSError as exc:
-                git_entries = None
-                git_observation_error = f"{{type(exc).__name__}}: {{exc}}"
-            manifest_sha256, manifest_hash_error = (
-                observe_sha256(manifest_path) if manifest_path.is_file() else (None, None)
-            )
-            atomic_json(OUTPUT_ROOT / "portable_source_receipt.json", {{
-                "zip_sha256_expected": PORTABLE_ZIP_SHA256,
-                "zip_sha256_actual": actual_zip_sha256,
-                "zip_sha256_status": "MATCH" if actual_zip_sha256 == PORTABLE_ZIP_SHA256 else "RECORDED_DIFFERENCE",
-                "manifest_status": manifest_status,
-                "manifest_error": manifest_error,
-                "manifest_sha256": manifest_sha256,
-                "manifest_hash_observation_error": manifest_hash_error,
-                "file_observations": file_observations,
-                "git_entries": git_entries,
-                "git_observation_error": git_observation_error,
-                "built_from_git_head_context_only": PORTABLE_BASE_COMMIT_CONTEXT,
-                "execution_identity": "SOURCE_BYTES_USED_WITH_OPTIONAL_PROVENANCE_OBSERVATIONS",
-                "file_count": len(source_manifest.get("files", {{}})),
-                "identity_differences_are_blocking": False,
-            }})
-            return source_manifest
+        def load_companion_source():
+            required = PORTABLE_ROOT / "experiments/paper_results_v1/real_cli.py"
+            archive_path = OUTPUT_ROOT / "companion_source.zip"
+            status = "REUSED_EDITABLE_WORKING_DIRECTORY"
+            if not required.is_file():
+                status = "DOWNLOADED_AND_EXTRACTED"
+                urllib.request.urlretrieve(COMPANION_ZIP_URL, archive_path)
+                PORTABLE_ROOT.mkdir(parents=True, exist_ok=True)
+                root_resolved = PORTABLE_ROOT.resolve()
+                with zipfile.ZipFile(archive_path) as archive:
+                    for member in archive.infolist():
+                        target = (PORTABLE_ROOT / member.filename).resolve()
+                        if root_resolved not in target.parents and target != root_resolved:
+                            raise RuntimeError("unsafe companion archive member")
+                    archive.extractall(PORTABLE_ROOT)
+            if not required.is_file():
+                raise FileNotFoundError("companion source is missing experiments/paper_results_v1/real_cli.py")
+            receipt = {{
+                "status": status,
+                "source_repository": SOURCE_REPOSITORY,
+                "source_ref": SOURCE_REF,
+                "companion_zip_url": COMPANION_ZIP_URL,
+                "source_root": str(PORTABLE_ROOT),
+                "manifest_required": False,
+                "digest_required": False,
+                "git_clean_required": False,
+            }}
+            atomic_json(OUTPUT_ROOT / "companion_source_receipt.json", receipt)
+            return receipt
 
         try:
-            SOURCE_MANIFEST = extract_portable_source()
+            SOURCE_RECEIPT = load_companion_source()
             portable_source_path = str(PORTABLE_ROOT)
             if portable_source_path in sys.path:
                 sys.path.remove(portable_source_path)
@@ -312,12 +198,12 @@ def build_notebook():
         except Exception as exc:
             atomic_json(OUTPUT_ROOT / "bootstrap_failure.json", {{"status": "FAILED", "reason": f"{{type(exc).__name__}}: {{exc}}", "traceback": traceback.format_exc(), "full_denominator": FIXED_FULL_DENOMINATOR}})
             raise
-        print("Run:", RUN_ID, "portable source:", PORTABLE_ZIP_SHA256)
+        print("Run:", RUN_ID, "companion source:", SOURCE_RECEIPT["source_root"])
         print("Fixed execution scope:", PILOT_CASES, "; confirmation is not executed by this notebook.")
     ''')
 
     prepare_identity = textwrap.dedent('''\
-        ## Prepare fixed source/checkpoint declarations and record actual local identities
+        ## Prepare fixed source/checkpoint declarations using ordinary local paths
         # Baseline preparation failures are retained and do not prevent the main-method attempt.
         VIDEOSEAL_COMMIT = "870ca7fb33578b90f14c602016b6c2788096226e"
         VIDEOSEAL_REPO = "https://github.com/facebookresearch/videoseal.git"
@@ -339,34 +225,16 @@ def build_notebook():
                 ).returncode == 0
                 if not has_commit:
                     logged(["git", "-C", str(destination), "fetch", "origin", commit], label + "_FETCH", check=False)
-                logged(["git", "-C", str(destination), "checkout", "--detach", commit], label + "_CHECKOUT", check=False)
-            try:
-                head = subprocess.run(
-                    ["git", "-C", str(destination), "rev-parse", "HEAD"],
-                    text=True, capture_output=True, check=False,
-                )
-                status = subprocess.run(
-                    ["git", "-C", str(destination), "status", "--porcelain"],
-                    text=True, capture_output=True, check=False,
-                )
-                actual = head.stdout.strip() if head.returncode == 0 else None
-                dirty = status.stdout.splitlines() if status.returncode == 0 else None
-                git_error = (head.stderr or status.stderr).strip() or None
-            except OSError as exc:
-                actual = None; dirty = None
-                git_error = f"{type(exc).__name__}: {exc}"
+                if logged(["git", "-C", str(destination), "checkout", "--detach", commit], label + "_CHECKOUT", check=False):
+                    raise RuntimeError(label + " checkout failed")
+            if not destination.is_dir():
+                raise FileNotFoundError(label + " source directory is unavailable: " + str(destination))
             source_checkout_receipts[label] = {
-                "requested_commit": commit,
-                "actual_commit": actual,
-                "dirty_paths": dirty,
-                "status": (
-                    "MATCH_CLEAN" if actual == commit and dirty == []
-                    else "RECORDED_DIFFERENCE" if actual is not None
-                    else "GIT_IDENTITY_UNAVAILABLE"
-                ),
-                "identity_difference_blocking": False,
+                "status": "CREATED_FROM_REQUESTED_REF" if created_now else "REUSED_EXISTING_WORKING_DIRECTORY",
+                "source_url": url,
+                "requested_ref": commit,
+                "path": str(destination),
                 "created_now": created_now,
-                "git_error": git_error,
             }
             return destination
 
@@ -377,23 +245,12 @@ def build_notebook():
                 if temporary.exists(): temporary.unlink()
                 urllib.request.urlretrieve(url, temporary)
                 os.replace(temporary, destination)
-            digest, digest_error = observe_sha256(destination)
             source_checkout_receipts[label + "_FILE"] = {
-                "actual_sha256": digest,
-                "digest_observation_error": digest_error,
-                "blocking": False,
+                "status": "AVAILABLE",
+                "source_url": url,
+                "path": str(destination),
             }
-            return destination, digest
-
-        def optional_sha256(label, path):
-            digest, error = observe_sha256(path)
-            if error:
-                source_checkout_receipts[label] = {
-                    "actual_sha256": None,
-                    "digest_observation_error": error,
-                    "blocking": False,
-                }
-            return digest
+            return destination
 
         baseline_setup = {}
         VS_ROOT = CACHE_ROOT / "sources" / ("videoseal-" + VIDEOSEAL_COMMIT)
@@ -401,27 +258,25 @@ def build_notebook():
         VS_WEIGHT = CACHE_ROOT / "checkpoints/videoseal/y_256b_img.pth"
         try:
             prepared_checkout("VIDEOSEAL_SOURCE", VIDEOSEAL_REPO, VIDEOSEAL_COMMIT, VS_ROOT)
-            VS_WEIGHT, vs_weight_sha = cached_download("VIDEOSEAL_CHECKPOINT", VIDEOSEAL_CHECKPOINT_URL, VS_WEIGHT)
-            vs_card_sha = optional_sha256("VIDEOSEAL_CARD", VS_CARD)
-            baseline_setup["videoseal"] = {"status": "READY", "source_commit": VIDEOSEAL_COMMIT, "source_identity": source_checkout_receipts.get("VIDEOSEAL_SOURCE"), "card_sha256": vs_card_sha, "checkpoint_sha256": vs_weight_sha}
+            VS_WEIGHT = cached_download("VIDEOSEAL_CHECKPOINT", VIDEOSEAL_CHECKPOINT_URL, VS_WEIGHT)
+            if not VS_CARD.is_file():
+                raise FileNotFoundError("VideoSeal card is unavailable: " + str(VS_CARD))
+            baseline_setup["videoseal"] = {"status": "READY", "source_url": VIDEOSEAL_REPO, "requested_ref": VIDEOSEAL_COMMIT, "source_path": str(VS_ROOT), "card_path": str(VS_CARD), "checkpoint_path": str(VS_WEIGHT)}
         except Exception as exc:
-            vs_card_sha = None; vs_weight_sha = None
             baseline_setup["videoseal"] = {"status": "FAILED", "reason": f"{type(exc).__name__}: {exc}", "source_commit": VIDEOSEAL_COMMIT}
 
         RIVA_ROOT = CACHE_ROOT / "sources" / ("rivagan-" + RIVAGAN_COMMIT)
         RIVA_WEIGHT = CACHE_ROOT / "checkpoints/rivagan/rivagan_32bit_model.pt"
         try:
             prepared_checkout("RIVAGAN_SOURCE", RIVAGAN_REPO, RIVAGAN_COMMIT, RIVA_ROOT)
-            RIVA_WEIGHT, riva_weight_sha = cached_download("RIVAGAN_CHECKPOINT", RIVAGAN_CHECKPOINT_URL, RIVA_WEIGHT)
+            RIVA_WEIGHT = cached_download("RIVAGAN_CHECKPOINT", RIVAGAN_CHECKPOINT_URL, RIVA_WEIGHT)
             baseline_setup["rivagan"] = {
-                "status": "READY", "source_commit": RIVAGAN_COMMIT,
-                "source_identity": source_checkout_receipts.get("RIVAGAN_SOURCE"),
-                "checkpoint_source_commit": RIVAGAN_WEIGHT_COMMIT,
-                "checkpoint_sha256": riva_weight_sha,
+                "status": "READY", "source_url": RIVAGAN_REPO,
+                "requested_ref": RIVAGAN_COMMIT, "source_path": str(RIVA_ROOT),
+                "checkpoint_path": str(RIVA_WEIGHT), "checkpoint_source_ref": RIVAGAN_WEIGHT_COMMIT,
                 "checkpoint_provenance": "Peachypie98 community 32-bit checkpoint; not DAI-Lab official weights",
             }
         except Exception as exc:
-            riva_weight_sha = None
             baseline_setup["rivagan"] = {"status": "FAILED", "reason": f"{type(exc).__name__}: {exc}", "source_commit": RIVAGAN_COMMIT, "checkpoint_source_commit": RIVAGAN_WEIGHT_COMMIT}
         atomic_json(OUTPUT_ROOT / "baseline_setup_receipts.json", baseline_setup)
 
@@ -434,31 +289,26 @@ def build_notebook():
         effective["models"]["framewise"]["local_snapshot_path"] = str(FRAMEWISE_SNAPSHOT)
         effective["models"]["videoseal"].update({
             "source_root": str(VS_ROOT), "source_commit": VIDEOSEAL_COMMIT,
-            "source_identity_observation": source_checkout_receipts.get("VIDEOSEAL_SOURCE"),
-            "card_path": str(VS_CARD), "card_sha256": vs_card_sha,
-            "checkpoint_path": str(VS_WEIGHT), "checkpoint_sha256": vs_weight_sha,
-            "checkpoint_download_status": "DOWNLOADED_OR_REUSED_DIGEST_RECORDED" if baseline_setup["videoseal"]["status"] == "READY" else "FAILED_NOT_AVAILABLE",
+            "card_path": str(VS_CARD), "card_sha256": None,
+            "checkpoint_path": str(VS_WEIGHT), "checkpoint_sha256": None,
+            "checkpoint_download_status": "DOWNLOADED_OR_REUSED" if baseline_setup["videoseal"]["status"] == "READY" else "FAILED_NOT_AVAILABLE",
         })
         effective["models"]["rivagan"].update({
             "source_root": str(RIVA_ROOT), "source_commit": RIVAGAN_COMMIT,
-            "source_identity_observation": source_checkout_receipts.get("RIVAGAN_SOURCE"),
-            "checkpoint_path": str(RIVA_WEIGHT), "checkpoint_sha256": riva_weight_sha,
+            "checkpoint_path": str(RIVA_WEIGHT), "checkpoint_sha256": None,
             "source_url": RIVAGAN_REPO,
             "checkpoint_source_url": RIVAGAN_CHECKPOINT_URL,
             "checkpoint_source_commit": RIVAGAN_WEIGHT_COMMIT,
-            "checkpoint_download_status": "DOWNLOADED_OR_REUSED_DIGEST_RECORDED" if baseline_setup["rivagan"]["status"] == "READY" else "FAILED_NOT_AVAILABLE",
+            "checkpoint_download_status": "DOWNLOADED_OR_REUSED" if baseline_setup["rivagan"]["status"] == "READY" else "FAILED_NOT_AVAILABLE",
         })
         EFFECTIVE_CONFIG = OUTPUT_ROOT / "effective_config.json"
         atomic_json(EFFECTIVE_CONFIG, effective)
-        EFFECTIVE_CONFIG_SHA256 = optional_sha256("EFFECTIVE_CONFIG_INITIAL", EFFECTIVE_CONFIG)
         portable_env = {**os.environ, "PYTHONPATH": str(PORTABLE_ROOT)}
         logged([PYTHON, "-u", "-m", "experiments.paper_results_v1.real_cli", "--config", str(EFFECTIVE_CONFIG), "--output", str(OUTPUT_ROOT / "fixed_plan"), "--phase", "plan"], "EFFECTIVE_FIXED_PLAN", cwd=PORTABLE_ROOT, env=portable_env)
         logged([PYTHON, "-u", "-m", "experiments.paper_results_v1.real_cli", "--config", str(EFFECTIVE_CONFIG), "--output", str(RUN_OUTPUT), "--phase", "init"], "RUN_STATE_INIT", cwd=PORTABLE_ROOT, env=portable_env)
         record_stage(
             "FIXED_IDENTITIES_AND_RUN_INIT", "SUCCEEDED",
-            effective_config_sha256=EFFECTIVE_CONFIG_SHA256,
-            effective_config_hash_observation=source_checkout_receipts.get("EFFECTIVE_CONFIG_INITIAL"),
-            effective_config_hash_blocking=False,
+            effective_config_path=str(EFFECTIVE_CONFIG),
         )
         print("Initialized full 10-case denominator. Run all will attempt only:", PILOT_CASES)
     ''')
@@ -493,8 +343,7 @@ def build_notebook():
             version_observation[distribution] = {
                 "recommended_historical_version": recommended,
                 "actual_version": actual,
-                "status": "MATCH" if actual and actual.split("+")[0] == recommended else "RECORDED_DIFFERENCE",
-                "blocking": False,
+                "status": "INSTALLED" if actual else "NOT_INSTALLED",
             }
         atomic_json(OUTPUT_ROOT / "main_environment_version_observation.json", version_observation)
         probe = "from diffusers import AutoencoderKL,AutoencoderKLWan,WanPipeline; import torch,sentencepiece,ftfy; print('MAIN_IMPORT_READY')"
@@ -654,20 +503,13 @@ def build_notebook():
             record_stage("MODEL_SNAPSHOT_PREPARATION", "FAILED", reason=f"{type(exc).__name__}: {exc}")
         finally:
             hf_token = None
-        recommendation_sha = optional_sha256("BASELINE_VERSION_RECOMMENDATIONS", BASELINE_VERSION_RECOMMENDATIONS)
-        repair_constraints_sha = optional_sha256("BASELINE_REPAIR_CONSTRAINTS", BASELINE_REPAIR_CONSTRAINTS)
         atomic_json(OUTPUT_ROOT / "environment_setup_receipt.json", {
             "main_environment_status": main_environment_status,
             "main_pip_check_returncode_nonfatal_diagnostic": dependency_check_returncode,
             "model_snapshot_status": model_snapshot_status,
             "wan_revision": WAN_REVISION, "framewise_revision": FRAMEWISE_REVISION,
             "baseline_version_recommendations_path": str(BASELINE_VERSION_RECOMMENDATIONS),
-            "baseline_version_recommendations_sha256": recommendation_sha,
-            "baseline_version_recommendations_hash_observation": source_checkout_receipts.get("BASELINE_VERSION_RECOMMENDATIONS"),
             "baseline_repair_constraints_path": str(BASELINE_REPAIR_CONSTRAINTS),
-            "baseline_repair_constraints_sha256": repair_constraints_sha,
-            "baseline_repair_constraints_hash_observation": source_checkout_receipts.get("BASELINE_REPAIR_CONSTRAINTS"),
-            "receipt_hashes_blocking": False,
             "baseline_environments": baseline_setup,
             "note": "Model/backend compatibility is established only by later phase receipts, not by preparation status.",
         })
@@ -678,22 +520,6 @@ def build_notebook():
         ## Execute the fixed two pilots once, one model family per process
         from experiments.paper_results_v1.colab_orchestration import execute_fixed_sequence
 
-        try:
-            effective_config_actual_sha256 = sha256_file(EFFECTIVE_CONFIG)
-            effective_config_hash_error = None
-        except OSError as exc:
-            effective_config_actual_sha256 = None
-            effective_config_hash_error = f"{type(exc).__name__}: {exc}"
-        record_stage(
-            "EFFECTIVE_CONFIG_IDENTITY_OBSERVED",
-            "OBSERVATION_UNAVAILABLE" if effective_config_hash_error
-            else "MATCH" if effective_config_actual_sha256 == EFFECTIVE_CONFIG_SHA256
-            else "RECORDED_DIFFERENCE",
-            expected_sha256=EFFECTIVE_CONFIG_SHA256,
-            actual_sha256=effective_config_actual_sha256,
-            observation_error=effective_config_hash_error,
-            blocking=False,
-        )
         portable_env = {**os.environ, "PYTHONPATH": str(PORTABLE_ROOT)}
         cli_prefix = ["-u", "-m", "experiments.paper_results_v1.real_cli", "--config", str(EFFECTIVE_CONFIG), "--output", str(RUN_OUTPUT)]
         phase_interpreters = {
@@ -774,8 +600,9 @@ def build_notebook():
                 "pilot_excluded_from_confirmation": True,
             },
             "identity": {
-                "portable_zip_sha256": PORTABLE_ZIP_SHA256,
-                "effective_config_sha256": EFFECTIVE_CONFIG_SHA256,
+                "source_repository": SOURCE_REPOSITORY,
+                "source_ref": SOURCE_REF,
+                "source_root": str(PORTABLE_ROOT),
                 "historical_real_evidence_source_sha": "ac111d0fed253767651929d115c343fe1636c525",
                 "historical_evidence_is_not_this_run": True,
             },
@@ -811,7 +638,7 @@ def build_notebook():
 
             This handoff attempts **pilot_01** and **pilot_02** once, in the frozen order below. The eight confirmation cases remain in the immutable ten-case manifest but are `NOT_EXECUTED_BY_NOTEBOOK`; full-denominator evaluation projects absent receiver/baseline/comparison evidence to disclosed FAILED/UNEVALUABLE rows while quality retains its recorded state. These are not attempted model failures, and pilots are never pooled into confirmation.
 
-            The notebook embeds the current evaluator and its runtime/main source closure, so the notebook is the only project file to upload. On a fresh cache it requests the named baseline source commits; an existing usable cached checkout is preserved and its actual commit/dirty state is recorded. It also downloads named model snapshots and checkpoint objects when the user runs it. The notebook itself has not been run against real models in this delivery; local validation is static plus CPU/fake only.
+            The notebook downloads the public `paper_results_v1_companion.zip` from the editable `SOURCE_REF` near the top of the setup cell. On a fresh cache it requests the named baseline source revisions; an existing usable cached working directory is preserved without a digest, clean-Git, or exact-version gate. It also downloads named model snapshots and checkpoint objects when the user runs it. The notebook itself has not been run against real models in this delivery; local validation is static plus CPU/fake only.
 
             Historical real evidence remains bound to source `ac111d0fed253767651929d115c343fe1636c525` and run `20261008T003135066923Z/fixed_reference`. That evidence checks the main chain, not this notebook or either external baseline.
         '''), "goal"),
@@ -827,7 +654,7 @@ def build_notebook():
 
             Six arms' PRE/POST RGB8 rasters require 2,135,162,880 bytes (about 1.99 GiB) for two pilots before MP4, terminal/shared latents, native-soft sidecars, logs, or filesystem overhead. The fixed Wan snapshot objects total about 28.93 GB and the framewise safetensors object is about 334.64 MB. Peak GPU memory and wall time have not been measured, and no GPU model threshold is claimed. A CUDA runtime is required by the adopted execution configuration.
 
-            Return the entire unique Drive run directory, especially `handoff_summary.json`, `effective_config.json`, `portable_source_receipt.json`, `execution.log`, `stage_receipts.json`, `run_state/run_state.json`, all CSV/JSON evaluation reports, both `run_state/artifacts/pilot_01` and `pilot_02` trees, and every native `.npz` sidecar. Do not rerun a failed phase in the same run directory; another attempt requires a new Run-all directory.
+            Return the entire unique Drive run directory, especially `handoff_summary.json`, `effective_config.json`, `companion_source_receipt.json`, `execution.log`, `stage_receipts.json`, `run_state/run_state.json`, all CSV/JSON evaluation reports, both `run_state/artifacts/pilot_01` and `pilot_02` trees, and every native `.npz` sidecar. Do not rerun a failed phase in the same run directory; another attempt requires a new Run-all directory.
 
             `pip check` is retained as a diagnostic. The historical successful main environment had a non-zero result from unrelated Gradio/Hub and Jedi conflicts, so a non-zero value alone is not used to erase model-phase evidence. Recorded main versions are non-blocking historical recommendations. Main and baseline entries are import-probed first; only an actual import failure triggers dependency repair. Baseline repairs stay in separate system-site-package virtual environments and explicitly request VideoSeal's OmegaConf, ANTLR, and PyYAML closure without exact-version equality gates. Model compatibility remains unvalidated until its real embed/extract phase. The old RivaGAN requirements are not installed because they pin obsolete Torch/OpenCV/Pandas/NumPy versions.
         '''), "handoff"),

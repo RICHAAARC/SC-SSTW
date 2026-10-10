@@ -9,10 +9,11 @@ import unittest
 from pathlib import Path
 
 from experiments.paper_results_v1.build_attack_eval_colab import OUTPUT, build_notebook
+from experiments.paper_results_v1.companion_source import OUTPUT as COMPANION
 
 
 class AttackNotebookTests(unittest.TestCase):
-    def test_notebook_is_fixed_two_pilot_portable_and_clean(self):
+    def test_notebook_is_fixed_two_pilot_companion_based_and_clean(self):
         receipt = build_notebook()
         notebook = json.loads(OUTPUT.read_text())
         self.assertEqual(notebook["metadata"]["accelerator"], "GPU")
@@ -25,11 +26,15 @@ class AttackNotebookTests(unittest.TestCase):
         joined = "\n".join(code)
         self.assertIn('PILOTS = ("pilot_01", "pilot_02")', joined)
         self.assertIn('confirmation": "NOT_EXECUTED_BY_NOTEBOOK"', joined)
-        self.assertIn("portable_source.zip", joined)
+        self.assertIn("companion_source.zip", joined)
+        self.assertIn('SOURCE_REF = "dev/paper-results-v1"', joined)
+        self.assertNotIn("PORTABLE_B64", joined)
+        self.assertNotIn("PORTABLE_SHA256", joined)
+        self.assertNotIn("portable_manifest", joined)
         self.assertIn("record-failure", joined)
         self.assertIn("finally:", joined)
         self.assertNotIn("force_remount", joined)
-        self.assertGreater(receipt["portable_files"], 10)
+        self.assertGreater(receipt["companion"]["files"], 10)
 
     def test_generated_cells_run_in_order_in_fresh_boundary_stub(self):
         build_notebook()
@@ -37,7 +42,7 @@ class AttackNotebookTests(unittest.TestCase):
             root = Path(directory)
             script = root / "boundary.py"
             script.write_text(textwrap.dedent(f'''\
-                import json, os, subprocess, sys, types
+                import json, os, shutil, subprocess, sys, types, urllib.request
                 from pathlib import Path
                 notebook = json.loads(Path({str(OUTPUT)!r}).read_text())
                 cells = ["".join(c["source"]) for c in notebook["cells"] if c["cell_type"] == "code"]
@@ -53,6 +58,9 @@ class AttackNotebookTests(unittest.TestCase):
                     else: (target/"config.json").write_text("{{}}",encoding="utf-8"); (target/"diffusion_pytorch_model.safetensors").write_bytes(b"stub")
                     return str(target)
                 hf.snapshot_download=snapshot_download; sys.modules["huggingface_hub"]=hf
+                companion=Path({str(COMPANION)!r})
+                def source_download(url,target): shutil.copyfile(companion,target); return str(target),None
+                urllib.request.urlretrieve=source_download
                 def adapted(source): return source.replace("/content/drive/MyDrive/Video-WM",str(drive_root)).replace("/content",str(content))
                 ns={{"__name__":"__main__"}}; os.chdir(sandbox)
                 exec(compile(adapted(cells[0]),"drive","exec"),ns)

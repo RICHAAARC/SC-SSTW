@@ -17,14 +17,13 @@ The shortest user path is:
 
 Run all attempts the two pilots once in the fixed order:
 
-1. extract the embedded source closure, rejecting corrupt ZIPs and unsafe paths
-   while recording optional manifest/digest/`.git` observations;
+1. download the companion ZIP selected by editable `SOURCE_REF`, or reuse an
+   existing usable source directory, while rejecting unsafe archive paths;
 2. write the complete ten-case fixed plan and the two-pilot execution scope;
 3. fetch the declared baseline sources and named checkpoint objects when a
    usable cached copy is absent, retaining preparation failures independently
-   and recording actual commit/dirty/digest differences without rewriting an
-   existing cached tree;
-4. put usable local paths and recorded identity observations into the effective
+   without rewriting an existing cached tree;
+4. put usable local paths into the effective
    config and initialize the complete RunStore;
 5. probe the current main and isolated baseline imports, repairing missing
    dependencies only after an actual import failure, and prepare the declared
@@ -65,14 +64,14 @@ Colab will normally stop Run all at that point, so the later summary cell is not
 claimed to run on the interrupt path; the interruption handoff is the artifact
 to return.
 
-## Source and model identities
+## Source and model locations
 
-The notebook does not fetch the unpublished project branch. It embeds
-`experiments/paper_results_v1`, `runtime/wan`, and `main/tube_state`. It records
-the ZIP digest, optional per-file manifest observations, and any embedded
-`.git` entries. Digest, manifest, and contextual build-commit differences are
-provenance observations rather than execution gates; corrupt ZIP structure and
-unsafe extraction paths still fail.
+The notebook downloads the public `notebooks/paper_results_v1_companion.zip`
+from `SOURCE_REPOSITORY` and the editable `SOURCE_REF` in its setup cell. A
+usable existing `/content/paper-results-v1-source` directory is reused. The
+companion has no B64 payload, digest contract, per-file manifest, clean-Git
+requirement, or exact-version admission check. A failed download, corrupt ZIP,
+unsafe extraction path, or missing executable source entry still fails clearly.
 
 The fixed external identities are:
 
@@ -87,10 +86,9 @@ The fixed external identities are:
 - Wan revision `0fad780a534b6463e45facd96134c9f345acfa5b` and
   framewise VAE revision `31f26fdeee1355a5c34592e401dd41e45d25a493`.
 
-The notebook computes and records actual card/checkpoint SHA-256 values after
-download. It does not invent an unpublished checkpoint digest, and a declared
-digest/source-commit/dirty difference is retained without independently
-blocking a usable source. Baseline source and weights being present is only
+The notebook records baseline source URLs, requested revisions, working paths,
+and checkpoint paths without using repository cleanliness or a digest as an
+admission decision. Baseline source and weights being present is only
 preparation evidence; successful model/API compatibility requires later
 embed/extract receipts. VideoSeal's official dependency set and RivaGAN's
 legacy dependency pins are not installed over the main stack. Each baseline
@@ -185,7 +183,7 @@ any nonzero result as an automatic scientific or runtime failure.
 Return the entire unique Drive directory. The minimum review set is:
 
 - `handoff_summary.json`, `effective_config.json`, `execution_scope.json`,
-  `portable_source_receipt.json`, `baseline_setup_receipts.json`, and
+  `companion_source_receipt.json`, `baseline_setup_receipts.json`, and
   `environment_setup_receipt.json`;
 - `execution.log`, `stage_receipts.json`, and `pilot_phase_attempts.json`;
 - `run_state/run_state.json`, `run_state/evaluation_report.json`, all five CSV
@@ -194,7 +192,7 @@ Return the entire unique Drive directory. The minimum review set is:
   lossless native `.npz` sidecar.
 
 This delivery was checked with standard-library notebook parsing, Python AST
-compilation, recorded embedded-file identity differences, path-safe extraction,
+compilation, path-safe companion extraction, editable/no-manifest source reuse,
 and a CPU-only plan expansion. Generated code cells also ran in order under an
 isolated boundary stub. The real Colab/model chain was not executed locally and
 no model, weight, source video, VAE, codec, GPU, or Drive output was loaded.

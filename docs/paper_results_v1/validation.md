@@ -1,5 +1,35 @@
 # Paper Results V1 validation
 
+## 2026-10-10 companion-source notebook revision
+
+The two Run-all notebooks now fetch the ordinary public
+`notebooks/paper_results_v1_companion.zip` selected by editable `SOURCE_REF`.
+They contain no embedded B64 source, expected ZIP digest, per-file manifest, or
+Git-clean admission flow. A usable edited source directory is reused. Corrupt
+ZIPs, path traversal, missing executable source entries, unreadable model/media
+inputs, method violations, and fixed-denominator violations still fail.
+
+The final scoped command was:
+
+```text
+PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=. <project-python> -m pytest -q \
+  -p no:cacheprovider \
+  tests/test_paper_results_v1_two_pilot_notebook.py \
+  tests/test_paper_results_v1_attack_notebook.py \
+  tests/test_paper_results_v1_real_eval.py
+```
+
+It completed with `46 passed, 2 deselected in 2.29s`. The tests parse every
+generated code cell, require empty outputs and the exact two-line Drive mount,
+inspect and execute source from a no-manifest companion ZIP, reject corrupt and
+path-traversing archives, reuse an edited source directory, exercise the real
+RGB8 reader with a differing optional digest, and run both
+generated notebooks through their isolated no-model boundary stubs to final
+evaluation/handoff. A final separate static pass parsed all Python entries in
+the 56-file companion ZIP and confirmed GPU notebook metadata. No real Colab,
+Drive, GPU, model, VAE, codec, media, dependency installation, or model/source
+download was executed.
+
 Validation is limited to CPU/static reporting behavior. No model, GPU, Colab,
 Drive, media encode/decode, generation, or new scientific experiment ran.
 

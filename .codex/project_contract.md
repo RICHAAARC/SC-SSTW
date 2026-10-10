@@ -20,17 +20,17 @@ failures or fill blind unresolved slots. No new thresholds or scientific PASS.
 
 The saved-input CLIs require explicit input configs within frozen 181/177/89
 geometry; conditional joint V1 uses its fixed bundled config and source roster.
-Historical exact configs are separately labeled. External config bytes and the
-complete runtime source closure are recorded. A standalone no-.git copy must
-work, including under an unrelated parent Git repository. Git identity is used
-only when root/.git exists; otherwise use the bundled content manifest.
+Historical exact configs are separately labeled. A standalone no-.git copy
+must work, including under an unrelated parent Git repository.
 
-Notebooks begin with the two-line mount. Published source/notebook references
-locate reviewed artifacts; source commits, dirty state, manifests, file/config
-digests, and dependency versions are recorded reproduction metadata rather
-than execution gates. Corrupt or path-traversing archives, missing/unusable
-files, actual import/load failures, method/interface violations, truth leaks,
-and fixed-roster/denominator changes still fail. Schema/CPU/full portability
+Notebooks begin with the two-line mount. Published references are ordinary
+editable source locators. Tamper-proof or strong-reproducibility admission is
+not a project requirement: B64 embedding, manifests, source/config/file
+digests, Git SHA/dirty state, and exact dependency versions must not gate a
+run, and no strict/override mode may reintroduce that policy. Corrupt or
+path-traversing archives, missing/unusable files, actual import/load failures,
+method/interface violations, truth leaks, and fixed-roster/denominator changes
+still fail. Schema/CPU/full portability
 checks must actually run; they do not execute real models. Real evidence stays
 at its original version and source. Paper-experiment preparation occurs only
 within the user's current explicit scope.

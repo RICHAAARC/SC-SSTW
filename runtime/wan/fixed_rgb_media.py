@@ -48,7 +48,7 @@ def mp4_roundtrip(raster_path,raster_sha,mp4_path,rgb_path,*,count,event):
     mp4_path,rgb_path=Path(mp4_path),Path(rgb_path);mp4_path.parent.mkdir(parents=True,exist_ok=True)
     partial=mp4_path.with_name(mp4_path.stem+'.partial.mp4')
     if mp4_path.exists() or partial.exists() or rgb_path.exists():raise FileExistsError('new media path already exists')
-    source=_bytes(raster_path,raster_sha);actual_raster_sha=hashlib.sha256(source).hexdigest();row=dict(status='RUNNING',path=str(mp4_path),partial_path=str(partial),input_raster_path=str(raster_path),input_raster_sha256_expected=raster_sha,input_raster_sha256_actual=actual_raster_sha,input_raster_sha256_status='MATCH' if raster_sha==actual_raster_sha else 'RECORDED_DIFFERENCE',input_raster_sha256_blocking=False,command=commands(partial)['save'])
+    source=_bytes(raster_path,raster_sha);actual_raster_sha=hashlib.sha256(source).hexdigest();row=dict(status='RUNNING',path=str(mp4_path),partial_path=str(partial),input_raster_path=str(raster_path),input_content_token=actual_raster_sha,declared_digest_is_admission_gate=False,command=commands(partial)['save'])
     event('mp4',dict(row));count('mp4_save',False)
     try:
         child=subprocess.run(row['command'],input=source,capture_output=True,check=False)
@@ -79,5 +79,5 @@ def mp4_roundtrip(raster_path,raster_sha,mp4_path,rgb_path,*,count,event):
         received.update(status='SAVED',bytes=len(raw),shape=list(SHAPE),**identity_fields('sha256',rgb_path));count('mp4_readback',True);event('rgb24',dict(received))
     except Exception as exc:received.update(status='FAILED',error=f'{type(exc).__name__}: {exc}');event('rgb24',dict(received));raise
     final_mp4_sha,final_mp4_error=observe_sha256(mp4_path);final_raster_sha,final_raster_error=observe_sha256(raster_path)
-    row.update(final_mp4_sha256=final_mp4_sha,final_raster_sha256=final_raster_sha,post_transport_identity_status='OBSERVATION_UNAVAILABLE' if final_mp4_error or final_raster_error else 'MATCH' if final_mp4_sha==row['sha256'] and final_raster_sha==actual_raster_sha else 'RECORDED_DIFFERENCE',post_transport_identity_error=final_mp4_error or final_raster_error,post_transport_identity_blocking=False);event('mp4',dict(row))
+    row.update(final_mp4_content_token=final_mp4_sha,final_raster_content_token=final_raster_sha,post_transport_observation_status='OBSERVATION_UNAVAILABLE' if final_mp4_error or final_raster_error else 'OBSERVED',post_transport_observation_error=final_mp4_error or final_raster_error);event('mp4',dict(row))
     return reopen_raster(rgb_path,received['sha256'])
