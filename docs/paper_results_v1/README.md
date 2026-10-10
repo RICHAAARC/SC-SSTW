@@ -1,5 +1,7 @@
 # Paper Results V1
 
+The adopted fixed two-pilot temporal-edit extension is documented in [temporal_attack_eval_v1.md](temporal_attack_eval_v1.md). Its independent CLI is `python -m experiments.paper_results_v1.attack_cli`; its Run-all handoff is `notebooks/paper_results_v1_temporal_attack_two_pilot_colab.ipynb`. This extension reuses saved main PRE/POST artifacts and never regenerates a missing main arm.
+
 The original `cli` entry turns an explicit predeclared slot manifest plus saved
 experiment outputs into deterministic JSON, CSV, and Markdown reports. That
 reporting entry does not import or change generation, receiver, runtime, or

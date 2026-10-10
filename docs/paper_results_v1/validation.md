@@ -404,3 +404,43 @@ GPU peak memory, wall time, and resulting media/readouts. The notebook records
 those operations and failures instead of claiming they passed. No dependency,
 source checkout, checkpoint, or model snapshot was downloaded during this
 validation.
+
+## Fixed two-pilot temporal-attack handoff
+
+The adopted attack manifest expands to 15 instances in nine condition groups.
+The complete plan contains 2,400 main receiver rows, 300 external-baseline
+rows, and 70 original-POST quality rows. The notebook attempt scope is 480
+main rows/15,360 bits, 60 baseline rows, and 14 quality rows; the eight
+confirmation sources retain 1,920 main and 240 baseline rows as
+`NOT_EXECUTED_BY_NOTEBOOK`. The CPU plan check confirmed edit lengths
+181/89/241/145/181/181/163×3/199×3/199×3 and all materialized random
+positions.
+
+Focused validation produced 9 passing stdlib tests and 4 passing tests under
+the already-present archive NumPy runtime. It covers top-two monotone DP against
+exhaustive enumeration, an exact unresolved tie, crop anchor/front-copy/tail
+semantics, fixed denominators, pilot/confirmation rate separation, missing-row
+retention, RAW survival when clock-model setup fails, variable codec command
+parameters, weighted-truth spread, exact temporal-edit arithmetic, RivaGAN's
+real phase-level ndarray conversion, and phase-level per-attack VideoSeal
+sidecar uniqueness. The reference-flow fixture uses coordinate-aware integer
+sampling to prove the adopted backward-flow sign, zero stable residual,
+nonzero wrong-direction residual, an exact +20 flicker transition, and the
+no-valid-coverage result.
+
+The generated notebook has empty outputs and all code cells parse. Its code
+cells ran in order in a fresh `/usr/bin/python3 -I` process with Drive,
+network, pip, Hugging Face, model, and media boundaries replaced. That test
+uses the notebook's real `logged` implementation with fake subprocess return
+codes: VideoSeal's first entry probe fails, repair and reprobe succeed;
+RivaGAN's repair reprobe remains failed but does not stop the 20 independent
+pilot phase attempts or final fixed-denominator evaluation. It also verifies
+both `--without-pip --system-site-packages` venv creations, constrained
+`pip --python` repairs, quality import repair, Wan VAE-only snapshot patterns,
+portable source activation, final report creation, and confirmation isolation.
+
+No real model, VAE, GPU, codec, media, Colab, Drive, dependency installation,
+network download, or external-baseline checkpoint load was performed. The
+real compatibility, GPU peak, wall time, actual physical Wan-encode aliases,
+MP4 sizes, LPIPS/flow receipts, and scientific recovery/quality results remain
+execution evidence to be returned from the unique notebook run directory.
