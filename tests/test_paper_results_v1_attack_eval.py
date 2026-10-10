@@ -6,6 +6,8 @@ import unittest
 from pathlib import Path
 from unittest import mock
 
+import torch  # Initialize before the clock's intentionally minimal numpy stub.
+
 from experiments.paper_results_v1.attack_eval import (
     ATTEMPT_CASES, AttackRunStore, build_plan, phase_evaluate, phase_receiver_clock,
     phase_receiver_read, record_external_failure, validate_config,
@@ -104,6 +106,10 @@ class AttackEvalTests(unittest.TestCase):
                 "source_coordinate_map": list(range(181)),
             },
         )
+        fake_method.receive_scores = lambda *args: {
+            "estimate": fake_method.solve_monotone(),
+            "operation": fake_method.decode_visible_span(),
+        }
         return fake_numpy, fake_method
 
     def test_clock_key_failure_isolated_and_actual_encode_persisted(self):
@@ -122,7 +128,9 @@ class AttackEvalTests(unittest.TestCase):
                     pass
 
             import main.tube_state as tube_state
-            with mock.patch.dict(sys.modules, {"numpy": fake_numpy}), mock.patch.object(
+            with mock.patch.dict(sys.modules, {"numpy": fake_numpy,
+                "main.tube_state.receiver_controls_v1": types.SimpleNamespace(receive_scores=fake_method.receive_scores),
+            }), mock.patch.object(
                 tube_state, "video_trajectory_temporal_edit_receiver_v1", fake_method, create=True,
             ), mock.patch(
                 "experiments.paper_results_v1.real_backends.load_local_framewise_backend",
@@ -163,7 +171,9 @@ class AttackEvalTests(unittest.TestCase):
                     pass
 
             import main.tube_state as tube_state
-            with mock.patch.dict(sys.modules, {"numpy": fake_numpy}), mock.patch.object(
+            with mock.patch.dict(sys.modules, {"numpy": fake_numpy,
+                "main.tube_state.receiver_controls_v1": types.SimpleNamespace(receive_scores=fake_method.receive_scores),
+            }), mock.patch.object(
                 tube_state, "video_trajectory_temporal_edit_receiver_v1", fake_method, create=True,
             ), mock.patch(
                 "experiments.paper_results_v1.real_backends.load_local_framewise_backend",

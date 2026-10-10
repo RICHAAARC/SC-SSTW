@@ -752,13 +752,9 @@ def phase_receiver_clock(store, config, case_id):
                             try:
                                 root = _clock_record_path(store, case_id, arm, attack_id, key_label)
                                 evidence = method.score_framewise(latent, config["keys"][key_label], method.PUBLIC)
-                                estimate = method.solve_monotone(
-                                    evidence["signed_projection"], evidence["rho"], method.PUBLIC,
-                                )
-                                operation = (
-                                    method.decode_visible_span(estimate["path"], method.PUBLIC)
-                                    if estimate["status"] == "ESTIMATED" else None
-                                )
+                                from main.tube_state.receiver_controls_v1 import receive_scores
+                                selection = receive_scores(evidence["signed_projection"], evidence["rho"], "RAW_U")
+                                estimate, operation = selection["estimate"], selection["operation"]
                                 root.parent.mkdir(parents=True, exist_ok=True)
                                 np.savez_compressed(
                                     root.with_suffix(".npz"),

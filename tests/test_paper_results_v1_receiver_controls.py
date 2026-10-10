@@ -184,6 +184,7 @@ def test_direct_cli_without_git_or_model_import(tmp_path):
     source = tmp_path / "source"
     files = ("main/__init__.py", "main/tube_state/__init__.py",
              "main/tube_state/video_trajectory_temporal_edit_receiver_v1.py",
+             "main/tube_state/receiver_controls_v1.py",
              "experiments/__init__.py", "experiments/paper_results_v1/__init__.py",
              "experiments/paper_results_v1/receiver_controls.py",
              "experiments/paper_results_v1/receiver_controls_cli.py")

@@ -4,17 +4,15 @@ from __future__ import annotations
 import hashlib
 
 
-def encode_and_score_framewise(model, received_rgb8, key):
+def encode_and_score_framewise(model, received_rgb8, key, receiver="RAW_U"):
     from main.tube_state import video_trajectory_temporal_edit_receiver_v1 as method
 
     latent = model.encode(received_rgb8)
     evidence = method.score_framewise(latent, key, method.PUBLIC)
-    estimate = method.solve_monotone(evidence["signed_projection"], evidence["rho"], method.PUBLIC)
-    operation = method.decode_visible_span(estimate["path"], method.PUBLIC) if estimate["status"] == "ESTIMATED" else None
-    return evidence, {
-        "status": operation["status"] if operation is not None else "UNRESOLVED",
-        "estimate": estimate, "operation": operation, "truth_inputs": False,
-    }
+    from main.tube_state.receiver_controls_v1 import receive_scores
+    result = receive_scores(evidence["signed_projection"], evidence["rho"], receiver)
+    return evidence, result
+
 
 
 def read_payload_general(normalized, key, output_frames, source_coordinate_map):
