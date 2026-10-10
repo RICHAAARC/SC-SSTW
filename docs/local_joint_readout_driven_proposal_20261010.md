@@ -1,10 +1,12 @@
 # B 线：真实读出驱动的终端方向对照与最小提案
 
-日期：2026-10-10。状态：**研究提案，尚未采纳；未实现新 writer/reader，未执行模型。**
+日期：2026-10-10。状态：**选项 A 的 M0 已由用户采纳并完成本地实现与 CPU/替身验证；未执行真实模型。M1/M2 与学习读出 B 均未采纳。**
+
+本轮交付见 [M0 实施与验证说明](local_joint_readout_m0_v1_implementation_20261010.md)。下列历史实跑数值仍属于原桥接/B2，不能归入新 M0。
 
 建议先保留 B 当前的局部 DCT 配对能量读出，在同一个保存 Wan 终端点上，比较原桥接方向、五个关键读数的平均梯度方向、以及同时改善这些读数的一阶共同方向。关键读数是 **state gap 和四个 fragment 各自最弱的 signed margin**。先查真正的 decoder 输入梯度能否形成有用的有限扰动，再讨论 CFG/native、自由尾程和学习读出。不是宣称“加 VAE 梯度就能成功”，也不以平均 loss 下降代替原描述条件。
 
-本轮只有来源核验、已存数值复算、CPU 小张量数学检查和本文。以下目标、求解方式、矩阵、预算、停止条件均为待用户集中采纳的建议；本文件不授予执行或方法修改权限。当前两个 notebook、方法/config、已存结果和 main 保持原状。
+提案阶段完成来源核验、已存数值复算与 CPU 小张量数学检查。其后用户明确同意 B 线路 M0 实施：采纳下文选项 A 的五目标、求解方式、六视图矩阵、调用预算和退化处置，并交付用户自运行 notebook。授权不包含本地真实模型执行、M1/M2、学习读出、推送或 main 集成。既有桥接结果与原两个 notebook 保持原状。
 
 ## 1. 当前证据决定了问题的范围
 
@@ -114,15 +116,15 @@ flowchart LR
 
 `alpha* = argmin_{alpha>=0, sum alpha=1} ||sum_j alpha_j g_j||²`，`g*=sum_j alpha*_j g_j`。
 
-这是输入梯度凸包的最小范数点，只需 5×5 Gram 矩阵的 CPU 数值解。解的 KKT 条件给出 `g_j·g* >= ||g*||²`；非零时沿 g* 对五个当前活跃目标具有共同一阶改善。Gram 只做公共尺度缩放改善数值条件，不逐目标重标定；未来实现应报告简单数值最优性残差，不能借求解器失败换目标。该求解没有调用 Wan 的迭代优化、参数扫描或多次候选选择。
+这是输入梯度凸包的最小范数点，只需 5×5 Gram 矩阵的 CPU 数值解。解的 KKT 条件给出 `g_j·g* >= ||g*||²`；非零时沿 g* 对五个当前活跃目标具有共同一阶改善。Gram 只做公共尺度缩放改善数值条件，不逐目标重标定；M0 实现报告简单数值最优性残差，不能借求解器失败换目标。该求解没有调用 Wan 的迭代优化、参数扫描或多次候选选择。
 
 严格限制：min/max 在并列点不可微；本保存数值的四个最弱 bit 和最大错误 offset 唯一，但新 forward 必须按其真实读数确认。任何活跃 min/max 并列都使本固定五梯度方向构造未定义，不采用 autograd 的默认 tie 规则、不任取子梯度，也不自动增加目标/VJP；固定槽位处置见下文。
 
 在有效、唯一活跃项的梯度下，精确 g*=0 只排除当前 mask 内使五项**全部严格一阶上升**的方向，不排除“均不降、至少一项上升”的弱协调方向，也不排除有限步或高阶改善。例如五个梯度 `(1,0),(-1,0),(0,1),(0,1),(0,1)` 的凸包含零，但方向 `(0,1)` 的五个斜率为 `0,0,1,1,1`。本提案仍停止当前 COMMON 构造，不回退平均方向后称共同方向成功；接近零且数值不可分辨只报告不确定，不援引精确零的排除结论。
 
-有限候选为 `delta_mean=g_mean/||g_mean||₂`、`delta_common=g*/||g*||₂`，**各一次、L2=1**。这是待采纳的等半径方向实验，并非声称单位归一化稳定。沿用当前 cap=1 的实际半径以避免把方向改进与增大预算混在一起；真实步长仍可能过大。旧 B2 的全空间时间支持 L2 约 57.6503，不能把旧 R* RMS 与当前局部 L2=1 当同一预算，也不能因当前较小就推定安全。
+有限候选为 `delta_mean=g_mean/||g_mean||₂`、`delta_common=g*/||g*||₂`，**各一次、L2=1**。这是 M0 已采纳的等半径方向实验，并非声称单位归一化稳定。沿用当前 cap=1 的实际半径以避免把方向改进与增大预算混在一起；真实步长仍可能过大。旧 B2 的全空间时间支持 L2 约 57.6503，不能把旧 R* RMS 与当前局部 L2=1 当同一预算，也不能因当前较小就推定安全。
 
-### 4.3 最小固定矩阵与调用预算（建议，未采纳）
+### 4.3 M0 已采纳的固定矩阵与调用预算
 
 | 行 | 实际输入 | 用途 |
 |---|---|---|
@@ -133,9 +135,9 @@ flowchart LR
 | FD_MINUS | z - (1/64) delta_common | 一次固定中心差分探针 |
 | FD_PLUS | z + (1/64) delta_common | 同一中心差分另一侧 |
 
-4 个主行 + 2 个诊断行，共 6 个固定视图。中心差分半径 1/64 也是待采纳数值，只有这一对，不据它选步长、换方向、缩步重试或替代主行。对每个 s_j 比较 `(s_j(FD_PLUS)-s_j(FD_MINUS))/(2/64)` 与 `g_j·delta_common`；若活跃项切换或 FP32 数值噪声无法分辨，明确报告。此差分核对不保证 L2=1 有限步效果。
+4 个主行 + 2 个诊断行，共 6 个固定视图。中心差分半径 1/64 已在本轮 M0 采纳，只有这一对，不据它选步长、换方向、缩步重试或替代主行。对每个 s_j 比较 `(s_j(FD_PLUS)-s_j(FD_MINUS))/(2/64)` 与 `g_j·delta_common`；若活跃项切换或 FP32 数值噪声无法分辨，明确报告。此差分核对不保证 L2=1 有限步效果。
 
-完整非退化路径的调用计划与上限建议：**1 次 VAE load、11 次 decode、5 次 decoder VJP、0 encode、0 DiT、0 scheduler、0 codec**。11D=1 基线普通 decode+5 个顺序梯度 decode+5 个其他普通视图 decode。采用顺序 VJP，每次释放该图和暂存后再求下一项；不同时留五份 decoder 图。五个梯度 decode 的 causal chunk 原始 forward 计划 5×46=230；重算名义上另 230 chunk，单列实际 attempted/completed，不把重算偷藏到“5D”。普通 6D 的 chunk forward 另 276；不能用 checkpoint 重算代替一个原定评分 decode。并列、退化、缺失或失败导致实际调用不足时，按真实 attempted/completed 报告，不为凑满预算新增调用。
+M0 完整非退化路径已采纳的调用计划与上限：**1 次 VAE load、11 次 decode、5 次 decoder VJP、0 encode、0 DiT、0 scheduler、0 codec**。11D=1 基线普通 decode+5 个顺序梯度 decode+5 个其他普通视图 decode。采用顺序 VJP，每次释放该图和暂存后再求下一项；不同时留五份 decoder 图。五个梯度 decode 的 causal chunk 原始 forward 计划 5×46=230；重算名义上另 230 chunk，单列实际 attempted/completed，不把重算偷藏到“5D”。普通 6D 的 chunk forward 另 276；不能用 checkpoint 重算代替一个原定评分 decode。并列、退化、缺失或失败导致实际调用不足时，按真实 attempted/completed 报告，不为凑满预算新增调用。
 
 固定证据分母为 6×88=528 windows、8448 chips、6×55=330 个描述汇总。5 次梯度内部重复读数另标 engineering，不作额外样本。方向未定义的行保留 `direction_status=UNDEFINED`，未产生的观测记 `MISSING` 并附具体原因；不填零、不当负判定、不从分母删除。处置如下：
 
@@ -150,7 +152,7 @@ flowchart LR
 
 ### 4.4 判读与停止条件
 
-以下是待采纳的**方法诊断判读**，不是运行门禁或科学 PASS：
+以下是 M0 已采纳的**方法诊断判读**，不是运行门禁或科学 PASS：
 
 1. 无有效 VJP、非有限、缺失、OOM：工程未完成，不解释为方法负或零信号，不自动重试。
 2. 有效梯度且精确 g*=0：只排除当前五目标/当前 mask 下五项全部严格一阶上升，不排除弱协调或有限步/高阶改善。保留结果和未定义槽位，停止当前 COMMON 构造，不扫描目标权重或解锁 mask；数值不可辨则保留不确定状态。
@@ -158,13 +160,13 @@ flowchart LR
 4. COMMON 的任一五指标实际下降，或丢失原本正向 bit：记录有限步取舍/失败；平均值提高不能覆盖该事实。不得只展示最好的片段。
 5. 五指标均不降且至少一项严格提升、无原正 bit 丢失：只支持“该同点有限扰动协调改善”的描述。若 G≤0 或任一 margin≤0，当前原描述条件仍未达到。只有 G>0 且 32/32>0 才可说该保存终端点满足原描述条件，仍不是盲解码、FPR 或轨迹成功。
 
-完整报告各行 RGB RMSE/PSNR、max abs、每帧误差、时间残差 `RMSE((Y'-Y)[t]-(Y'-Y)[t-1])`、ROI 内外能量、局部峰值，以及预定帧 `[1,44,88,132,176]` 的相同显示尺度比较。局部 latent mask 不保证 RGB 局部化。没有已采纳的视觉质量阈值，因此没有自动“质量通过”；即使数值方向有用，也需用户查看质量后才讨论下一阶段。本轮不生成这些模型图像。
+完整报告各行 RGB RMSE/PSNR、max abs、每帧误差、时间残差 `RMSE((Y'-Y)[t]-(Y'-Y)[t-1])`、ROI 内外能量、局部峰值，以及预定帧 `[1,44,88,132,176]` 的相同显示尺度比较。局部 latent mask 不保证 RGB 局部化。没有已采纳的视觉质量阈值，因此没有自动“质量通过”；即使数值方向有用，也需用户查看质量后才讨论下一阶段。本轮本地验证不生成真实模型图像；用户自运行 M0 时保存上述固定图像。
 
 ## 5. 可微性与资源：已有真实梯度先例，不以无梯度 L4 成功推断
 
 已核官方 [Diffusers v0.40.0 Wan 源码](https://github.com/huggingface/diffusers/blob/v0.40.0/src/diffusers/models/autoencoders/autoencoder_kl_wan.py)：内部 decode 是可微张量操作；causal cache 使用 clone，未 detach，时序依赖跨 chunk 保留；`_supports_gradient_checkpointing=False`。**46 次分块 forward 不表示反向图小，也不能直接调用通用 enable_gradient_checkpointing 就宣称解决。**外层 inference_mode 和 Python float 是当前 B 入口的接线限制，模型本身并非不可微。
 
-与其援引本次无梯度 L4，更合适的先例是实际 B2：181×320×512 FP32 Wan decoder VJP 在 L4 完成，46 forward+46 replay/来源。其独立历史 `runtime/wan/gradient_checkpointing.py::checkpoint_decode` 显式携带 Tensor/None/Rep cache、cursor、first_chunk，并将边界 storage 暂存到磁盘；不能直接复制整个历史 runner 或其身份校验。未来采纳时只复用必要 cache/replay 数学和生命周期，适配当前实际运行接口，保留真实 I/O/内存错误。
+与其援引本次无梯度 L4，更合适的先例是实际 B2：181×320×512 FP32 Wan decoder VJP 在 L4 完成，46 forward+46 replay/来源。其独立历史 `runtime/wan/gradient_checkpointing.py::checkpoint_decode` 显式携带 Tensor/None/Rep cache、cursor、first_chunk，并将边界 storage 暂存到磁盘；不能直接复制整个历史 runner 或其身份校验。本轮 M0 只复用必要 cache/replay 数学和生命周期，适配当前实际运行接口，保留真实 I/O/内存错误。
 
 同次 B2 JSON 记录的全 worker 最大值：GPU allocated **19.04 GiB**、reserved **20.66 GiB**、主机 RSS **38.59 GiB**、VAE boundary spool peak **64.53 GiB**。这些是历史工作进程记录，包含其阶段与实现，**不是新 M0 的已测峰值或下/上界**。它比“无梯度在 L4 跑过”更相关，但新 paired-energy reader 的 FP64 图和五次 VJP 尚未实测。run08 的 A100 经历也说明 CPU offload、活跃 causal cache 和历史图必须分别计算。
 
@@ -197,9 +199,9 @@ Flow 条件 clean 的 delta d 满足 `c'=c-d/sigma`、`v'=u+5(c'-u)=v-5d/sigma`�
 
 保留 DCT 能隔离“posterior difference 方向失配/多目标冲突”而不同时改变接收器和信号。学习读出可能提供更适于图像统计的方向，但也可能只在完整画面上读出全局重复消息；后者不能替代 local time ID/shard。若未来采用 B，需要重新定义接收质量与盲搜索误报，不把两个 reader 的 margin 大小直接排名。
 
-## 8. 本轮已完成的 CPU 检查及集中待决项
+## 8. 提案阶段 CPU 证据与本轮采纳范围
 
-检查文件：`/home/richar/projects/Video-WM/diagnostics/b-line-readout-proposal-20261010/cpu_feasibility.py` 和 `cpu_feasibility.json`。只调用现有 DCT 的小型 CPU 运算，不实例化 Wan/VideoSeal，也未实现上述优化 writer。
+提案阶段检查文件：`/home/richar/projects/Video-WM/diagnostics/b-line-readout-proposal-20261010/cpu_feasibility.py` 和 `cpu_feasibility.json`。只调用现有 DCT 的小型 CPU 运算，不实例化 Wan/VideoSeal，当时尚未实现上述优化 writer。后续 M0 实施与新增定向测试见交付说明。
 
 - 同次 11 视图 payload CSV 的四片段最弱值和表格复算；未重新解释为盲准确率。
 - 现 DCT→池化 q 的 CPU autograd 与中心差分误差 `6.64e-12`；解析 q 导数相符。
@@ -208,10 +210,9 @@ Flow 条件 clean 的 delta d 满足 `c'=c-d/sigma`、`v'=u+5(c'-u)=v-5d/sigma`�
 - Jacobian 收缩乘积不等于一般 VJP 的小反例；v0.40.0 内部 clamp、当前 inference_mode、reader float 序列化及 checkpoint 支持标志的静态检查。
 - B2 原始 JSON 的历史资源最大值与当前几何字节量复算。
 
-建议用户集中决定三项，而不是逐项运行中追加：
+本轮用户已采纳的范围：
 
-1. 是否采纳**选项 A 的 M0**：五目标凸包方向、MEAN/BRIDGE对照、现mask和等L2=1、固定±1/64差分、上述无扫描判读；或改选学习读出 B（需要先冻结新协议）。
-2. 是否接受 **11D+5VJP、0E/DiT/native/codec** 作为一次用户自运行诊断完整非退化路径的调用计划与上限，以及顺序显式缓存 checkpoint 方案。退化或失败按实际调用报告；当前结果不证明其资源峰值。
-3. 是否将“同点五指标改善、原描述条件是否达到、用户看过质量”作为讨论 M1 的依据；**本次不提前采纳 M1–M2、多步、codec、盲同步或新的质量阈值**。
-
+1. **选项 A 的 M0**：五目标凸包方向、MEAN/BRIDGE 对照、现 mask 和等 L2=1、固定 ±1/64 差分、无扫描判读。学习读出 B 未采纳。
+2. **11D+5VJP、0E/DiT/native/codec** 作为一次用户自运行诊断完整非退化路径的调用计划与上限，使用顺序显式缓存 checkpoint。退化或失败按实际调用报告；CPU 实现验证不证明其真实资源峰值。
+3. “同点五指标改善、原描述条件是否达到、用户看过质量”只作为后续讨论依据；**M1–M2、多步、codec、盲同步和新的质量阈值仍未采纳**。本轮仅本地实现与工程验证，交付用户自行执行。
 无论选择如何，完整保留失败/缺失和原固定分母。源码普通下载、可编辑引用、URL/path即可；不建立 B64、hash、manifest、Git状态或精确版本的准入要求。实施、真实执行、方法结果、发布与 main 集成仍分别报告。
