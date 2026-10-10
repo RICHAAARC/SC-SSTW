@@ -289,18 +289,23 @@ def build_notebook():
         effective["models"]["framewise"]["local_snapshot_path"] = str(FRAMEWISE_SNAPSHOT)
         effective["models"]["videoseal"].update({
             "source_root": str(VS_ROOT), "source_commit": VIDEOSEAL_COMMIT,
-            "card_path": str(VS_CARD), "card_sha256": None,
-            "checkpoint_path": str(VS_WEIGHT), "checkpoint_sha256": None,
+            "card_path": str(VS_CARD), "checkpoint_path": str(VS_WEIGHT),
             "checkpoint_download_status": "DOWNLOADED_OR_REUSED" if baseline_setup["videoseal"]["status"] == "READY" else "FAILED_NOT_AVAILABLE",
         })
         effective["models"]["rivagan"].update({
             "source_root": str(RIVA_ROOT), "source_commit": RIVAGAN_COMMIT,
-            "checkpoint_path": str(RIVA_WEIGHT), "checkpoint_sha256": None,
+            "checkpoint_path": str(RIVA_WEIGHT),
             "source_url": RIVAGAN_REPO,
             "checkpoint_source_url": RIVAGAN_CHECKPOINT_URL,
             "checkpoint_source_commit": RIVAGAN_WEIGHT_COMMIT,
             "checkpoint_download_status": "DOWNLOADED_OR_REUSED" if baseline_setup["rivagan"]["status"] == "READY" else "FAILED_NOT_AVAILABLE",
         })
+        for model_name, optional_fields in {
+            "videoseal": ("card_sha256", "checkpoint_sha256"),
+            "rivagan": ("checkpoint_sha256",),
+        }.items():
+            for field in optional_fields:
+                effective["models"][model_name].pop(field, None)
         EFFECTIVE_CONFIG = OUTPUT_ROOT / "effective_config.json"
         atomic_json(EFFECTIVE_CONFIG, effective)
         portable_env = {**os.environ, "PYTHONPATH": str(PORTABLE_ROOT)}
@@ -636,7 +641,7 @@ def build_notebook():
         _cell("markdown", textwrap.dedent('''\
             # Paper Results V1 — fixed two-pilot Run-all
 
-            This handoff attempts **pilot_01** and **pilot_02** once, in the frozen order below. The eight confirmation cases remain in the immutable ten-case manifest but are `NOT_EXECUTED_BY_NOTEBOOK`; full-denominator evaluation projects absent receiver/baseline/comparison evidence to disclosed FAILED/UNEVALUABLE rows while quality retains its recorded state. These are not attempted model failures, and pilots are never pooled into confirmation.
+            This handoff attempts **pilot_01** and **pilot_02** once, in the fixed order below. The eight confirmation cases remain in the fixed ten-case roster but are `NOT_EXECUTED_BY_NOTEBOOK`; full-denominator evaluation projects absent receiver/baseline/comparison evidence to disclosed FAILED/UNEVALUABLE rows while quality retains its recorded state. These are not attempted model failures, and pilots are never pooled into confirmation.
 
             The notebook downloads the public `paper_results_v1_companion.zip` from the editable `SOURCE_REF` near the top of the setup cell. On a fresh cache it requests the named baseline source revisions; an existing usable cached working directory is preserved without a digest, clean-Git, or exact-version gate. It also downloads named model snapshots and checkpoint objects when the user runs it. The notebook itself has not been run against real models in this delivery; local validation is static plus CPU/fake only.
 

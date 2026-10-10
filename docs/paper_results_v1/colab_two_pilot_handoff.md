@@ -44,12 +44,12 @@ structural reuse only: the first notebook's real evidence remains bound to its
 older source, and the available receipt for the second notebook does not prove
 that notebook binding launched the historical M05 run.
 
-The eight confirmation cases stay in the immutable manifest, but the notebook
+The eight confirmation cases stay in the fixed ten-case roster, but the notebook
 never invokes them and labels their execution scope `NOT_EXECUTED_BY_NOTEBOOK`.
 The complete fixed-denominator evaluator still projects their absent evidence
 for receiver, baseline, and comparison to FAILED/UNEVALUABLE report rows;
 quality retains its recorded state. The handoff lists those report counts
-separately from immutable plan counts and never presents them as attempted
+separately from fixed plan counts and never presents them as attempted
 model failures. Pilot results remain excluded from the confirmation cohort. A
 failed phase is not retried in the same run directory;
 all later phases are still attempted once so that missing dependencies and

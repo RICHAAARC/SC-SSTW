@@ -117,6 +117,12 @@ def build_notebook():
         cfg["models"]["framewise"]["local_snapshot_path"] = str(FRAMEWISE_SNAPSHOT)
         cfg["models"]["videoseal"].update(source_root=str(VS_ROOT), card_path=str(VS_CARD), checkpoint_path=str(VS_WEIGHT))
         cfg["models"]["rivagan"].update(source_root=str(RIVA_ROOT), checkpoint_path=str(RIVA_WEIGHT))
+        for model_name, optional_fields in {{
+            "videoseal": ("card_sha256", "checkpoint_sha256"),
+            "rivagan": ("checkpoint_sha256",),
+        }}.items():
+            for field in optional_fields:
+                cfg["models"][model_name].pop(field, None)
         atomic_json(CONFIG, cfg)
         ENV = {{**os.environ, "PYTHONPATH": str(PORTABLE_ROOT)}}
         portable_env = ENV; EFFECTIVE_CONFIG = CONFIG

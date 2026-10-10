@@ -19,14 +19,19 @@ PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=. <project-python> -m pytest -q \
   tests/test_paper_results_v1_real_eval.py
 ```
 
-It completed with `46 passed, 2 deselected in 2.29s`. The tests parse every
-generated code cell, require empty outputs and the exact two-line Drive mount,
-inspect and execute source from a no-manifest companion ZIP, reject corrupt and
-path-traversing archives, reuse an edited source directory, exercise the real
-RGB8 reader with a differing optional digest, and run both
-generated notebooks through their isolated no-model boundary stubs to final
-evaluation/handoff. A final separate static pass parsed all Python entries in
-the 56-file companion ZIP and confirmed GPU notebook metadata. No real Colab,
+It completed with `46 passed, 2 deselected in 2.29s`. The selected tests parse
+the generated main notebook code cells, require empty outputs and the exact
+two-line Drive mount, inspect and execute source from a no-manifest companion
+ZIP, reject corrupt and path-traversing archives, reuse an edited source
+directory, exercise the real RGB8 reader with a differing optional digest, and
+run the main notebook through its isolated no-model boundary stub to final
+evaluation/handoff. The two methods in
+`tests/test_paper_results_v1_attack_notebook.py` were deselected because that
+`unittest.TestCase` file has no `unit` marker and project `addopts` selects
+`constraint or unit or quick`; this command therefore does not claim it ran the
+attack-notebook boundary test. A final separate static pass parsed both
+notebooks and all Python entries in the 56-file companion ZIP and confirmed GPU
+notebook metadata. No real Colab,
 Drive, GPU, model, VAE, codec, media, dependency installation, or model/source
 download was executed.
 
@@ -336,7 +341,7 @@ an empty-evidence RunStore using the real standard-library report path, and
 confirms four pilot source summaries plus both method-specific cohort summaries
 (`videoseal` and `rivagan`). It also verifies that all 36 pilot comparison rows
 are unevaluable and that the eight unexecuted confirmation cases retain their
-immutable 1,280/144/144/56 receiver/baseline/comparison/quality plan counts.
+fixed 1,280/144/144/56 receiver/baseline/comparison/quality plan counts.
 
 The generated notebook code cells were also executed in order under a fresh
 isolated `/usr/bin/python3 -I` kernel boundary stub, with an empty
