@@ -55,12 +55,14 @@ def quantize_rgb8_no_codec(rgb: Any) -> Any:
     return torch.from_numpy(pixels.copy())
 
 
-def reencode_rgb24_readback(vae: Any, rgb: Any) -> Any:
+def reencode_rgb24_readback(vae: Any, rgb: Any, *, encode_observer=None) -> Any:
     """Use posterior mode and restore the normalized coordinate system.
 
     The frame tensor follows the old Wan endpoint adapter: RGB [0,1] becomes
     [1,3,T,H,W] in [-1,1].  This adapter rejects an
     incompatible VAE call rather than silently swapping encoder semantics.
+    The optional observer records only the actual encode invocation, excluding
+    input preparation and posterior/normalization work. Default math is unchanged.
     """
 
     import torch
@@ -74,7 +76,17 @@ def reencode_rgb24_readback(vae: Any, rgb: Any) -> Any:
     _clear_cache(vae)
     try:
         with torch.inference_mode():
-            encoded = vae.encode(video)
+            encode = vae.encode
+            if encode_observer is not None:
+                encode_observer("STARTED", None)
+            try:
+                encoded = encode(video)
+            except BaseException as exc:
+                if encode_observer is not None:
+                    encode_observer("FAILED", exc)
+                raise
+            if encode_observer is not None:
+                encode_observer("RETURNED", None)
             distribution = getattr(encoded, "latent_dist", None)
             if distribution is None or not callable(getattr(distribution, "mode", None)):
                 raise ValueError("frozen VAE encode lacks deterministic latent_dist.mode()")

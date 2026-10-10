@@ -85,8 +85,12 @@ sign/zero arrays, votes, decoded bits and receiver-local timing are reused.
 Source files remain unchanged. Missing old sidecars remain MISSING, with their
 paths/reasons recorded; they do not silently trigger another model read.
 
-Each physical invocation is saved RUNNING immediately before the encode and
-COMPLETE when it returns, before CPU transfer/readout. A shared raw read is
+Each physical invocation is saved RUNNING immediately before the actual
+`vae.encode` call and COMPLETE when that call returns. Parameter/device input
+preparation failures count as zero encodes. Posterior mode, shape, FP32
+normalization, finite checks or later CPU/readout failures retain a completed
+encode and a failed read. An optional adapter observer supplies these receipts
+without changing the default computation. A shared raw read is
 saved before its dependent logical rows. Re-entry or external child failure
 can finish that fan-out from durable evidence. If an attempted encode has no
 durable read evidence, retain FAILED/INTERRUPTED slots instead of repeating it.

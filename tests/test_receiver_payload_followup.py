@@ -6,6 +6,7 @@ import json
 from pathlib import Path
 import subprocess
 import sys
+import types
 import zipfile
 
 import numpy as np
@@ -49,6 +50,17 @@ def run_stub(store, **kwargs):
     defaults = dict(load_vae=lambda: object(), encode=lambda vae,rgb: torch.zeros(1,16,2,2,2),
                     payload_read=payload, load_rgb=lambda row: torch.full((5,2,2,3),255,dtype=torch.uint8))
     defaults.update(kwargs)
+    substitute = defaults["encode"]
+    def observed(vae, rgb, *, encode_observer):
+        encode_observer("STARTED", None)
+        try:
+            value = substitute(vae, rgb)
+        except BaseException as exc:
+            encode_observer("FAILED", exc)
+            raise
+        encode_observer("RETURNED", None)
+        return value
+    defaults["encode"] = observed
     return f.read(store, **defaults)
 
 
@@ -115,6 +127,68 @@ def test_vae_load_failure_recorded_and_no_encode(tmp_path):
     assert summary['actual_vae_loads']==dict(attempted=1,statuses={'FAILED':1})
     assert summary['actual_wan_calls']['attempted']==0
     assert len(json.loads((store.output/'evaluation_report.json').read_text())['rows'])==90
+
+
+class BoundaryVAE:
+    """Tiny CPU double exercising the real shared adapter, with no model weights."""
+    def __init__(self, failure=None):
+        self.failure=failure; self.calls=0; self.returns=0; self.clears=0
+        self.parameter=torch.nn.Parameter(torch.zeros(1))
+        self.config=types.SimpleNamespace(latents_mean=[1.0]*16,latents_std=[2.0]*16)
+        if failure=='scaling': self.config.latents_std=[0.0]*16
+    def parameters(self):
+        if self.failure=='preparation': raise RuntimeError('before actual encode')
+        return iter([self.parameter])
+    def clear_cache(self): self.clears+=1
+    def encode(self,video):
+        self.calls+=1
+        assert video.shape==(1,3,5,2,2) and video.dtype==torch.float32
+        if self.failure=='encode': raise RuntimeError('actual encode failed')
+        if self.failure=='interrupt': raise KeyboardInterrupt('actual encode interrupted')
+        self.returns+=1
+        def mode():
+            if self.failure=='mode': raise RuntimeError('returned encode, mode failed')
+            if self.failure=='shape': return torch.zeros(1,16,2,2)
+            raw=torch.arange(128,dtype=torch.float32).reshape(1,16,2,2,2)
+            if self.failure=='finite': raw[0,0,0,0,0]=float('nan')
+            return raw
+        return types.SimpleNamespace(latent_dist=types.SimpleNamespace(mode=mode))
+
+
+@pytest.mark.parametrize('failure,attempted,status,returned',[
+    ('preparation',0,'PREPROCESS_FAILED',0),
+    ('mode',1,'COMPLETE',1), ('shape',1,'COMPLETE',1),
+    ('scaling',1,'COMPLETE',1), ('finite',1,'COMPLETE',1),
+    ('encode',1,'FAILED',0), ('interrupt',1,'INTERRUPTED',0),
+])
+def test_actual_vae_encode_boundary_and_no_repeat(tmp_path,failure,attempted,status,returned):
+    store=fixture(tmp_path); vae=BoundaryVAE(failure)
+    args=dict(load_vae=lambda:vae, payload_read=payload,
+              load_rgb=lambda row:torch.full((5,2,2,3),255,dtype=torch.uint8))
+    if failure=='interrupt':
+        with pytest.raises(KeyboardInterrupt):f.read(store,**args)
+    else:
+        f.read(store,**args)
+    assert (vae.calls,vae.returns)==(attempted,returned)
+    assert store.data['physical_inputs'][0]['status']==status
+    summary=f.report(store)
+    assert summary['actual_wan_calls']['attempted']==attempted
+    assert summary['actual_wan_calls']['statuses']==({status:1} if attempted else {})
+    assert all(r['status']=='FAILED' for r in store.data['rows'][1:3])
+    f.read(store,**args)
+    assert (vae.calls,vae.returns)==(attempted,returned)
+
+
+def test_adapter_observer_preserves_successful_default_result():
+    from runtime.wan.vae import reencode_rgb24_readback
+    rgb=torch.full((5,2,2,3),0.75)
+    original=BoundaryVAE(); observed=BoundaryVAE(); events=[]
+    default=reencode_rgb24_readback(original,rgb)
+    result=reencode_rgb24_readback(observed,rgb,encode_observer=lambda event,error:events.append((event,error)))
+    expected=(torch.arange(128,dtype=torch.float32).reshape(1,16,2,2,2)-1)/2
+    assert torch.equal(default,expected) and torch.equal(result,default)
+    assert original.calls==observed.calls==1 and original.clears==observed.clears==2
+    assert events==[('STARTED',None),('RETURNED',None)]
 
 
 def test_reannotation_preserves_bits_and_original(tmp_path):

@@ -343,6 +343,7 @@ def _save_shared_read(store, group, result):
 
 def read(store, *, load_vae=None, encode=None, payload_read=None, load_rgb=None):
     # Injection points serve CPU engineering tests, never config-selectable model replacements.
+    # An encode substitute must honor the adapter's encode_observer boundary protocol.
     from runtime.wan.generation import load_frozen_vae
     from runtime.wan.vae import reencode_rgb24_readback
     from runtime.wan.video_trajectory_temporal_edit_receiver_v1 import operate_map, read_payload_general
@@ -372,15 +373,20 @@ def read(store, *, load_vae=None, encode=None, payload_read=None, load_rgb=None)
                 if cached_artifact != group["artifact_id"]:
                     received = load_rgb(row); cached_artifact = group["artifact_id"]
                 corrected = operate_map(received, group["received_index_map"]).float().div(255.0)
-                # Preprocessing failures do not count as model invocations.
-                group.update(status="RUNNING", started_at=time.time()); store.save()
-                try:
-                    encoded = encode(vae, corrected)
-                except BaseException as exc:
-                    group.update(status="FAILED" if isinstance(exc, Exception) else "INTERRUPTED",
-                                 reason=reason(exc), finished_at=time.time()); store.save(); raise
-                # Model return is recorded before any CPU transfer or evidence writing.
-                group.update(status="COMPLETE", finished_at=time.time()); store.save()
+                def observe_encode(event, error):
+                    if event == "STARTED":
+                        group.update(status="RUNNING", started_at=time.time())
+                    elif event == "RETURNED":
+                        group.update(status="COMPLETE", finished_at=time.time())
+                    elif event == "FAILED":
+                        group.update(status="FAILED" if isinstance(error, Exception) else "INTERRUPTED",
+                                     reason=reason(error), finished_at=time.time())
+                    else:
+                        raise ValueError("unknown encode observer event")
+                    store.save()
+                # The shared adapter signals inside its actual vae.encode boundary.
+                # Parameter/device preparation and posterior/normalization are outside it.
+                encoded = encode(vae, corrected, encode_observer=observe_encode)
                 normalized = encoded.detach().cpu()
                 result = payload_read(normalized, store.data["key"], row["operation"]["output_frames"],
                                       row["operation"]["source_coordinate_map"])
