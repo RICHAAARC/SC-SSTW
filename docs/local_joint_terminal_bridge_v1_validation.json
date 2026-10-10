@@ -102,5 +102,66 @@
     "dependency_installations": 0,
     "push_performed": false,
     "scientific_pass": false
-  }
+  },
+  "current_simple_source_delivery": {
+    "predecessor_commit": "f0d1bd78e67c458185d7b4bfb00b37db5ba4f987",
+    "scope": "user-authorized removal of strong-reproducibility governance",
+    "notebooks": [
+      {
+        "notebook": "notebooks/local_joint_state_payload_v1_colab.ipynb",
+        "source_ref": "dev/local-joint-state-payload-v1",
+        "code_cells": 6,
+        "archive_files": 22,
+        "source_format": "ordinary_public_GitHub_ZIP",
+        "gpu_metadata": true,
+        "source_or_config_digest_checks": false,
+        "manifest_required": false,
+        "fixed_config_and_call_budget_unchanged": true
+      },
+      {
+        "notebook": "notebooks/local_joint_state_payload_v1_terminal_bridge_colab.ipynb",
+        "source_ref": "dev/local-joint-state-payload-v1",
+        "code_cells": 6,
+        "archive_files": 26,
+        "source_format": "ordinary_public_GitHub_ZIP",
+        "gpu_metadata": true,
+        "source_or_config_digest_checks": false,
+        "manifest_required": false,
+        "fixed_config_and_call_budget_unchanged": true
+      }
+    ],
+    "unchanged_method_and_config_files": [
+      "experiments/wan_state_clock/configs/local_joint_state_payload_v1.json",
+      "experiments/wan_state_clock/configs/local_joint_terminal_bridge_v1.json",
+      "main/tube_state/local_joint_state_payload_carrier_v1.py",
+      "main/tube_state/local_joint_state_payload_posthoc_v1.py",
+      "main/tube_state/local_joint_terminal_bridge_v1.py",
+      "runtime/wan/local_joint_state_payload_provider_v1.py",
+      "runtime/wan/local_joint_state_payload_v1.py",
+      "runtime/wan/local_joint_terminal_bridge_v1.py",
+      "runtime/wan/vae.py",
+      "runtime/wan/grow_video_reference.py"
+    ],
+    "targeted_unique_checks_passed": 33,
+    "latest_batch": {
+      "passed": 28,
+      "seconds": 6.72
+    },
+    "earlier_unaffected_checks": 5,
+    "whole_previous_suites_repeated": false,
+    "actual_cli_boundary_checked_with_edited_source": true,
+    "invalid_ZIP_unsafe_path_and_actual_import_failures_retained": true,
+    "posthoc_reads_fixed_raw_paths_before_truth_without_manifest": true,
+    "fixed_denominators_and_truth_mismatch_errors_retained": true,
+    "actual_model_calls": 0,
+    "gpu_calls": 0,
+    "codec_execution": 0,
+    "dependency_installations": 0,
+    "colab_execution": false,
+    "push_performed": false,
+    "scientific_pass": false,
+    "current_old_B_notebook_and_ZIP_update_explicitly_authorized": true,
+    "historical_runs_and_commits_unchanged": true
+  },
+  "historical_records_note": "Earlier hashes and byte-preservation records describe their named historical revisions, not current execution requirements."
 }

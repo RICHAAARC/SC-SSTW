@@ -13,22 +13,26 @@ GROW's own all46-time reader and full native50-step chain remain separate.
 
 Receiver arguments contain received RGB, public protocol and the current key.
 Preparation can know fixture indices, but blind estimators/plans/corrections
-cannot consume truth. Identity hashing may precede seals; oracle-map semantic
-parsing follows blind payload sealing, and message parsing follows final oracle
-sealing. Preserve fixed failure slots and aliases; oracle cannot retry cached
+cannot consume truth. Save raw observations and blind decisions before reading
+oracle-map semantics or message truth. Preserve fixed failure slots and aliases;
+oracle cannot retry cached
 failures or fill blind unresolved slots. No new thresholds or scientific PASS.
 
 The saved-input CLIs require explicit input configs within frozen 181/177/89
 geometry; conditional joint V1 uses its fixed bundled config and source roster.
-Historical exact configs are separately labeled. External config bytes and the
-complete runtime source closure are recorded. A standalone no-.git copy must
-work, including under an unrelated parent Git repository. Git identity is used
-only when root/.git exists; otherwise use the bundled content manifest.
+Historical configs and actual runs remain labeled at their original versions.
+A standalone editable no-.git copy must work, including under an unrelated
+parent Git repository. Source location may be recorded as a URL or directory;
+neither a Git identity nor a bundled manifest is required.
 
 Notebooks begin with the two-line mount. Published source references locate the
-code used; reproducibility metadata is diagnostic, never an immutable-source or
-strong-reproducibility admission gate. Record source/config/environment differences
-without blocking usable code, including optional missing provenance. Preserve safe
-extraction, actual import/load errors, and fixed experiment semantics. Schema/CPU/full portability
-checks must actually run; they do not execute real models. Real evidence stays
-at its original version and source. No automatic paper-experiment preparation.
+code used. Immutability and strong reproducibility are not project requirements.
+Do not add B64 source packaging, expected package/source/config hashes, source-SHA
+verification, dirty-Git checks, exact-version gates, manifest requirements or
+identity-comparison workflows. Their absence or differences must never be an
+execution admission condition. Prefer ordinary downloads, editable refs and
+brief URL/path notes. Remove governance instead of adding warning, strict or
+override modes. Keep safe extraction, actual import/load failures, input
+semantics, blind truth isolation, fixed denominators and missing/failed records.
+Targeted static/CPU checks are engineering evidence only. Historical real runs
+remain at their original version. No automatic paper-experiment preparation.

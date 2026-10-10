@@ -129,6 +129,7 @@ def test_condition_and_attribution_keep_finite_negative_and_missing_control_dist
 
 def _write_rows(path: Path, value):
     encoded = json.dumps(value, separators=(",", ":"), allow_nan=False).encode()
+    path.parent.mkdir(parents=True, exist_ok=True)
     path.write_bytes(encoded)
     return hashlib.sha256(encoded).hexdigest()
 
@@ -139,7 +140,7 @@ def _fixture_run(root: Path, config: dict):
         observations[arm] = {}
         for layer in method.LAYERS:
             for label, key in (("CORRECT", config["carrier"]["key"]), ("WRONG", config["carrier"]["wrong_key"])):
-                path = root / f"{arm}-{layer}-{label}.json"
+                path = root / arm.lower() / f"{layer}_{label.lower()}_raw_observations.json"
                 sha = _write_rows(path, rows(key, bytes.fromhex(config["carrier"]["message_hex"]), amplitude))
                 observations[arm][f"{layer}/{label}"] = dict(
                     status="SAVED", path=str(path), sha256=sha, rows=768,
@@ -197,8 +198,7 @@ def test_saved_posthoc_cli_no_git_seals_before_truth_and_compares_arms(tmp_path)
     seal = json.loads((output / "raw_observation_seal.json").read_text())
     result = json.loads((output / "posthoc_result.json").read_text())
     assert seal["truth_loaded"] is False and len(seal["entries"]) == 12
-    assert seal["manifest_sha256"] == hashlib.sha256(
-        (tmp_path / "raw_observation_manifest.json").read_bytes()).hexdigest()
+    assert "manifest_sha256" not in seal
     assert all(item["status"] == "SEALED" and item["rows"] == 768 for item in seal["entries"].values())
     assert result["truth"]["loaded_after_raw_seal"] is True
     assert result["mp4_conditions"]["JOINT"]["met"] is True
@@ -226,16 +226,14 @@ def test_metadata_differences_and_optional_hash_errors_do_not_block_posthoc(tmp_
     # The source snapshot is optional; the already imported implementation can
     # evaluate readable observations even without its source/config sidecars.
     monkeypatch.setattr(posthoc, "ROOT", tmp_path / "missing-source")
-    monkeypatch.setattr(posthoc, "_sha", lambda path: (_ for _ in ()).throw(PermissionError("optional hash read")))
+    (tmp_path / "raw_observation_manifest.json").unlink()
     output = tmp_path / "binding-output"
     persisted = posthoc.run(run_result, posthoc.FIXED_CONFIG, output)
     seal = json.loads((output / "raw_observation_seal.json").read_text())
     assert seal["truth_loaded"] is False and len(seal["entries"]) == 12
     assert persisted["truth"]["loaded_after_raw_seal"] is True
-    assert persisted["metadata_comparison"]["manifest_matches_run_receipt"] is False
-    assert persisted["metadata_comparison"]["config_matches_run_receipt"] is False
-    assert persisted["source_identity"]["file_errors"]
-    assert len(persisted["identity_errors"]) == 3
+    assert "metadata_comparison" not in persisted
+    assert persisted["source_identity"] == dict(workspace=str(tmp_path / "missing-source"))
     assert persisted["outcome_classification"] == "DESCRIPTIVE_PROGRESS_WITH_OFF_CONTRAST"
 
 
@@ -246,7 +244,7 @@ def test_raw_receipt_hash_is_advisory(tmp_path, declared_sha):
     receipt = dict(status="SAVED", path=str(path), layer="mp4", key_label="CORRECT", sha256=declared_sha)
     loaded, sealed = posthoc._load_raw_receipt(receipt, expected_layer="mp4", expected_label="CORRECT")
     assert len(loaded) == 768 and sealed["status"] == "SEALED"
-    assert sealed["sha256_matches"] is (None if declared_sha is None else False)
+    assert "sha256_matches" not in sealed and "sha256" not in sealed
     path.write_text(json.dumps([{}] * 767))
     loaded, failure = posthoc._load_raw_receipt(receipt, expected_layer="mp4", expected_label="CORRECT")
     assert loaded is None and "768 rows" in failure["reason"]
@@ -302,6 +300,7 @@ def test_wrong_key_failure_is_auxiliary_when_correct_chain_is_complete(tmp_path)
     result["arms"]["JOINT"]["status"] = "COMPLETE_WITH_OBSERVATION_FAILURE"
     run_result.write_text(json.dumps(result))
     manifest_path.write_text(json.dumps(manifest))
+    (tmp_path / "joint/mp4_wrong_raw_observations.json").unlink()
     persisted = posthoc.run(run_result, posthoc.FIXED_CONFIG, tmp_path / "wrong-aux-output")
     assert persisted["wrong_key_conditions"]["JOINT"]["mp4"]["classification"] == "ENGINEERING_FAILURE"
     assert persisted["mp4_attribution"] == "DESCRIPTIVE_PROGRESS_WITH_OFF_CONTRAST"
@@ -320,6 +319,7 @@ def test_unavailable_complete_raw_file_preserves_fixed_metrics_and_other_evidenc
     run_result.write_text(json.dumps(result))
     manifest_path.write_text(json.dumps(manifest))
 
+    (tmp_path / "off/mp4_correct_raw_observations.json").unlink()
     persisted = posthoc.run(run_result, posthoc.FIXED_CONFIG, tmp_path / "missing-raw-output")
     unavailable = persisted["evaluations"]["OFF"]["mp4"]["CORRECT"]
     evaluation = unavailable["evaluation"]

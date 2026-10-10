@@ -1,8 +1,6 @@
 from __future__ import annotations
 
 import ast
-import base64
-import hashlib
 import io
 import json
 from pathlib import Path
@@ -11,6 +9,7 @@ import subprocess
 import sys
 import types
 import zipfile
+import urllib.request
 
 import pytest
 
@@ -54,6 +53,7 @@ def _execute_setup(notebook: dict[str, object], tmp_path: Path, monkeypatch: pyt
         str(tmp_path / "workspace-"),
     )
     exec(compile(setup, "cell-2", "exec"), namespace)
+    monkeypatch.setattr(urllib.request, "urlopen", lambda *_a, **_k: io.BytesIO(builder.portable_archive()))
     return namespace, mounts
 
 
@@ -91,15 +91,10 @@ def _write_fake_run(namespace: dict[str, object]) -> None:
             stage="COMPLETE",
             execution=dict(attempted=True, completed=True),
             actual_model_calls=True,
-            source_identity=dict(
-                kind="unversioned_directory",
-                git_commit=None,
-                content_sha256=namespace["RUNNER_CONTENT_SHA256"],
-            ),
+            source_identity=dict(workspace=str(namespace["WORKSPACE"])),
             arms={"OFF": {"status": "COMPLETE"}, "JOINT": {"status": "COMPLETE"}},
         ),
     )
-    namespace["write_json"](run_output / "raw_observation_manifest.json", {"entries": {}})
 
 
 def _write_fake_posthoc(namespace: dict[str, object]) -> None:
@@ -167,8 +162,8 @@ def _execute_environment_source_and_run(
 
 def test_notebook_is_deterministic_empty_single_file_handoff() -> None:
     notebook = _load_notebook()
-    # This is the already-executed historical handoff. New optional runtime
-    # observers do not rewrite its embedded source snapshot.
+    assert notebook == builder.build_notebook()
+    assert notebook["metadata"]["accelerator"] == "GPU"
     assert (notebook["nbformat"], notebook["nbformat_minor"]) == (4, 5)
     assert _code(notebook, 0) == "from google.colab import drive\ndrive.mount('/content/drive')"
     all_source = "\n".join("".join(cell["source"]) for cell in notebook["cells"])
@@ -183,22 +178,16 @@ def test_notebook_is_deterministic_empty_single_file_handoff() -> None:
             assert cell["execution_count"] is None
             ast.parse("".join(cell["source"]))
 
-    source_tree = ast.parse(_code(notebook, 4))
-    encoded = next(ast.literal_eval(node.value) for node in source_tree.body
-                   if isinstance(node, ast.Assign) and any(
-                       isinstance(target, ast.Name) and target.id == "SOURCE_PACKAGE_B64"
-                       for target in node.targets))
-    package = base64.b64decode("".join(encoded))
-    with zipfile.ZipFile(io.BytesIO(package)) as archive:
-        manifest = json.loads(archive.read("portable_source_manifest.json"))
+    assert "base64" not in all_source and "B64" not in all_source
+    assert "hashlib" not in all_source and "SHA256" not in all_source
+    assert "urlopen(SOURCE_URL)" in all_source
+    assert "SOURCE_REF = 'dev/local-joint-state-payload-v1'" in all_source
+    package = builder.portable_archive()
     assert COMPANION_PACKAGE.read_bytes() == package
-    assert hashlib.sha256(package).hexdigest() in all_source
-    assert manifest["git_commit"] is None
     with zipfile.ZipFile(io.BytesIO(package)) as archive:
-        assert set(archive.namelist()) == set(builder.PORTABLE_FILES) | {"portable_source_manifest.json"}
-        assert not any(name == ".git" or name.startswith(".git/") for name in archive.namelist())
-        for name, expected in manifest["files"].items():
-            assert hashlib.sha256(archive.read(name)).hexdigest() == expected
+        assert set(archive.namelist()) == set(builder.PORTABLE_FILES)
+        for name in builder.PORTABLE_FILES:
+            assert archive.read(name) == (builder.ROOT/name).read_bytes()
     runner_tree = ast.parse(
         (builder.ROOT / "experiments/wan_state_clock/local_joint_state_payload_v1_run.py").read_text()
     )
@@ -223,7 +212,7 @@ def test_stubbed_run_all_success_preserves_fixed_identity_and_seal(
     assert stages == ["DEPENDENCY_PROBE", "DEPENDENCY_REPORT", "REAL_FIXED_RUN", "SEALED_POSTHOC"]
     assert not (namespace["WORKSPACE"] / ".git").exists()
     audit = json.loads((namespace["OUTPUT"] / "notebook_audit.json").read_text())
-    assert audit["run"]["source_identity"]["git_commit"] is None
+    assert audit["run"]["source_identity"] == dict(workspace=str(namespace["WORKSPACE"]))
     assert audit["raw_seal"]["entries"] == 12
     assert audit["posthoc"]["scientific_pass"] is False
     slots = json.loads((namespace["OUTPUT"] / "fixed_slots.json").read_text())
@@ -363,7 +352,7 @@ def test_portable_provenance_differences_do_not_block_run(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch, manifest_mode: str
 ) -> None:
     notebook = _load_notebook()
-    original, _ = builder.portable_archive()
+    original = builder.portable_archive()
     edited = io.BytesIO()
     with zipfile.ZipFile(io.BytesIO(original)) as source, zipfile.ZipFile(edited, "w") as archive:
         for name in source.namelist():
@@ -378,19 +367,19 @@ def test_portable_provenance_differences_do_not_block_run(
                 data = json.dumps(json.loads(data), indent=4).encode() + b"\n"
             archive.writestr(name, data)
         archive.writestr("local_notes.txt", "Additional user notes are allowed.\n")
-    source_tree = ast.parse(_code(notebook, 4))
-    package_assignment = next(n for n in source_tree.body if isinstance(n, ast.Assign))
-    assert package_assignment.targets[0].id == "SOURCE_PACKAGE_B64"
-    package_assignment.value = ast.Constant(base64.b64encode(edited.getvalue()).decode())
-    notebook["cells"][4]["source"] = [ast.unparse(source_tree)]
+    if manifest_mode == "malformed":
+        with zipfile.ZipFile(edited, "a") as archive:
+            archive.writestr("portable_source_manifest.json", b"not-json")
     namespace, _ = _execute_setup(notebook, tmp_path, monkeypatch)
+    namespace["SOURCE_REF"] = "editable-feature-branch"
+    monkeypatch.setattr(urllib.request, "urlopen", lambda *_a, **_k: io.BytesIO(edited.getvalue()))
     _execute_environment_source_and_run(notebook, namespace, monkeypatch)
-    receipt = json.loads((namespace["OUTPUT"] / "portable_source_receipt.json").read_text())
-    assert receipt["blocking"] is False
-    assert receipt["package_sha256"] != receipt["package_reference_sha256"]
-    assert receipt["config_sha256"] != namespace["CONFIG_SHA256"]
+    receipt = json.loads((namespace["OUTPUT"] / "source_receipt.json").read_text())
+    assert set(receipt) == {"url", "workspace"}
+    assert "editable-feature-branch" in receipt["url"]
     assert (namespace["WORKSPACE"] / "local_notes.txt").is_file()
     assert (namespace["POSTHOC_OUTPUT"] / "posthoc_result.json").is_file()
+
 
 
 @pytest.mark.parametrize("unsafe_path", [False, True])
@@ -405,15 +394,14 @@ def test_unusable_or_unsafe_source_archive_retains_real_failure(
         package = stream.getvalue()
     else:
         package = b"This is not a ZIP archive."
-    source_tree = ast.parse(_code(notebook, 4))
-    assignment = next(n for n in source_tree.body if isinstance(n, ast.Assign))
-    assignment.value = ast.Constant(base64.b64encode(package).decode())
     namespace, _ = _execute_setup(notebook, tmp_path, monkeypatch)
+    monkeypatch.setattr(urllib.request, "urlopen", lambda *_a, **_k: io.BytesIO(package))
     with pytest.raises(RuntimeError if unsafe_path else zipfile.BadZipFile):
-        exec(compile(ast.unparse(source_tree), "cell-4", "exec"), namespace)
+        exec(compile(_code(notebook, 4), "cell-4", "exec"), namespace)
     assert not (tmp_path / "outside.py").exists()
     failure = json.loads((namespace["OUTPUT"] / "notebook_failure.json").read_text())
-    assert failure["stage"] == "PORTABLE_SOURCE"
+    assert failure["stage"] == "SOURCE_DOWNLOAD"
+
 
 
 def test_receipt_failure_does_not_replace_runner_primary(

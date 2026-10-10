@@ -7,14 +7,19 @@ main/tube_state must not import runtime, experiments or governance. Runtime must
 not import experiments/governance. Stable receiver extraction must preserve
 vote ordering, strict zero and Counter ties; GROW keeps its own 46-time reader.
 Blind selection uses received input/public protocol/key, never truth or writer
-state. Retain all fixed failed/alias rows; semantic truth parsing follows seals.
-Complete CLIs must work without notebook/scripts and from a no-.git source copy;
-record real manifest content identity, never invent a Git SHA or inherit parent
-Git. Model execution/Colab and Git publication require the current user scope.
+state. Retain all fixed failed/alias rows; raw observations are saved before
+semantic truth is read.
+Complete CLIs must work without notebook/scripts and from an editable no-.git
+source copy. A source URL or directory is enough; no source manifest is required.
+Model execution/Colab and Git publication require the current user scope.
 CPU/fixture and release checks are engineering evidence, not scientific PASS.
 
-Reproducibility is diagnostic only: record available source/config/environment
-identity, but do not impose immutable-source, portable-package/hash, clean-Git,
-or exact-version admission gates. Missing optional provenance must not block
-usable code. Preserve safe extraction, real import/load errors, fixed experiment
-semantics, and complete failure records. Do not add strict/override modes.
+Project-wide rule: immutability and strong reproducibility are not project
+requirements. Do not introduce B64 source packaging, expected package/source/
+config hashes, source-SHA verification, dirty-Git checks, exact-version checks,
+manifest requirements or identity-comparison workflows as execution admission.
+Missing or changed identity/provenance must never block usable code. Use ordinary
+source downloads and editable refs/directories; a brief URL/path note is enough.
+Remove such governance instead of adding warning/strict/override modes. Preserve
+safe extraction, actual import/load errors, input semantics, blind truth
+isolation, fixed denominators and complete failure records.

@@ -190,7 +190,9 @@ A1 定向验证为 `3 passed in 2.96s`，包含 1 个新增 constructor 回归�
 
 以上句子记录的是 constructor 修复版本的历史边界。随后用户已经采纳固定参数、OFF/JOINT 名单、wrong key 与 known-grid 描述性后评公式；本阶段在同一 runner 中增加双 key 原始目录，并以独立只读 posthoc 实现 seal 后真值后评。它仍不能自动回答 blind recovery、FPR 或科学 PASS，也不授权真实资源执行。
 
-### 已采纳后评实现（已完成同版受影响审查）
+### 已采纳后评实现（历史受审版本）
+
+2026-10-10 当前交付已按用户要求移除以下历史 manifest/摘要封存治理；posthoc 改为固定路径 raw-before-truth 读取。历史代码、真实 run 和审查记录保留，历史强可复现条件不再是项目要求。现行交付见 [真实实验交付说明](local_joint_state_payload_v1_real_experiment_proposal.md#2026-10-10-当前交付简化)。
 
 固定配置保存于 `experiments/wan_state_clock/configs/local_joint_state_payload_v1.json`。runner 对 OFF/JOINT 的 float RGB、RGB8、MP4 分别保存 correct/wrong key 两套 768 行 received-only 目录；每套独立失败，已保存的另一套不被覆盖，并同步写不含 key/message 的 `raw_observation_manifest.json`。`main/tube_state/local_joint_state_payload_posthoc_v1.py` 实现固定 phase 1、slot 0..21 的 22 个 state 循环相关值与 32 个 payload signed mean，保留严格并列和 24/24/20/20 固定 evidence 数。`experiments/wan_state_clock/local_joint_state_payload_posthoc_v1_run.py` 在读取含配置的 `result.json` 前，先依据 manifest 重读并哈希封存 12 份 raw 目录，再加载固定 truth；wrong key 只作辅助观察。
 

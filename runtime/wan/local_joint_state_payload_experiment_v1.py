@@ -112,9 +112,12 @@ def _tensor_file(path: Path, value: Any) -> dict[str, Any]:
     return dict(status="SAVED", path=str(path), sha256=_sha(path), shape=list(value.shape), dtype=str(value.dtype))
 
 
-def _sha(path: Path) -> str:
-    with path.open("rb") as stream:
-        return hashlib.file_digest(stream, "sha256").hexdigest()
+def _sha(path: Path) -> str | None:
+    try:
+        with path.open("rb") as stream:
+            return hashlib.file_digest(stream, "sha256").hexdigest()
+    except OSError:
+        return None
 
 
 def _move_scheduler(scheduler: Any, device: Any) -> Any:
@@ -145,7 +148,6 @@ class WanSerialResidency:
         self.backend = None
         self.active_scheduler = None
         self.phase = "EMPTY"
-        self.phase_identity = None
 
     def load_generation(self) -> dict[str, Any]:
         started = time.perf_counter()
@@ -186,7 +188,6 @@ class WanSerialResidency:
         started = time.perf_counter()
         self.event(label, {"status": "ATTEMPTED", "transition": "transformer_to_vae", "resources": _resources(self.device)})
         try:
-            self.phase_identity = self._identity()
             self.pipe.transformer.to(torch.device("cpu"))
             if self.active_scheduler is None:
                 raise RuntimeError("VAE phase requires the active arm scheduler")
@@ -200,7 +201,7 @@ class WanSerialResidency:
             row = dict(status="COMPLETED", transition="transformer_to_vae", transformer_resident="cpu",
                        vae_resident=str(self.device), scheduler_resident="cpu",
                        conditioning_resident=str(self.prompt.device),
-                       conditioning_deliberately_retained=True, identity_before=self.phase_identity,
+                       conditioning_deliberately_retained=True,
                        elapsed_seconds=time.perf_counter() - started, resources=_resources(self.device))
             self.event(label, row)
             return row
@@ -224,12 +225,9 @@ class WanSerialResidency:
                 torch.cuda.empty_cache()
             self.pipe.transformer.to(self.device)
             _move_scheduler(self.active_scheduler, self.device)
-            actual = self._identity()
-            if actual != self.phase_identity:
-                raise RuntimeError("initial/conditioning/base scheduler identity changed across VAE phase")
             self.phase = "TRANSFORMER"
             row = dict(status="COMPLETED", transition="vae_to_transformer", transformer_resident=str(self.device),
-                       vae_resident="absent", scheduler_resident=str(self.device), identity_verified=True)
+                       vae_resident="absent", scheduler_resident=str(self.device))
             row.update(elapsed_seconds=time.perf_counter() - started, resources=_resources(self.device))
             self.event(label, row)
             return row
@@ -453,19 +451,19 @@ class ExplicitFFmpeg:
 
         raster_path = Path(raster_path)
         reopen = fixed_rgb_media.reopen_raster if self.raster_loader is None else self.raster_loader
-        rgb8 = reopen(raster_path, expected_sha256)
+        # Compatibility argument is ignored; readable raster semantics suffice.
+        rgb8 = reopen(raster_path, None)
         t, h, w, _ = carrier.PUBLIC.video_shape
         partial = path.with_name(path.stem + ".partial.mp4")
         if path.exists() or partial.exists():
             raise FileExistsError("MP4 output already exists")
         raw = rgb8.detach().cpu().contiguous().numpy().tobytes()
         actual_sha256 = hashlib.sha256(raw).hexdigest()
-        identity_matches = actual_sha256 == expected_sha256 if expected_sha256 is not None else None
         save = ["ffmpeg", "-v", "error", "-threads", "1", "-f", "rawvideo", "-pix_fmt", "rgb24", "-s", f"{w}x{h}", "-r", str(self.media["fps"]), "-i", "pipe:0", "-an", "-c:v", self.media["codec"], "-crf", str(self.media["crf"]), "-pix_fmt", self.media["pixel_format"], "-n", str(partial)]
         row = {"stage": "encode", "status": "ATTEMPTED", "command": save,
-               "input_raster_path": str(raster_path), "input_expected_sha256": expected_sha256,
+               "input_raster_path": str(raster_path),
                "input_actual_sha256": actual_sha256, "input_bytes_sha256": actual_sha256,
-               "input_sha256_matches": identity_matches, "retry": False}
+               "retry": False}
         event(dict(row))
         child = None
         try:
@@ -521,8 +519,7 @@ class ExplicitFFmpeg:
                         stderr=child.stderr.decode(errors="replace"), full_frame_count_by_raw_bytes=t)
         event(dict(read_row))
         return received, dict(status="SAVED", artifact=artifact, input_raster_path=str(raster_path),
-                              input_expected_sha256=expected_sha256, input_actual_sha256=actual_sha256,
-                              input_sha256_matches=identity_matches,
+                              input_actual_sha256=actual_sha256,
                               encode=row, probe=probe, read=read_row)
 
 

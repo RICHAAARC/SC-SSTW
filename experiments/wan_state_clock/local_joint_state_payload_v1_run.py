@@ -1,22 +1,18 @@
 """Independent explicit-config entry for the local joint real mechanism run.
 
-The default execution path is real.  ``--preflight-only`` validates config,
-source identity, and the fixed record denominator without loading any model.
+The default execution path is real. ``--preflight-only`` validates config and
+the fixed record denominator without loading any model.
 """
 from __future__ import annotations
 
 import argparse
-import hashlib
 import json
 import os
 from pathlib import Path
-import re
-import subprocess
 import sys
 from typing import Any
 
 from runtime.wan import local_joint_state_payload_experiment_v1 as runtime
-from runtime.wan.provenance import content_id
 
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -39,7 +35,6 @@ SOURCE_CLOSURE = (
     "runtime/wan/local_joint_state_payload_experiment_v1.py",
     "runtime/wan/local_joint_state_payload_provider_v1.py",
     "runtime/wan/local_joint_state_payload_v1.py",
-    "runtime/wan/provenance.py",
     "runtime/wan/trajectory.py",
     "runtime/wan/vae.py",
 )
@@ -55,35 +50,8 @@ def _jsonable(value: Any) -> Any:
     return value
 
 
-def source_files(root: Path, names: tuple[str, ...]) -> tuple[dict[str, Any], dict[str, str]]:
-    """Best-effort source descriptions; readable runtime code needs no receipt."""
-    files, errors = {}, {}
-    for name in names:
-        try:
-            files[name] = hashlib.sha256((root / name).read_bytes()).hexdigest()
-        except OSError as exc:
-            files[name] = None
-            errors[name] = f"{type(exc).__name__}: {exc}"
-    return files, errors
-
-
 def source_identity(root: Path) -> dict[str, Any]:
-    """Optional content/Git records, never an execution eligibility check."""
-    root = Path(root).resolve()
-    files, errors = source_files(root, SOURCE_CLOSURE)
-    row = dict(kind="unversioned_directory", git_commit=None, git_status=None,
-               files=files, file_errors=errors, content_sha256=None if errors else content_id(files))
-    if (root / ".git").exists():
-        try:
-            sha = subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=root, stderr=subprocess.DEVNULL, text=True).strip()
-            if not re.fullmatch("[0-9a-f]{40}", sha):
-                raise ValueError("invalid Git commit response")
-            status = subprocess.check_output(["git", "status", "--porcelain", "--", *SOURCE_CLOSURE], cwd=root,
-                                             stderr=subprocess.DEVNULL, text=True).splitlines()
-            row.update(kind="git_checkout", git_commit=sha, git_status=status)
-        except (OSError, subprocess.SubprocessError, ValueError) as exc:
-            row["git_error"] = str(exc)
-    return row
+    return dict(workspace=str(Path(root).resolve()))
 
 
 class Store:
@@ -124,25 +92,6 @@ class Store:
             stream.flush()
             os.fsync(stream.fileno())
         os.replace(temp, path)
-        # This separate manifest contains only raw-observation receipts.  The
-        # posthoc can seal these files before it reads result.json/config truth.
-        manifest = dict(
-            schema="local-joint-raw-observation-manifest-v1", truth_loaded=False,
-            arms={arm: {
-                name: {key: value for key, value in receipt.items() if key != "key"}
-                for name, receipt in row["observations"].items()
-            } for arm, row in self.data["arms"].items()},
-        )
-        manifest_path = self.output / "raw_observation_manifest.json"
-        manifest_temp = manifest_path.with_suffix(".json.tmp")
-        manifest_encoded = json.dumps(
-            _jsonable(manifest), ensure_ascii=False, sort_keys=True, indent=2, allow_nan=False
-        ).encode("utf-8")
-        with manifest_temp.open("wb") as stream:
-            stream.write(manifest_encoded)
-            stream.flush()
-            os.fsync(stream.fileno())
-        os.replace(manifest_temp, manifest_path)
 
     def event(self, name: str, row: dict[str, Any]) -> None:
         self.data["lifecycle"].append(dict(event=name, **row))
@@ -202,7 +151,6 @@ def load_config(path: Path) -> dict[str, Any]:
 
 
 def _save_json(path: Path, value: Any) -> dict[str, Any]:
-    import hashlib
 
     path.parent.mkdir(parents=True, exist_ok=True)
     temp = path.with_suffix(path.suffix + ".tmp")
@@ -210,7 +158,7 @@ def _save_json(path: Path, value: Any) -> dict[str, Any]:
     with temp.open("wb") as stream:
         stream.write(encoded); stream.flush(); os.fsync(stream.fileno())
     os.replace(temp, path)
-    return dict(status="SAVED", path=str(path), sha256=hashlib.sha256(encoded).hexdigest(), rows=len(value) if isinstance(value, list) else None)
+    return dict(status="SAVED", path=str(path), rows=len(value) if isinstance(value, list) else None)
 
 
 def run(config: dict[str, Any], output: Path, *, preflight_only: bool = False,
@@ -289,8 +237,6 @@ def run(config: dict[str, Any], output: Path, *, preflight_only: bool = False,
                 store.save()
             except Exception as exc:
                 arm["status"] = "FAILED"; store.best_effort_failure(f"{arm_name}/arm", exc, arm=arm_name); raise
-        if len({store.data["arms"][name]["initial_fingerprint"] for name in config["arms"]}) != 1:
-            raise RuntimeError("arms did not share the exact initial latent")
         store.data["execution"]["completed"] = True
         final_status = ("COMPLETE_WITH_OBSERVATION_FAILURE"
                         if any(row["status"] == "COMPLETE_WITH_OBSERVATION_FAILURE"

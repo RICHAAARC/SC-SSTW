@@ -2,12 +2,8 @@
 from __future__ import annotations
 
 import ast
-import base64
-import hashlib
-import io
 import json
 from pathlib import Path
-import zipfile
 
 from scripts import build_local_joint_state_payload_v1_notebook as previous
 
@@ -22,17 +18,7 @@ PORTABLE_FILES = previous.PORTABLE_FILES + (
 
 
 def portable_archive():
-    stream = io.BytesIO()
-    manifest = dict(schema="saved-joint-terminal-bridge-source-v1", git_commit=None, blocking=False,
-                    files={name: hashlib.sha256((ROOT/name).read_bytes()).hexdigest() for name in PORTABLE_FILES})
-    with zipfile.ZipFile(stream, "w", zipfile.ZIP_DEFLATED, compresslevel=9) as archive:
-        for name in (*PORTABLE_FILES, "portable_source_manifest.json"):
-            info = zipfile.ZipInfo(name, date_time=(1980, 1, 1, 0, 0, 0))
-            info.compress_type = zipfile.ZIP_DEFLATED
-            info.external_attr = 0o100644 << 16
-            data = (ROOT/name).read_bytes() if name in PORTABLE_FILES else json.dumps(manifest, sort_keys=True).encode()
-            archive.writestr(info, data)
-    return stream.getvalue(), manifest
+    return previous.portable_archive(PORTABLE_FILES)
 
 
 def reused_setup_functions() -> str:
@@ -61,12 +47,12 @@ def reused_environment() -> str:
 
 
 def build_notebook():
-    package, manifest = portable_archive()
     config = json.loads((ROOT/CONFIG_PATH).read_text(encoding="utf-8"))
     c, m = previous._code, previous._markdown
     setup = f'''\
 from pathlib import Path
-import datetime, hashlib, json, os, signal, subprocess, sys, time, traceback
+import datetime, json, os, signal, subprocess, sys, time, traceback
+SOURCE_REF = 'dev/local-joint-state-payload-v1'  # Editable branch/tag/ref.
 FIXED_CONFIG = {config!r}
 EXPECTED_COST = {{"encode":2,"decode":4,"dit":0,"native":0,"codec":0,"backward":0,"vae_load":1}}
 OUTPUT_PARENT = Path('/content/drive/MyDrive/Video-WM/Local-Joint-State-Payload-V1-Terminal-Bridge')
@@ -96,39 +82,7 @@ write_json(OUTPUT / 'setup_receipt.json', dict(config=FIXED_CONFIG, expected_cos
     output=str(OUTPUT), python=sys.version, scientific_pass=False, automatic_retry=False))
 print('Saved-terminal diagnostic output:', OUTPUT, flush=True)
 '''
-    encoded = base64.b64encode(package).decode()
-    chunks = "\n".join(repr(encoded[i:i+100]) for i in range(0, len(encoded), 100))
-    source = f'''\
-import base64, io, zipfile
-SOURCE_PACKAGE_B64 = (
-{chunks}
-)
-try:
-    WORKSPACE.mkdir(parents=True, exist_ok=False)
-    package_bytes = base64.b64decode(SOURCE_PACKAGE_B64)
-    with zipfile.ZipFile(io.BytesIO(package_bytes)) as archive:
-        for member in archive.infolist():
-            target = (WORKSPACE / member.filename).resolve()
-            if not target.is_relative_to(WORKSPACE.resolve()):
-                raise RuntimeError('unsafe embedded archive path')
-            if member.is_dir():
-                target.mkdir(parents=True, exist_ok=True)
-            else:
-                target.parent.mkdir(parents=True, exist_ok=True)
-                target.write_bytes(archive.read(member))
-    sys.path.insert(0, str(WORKSPACE))
-    # Optional identity is descriptive. Missing provenance is not an admission gate.
-    try:
-        files = {{name: hashlib.sha256((WORKSPACE/name).read_bytes()).hexdigest() for name in {list(PORTABLE_FILES)!r}
-                 if (WORKSPACE/name).is_file()}}
-        write_json(OUTPUT / 'source_receipt.json', dict(files=files, git_commit=None, blocking=False,
-            package_sha256=hashlib.sha256(package_bytes).hexdigest(), workspace=str(WORKSPACE)))
-    except Exception as exc:
-        print('Optional source receipt unavailable:', repr(exc), flush=True)
-except BaseException as exc:
-    record_failure('SOURCE_EXTRACTION', exc)
-    raise
-'''
+    source = previous.download_source_cell(NAME + "_portable_source.zip")
     run = f'''\
 try:
     from google.colab import userdata
@@ -212,7 +166,7 @@ print('Return the entire output directory, including failures:', OUTPUT)
 def main():
     notebook = build_notebook()
     (ROOT/"notebooks"/(NAME+"_colab.ipynb")).write_text(json.dumps(notebook, ensure_ascii=False, indent=1)+"\n", encoding="utf-8")
-    package, _ = portable_archive()
+    package = portable_archive()
     (ROOT/"notebooks"/(NAME+"_portable_source.zip")).write_bytes(package)
 
 

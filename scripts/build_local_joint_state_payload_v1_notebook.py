@@ -1,13 +1,7 @@
-"""Build the single-file Colab handoff for Local Joint State+Payload V1.
-
-The notebook embeds the exact portable runtime closure.  It does not require a
-published Git commit and therefore never invents or inherits a source SHA.
-"""
+"""Build a Colab handoff using an ordinary editable GitHub companion ZIP."""
 from __future__ import annotations
 
 import argparse
-import base64
-import hashlib
 import io
 import json
 from pathlib import Path
@@ -34,44 +28,54 @@ PORTABLE_FILES = (
     "runtime/wan/local_joint_state_payload_experiment_v1.py",
     "runtime/wan/local_joint_state_payload_provider_v1.py",
     "runtime/wan/local_joint_state_payload_v1.py",
-    "runtime/wan/provenance.py",
     "runtime/wan/trajectory.py",
     "runtime/wan/vae.py",
     "main/tube_state/local_joint_state_payload_posthoc_v1.py",
     "experiments/wan_state_clock/local_joint_state_payload_posthoc_v1_run.py",
     "experiments/wan_state_clock/configs/local_joint_state_payload_v1.json",
 )
-RUNNER_FILES = PORTABLE_FILES[:20]
+RUNNER_FILES = PORTABLE_FILES[:19]
 CONFIG_PATH = "experiments/wan_state_clock/configs/local_joint_state_payload_v1.json"
 
 
-def _content_id(files: dict[str, str]) -> str:
-    encoded = json.dumps(files, sort_keys=True, separators=(",", ":")).encode()
-    return hashlib.sha256(encoded).hexdigest()
-
-
-def portable_archive() -> tuple[bytes, dict[str, object]]:
-    hashes = {name: hashlib.sha256((ROOT / name).read_bytes()).hexdigest()
-              for name in PORTABLE_FILES}
-    manifest: dict[str, object] = dict(
-        schema="local-joint-portable-source-v1",
-        files=hashes,
-        content_sha256=_content_id(hashes),
-        git_commit=None,
-        source_kind="embedded_unversioned_directory",
-    )
+def portable_archive(files=PORTABLE_FILES) -> bytes:
     stream = io.BytesIO()
     with zipfile.ZipFile(stream, "w", zipfile.ZIP_DEFLATED, compresslevel=9) as archive:
-        for name in PORTABLE_FILES:
+        for name in files:
             info = zipfile.ZipInfo(name, date_time=(1980, 1, 1, 0, 0, 0))
             info.compress_type = zipfile.ZIP_DEFLATED
             info.external_attr = 0o100644 << 16
             archive.writestr(info, (ROOT / name).read_bytes())
-        info = zipfile.ZipInfo("portable_source_manifest.json", date_time=(1980, 1, 1, 0, 0, 0))
-        info.compress_type = zipfile.ZIP_DEFLATED
-        info.external_attr = 0o100644 << 16
-        archive.writestr(info, json.dumps(manifest, sort_keys=True, indent=2).encode() + b"\n")
-    return stream.getvalue(), manifest
+    return stream.getvalue()
+
+
+def download_source_cell(package_name: str) -> str:
+    return f"""import io, urllib.request, zipfile
+SOURCE_URL = 'https://raw.githubusercontent.com/RICHAAARC/SC-SSTW/' + SOURCE_REF + '/notebooks/{package_name}'
+try:
+    with urllib.request.urlopen(SOURCE_URL) as response:
+        package_bytes = response.read()
+    WORKSPACE.mkdir(parents=True, exist_ok=True)
+    with zipfile.ZipFile(io.BytesIO(package_bytes)) as archive:
+        for member in archive.infolist():
+            target = (WORKSPACE / member.filename).resolve()
+            if not target.is_relative_to(WORKSPACE.resolve()):
+                raise RuntimeError('unsafe source archive path')
+            if member.is_dir():
+                target.mkdir(parents=True, exist_ok=True)
+            else:
+                target.parent.mkdir(parents=True, exist_ok=True)
+                target.write_bytes(archive.read(member))
+    sys.path.insert(0, str(WORKSPACE))
+    print('Source:', SOURCE_URL, 'Workspace:', WORKSPACE, flush=True)
+    try:
+        write_json(OUTPUT / 'source_receipt.json', dict(url=SOURCE_URL, workspace=str(WORKSPACE)))
+    except Exception as exc:
+        print('Source note unavailable:', repr(exc), flush=True)
+except BaseException as exc:
+    record_failure('SOURCE_DOWNLOAD', exc)
+    raise
+"""
 
 
 def _code(source: str) -> dict[str, object]:
@@ -85,29 +89,13 @@ def _markdown(source: str) -> dict[str, object]:
 
 
 def build_notebook() -> dict[str, object]:
-    package, manifest = portable_archive()
-    package_sha = hashlib.sha256(package).hexdigest()
-    runner_content_sha = _content_id(
-        {name: manifest["files"][name] for name in RUNNER_FILES}
-    )
     config = json.loads((ROOT / CONFIG_PATH).read_text(encoding="utf-8"))
-    config_sha = hashlib.sha256((ROOT / CONFIG_PATH).read_bytes()).hexdigest()
-    build_id = hashlib.sha256(
-        (package_sha + config_sha + "local-joint-colab-v1.1").encode()
-    ).hexdigest()
-    encoded = base64.b64encode(package).decode("ascii")
-    chunks = "\n".join(f"    {chunk!r}" for chunk in
-                       (encoded[index:index + 100] for index in range(0, len(encoded), 100)))
 
     setup = f'''\
     from pathlib import Path
-    import datetime, hashlib, json, os, signal, subprocess, sys, time, traceback
+    import datetime, json, os, signal, subprocess, sys, time, traceback
 
-    NOTEBOOK_BUILD_ID = {build_id!r}
-    PACKAGE_SHA256 = {package_sha!r}
-    SOURCE_CONTENT_SHA256 = {manifest["content_sha256"]!r}
-    RUNNER_CONTENT_SHA256 = {runner_content_sha!r}
-    CONFIG_SHA256 = {config_sha!r}
+    SOURCE_REF = 'dev/local-joint-state-payload-v1'  # Editable branch/tag/ref.
     FIXED_CONFIG = {config!r}
     EXPECTED_COST = {{"arms": 2, "native_steps": 100, "transformer_forwards": 200,
                      "joint_decode": 25, "joint_encode": 50, "terminal_decode": 2,
@@ -212,9 +200,7 @@ def build_notebook() -> dict[str, object]:
               for arm in ('OFF', 'JOINT')}})
     write_json(OUTPUT / 'fixed_slots.json', fixed_slots)
     write_json(OUTPUT / 'setup_receipt.json', dict(
-        status='SETUP_STARTED', notebook_build_id=NOTEBOOK_BUILD_ID,
-        package_sha256=PACKAGE_SHA256, source_content_sha256=SOURCE_CONTENT_SHA256,
-        config_sha256=CONFIG_SHA256, expected_cost=EXPECTED_COST,
+        status='SETUP_STARTED', expected_cost=EXPECTED_COST,
         output=str(OUTPUT), python=sys.version, executable=sys.executable,
         execution_authorized_by_notebook_run=True, scientific_pass=False))
     print('fresh B-line output:', OUTPUT, flush=True)
@@ -266,46 +252,7 @@ def build_notebook() -> dict[str, object]:
         raise
     '''
 
-    source = f'''\
-    import base64, io, zipfile
-    SOURCE_PACKAGE_B64 = (\n{chunks}\n    )
-    try:
-        package_bytes = base64.b64decode(''.join(SOURCE_PACKAGE_B64))
-        WORKSPACE.mkdir(parents=True, exist_ok=False)
-        with zipfile.ZipFile(io.BytesIO(package_bytes)) as archive:
-            for member in archive.infolist():
-                target = (WORKSPACE / member.filename).resolve()
-                if not target.is_relative_to(WORKSPACE.resolve()):
-                    raise RuntimeError('unsafe embedded archive path')
-                if member.is_dir():
-                    target.mkdir(parents=True, exist_ok=True)
-                    continue
-                target.parent.mkdir(parents=True, exist_ok=True)
-                target.write_bytes(archive.read(member))
-        # Provenance describes the extracted source; it is never an admission check.
-        receipt = dict(status='RECORDED', blocking=False, workspace=str(WORKSPACE),
-                       package_sha256=hashlib.sha256(package_bytes).hexdigest(),
-                       package_reference_sha256=PACKAGE_SHA256)
-        try:
-            actual_hashes = {{name: hashlib.sha256((WORKSPACE / name).read_bytes()).hexdigest()
-                             for name in {list(PORTABLE_FILES)!r} if (WORKSPACE / name).is_file()}}
-            receipt.update(files=actual_hashes,
-                           content_sha256=hashlib.sha256(json.dumps(actual_hashes, sort_keys=True,
-                                                       separators=(',', ':')).encode()).hexdigest())
-            config_path = WORKSPACE / {CONFIG_PATH!r}
-            receipt['config_sha256'] = hashlib.sha256(config_path.read_bytes()).hexdigest()
-        except Exception as record_error:
-            receipt['record_error'] = repr(record_error)
-        try:
-            write_json(OUTPUT / 'portable_source_receipt.json', receipt)
-        except Exception as record_error:
-            print('Source provenance could not be recorded:', repr(record_error), flush=True)
-    except BaseException as exc:
-        try: record_failure('PORTABLE_SOURCE', exc)
-        except BaseException as record_error:
-            if hasattr(exc, 'add_note'): exc.add_note('failure record error: ' + repr(record_error))
-        raise
-    '''
+    source = download_source_cell("local_joint_state_payload_v1_portable_source.zip")
 
     run = '''\
     try:
@@ -332,7 +279,7 @@ def build_notebook() -> dict[str, object]:
         run_returncode = logged(run_command, 'REAL_FIXED_RUN', cwd=WORKSPACE, env=env, check=False)
         if run_returncode:
             primary = RuntimeError(f'real runner exited {run_returncode}'); primary_tb = primary.__traceback__
-        required = (RUN_OUTPUT / 'result.json', RUN_OUTPUT / 'raw_observation_manifest.json')
+        required = (RUN_OUTPUT / 'result.json',)
         missing = [str(path) for path in required if not path.is_file()]
         if missing:
             error = FileNotFoundError('runner retained artifacts missing: ' + repr(missing))
@@ -349,9 +296,7 @@ def build_notebook() -> dict[str, object]:
         elif exc is not primary: secondary.append(repr(exc))
 
     audit = dict(
-        schema='local-joint-colab-audit-v1', notebook_build_id=NOTEBOOK_BUILD_ID,
-        source_content_sha256=SOURCE_CONTENT_SHA256,
-        runner_content_sha256=RUNNER_CONTENT_SHA256, config_sha256=CONFIG_SHA256,
+        schema='local-joint-colab-audit-v1', source_url=SOURCE_URL,
         run_returncode=run_returncode, posthoc_returncode=posthoc_returncode,
         expected_cost=EXPECTED_COST, automatic_retry=False, scientific_pass=False,
         resource_claim='27D/50E/27-load and 25 roundtrips are planned costs, not verified capacity')
@@ -362,9 +307,6 @@ def build_notebook() -> dict[str, object]:
                                 execution=run_result.get('execution'), actual_model_calls=run_result.get('actual_model_calls'),
                                 source_identity=run_result.get('source_identity'),
                                 arms={name: row.get('status') for name, row in run_result.get('arms', {}).items()})
-            identity = run_result.get('source_identity', {})
-            audit['runner_source_matches_reference'] = (
-                isinstance(identity, dict) and identity.get('content_sha256') == RUNNER_CONTENT_SHA256)
         if (POSTHOC_OUTPUT / 'raw_observation_seal.json').is_file():
             raw_seal = json.loads((POSTHOC_OUTPUT / 'raw_observation_seal.json').read_text(encoding='utf-8'))
             audit['raw_seal'] = dict(entries=len(raw_seal.get('entries', {})), truth_loaded=raw_seal.get('truth_loaded'),
@@ -423,7 +365,7 @@ def build_notebook() -> dict[str, object]:
             3. Choose **Run all** once and authorize the Drive mount when prompted.
 
             This notebook mounts Drive, prepares the historically grounded Wan environment,
-            extracts the embedded B-line source and records provenance without integrity gates, then runs the adopted
+            downloads the ordinary companion ZIP from the editable SOURCE_REF branch/ref, then runs the adopted
             `yellow_sailboat_dev_s2026100701` OFF/JOINT experiment and its seal-first posthoc.
 
             The fixed configuration uses seed 2026100701, rho 0.5, cap 1, message `8001a55a`, the adopted
@@ -437,9 +379,9 @@ def build_notebook() -> dict[str, object]:
             After completion or failure, return/share the entire new UTC directory under
             `MyDrive/Video-WM/Local-Joint-State-Payload-V1/`, including raw observations and failure records.
             When present it contains `notebook_failure.json`, `execution.log`, `fixed_slots.json`,
-            `setup_receipt.json`, `environment_receipt.json`, `portable_source_receipt.json`,
+            `setup_receipt.json`, `environment_receipt.json`, `source_receipt.json`,
             `execution_receipt.json`, `notebook_audit.json`, `run/result.json`,
-            `run/raw_observation_manifest.json`, `posthoc/raw_observation_seal.json`, and
+            `posthoc/raw_observation_seal.json`, and
             `posthoc/posthoc_result.json`. Return every file that exists. The final summary cell may not run after a
             failure, so the UTC directory is the handoff artifact rather than copied notebook output.
 
@@ -449,6 +391,7 @@ def build_notebook() -> dict[str, object]:
             _code(setup), _code(environment), _code(source), _code(run), _code(summary),
         ],
         metadata=dict(
+            accelerator="GPU",
             kernelspec=dict(display_name="Python 3", language="python", name="python3"),
             language_info=dict(name="python", version="3"),
             colab=dict(name="local_joint_state_payload_v1_colab.ipynb", provenance=[]),
@@ -471,7 +414,7 @@ def main(argv: list[str] | None = None) -> int:
     notebook = build_notebook()
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(json.dumps(notebook, ensure_ascii=False, indent=1) + "\n", encoding="utf-8")
-    package, _manifest = portable_archive()
+    package = portable_archive()
     args.package_output.parent.mkdir(parents=True, exist_ok=True)
     args.package_output.write_bytes(package)
     return 0

@@ -6,9 +6,11 @@ conditional-clean states. The implementation is on the B development branch;
 publication and independent review belong to the parent audit.
 
 Open `notebooks/local_joint_state_payload_v1_terminal_bridge_colab.ipynb`, select
-a CUDA runtime, and Run all. The notebook embeds its runtime closure. No Git
-checkout, immutable identity, exact dependency-version match or GPU-name gate
-is needed. The original B dependency repair and process-group logging/cleanup
+a CUDA runtime, and Run all. The notebook downloads its ordinary companion ZIP
+from GitHub using editable `SOURCE_REF = 'dev/local-joint-state-payload-v1'`.
+Source location is only a URL/path note; the workspace is editable. There is no
+embedded B64, expected digest, manifest requirement or source comparison.
+The original B dependency repair and process-group logging/cleanup
 are reused; codec installation and pipeline import are removed. No automatic
 retry, scan or experimental mode switch is provided.
 
@@ -87,7 +89,7 @@ or stage completion are never inferred from observation files.
 Abrupt loss of the entire Colab kernel cannot run
 this takeover; the last durable RUNNING record remains available for audit.
 
-The standalone command requires only the embedded/source tree and dependencies:
+The standalone command requires only the downloaded/source tree and dependencies:
 
 ```bash
 python -m experiments.wan_state_clock.local_joint_terminal_bridge_v1_run \
@@ -95,11 +97,11 @@ python -m experiments.wan_state_clock.local_joint_terminal_bridge_v1_run \
   --output /path/to/new-terminal-bridge-output
 ```
 
-The already-executed original B notebook and companion ZIP remain byte-for-byte
-unchanged. Their test now validates the historical artifact against its own
-embedded manifest and companion, while the new notebook is checked against the
-current bridge builder and source closure. Default carrier/VAE numerical paths
-are unchanged; the two hooks are diagnostic additions only.
+The current original-B and bridge notebooks/ZIPs both use this simple source
+delivery. Historical real runs and old commits retain their original artifacts;
+the user explicitly authorized updating both current handoffs. Immutability and
+strong reproducibility are not project requirements. Default carrier/VAE
+numerical paths are unchanged; the two hooks remain diagnostic additions only.
 
 Local validation uses CPU arithmetic, model doubles, a no-Git source copy and
 sequential notebook stubs. The previously downloaded actual terminal latent can

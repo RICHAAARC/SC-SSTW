@@ -113,7 +113,7 @@ def test_serial_residency_uses_load_vae_false_and_preserves_active_scheduler(mon
     assert loaders.generation_args == [{"load_vae": False, "device": torch.device("cpu"), "model_dtype": torch.float32}]
     assert loaders.vae_devices == ["cpu"] and runtime.trajectory.fingerprint(vars(active)) == before
     assert [row[1]["status"] for row in events] == ["ATTEMPTED", "COMPLETED", "ATTEMPTED", "COMPLETED", "ATTEMPTED", "COMPLETED"]
-    assert events[-1][1]["identity_verified"] is True
+    assert events[-1][1]["transition"] == "vae_to_transformer"
 
 
 def test_off_arm_uses_real_fifty_step_injection_path_without_vae():
@@ -225,7 +225,7 @@ def test_codec_consumes_exact_rgb8_bytes_and_returns_fixed_readback(monkeypatch,
     received, receipt = runtime.ExplicitFFmpeg(config()["media"]).roundtrip(
         raster, supplied_sha, tmp_path / "x.mp4", event=rows.append)
     assert torch.equal(received, pixels) and receipt["input_actual_sha256"] == expected_sha
-    assert receipt["input_sha256_matches"] is (None if supplied_sha is None else supplied_sha == expected_sha)
+    assert "input_sha256_matches" not in receipt and "input_expected_sha256" not in receipt
     assert len(invocations) == 3
     assert [(row["stage"], row["status"]) for row in rows] == [
         ("encode", "ATTEMPTED"), ("encode", "COMPLETED"),
@@ -276,8 +276,7 @@ def test_source_metadata_read_errors_do_not_block_fixed_store(monkeypatch, tmp_p
     monkeypatch.setattr(Path, "read_bytes", unavailable)
     store = runner.Store(tmp_path / "source-record-failure", config(), Path("fixture.json"), "fixture")
     identity = store.data["source_identity"]
-    assert identity["content_sha256"] is None
-    assert "PermissionError" in identity["file_errors"]["runtime/wan/generation.py"]
+    assert identity == dict(workspace=str(runner.ROOT))
     assert (store.output / "result.json").is_file()
     assert all(len(arm["steps"]) == 50 for arm in store.data["arms"].values())
 
@@ -401,9 +400,9 @@ def test_runner_nonpreflight_fake_success_uses_real_50_steps_and_three_768_catal
     assert all(arm["layers"][name]["status"] == "SAVED" for name in runtime.LAYERS)
     assert all(arm["observations"][f"{layer}/{label}"]["rows"] == 768
                for layer in ("float_rgb", "rgb8", "mp4") for label in runner.RAW_KEY_LABELS)
-    manifest = json.loads((tmp_path / "success" / "raw_observation_manifest.json").read_text())
-    assert manifest["truth_loaded"] is False and set(manifest["arms"]["OFF"]) == set(arm["observations"])
-    assert all("key" not in receipt for receipt in manifest["arms"]["OFF"].values())
+    assert not (tmp_path / "success" / "raw_observation_manifest.json").exists()
+    assert all(receipt["truth_used"] is False for receipt in arm["observations"].values())
+
 
 
 def test_runner_terminal_nonfinite_keeps_primary_and_records_cleanup_failures(tmp_path):
@@ -498,6 +497,6 @@ def test_no_git_preflight_subprocess_preserves_fixed_rows(tmp_path):
     ], cwd=root, env={**__import__("os").environ, "PYTHONPATH": str(root), "CUDA_VISIBLE_DEVICES": ""}, capture_output=True, text=True)
     assert child.returncode == 0, child.stderr
     result = json.loads((output / "result.json").read_text())
-    assert result["status"] == "PREFLIGHT_COMPLETE" and result["source_identity"]["git_commit"] is None
+    assert result["status"] == "PREFLIGHT_COMPLETE" and result["source_identity"] == dict(workspace=str(root))
     assert all(len(row["steps"]) == 50 for row in result["arms"].values())
     assert all(set(row["layers"]) == set(runtime.LAYERS) for row in result["arms"].values())

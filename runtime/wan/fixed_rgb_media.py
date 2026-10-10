@@ -8,7 +8,10 @@ RGB_BYTES=88965120
 
 
 def file_sha256(path):
-    with Path(path).open('rb') as f:return hashlib.file_digest(f,'sha256').hexdigest()
+    try:
+        with Path(path).open('rb') as f:return hashlib.file_digest(f,'sha256').hexdigest()
+    except OSError:
+        return None
 
 def _bytes(path,expected_sha):
     raw=Path(path).read_bytes()

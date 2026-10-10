@@ -8,6 +8,7 @@ import subprocess
 import sys
 import types
 import zipfile
+import urllib.request
 
 import pytest
 
@@ -41,7 +42,8 @@ def setup(tmp_path, monkeypatch):
         "/content/drive/MyDrive/Video-WM/Local-Joint-State-Payload-V1-Terminal-Bridge", str(tmp_path/"drive"))
     source = source.replace("/content/Video-WM-Local-Joint-Terminal-Bridge-", str(tmp_path/"source-"))
     exec(compile(source, "setup", "exec"), namespace)
-    # extraction is real, filesystem-local and model-free; no dependency install runs
+    monkeypatch.setattr(urllib.request, "urlopen", lambda *_a, **_k: io.BytesIO(builder.portable_archive()))
+    # Download is stubbed; extraction is real, local and model-free.
     exec(compile(code(nb, 3), "source", "exec"), namespace)
     assert mounts == ["/content/drive"]
     return nb, namespace
@@ -54,12 +56,15 @@ def test_new_notebook_and_archive_are_current_and_empty():
         if cell["cell_type"] == "code":
             ast.parse("".join(cell["source"]))
             assert cell["outputs"] == [] and cell["execution_count"] is None
-    archive, manifest = builder.portable_archive()
+    archive = builder.portable_archive()
     assert archive == (builder.ROOT/"notebooks"/(builder.NAME+"_portable_source.zip")).read_bytes()
     with zipfile.ZipFile(io.BytesIO(archive)) as z:
-        assert set(z.namelist()) == set(builder.PORTABLE_FILES) | {"portable_source_manifest.json"}
+        assert set(z.namelist()) == set(builder.PORTABLE_FILES)
         assert all(z.read(name) == (builder.ROOT/name).read_bytes() for name in builder.PORTABLE_FILES)
-    assert manifest["git_commit"] is None
+    assert nb["metadata"]["accelerator"] == "GPU"
+    source = "\n".join("".join(cell["source"]) for cell in nb["cells"])
+    assert "B64" not in source and "base64" not in source and "hashlib" not in source
+    assert "urlopen(SOURCE_URL)" in source
     environment = code(nb, 4)
     assert "apt-get" not in environment
     assert "WanPipeline" not in environment
@@ -130,7 +135,7 @@ def test_run_all_sequential_stub_and_failure_takeover(tmp_path, monkeypatch, out
 
 
 def test_no_git_archive_cli_runs_missing_input_path_without_models(tmp_path):
-    package, _ = builder.portable_archive()
+    package = builder.portable_archive()
     source = tmp_path/"source"
     with zipfile.ZipFile(io.BytesIO(package)) as archive:
         archive.extractall(source)
@@ -145,6 +150,5 @@ def test_no_git_archive_cli_runs_missing_input_path_without_models(tmp_path):
     result = json.loads((tmp_path/"output/result.json").read_text())
     assert result["status"] == "ENGINEERING_FAILURE"
     assert all(value == 0 for value in result["counts"].values())
-    assert result["source_identity"]["git_commit"] is None
-    assert "runtime/wan/local_joint_terminal_bridge_v1.py" in result["source_identity"]["files"]
+    assert result["source_identity"] == dict(workspace=str(source), config_path=str(config_path))
     assert (tmp_path/"output/paired_comparisons.json").exists()

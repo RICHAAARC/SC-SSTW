@@ -28,7 +28,7 @@
 
 每个 float RGB、RGB8、MP4 层先封存 received-only 的全部 768 行：phase `g=0..7`、slot `j=-1..22`、4 ROI，保留 signed requested coordinates、实际 received indices、每 chip 的 `E+`、`E-`、`q`、expected/available/zero/failed support，以及 SCORED/PARTIAL/MISSING/FAILED。terminal latent 只保存真实 normalized tensor、形状、统计和可获得的同源 OFF 差异，不使用旧 latent reader 冒称新 RGB carrier readout。现有 decoder 输出命名为 **adapter-clamped FP32 RGB [0,1]**；它不是 raw unclipped VAE output。
 
-runner 对 correct key 和 wrong key 分别保存原始目录；一个 key 的提取失败不覆盖另一个已经保存成功的目录，并另存不含 key/message 的 `raw_observation_manifest.json`。独立 posthoc 在读取含配置的 `result.json` 前，先从该 manifest 重读并校验 OFF/JOINT × float RGB/RGB8/MP4 × correct/wrong key 共 12 份原始收据，将全部目录身份写入 `raw_observation_seal.json`，此时 `truth_loaded=false`。只有 seal 完成后才加载固定 key/message，在 `posthoc_result.json` 中对预声明未攻击公共网格 phase 1、slot 0..21 作描述性后评，保留 22×32=704 个 state q 和 704 个 payload q。它不实现 blind path、message decode 或科学 PASS。
+runner 对 correct key 和 wrong key 分别保存原始目录；一个 key 的提取失败不覆盖另一个已经保存成功的目录。独立 posthoc 在读取含配置的 `result.json` 前，先按固定文件名读取 OFF/JOINT × float RGB/RGB8/MP4 × correct/wrong key 共 12 份 raw，将读取结果写入 `raw_observation_seal.json`，此时 `truth_loaded=false`。该文件只记录读取顺序和缺失，不是不可篡改封存。随后才加载固定 key/message，在 `posthoc_result.json` 中对预声明未攻击公共网格 phase 1、slot 0..21 作描述性后评，保留 22×32=704 个 state q 和 704 个 payload q。它不实现 blind path、message decode 或科学 PASS。
 
 State 对 22 个循环 label 偏移全部报告
 
@@ -118,7 +118,7 @@ PYTHONPATH=. python -B -m experiments.wan_state_clock.local_joint_state_payload_
 
 wrong key 已是 8-section 配置中 `carrier.wrong_key` 的显式必填字段，runner 只用它保存第二套 received-only raw observation；message 不进入 raw reader。posthoc 才在 seal 后加载固定 truth 并应用 known-grid reducer。wrong-key 结果不决定主条件或形成 FPR，routing 也不等于恢复。
 
-posthoc 在 seal 后从 `result.json` 重建去 key manifest，记录与已封存 manifest 的差异；哈希和来源元数据差异不阻断后评。实际 raw 目录格式、arm/layer/key 标签以及 key/message 与已保存 run 的对应关系仍决定如何解释证据。输出分别保存 `mp4_attribution` 与顶层 `outcome_classification`：run 未完成时顶层为 `INCOMPLETE`，任一 correct-key 层为工程失败时顶层为 `ENGINEERING_FAILURE`；wrong-key 单独失败不推翻完整 correct-key 链。非有限 q 或必要 energy 在 derived JSON 中写为 `null` 并保留 missing reason，不能参与正结论；原 raw 文件及其记录不被改写。
+posthoc 不读取 manifest、不计算观测摘要或比对来源身份；先读取固定 raw 目录，再加载 `result.json` 和 truth。实际 raw 目录格式、arm/layer/key 标签以及 key/message 与已保存 run 的对应关系仍决定如何解释证据。输出分别保存 `mp4_attribution` 与顶层 `outcome_classification`：run 未完成时顶层为 `INCOMPLETE`，任一 correct-key 层为工程失败时顶层为 `ENGINEERING_FAILURE`；wrong-key 单独失败不推翻完整 correct-key 链。非有限 q 或必要 energy 在 derived JSON 中写为 `null` 并保留 missing reason，不能参与正结论；原 raw 文件及其记录不被改写。
 
 上述 `1 source × {OFF,JOINT}` 名单、`rho=0.5/cap=1`、source/seed/prompts/key/message/codec、描述性后评公式与进展条件已经采纳并显式冻结。真实执行仍未授权；执行前不再改变这些字段，也不增加 arm、扫描或自动重试。
 
@@ -132,17 +132,17 @@ runner 冻结代码、CPU 工程分母与 A2/A3/A4/A5 同版审查结果绑定�
 
 ## 单文件 Colab 交付
 
-本阶段交付 `notebooks/local_joint_state_payload_v1_colab.ipynb`。用户步骤固定为：（1）上传并打开 notebook；（2）选择 CUDA GPU runtime，notebook 不按 GPU 型号设 gate；（3）选择一次 **Run all**，并在提示时授权 Drive mount。首个代码单元严格只有 `drive.mount('/content/drive')` 的两行导入/调用。它在独立的 `MyDrive/Video-WM/Local-Joint-State-Payload-V1/<UTC>` 目录先写固定 OFF/JOINT、每臂 50 step、4 层和 6 份 observation 的未完成槽，再准备环境、展开内嵌的 no-`.git` 源码闭包、运行固定真实 CLI，并在 runner 已保存 `result.json` 与 raw manifest 时继续执行 seal-first posthoc。没有运行开关、参数扫描、自动重试或 GPU 型号 gate。失败会保留已有 result/raw/posthoc、流式日志、执行收据和原始主异常；posthoc 仍保留整份 raw 不可用时的 55 项目录。当前 27 decode、50 encode、27 次 VAE load 和 25 次 joint residency 往返的资源可行性未知。
+本阶段交付 `notebooks/local_joint_state_payload_v1_colab.ipynb`。用户步骤固定为：（1）上传并打开 notebook；（2）选择 CUDA GPU runtime，notebook 不按 GPU 型号设 gate；（3）选择一次 **Run all**，并在提示时授权 Drive mount。首个代码单元严格只有 `drive.mount('/content/drive')` 的两行导入/调用。它在独立的 `MyDrive/Video-WM/Local-Joint-State-Payload-V1/<UTC>` 目录先写固定 OFF/JOINT、每臂 50 step、4 层和 6 份 observation 的未完成槽，再准备环境、从公开 GitHub 下载并解压普通 companion ZIP（`SOURCE_REF` 默认开发分支，可编辑）、运行固定真实 CLI，并在 runner 已保存 `result.json` 时继续执行 seal-first posthoc。没有运行开关、参数扫描、自动重试或 GPU 型号 gate。失败会保留已有 result/raw/posthoc、流式日志、执行收据和原始主异常；posthoc 仍保留整份 raw 不可用时的 55 项目录。当前 27 decode、50 encode、27 次 VAE load 和 25 次 joint residency 往返的资源可行性未知。
 
-完成或失败后，直接分享/回传整个新建的 UTC 目录，包括 raw observations 与失败记录；最终 summary 单元在异常后可能不会执行，不能只回传屏幕摘要。目录中存在即回传：`notebook_failure.json`、`execution.log`、`fixed_slots.json`、`setup_receipt.json`、`environment_receipt.json`、`portable_source_receipt.json`、`execution_receipt.json`、`notebook_audit.json`、`run/result.json`、`run/raw_observation_manifest.json`、`posthoc/raw_observation_seal.json`、`posthoc/posthoc_result.json`，以及这些清单所在目录的其余 raw/media/failure 文件。两臂 float RGB 与 RGB8 栅格的已知合计约 0.89 GB；模型权重/cache、临时量、12 份 raw JSON、MP4 与日志的额外存储总需求没有测量，不据此编造最低磁盘值。
+完成或失败后，直接分享/回传整个新建的 UTC 目录，包括 raw observations 与失败记录；最终 summary 单元在异常后可能不会执行，不能只回传屏幕摘要。目录中存在即回传：`notebook_failure.json`、`execution.log`、`fixed_slots.json`、`setup_receipt.json`、`environment_receipt.json`、`source_receipt.json`、`execution_receipt.json`、`notebook_audit.json`、`run/result.json`、`posthoc/raw_observation_seal.json`、`posthoc/posthoc_result.json`，以及这些清单所在目录的其余 raw/media/failure 文件。两臂 float RGB 与 RGB8 栅格的已知合计约 0.89 GB；模型权重/cache、临时量、12 份 raw JSON、MP4 与日志的额外存储总需求没有测量，不据此编造最低磁盘值。
 
-同目录的 `local_joint_state_payload_v1_portable_source.zip` 是 notebook 内嵌源码的审阅副本，不是用户额外上传或运行步骤。源码包、配置与 runner 来源只作定位记录，不按哈希、文件清单、Git 身份或配置字节一致性设置准入门禁；可选 manifest 缺失或格式错误也不阻断可用源码。解压路径越界、无法解压或实际 import/load 失败仍按真实工程错误保存。
+同目录的 `local_joint_state_payload_v1_portable_source.zip` 是 notebook 直接下载的普通源码包，无 manifest。来源只简记 URL/路径；不内嵌 B64、不计算预期摘要、不比对源码/配置/runner 身份，也不要求 SHA 格式 ref 或干净 Git。解压路径越界、无法解压或实际 import/load 失败仍按真实工程错误保存。不可篡改和强可复现性不是项目要求；源码可编辑，真实历史 run 与旧提交保持原证据。
 
 依赖修复参考较新 conditional-joint 实跑环境组合：torch 2.11.0、diffusers 0.39.0、transformers 4.57.6、numpy 2.1.3、accelerate 1.15.0、safetensors 0.8.0、huggingface-hub 0.36.2、tokenizers 0.22.2、sentencepiece 0.2.2、ftfy 6.3.1。先检查实际入口 import；版本差异只记录，不能单独触发重装或拒绝运行。`diagnostics/trajectory-conditional-joint-real-run-audit-20261008/raw/setup/` 的 primary receipts 记录实际源码 `ac111d0fed253767651929d115c343fe1636c525`、torch 2.11.0+cu130/diffusers 0.39.0、runner rc 0。`pip check` 的返回码也只写入环境收据，不作为无关 Colab 包冲突的 hard gate；实际模型兼容性以本次执行为准。
 
 串行驻留依据另来自 [旧 multistep 审计](../../../diagnostics/receiver-first-20260923/rgb_dct_multistep_real_result_audit_20260924.md)及其 [Drive result](https://drive.google.com/file/d/16TX_EE8s1Zj5xA873WJzbn_wuoQdFLGA/view) 和 [setup log](https://drive.google.com/file/d/1LMz-TtvSCJEJshyV9Pu-sjZp2wRRR0eW/view)：精确 notebook source 为 `6850ee81454f538916bc228f2ecec521f9ac7511`，运行源码为 `d23fe4eeaca81395c57c98fc403e1d37b4dcd6e4`，run id 为 `20260924T121641567985Z`。该 N2/S2 run 使用 torch 2.11.0+cu128、diffusers 0.40.0、transformers 5.16.1、accelerate 1.14.0、huggingface-hub 1.29.0、numpy 2.1.3，在 L4 完成 8/8 media、14 decode/16 encode、0 backward、CFG restore max-abs 0，peak allocated `11652710912` bytes（约 11.65 GB，原审计十进口径）。这套旧环境没有与较新 conditional-joint 环境混写为同一个验证栈；它只证明较小的同 Wan 无梯度释放/重载路径曾真实成功，不能证明当前 27 decode、50 encode、27 次 VAE load、25 次 joint 往返的显存、时间或媒体存留。
 
-notebook 及 builder 的本地验证只执行 deterministic source packaging、代码单元语法和完全 stub 的编排；没有运行模型、权重、GPU、VAE、codec、媒体、Colab 或 Drive，也没有安装/下载依赖。Run all 是之后的真实外部执行动作，仍不能从这些本地检查推断 state 与四个 payload fragment 穿过 MP4。
+notebook 及 builder 的本地验证只执行普通 ZIP 读取、代码单元语法和完全 stub 的编排；没有运行模型、权重、GPU、VAE、codec、媒体、Colab 或 Drive，也没有安装/下载依赖。Run all 是之后的真实外部执行动作，仍不能从这些本地检查推断 state 与四个 payload fragment 穿过 MP4。
 
 ## Colab notebook 初版交付收据（历史）
 
@@ -152,7 +152,7 @@ A1 初版定向工程检查为 5 passed in 0.07s，覆盖确定性包/静态约�
 
 全部证据只支持 notebook/source packaging、身份、编排和失败持久化的工程交付。没有真实安装依赖，没有运行模型、权重、GPU、VAE、codec、媒体或 Colab，也没有写入 Drive；27 decode、50 encode、27 次 VAE load、25 次 joint 往返的资源可行性以及 state 与四个 payload fragment 的 MP4 存留仍未知。本分支没有 push 或 merge。
 
-## 2026-10-09 Colab 工程修复与非阻断原则
+## 2026-10-09 Colab 工程修复与非阻断原则（历史收据）
 
 用户运行 `20261009T123404556039Z` 在 DEPENDENCY_PROBE/DEPENDENCY_REPROBE 均遇到 `SyntaxError: unterminated string literal`。原因是 builder 到 notebook 再到 `python -c` 的两层字符串构造把 JSON 尾部换行提前展开。修复为在最终子进程中使用 `chr(10)`；模型阶段尚未开始。此前外层语法和全替身测试没有执行内层 probe，不能据此声称真实启动路径已验证。
 
@@ -161,3 +161,7 @@ A1 初版定向工程检查为 5 passed in 0.07s，覆盖确定性包/静态约�
 定向 notebook 检查 12 passed（0.42s）：真实新解释器执行最终生成的 probe，覆盖正常导入、版本不同仍继续、实际导入失败后复查；读取真实 JSON 输出；覆盖修改源码注释/配置格式/额外文件/缺失或错误 manifest 仍进入下游替身流程。坏 ZIP 和越界解压保留真实失败。检查不安装依赖、不执行模型/GPU、codec、Colab 或 Drive；新真实实验可行性仍待用户运行结果。
 
 下游修复 `493cf4167854a12bfc7fcfe03dace29f38f51343` 经 14 项定向 CPU 检查（21.40s）：RGB8、raw observation、manifest 及来源记录差异均作记录；可选哈希读取失败不挡可解析数据。实际视频字节数、geometry、768 行观测目录、layer/key 标签和 key/message 对应关系继续检查；OFF/JOINT 对照与驻留状态检查未改。FFmpeg 全部替身，无真实媒体执行。
+
+## 2026-10-10 当前交付简化
+
+用户明确要求删除强可复现治理本身，而不是仅把比较改成 warning。当前两份 notebook 与 builders 已统一为公开 GitHub 普通 ZIP 下载，SOURCE_REF 可编辑，首格 Drive mount 与 GPU metadata 保留。上文历史哈希、manifest、封存版本绑定及不可修改旧 artifact 的记录只描述当时版本，不是当前项目规范。posthoc 的 raw-before-truth、固定分母和输入语义检查继续保留。驻留恢复不再用纯 fingerprint 等值作为执行门禁；实际张量移动、控制算法、固定参数和调用预算不变。
