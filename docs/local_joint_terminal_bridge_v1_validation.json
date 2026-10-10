@@ -1,0 +1,46 @@
+{
+  "schema": "saved-terminal-bridge-delivery-validation-v1",
+  "base_commit": "447d9b323801607fd6897f2eb2061d996ebab19c",
+  "branch": "dev/local-joint-state-payload-v1",
+  "real_model_calls": 0,
+  "gpu_calls": 0,
+  "dependency_installations": 0,
+  "scientific_pass": false,
+  "new_checks": 17,
+  "affected_existing_checks": 81,
+  "unique_targeted_checks": 98,
+  "test_batches": [
+    {
+      "tests": "new bridge runtime/reader, notebook and persistence failures",
+      "passed": 17,
+      "seconds": 36.93
+    },
+    {
+      "tests": "new notebook plus old notebook/carrier/provider/posthoc",
+      "passed": 50,
+      "seconds": 56.27,
+      "overlap_with_new_checks": 5
+    },
+    {
+      "tests": "existing experiment and GROW reference paths",
+      "passed": 36,
+      "seconds": 32.71
+    }
+  ],
+  "old_delivery": [
+    {
+      "path": "notebooks/local_joint_state_payload_v1_colab.ipynb",
+      "unchanged": true,
+      "sha256": "2d3a3fa8b5e02dd072925e0ff6747e858b4eb962d3ea016648617b52e1082ed3"
+    },
+    {
+      "path": "notebooks/local_joint_state_payload_v1_portable_source.zip",
+      "unchanged": true,
+      "sha256": "4e137f94fca6b56be37964e7facd2a54158f6a1defc985bc0b2ad1726d94da9c"
+    }
+  ],
+  "actual_terminal_cpu_contract": "/home/richar/projects/Video-WM/diagnostics/b-line-terminal-bridge-delivery-20261010/actual_terminal_input_contract.json",
+  "source_float_fully_read_locally": false,
+  "execution_ceiling": "CPU math/model doubles/notebook sequential stubs/no-Git failure-path CLI only; no real run",
+  "publication": "not pushed; parent review and publication pending"
+}

@@ -259,6 +259,7 @@ def _roi_tiles(rgb_roi: Any) -> tuple[Any, int, int]:
 def apply_carrier_rgb(
     rgb: Any, *, key: str, message: bytes, rho: float,
     protocol: CarrierProtocol = PUBLIC,
+    diagnostic_observer: Any = None,
 ) -> tuple[Any, dict[str, Any]]:
     """Apply the complete state+fragment carrier to finite RGB ``[0,1]``.
 
@@ -315,6 +316,9 @@ def apply_carrier_rgb(
                 clipped_low += int((candidate_fp32 < 0).sum())
                 clipped_high += int((candidate_fp32 > 1).sum())
                 stored = candidate_fp32.clamp(0, 1)
+                if diagnostic_observer is not None:
+                    # Detached copies keep optional diagnostics from changing the carrier.
+                    diagnostic_observer(frame, roi_index, candidate_fp32.detach().clone())
                 fp32_rounding_sq += float((candidate_fp32.double() - candidate).square().sum())
                 clip_adjustment_sq += float((stored.double() - candidate_fp32.double()).square().sum())
                 output[frame, y0:y1, x0:x1] = stored

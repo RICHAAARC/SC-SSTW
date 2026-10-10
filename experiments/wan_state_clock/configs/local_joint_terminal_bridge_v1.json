@@ -1,0 +1,12 @@
+{
+  "schema": "saved-joint-terminal-bridge-v1",
+  "source_run": "20261009T132316545817Z",
+  "source_arm": "JOINT",
+  "model": {"id": "Wan-AI/Wan2.1-T2V-1.3B-Diffusers", "revision": "0fad780a534b6463e45facd96134c9f345acfa5b"},
+  "carrier": {"key": "local-joint-state-payload-v1-first-mechanism", "message_hex": "8001a55a", "rho": 0.5, "cap": 1.0},
+  "device": "cuda",
+  "inputs": {
+    "terminal_latent": "/content/drive/MyDrive/Video-WM/Local-Joint-State-Payload-V1/20261009T132316545817Z/run/joint/terminal_latent.pt",
+    "float_rgb": "/content/drive/MyDrive/Video-WM/Local-Joint-State-Payload-V1/20261009T132316545817Z/run/joint/float_rgb.pt"
+  }
+}
