@@ -140,7 +140,7 @@ def reports(output, state):
     target = output / "case_arm_rows.csv"
     temporary = target.with_suffix(".csv.tmp")
     with temporary.open("w", newline="") as stream:
-        writer = csv.DictWriter(stream, fieldnames=list(compact[0]))
+        writer = csv.DictWriter(stream, fieldnames=list(compact[0]), lineterminator="\n")
         writer.writeheader()
         writer.writerows(compact)
     temporary.replace(target)
