@@ -269,6 +269,42 @@ class AttackRecoveryTests(unittest.TestCase):
                     attack_recovery.run_case_phase(store, config, phase, "pilot_01")
             self.assertEqual(called, list(patches))
 
+    def test_quality_interrupt_persists_completed_metric_and_seals_reentry(self):
+        config = self.config()
+        with tempfile.TemporaryDirectory() as directory:
+            store = attack_eval.AttackRunStore(Path(directory) / "run", config, create=True)
+            rows = [row for row in store.data["quality_rows"] if row["case_id"] == "pilot_01"]
+            for row in rows:
+                row["status"] = "EVALUATED"
+            target = rows[0]
+            target.update(status="RECOVERY_PENDING")
+            store.save()
+
+            with mock.patch.object(attack_eval, "_load_rgb8", return_value=object()), mock.patch.object(
+                attack_eval, "_psnr", return_value={"psnr_db": 31.0}
+            ) as psnr, mock.patch.object(
+                attack_eval, "_lpips", side_effect=KeyboardInterrupt("stop")
+            ), self.assertRaises(KeyboardInterrupt):
+                attack_eval.phase_quality(store, config, "pilot_01")
+
+            store = attack_eval.AttackRunStore(Path(directory) / "run", config)
+            target = next(row for row in store.data["quality_rows"] if row["quality_id"] == target["quality_id"])
+            self.assertEqual(target["status"], "PARTIAL")
+            self.assertEqual(target["metrics"]["PSNR_RGB"]["status"], "EVALUATED")
+            self.assertEqual(target["metrics"]["LPIPS"]["status"], "FAILED")
+            self.assertEqual(target["metrics"]["REFERENCE_FLOW_RESIDUAL_WARP_FLUCTUATION"]["status"], "MISSING")
+            self.assertEqual(psnr.call_count, 1)
+
+            store.data["phases"]["quality"]["cases"]["pilot_01"]["status"] = "PLANNED"
+            store.data["phases"]["quality"]["status"] = "PLANNED"
+            store.save()
+            with mock.patch.object(attack_eval, "_psnr", side_effect=AssertionError("completed metric reran")):
+                attack_eval.phase_quality(store, config, "pilot_01")
+            self.assertEqual(
+                next(row for row in store.data["quality_rows"] if row["quality_id"] == target["quality_id"])["status"],
+                "PARTIAL",
+            )
+
     def test_reused_quality_video_is_probed_and_fully_decoded(self):
         config = self.config()
         with tempfile.TemporaryDirectory() as directory:

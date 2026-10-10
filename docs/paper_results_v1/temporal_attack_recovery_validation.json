@@ -43,6 +43,22 @@
       "source_actual_calls remains separate"
     ]
   },
+  "quality_interrupt_delta": {
+    "commands": [
+      "python3 -B -m unittest tests.test_paper_results_v1_attack_recovery.AttackRecoveryTests.test_quality_interrupt_persists_completed_metric_and_seals_reentry -v",
+      "python3 -B -m unittest tests.test_paper_results_v1_attack_recovery_notebook.RecoveryNotebookTests.test_companion_contains_recovery_entrypoints -v"
+    ],
+    "tests_run": 2,
+    "passed": 2,
+    "failed": 0,
+    "errors": 0,
+    "assertions": [
+      "completed PSNR persists across KeyboardInterrupt",
+      "interrupted and not-started metrics are explicitly FAILED and MISSING",
+      "quality row closes PARTIAL and re-entry does not repeat the completed metric",
+      "rebuilt companion contains the recovery entrypoints"
+    ]
+  },
   "diff_check": "PASS",
   "execution_ceiling": "CPU/static/stub only; no real MP4 decode, codec, model, VAE, GPU, Colab, Drive, package installation, or network execution"
 }

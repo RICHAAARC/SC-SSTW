@@ -445,5 +445,7 @@ def record_external_failure(store, phase, case_id, reason):
     if row["status"] == "RUNNING":
         row.update(status="PARTIAL", finished_at_unix=time.time())
         row.setdefault("failures", []).append(reason)
+    if phase == "quality":
+        base._seal_interrupted_quality_rows(store, case_id, reason)
     store.save()
     return row

@@ -280,6 +280,8 @@ class AttackRunStore:
         target.update(status="FAILED", finished_at_unix=time.time())
         target.setdefault("failures", []).append(reason)
         row["status"] = "FAILED"
+        if phase == "quality" and case_id is not None:
+            _seal_interrupted_quality_rows(self, case_id, reason)
         if case_id is not None and not self.data.get("recovery", {}).get("retain_pending_on_interrupt"):
             for item in self.data["artifacts"]:
                 if item["case_id"] == case_id and item["status"] == "PLANNED" and _phase_owns_artifact(phase, item):
@@ -1096,29 +1098,39 @@ def _side_by_side_mp4(reference, candidate, output):
 
 
 def phase_quality(store, config, case_id):
+    metric_functions = (
+        ("PSNR_RGB", lambda reference, candidate: _psnr(reference, candidate)),
+        ("LPIPS", lambda reference, candidate: _lpips(reference, candidate)),
+        ("REFERENCE_FLOW_RESIDUAL_WARP_FLUCTUATION", lambda reference, candidate: _reference_flow_fluctuation(
+            reference, candidate, config["quality"]["worst_segment_frames"],
+        )),
+    )
+
     def execute():
         for row in (item for item in store.data["quality_rows"] if item["case_id"] == case_id):
+            if row["status"] == "RECOVERY_RUNNING":
+                _seal_quality_row(row, "interrupted before recovery re-entry")
+                store.save()
             if row["status"] not in ("PLANNED", "RECOVERY_PENDING"):
                 continue
-            row.update(status="RECOVERY_RUNNING", attempt_started_at_unix=time.time())
+            row.update(status="RECOVERY_RUNNING", attempt_started_at_unix=time.time(), metrics=row.get("metrics", {}))
             store.save()
             try:
                 reference = _load_rgb8(_post_artifact(store, case_id, row["reference"]))
                 candidate = _load_rgb8(_post_artifact(store, case_id, row["candidate"]))
-                metrics = {}
-                for name, function in (
-                    ("PSNR_RGB", lambda: _psnr(reference, candidate)),
-                    ("LPIPS", lambda: _lpips(reference, candidate)),
-                    ("REFERENCE_FLOW_RESIDUAL_WARP_FLUCTUATION", lambda: _reference_flow_fluctuation(
-                        reference, candidate, config["quality"]["worst_segment_frames"],
-                    )),
-                ):
+                metrics = row["metrics"]
+                for name, function in metric_functions:
+                    if name in metrics and metrics[name].get("status") not in ("RUNNING", "MISSING"):
+                        continue
+                    metrics[name] = {"status": "RUNNING", "attempt_started_at_unix": time.time()}
+                    store.save()
                     try:
-                        value = function()
+                        value = function(reference, candidate)
                         status = value.get("status", "EVALUATED") if isinstance(value, dict) else "EVALUATED"
                         metrics[name] = {"status": status, "value": value}
                     except Exception as exc:
                         metrics[name] = {"status": "FAILED", "reason": f"{type(exc).__name__}: {exc}"}
+                    store.save()
                 row.update(
                     status="EVALUATED" if all(item["status"] == "EVALUATED" for item in metrics.values()) else "PARTIAL",
                     metrics=metrics,
@@ -1136,10 +1148,39 @@ def phase_quality(store, config, case_id):
                         row["side_by_side"] = {"status": "FAILED", "reason": f"{type(exc).__name__}: {exc}"}
                         row["status"] = "PARTIAL"
                 row["record"] = atomic_json(_record_path(store, case_id, "quality", row["quality_id"].split("/", 1)[1] + ".json"), row)
-            except Exception as exc:
-                row.update(status="FAILED", reason=f"{type(exc).__name__}: {exc}")
+            except BaseException as exc:
+                reason = f"{type(exc).__name__}: {exc}"
+                _seal_quality_row(row, reason)
+                store.save()
+                if not isinstance(exc, Exception):
+                    raise
             store.save()
     return _timed(store, "quality", case_id, execute)
+
+
+QUALITY_METRIC_NAMES = (
+    "PSNR_RGB",
+    "LPIPS",
+    "REFERENCE_FLOW_RESIDUAL_WARP_FLUCTUATION",
+)
+
+
+def _seal_quality_row(row, reason):
+    metrics = row.setdefault("metrics", {})
+    for name in QUALITY_METRIC_NAMES:
+        current = metrics.get(name)
+        if current is None:
+            metrics[name] = {"status": "MISSING", "reason": reason}
+        elif current.get("status") == "RUNNING":
+            metrics[name] = {"status": "FAILED", "reason": reason}
+    successful = any(item.get("status") not in ("FAILED", "MISSING", "RUNNING") for item in metrics.values())
+    row.update(status="PARTIAL" if successful else "FAILED", reason=reason, metrics=metrics)
+
+
+def _seal_interrupted_quality_rows(store, case_id, reason):
+    for row in store.data["quality_rows"]:
+        if row["case_id"] == case_id and row["status"] == "RECOVERY_RUNNING":
+            _seal_quality_row(row, reason)
 
 
 def _expected_for_key(config, key_label):

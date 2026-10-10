@@ -565,3 +565,10 @@ and `FAILED` entries in both the baseline temporal-edit codec ledger and the
 per-case baseline extraction ledger, then verifies that
 `handoff_summary.json` exposes both ledgers under `new_actual_calls`. The
 source-run call ledger remains separate. No real computation was performed.
+
+A subsequent interruption regression exercises `phase_quality` with PSNR
+completed and LPIPS raising `KeyboardInterrupt`. The saved row retains the
+completed PSNR result, marks the interrupted LPIPS result `FAILED`, marks the
+not-yet-started flow metric `MISSING`, and closes the fixed row as `PARTIAL`.
+Re-entry does not repeat the completed metric. The rebuilt companion entrypoint
+check also passed. These two focused tests used CPU/stub inputs only.
