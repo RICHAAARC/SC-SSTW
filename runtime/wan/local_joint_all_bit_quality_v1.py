@@ -85,7 +85,7 @@ def render_pair(path,name,index,frame,reference, *, box=None):
     draw.text((0,15),f"Residual [-0.25,0.25]; clipped pixels={clipped}",fill="black")
     if box is not None: draw.text((0,30),f"crop y0,y1,x0,x1={box}",fill="black")
     path.parent.mkdir(parents=True,exist_ok=True);canvas.save(path)
-    return dict(path=str(path.name),display_clipped_pixels=clipped,box=box)
+    return dict(path=path.relative_to(path.parent.parent).as_posix(),display_clipped_pixels=clipped,box=box)
 
 
 def export_visuals(output,base):
@@ -97,7 +97,8 @@ def export_visuals(output,base):
     frames,crops=selection(reports,len(base))
     index=dict(frame_indices=frames,crop_requests=crops,views={},failures=[],
         rgb_range=[0,1],residual_range=[-.25,.25],numeric_metrics_unclipped=True,
-        coordinates="zero-based; crop upper bounds exclusive")
+        coordinates="zero-based; crop upper bounds exclusive",
+        path_base="each view directory: <run>/<view>/<path>")
     for name in method.VIEWS:
         path=output/name/"float_rgb.pt"
         if not path.exists():

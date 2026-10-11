@@ -146,6 +146,8 @@ def test_full_runner_two_fresh_vjps_saved_comparator_and_resources(tmp_path,monk
         assert len(q["framewise"])==181 and len(q["temporal_framewise"])==180
         images=json.loads((out/name/"frames.json").read_text())
         assert images["frame_indices"]==result["quality_frames"]
+        for item in images["frames"]+images["crops"]:
+            assert (out/name/item["path"]).is_file()
         assert all("max_abs" in row for row in q["framewise"])
 
 
@@ -247,6 +249,9 @@ def test_actual_peak_neighborhoods_zero_ties_coordinates_and_unclipped_values(tm
     result=visual.export_visuals(tmp_path,base)
     assert result["views"]["BASE"]["frame_indices"]==result["views"]["ALLBIT_TWO"]["frame_indices"]
     assert result["views"]["TWO_MEAN_SAVED"]["status"]=="MISSING"
+    for name in ("BASE","ALLBIT_TWO"):
+        for item in result["views"][name]["frames"]+result["views"][name]["crops"]:
+            assert (tmp_path/name/item["path"]).is_file()
     from PIL import Image
     with Image.open(tmp_path/"ALLBIT_TWO/frames/frame_116.png") as image:
         assert image.size==(440,64)
@@ -283,3 +288,33 @@ def test_nonfinite_second_vjp_keeps_half_and_does_not_fake_final(tmp_path,monkey
     assert result["views"]["ALLBIT_HALF"]["status"]=="SCORED"
     assert result["views"]["ALLBIT_TWO"]["status"]=="MISSING"
     assert not (tmp_path/"out/ALLBIT_TWO/delta.pt").exists()
+
+
+@pytest.mark.parametrize("target,step,decode,metrics",[("ALLBIT_HALF","step_1",4,110),("ALLBIT_TWO","step_2",6,165)])
+@pytest.mark.parametrize("failure_kind",["decode","readout"])
+def test_target_failure_preserves_formed_direction_and_specific_view_reason(tmp_path,monkeypatch,target,step,decode,metrics,failure_kind):
+    if failure_kind=="readout":
+        original=runtime.observer.read_rgb;reads=0
+        def injected(*a,**kw):
+            nonlocal reads
+            reads+=1
+            if reads==(3 if target=="ALLBIT_HALF" else 4):
+                raise OSError("injected target readout failure")
+            return original(*a,**kw)
+        monkeypatch.setattr(runtime.observer,"read_rgb",injected)
+    result=execute(inputs(tmp_path),tmp_path,TinyWan(fail_decode=decode if failure_kind=="decode" else None))
+    assert result["status"]=="ENGINEERING_FAILURE"
+    assert result["counts"]["decode_attempted"]==decode
+    assert result["counts"]["decode_completed"]==decode-(failure_kind=="decode")
+    assert result["totals"]["observed_metrics"]==metrics and result["totals"]["expected_metrics"]==220
+    saved=json.loads((tmp_path/"out"/(step+".json")).read_text())
+    assert saved==result["steps"][step] and saved["status"]=="DEFINED"
+    assert result["views"][target]["direction_status"]=="DEFINED"
+    assert result["views"][target]["status"]=="MISSING"
+    assert "injected" in result["views"][target]["reason"]
+    assert any(row["stage"]==target and "injected" in row["reason"] for row in result["failures"])
+    if target=="ALLBIT_HALF":
+        assert result["steps"]["step_2"]["status"]=="MISSING_DEPENDENCY"
+        assert result["model_calls"]["step_2_gradient_decode"]["status"]=="MISSING_DEPENDENCY"
+        assert result["counts"]["decoder_vjp_completed"]==1
+        assert "ALLBIT_HALF" in result["views"]["ALLBIT_TWO"]["reason"]

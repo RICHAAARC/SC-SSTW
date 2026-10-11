@@ -51,3 +51,8 @@ python -m experiments.wan_state_clock.local_joint_all_bit_v1_run \
 A1定向检查包括：Huber分段/边界导数、32项系数及state活动并列；原reader标量方向差分；BASE球与相消/零梯度；两次新VJP分别对独立CPU因果decoder梯度逐值核对；6D/2VJP/184/92/92账及固定分母；保存对照原值/缺失、BASE或梯度decode失败、第二VJP非有限、质量I/O失败和报告接管；92/116峰值与邻域/crop；builder同步、普通ZIP闭包、全新notebook命名空间complete/killed/environment-failure顺序替身和无.git独立CLI。
 
 本轮21项定向检查通过（41.73秒）；记录见 `diagnostics/b-line-all-bit-implementation-20261011/a1_targeted_tests.txt`，同目录保留 `cpu_full_run/` 与 `cpu_peak_fixture/` 替身产物。A2/A3同版独立审查与A4综合完成后在此追加收据；主审统一复用A5做A/B最终交付里程碑核验，B线不重复启动A5。没有真实模型或Colab执行；CPU替身不得写成真实视频效果。
+
+
+A2 对首个实现候选 `f45d3c9` 给出有范围接受。A3 同版发现两项机械证据问题：目标普通decode/readout失败会覆盖已形成方向的状态；图片索引漏了子目录。已将目标观测失败与方向形成分开，保留DEFINED及对应视图的原始异常；HALF失败使第二步明确MISSING_DEPENDENCY。索引改为相对每个view目录的 `frames/...`、`crops/...`。
+
+修复后仅做受影响验证，**11项通过（26.44秒）**：含新增4个HALF/TWO decode与readout失败边界、完整CPU两步、所有图片索引存在、实际峰值输出与5项notebook/普通ZIP/CLI检查。未重复未变的公式/reader/checkpoint全套。记录见 [修复复检](../../../diagnostics/b-line-all-bit-implementation-20261011/a1_targeted_repair_tests.txt)，修复后的完整CPU产物在同目录 `cpu_repaired_full_run/`、`cpu_repaired_peak_fixture/`；4个失败案例记录在 `cpu_target_failure_cases/`。首版21项检查及首版产物仍保留，未覆盖原始审查证据。等待A2/A3增量确认及A4综合。

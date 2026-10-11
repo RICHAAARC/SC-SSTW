@@ -343,7 +343,6 @@ def run(config, output, *, loader=None, protocol=carrier.PUBLIC, latent_shape=LA
                     break
                 delta=updated
                 result["views"][target]["direction_status"]="DEFINED"
-                observe(target,z0+delta,delta)
             except method.UndefinedActiveTie as exc:
                 result["steps"][step].update(status="UNDEFINED_ACTIVE_STATE_MAX_TIE",reason=str(exc))
                 result["direction_status"]="UNDEFINED_ACTIVE_STATE_MAX_TIE"
@@ -352,6 +351,18 @@ def run(config, output, *, loader=None, protocol=carrier.PUBLIC, latent_shape=LA
                 result["steps"][step].update(status="UNDEFINED_STEP_FAILURE",reason=repr(exc))
                 result["direction_status"]="UNDEFINED_STEP_FAILURE"
                 failure(step,exc)
+                break
+            # Direction formation already completed and is durable. A scoring decode/read
+            # failure cannot retrospectively make that direction undefined.
+            try:
+                observe(target,z0+delta,delta)
+            except Exception as exc:
+                failure(target,exc)
+                if target=="ALLBIT_HALF":
+                    reason="ALLBIT_HALF observation failed: "+repr(exc)
+                    result["steps"]["step_2"].update(status="MISSING_DEPENDENCY",reason=reason,
+                        reference="ALLBIT_HALF",target="ALLBIT_TWO")
+                    result["views"]["ALLBIT_TWO"]["reason"]=reason
                 break
         if base_rgb is not None:
             try:
