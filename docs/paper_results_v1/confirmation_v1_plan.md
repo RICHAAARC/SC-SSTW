@@ -50,7 +50,7 @@ VideoSeal 独立 256 信息位 native-K 模式、额外强度、额外 baseline�
 
 ### 4.1 主方法路径和 payload
 
-每个 `source × main arm × attack × key` 先对收到的视频做一次 framewise VAE encode，产生 key 对应的 signed projection/rho；同一媒体的 framewise latent 在 K0/K1 间共享，key 只进入随后 score 计算。三个接收器仅消费 received score、rho、当前 key 和公开规则；消息与攻击 truth 只在选择完成后进入报告。
+每个 `source × main arm × attack` 先对收到的视频做一次 framewise VAE encode；同一媒体的 framewise latent 在 K0/K1 间共享，key 只进入随后 clock/scoring。clock/scoring 用 latent、当前 key 和公开坐标生成 `signed_projection`、`rho` 及 `q=signed_projection/rho`。三个 selector 只消费各自的 `q` 和公开 grammar；消息与攻击 truth 只在选择结果持久化后进入报告。
 
 固定逻辑表为：
 
@@ -64,6 +64,8 @@ VideoSeal 独立 256 信息位 native-K 模式、额外强度、额外 baseline�
 | OFF 负对照 | 2 keys × 3 receivers × 15 = 90 | 720 | 不汇入主恢复率 |
 | K1 负对照 | 4 arms × 3 receivers × 15 = 180 | 1,440 | 不称总体 FPR；与 K0 分表 |
 
+OFF 与 K1 是交叉切片：`OFF × K1` 的 360 行同时属于上表两项，因此 720 与 1,440 不能相加成 2,160 个不同逻辑行。总表始终只有固定 2,880 行。
+
 主表必须分别给 source-level 固定 15 条（及 14 条非 FULL）分母、成功、bit error、missing/failed/unresolved；不能把 120 view rows 当 120 个独立 source。同步路径指标与实际 payload exact/BER 分开报告，避免用路径吻合替代载荷结果。
 
 ### 4.2 外部 baseline
@@ -71,10 +73,11 @@ VideoSeal 独立 256 信息位 native-K 模式、额外强度、额外 baseline�
 每个 source、每个 baseline、每个 attack 形成一个固定 K0 effective-32 row：2 × 15 × 8 = **240 rows / 7,680 effective bits**。VideoSeal 先在全部收到 frame/空间位置和 256 native channel 上保留完整 soft，再按固定 `j mod 32` 合并、`>0` 判位；RivaGAN 对全部预声明收到 frame 的逐 bit logits 等权均值、`>=0` 判位。native bit、soft、tie、shape/frame 错误和失败仍完整保留。
 
 VideoSeal repeat32 是同 32 个有效信息位、不同 native 通道冗余/开销的对照，不是 256 独立信息容量，也不是同 code rate、同强度或同冗余。外部 baseline 与主方法按 `source × attack` 左连接；任一侧缺失保留，不做 success-only 平均。
+成功评价的 baseline 行必须显式保存 `missing_bits=0`；失败、非有限、shape/frame 不符或 sidecar 不可读则保留固定行和相应 missing bits，不能沿用别的旧 source 状态补值。
 
 ### 4.3 质量与成本
 
-质量只在未做时序编辑的固定 POST 上评价，不为 15 条攻击各造一套质量结果。每 source 固定七对：P0/OFF、P1/P0、P1/OFF、M05/P1、M05/OFF、VideoSeal/OFF、RivaGAN/OFF；8 sources 共 **56 quality rows**。每行独立保存 PSNR_RGB、LPIPS、reference-flow residual warp fluctuation（8 frames/7 transitions）状态，某一指标失败不抹掉其他指标。P0 含 payload，不是 OFF；PSNR 差不能当作可加性分解。M05/P1 与 M05/OFF 各保存一个并排视频，共 16 个展示视频，展示编码不算科学质量指标。
+质量只在未做时序编辑的固定 POST 上评价，不为 15 条攻击各造一套质量结果。每 source 固定七对：P0/OFF、P1/P0、P1/OFF、M05/P1、M05/OFF、VideoSeal/OFF、RivaGAN/OFF；8 sources 共 **56 quality rows**。每行独立保存 PSNR_RGB、LPIPS、reference-flow residual warp fluctuation 状态，某一指标失败不抹掉其他指标。LPIPS 覆盖完整 181 帧；Farneback 覆盖全部 180 个相邻 transition。`8 frames / 7 transitions` 只定义最差滑窗摘要，不是全指标只计算八帧。P0 含 payload，不是 OFF；PSNR 差不能当作可加性分解。M05/P1 与 M05/OFF 各保存一个并排视频，共 16 个展示视频，展示编码不算科学质量指标。
 
 ## 5. 确定调用量与物理复用边界
 
@@ -88,17 +91,21 @@ VideoSeal repeat32 是同 32 个有效信息位、不同 native 通道冗余/开
 | Wan native video decode | 2 | 16 | OFF、P0 |
 | framewise writer encode | 1 video / 23 batches | 8 videos / 184 batches | 181 frames，batch 8 |
 | framewise writer decode | 2 videos / 46 batches | 16 videos / 368 batches | P1 与 M05 各 23 batches |
-| baseline embed | VS 1 + Riva 1 | 16 | 同一 OFF PRE；无 hidden codec |
+| baseline embed adapter entries | VS 1 + Riva 1 | 16 | 同一 OFF PRE；无 hidden codec；整视频高层入口 |
 | initial full-video codec | 6 | 48 | 4 main + 2 baseline |
 | temporal edit transforms | 6 × 14 = 84 | 672 | CPU RGB recipe；不含 FULL |
 | temporal edit codec | 84 | 672 | 编辑后第二次发布 |
 | total scientific video codec | 90 | 720 | 48 initial + 672 edited；不含 16 个展示视频 |
 | main clock/framewise encodes | 4 × 15 = 60 observations | 480 | 同一 observation encode 后供 K0/K1 score；逐 observation batch 总计 1,376/source、11,008 batches |
-| baseline extracts | 2 × 15 = 30 | 240 | VS 120、Riva 120；失败仍占固定行 |
+| baseline extract adapter entries | 2 × 15 = 30 | 240 | VS 120、Riva 120；整视频高层入口，失败仍占固定行 |
 | quality row evaluations | 7 | 56 | 168 metric attempts；各指标独立状态 |
+| LPIPS batch forwards | 7 × ceil(181/8) = 161 | 1,288 | 全 181 帧；batch 8 |
+| CPU Farneback transitions | 7 × 180 = 1,260 | 10,080 | 全部相邻 transition；无 RAFT |
 | quality display codec | 2 | 16 | 仅并排视频，单独列账 |
 
-Wan payload 物理 encode 按完整 `(received artifact, selected index map)` 共享；key/receiver 标签本身不能阻止相同 map 共享，也不能强迫不同 map 合并。逻辑分母固定为 360/source，不随共享改变：
+高层 adapter 行数不等同于底层 GPU forward 数。现有 VideoSeal 接口对应 8 次整视频 embed 与 120 次整视频 detect；其内部 batching 由真实 backend 回执记录。现有 RivaGAN tensor backend 逐帧调用：8×181 = **1,448 次 encoder**，15 个条件每 source 合计 2,701 个收到帧，因此 8×2,701 = **21,608 次 decoder**。这些是代码路径展开的确定调用数，不是耗时或显存实测。
+
+Wan payload 物理 encode 按完整 `(received artifact, selected index map)` 共享；key/receiver 标签本身不能阻止相同 map 共享，也不能强迫不同 map 合并。共享仅止于 VAE latent：同 map 的 K0/K1 必须分别执行各自 key 的 FFT coordinate、votes 和 bit read，并分别持久化 keyed logical evidence。逻辑分母固定为 360/source，不随共享改变：
 
 - 无条件实际范围为 **0..360/source，0..2,880 total**。媒体、clock、路径或支持不足可以令某些甚至全部 Wan payload encode 不发生，固定逻辑行仍保留。
 - 条件下界：只有在每个 `arm × attack` 至少产生一个可读 map、且三接收器和两 key 全部共享该 map 时，才是 **60/source，480 total**；这不是无条件预算下界。

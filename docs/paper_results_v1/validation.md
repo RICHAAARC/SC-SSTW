@@ -572,3 +572,49 @@ completed PSNR result, marks the interrupted LPIPS result `FAILED`, marks the
 not-yet-started flow metric `MISSING`, and closes the fixed row as `PARTIAL`.
 Re-entry does not repeat the completed metric. The rebuilt companion entrypoint
 check also passed. These two focused tests used CPU/stub inputs only.
+
+## Eight-source confirmation V1 handoff
+
+The adopted confirmation config expands the fixed ten-source roster into an
+eight-source attempt scope and a two-pilot non-execution scope. Its new receiver
+table contains 2,880 confirmation rows / 92,160 planned bits over four main
+arms, fifteen attacks, two keys, and three frozen receivers. The attack layer
+retains 1,920 clock rows, 240 external-baseline rows, and 56 original-POST
+quality rows for those eight sources. No confirmation result is present in this
+delivery.
+
+The confirmation runner shares a VAE encode only for an identical received
+artifact and index map. Key-specific payload reads, votes, decoded bits, and
+durable sidecars remain separate. Physical time rows carry no shared source
+coordinate claim; each logical selector row stores its own compact source-map
+annotation so identical received maps with different decoded anchors cannot
+inherit the first row's coordinates. The focused fixture covers both different
+keys and different source anchors on one shared physical map. It also checks
+that a newly evaluated baseline row clears its initialized `missing_bits=32`
+to zero.
+
+The generated confirmation notebook keeps the exact two-line Drive first cell,
+empty outputs, editable `SOURCE_REF`, and ordinary companion ZIP loading. Its
+custom orchestration stub schedules only `confirm_01` through `confirm_08`,
+keeps pilots `NOT_EXECUTED_BY_NOTEBOOK`, filters handoff baseline/quality counts
+to confirmation, and on a second execution invokes only preflight plus the two
+report aggregations after all expensive phases are durable `COMPLETE`. The
+Drive active-run pointer and append-only attempt/stage receipts let a fresh
+kernel find the same unique run directory. The reused environment/source cells
+come from the previously boundary-tested two-pilot notebook; this test does not
+execute their package, network, or model operations again.
+
+The focused command was:
+
+```text
+python3 -B -m unittest tests.test_paper_results_v1_confirmation tests.test_paper_results_v1_confirmation_notebook -v
+```
+
+All five tests passed. JSON parsing passed for the adopted config and generated
+notebook, all generated code cells parsed in the notebook test, companion
+closure includes the config/runner/CLI, and `git diff --check` passed. The local
+stdlib interpreter has no NumPy or Torch, so the older dependency-bearing
+attack suites were not rerun and no packages were installed; the focused test
+uses a minimal persistence stub only at the NPZ boundary. No model, VAE, GPU,
+codec, media, Colab, Drive, network download, or dependency installation was
+performed.

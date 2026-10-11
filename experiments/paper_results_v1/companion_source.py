@@ -21,6 +21,7 @@ def companion_files():
         ROOT / "runtime/__init__.py",
         ROOT / "experiments/paper_results_v1/real_eval.adopted.json",
         ROOT / "experiments/paper_results_v1/attack_eval.adopted.json",
+        ROOT / "experiments/paper_results_v1/confirmation_v1.adopted.json",
         ROOT / "experiments/paper_results_v1/source_identity_audit.json",
     ]
     paths.extend(sorted((ROOT / "experiments/paper_results_v1").glob("*.py")))

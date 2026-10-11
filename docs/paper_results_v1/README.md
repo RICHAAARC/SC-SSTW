@@ -339,9 +339,9 @@ FULL in a separate table, giving 64 non-FULL pairs per external method and
 eight FULL controls over the eight confirmation sources. The complete 160 rows
 per source remain controls and ablations.
 
-This local method adoption does not authorize execution. VideoSeal native-K,
+This local method adoption does not authorize an agent-side execution. VideoSeal native-K,
 threshold/FPR work, strength or reducer scans, extra attacks/baselines, and
-automatic confirmation execution remain outside the adopted method. The
+any method expansion remain outside the adopted method. The
 self-contained [`paper_results_v1_two_pilot_colab.ipynb`](../../notebooks/paper_results_v1_two_pilot_colab.ipynb)
 is a fixed Run-all handoff for the two excluded pilots only. It downloads the
 public companion source selected by editable `SOURCE_REF` and includes all ten
@@ -353,6 +353,22 @@ quality retains its recorded state. None are treated as attempted model
 failures. See
 [`colab_two_pilot_handoff.md`](colab_two_pilot_handoff.md). This repository pass
 did not execute the notebook, models, media, codec, GPU, Colab, or Drive.
+
+The adopted eight-source confirmation handoff is specified in
+[`confirmation_v1_plan.md`](confirmation_v1_plan.md), configured by
+[`confirmation_v1.adopted.json`](../../experiments/paper_results_v1/confirmation_v1.adopted.json),
+and exposed through
+[`paper_results_v1_confirmation_v1_colab.ipynb`](../../notebooks/paper_results_v1_confirmation_v1_colab.ipynb).
+Run all attempts only `confirm_01` through `confirm_08`; the two development
+pilots remain outside confirmation. The notebook stages generation, shared
+framewise reconstruction, common codecs, the fixed temporal matrix, external
+baselines, quality, and the frozen `CENTERED_U` primary plus `RAW_U` and
+`CENTERED_D4` controls. It keeps key-specific FFT/vote/bit evidence separate
+while sharing only a physically identical artifact/map VAE latent. A Drive
+pointer resumes the same unique run directory, and completed expensive phases
+are skipped rather than rerun. This repository delivery built and tested the
+handoff with CPU/static/stub boundaries only; it did not execute any real
+confirmation media or model workload.
 
 The saved temporal-attack pilot run has a separate, item-resumable recovery
 notebook and handoff at

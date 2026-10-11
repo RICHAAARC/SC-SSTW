@@ -5,7 +5,7 @@ import argparse
 import json
 import sys
 
-from experiments.paper_results_v1.attack_eval import ATTEMPT_CASES, PHASES, record_external_failure, run_phase
+from experiments.paper_results_v1.attack_eval import ALL_CASES, PHASES, record_external_failure, run_phase
 
 
 def parser():
@@ -13,7 +13,7 @@ def parser():
     value.add_argument("--config", required=True)
     value.add_argument("--output", required=True)
     value.add_argument("--phase", required=True, choices=("plan", "init", "record-failure", *PHASES))
-    value.add_argument("--case-id", choices=ATTEMPT_CASES)
+    value.add_argument("--case-id", choices=ALL_CASES)
     value.add_argument("--failed-phase", choices=tuple(phase for phase in PHASES if phase != "evaluate"))
     value.add_argument("--reason")
     value.add_argument("--temp-root")

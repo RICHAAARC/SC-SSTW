@@ -34,8 +34,10 @@ MAIN_ARMS = (
 BASELINES = ("videoseal", "rivagan")
 MODES = ("RAW", "BLIND_PATH")
 KEY_LABELS = ("K0", "K1")
-ATTEMPT_CASES = ("pilot_01", "pilot_02")
+PILOT_CASES = ("pilot_01", "pilot_02")
+ATTEMPT_CASES = PILOT_CASES  # Backward-compatible name for the two-pilot config/tests.
 CONFIRMATION_CASES = tuple(f"confirm_{index:02d}" for index in range(1, 9))
+ALL_CASES = (*PILOT_CASES, *CONFIRMATION_CASES)
 PHASES = (
     "import-main", "baseline-embed-videoseal", "baseline-embed-rivagan",
     "baseline-codec", "attack-media", "receiver-clock", "receiver-read",
@@ -54,6 +56,11 @@ QUALITY_PAIRS = (
 
 class AttackEvalError(ValueError):
     pass
+
+
+def _execution_cases(config):
+    scope = config.get("execution_scope", {})
+    return tuple(scope.get("attempt_cases", ())), tuple(scope.get("not_executed_cases", ()))
 
 
 def read_json(path):
@@ -105,10 +112,13 @@ def validate_config(config):
         "rivagan": "ALL_DECLARED_FRAMES_EQUAL_LOGIT_MEAN_GE_ZERO_NATIVE_TIE_RETAINED",
     }:
         raise AttackEvalError("adopted external baseline reducers changed")
-    if config["execution_scope"] != {
-        "attempt_cases": list(ATTEMPT_CASES), "not_executed_cases": list(CONFIRMATION_CASES),
-    }:
-        raise AttackEvalError("fixed two-pilot execution scope changed")
+    attempt_cases, not_executed_cases = _execution_cases(config)
+    allowed_scopes = {
+        (PILOT_CASES, CONFIRMATION_CASES),
+        (CONFIRMATION_CASES, PILOT_CASES),
+    }
+    if (attempt_cases, not_executed_cases) not in allowed_scopes:
+        raise AttackEvalError("execution scope must be fixed pilots or fixed eight-source confirmation")
     if config["attacks"] != fixed_attack_specs():
         raise AttackEvalError("fixed fifteen-instance temporal matrix changed")
     if not isinstance(config["payload_bits"], list) or len(config["payload_bits"]) != 32 or any(
@@ -124,7 +134,7 @@ def validate_config(config):
     ):
         raise AttackEvalError("fixed K0/K1 values are required")
     case_ids = [case.get("case_id") for case in config["cases"]]
-    if case_ids != [*ATTEMPT_CASES, *CONFIRMATION_CASES]:
+    if case_ids != list(ALL_CASES):
         raise AttackEvalError("fixed two-pilot plus eight-confirmation roster changed")
     if config["codec"] != {"codec": "libx264", "fps": 8, "crf": 18, "pix_fmt": "yuv420p"}:
         raise AttackEvalError("fixed publication codec changed")
@@ -144,6 +154,7 @@ def _case(config, case_id):
 
 def build_plan(config):
     validate_config(config)
+    attempt_cases, _ = _execution_cases(config)
     attacks = [row["attack_id"] for row in config["attacks"]]
     artifacts = []
     receiver_rows = []
@@ -151,7 +162,7 @@ def build_plan(config):
     quality_rows = []
     for case in config["cases"]:
         case_id = case["case_id"]
-        attempted = case_id in ATTEMPT_CASES
+        attempted = case_id in attempt_cases
         initial = "PLANNED" if attempted else "NOT_EXECUTED_BY_NOTEBOOK"
         for arm in MAIN_ARMS:
             for phase in ("PRE", "POST"):
@@ -200,17 +211,19 @@ def build_plan(config):
         "baseline_rows": baseline_rows, "quality_rows": quality_rows,
         "fixed_denominator": {
             "cases": 10, "attack_instances_per_method_case": 15,
-            "attempt_main_receiver_rows": 480, "attempt_main_receiver_bits": 15360,
-            "attempt_baseline_rows": 60, "confirmation_main_receiver_rows": 1920,
+            "attempt_main_receiver_rows": len(attempt_cases) * 240,
+            "attempt_main_receiver_bits": len(attempt_cases) * 240 * 32,
+            "attempt_baseline_rows": len(attempt_cases) * 30,
+            "confirmation_main_receiver_rows": 1920,
             "confirmation_baseline_rows": 240,
             "all_main_receiver_rows": 2400, "all_baseline_rows": 300,
-            "attempt_quality_rows": 14, "confirmation_quality_rows": 56,
+            "attempt_quality_rows": len(attempt_cases) * 7, "confirmation_quality_rows": 56,
             "all_quality_rows": 70,
-            "attempt_framewise_clock_encodes": 120,
-            "attempt_logical_wan_reads": 480,
-            "attempt_physical_wan_encode_upper_bound": 360,
-            "attempt_new_codec_roundtrips": 172,
-            "attempt_edited_and_received_rgb8_bytes": 29727129600,
+            "attempt_framewise_clock_encodes": len(attempt_cases) * 60,
+            "attempt_logical_wan_reads": len(attempt_cases) * 240,
+            "attempt_physical_wan_encode_upper_bound": len(attempt_cases) * 180,
+            "attempt_new_codec_roundtrips": len(attempt_cases) * 86,
+            "attempt_edited_and_received_rgb8_bytes": len(attempt_cases) * 14863564800,
         },
     }
 
@@ -224,9 +237,10 @@ class AttackRunStore:
         if create:
             self.output.mkdir(parents=True, exist_ok=False)
             plan = build_plan(config)
+            attempt_cases, _ = _execution_cases(config)
             cases = {
                 case["case_id"]: {
-                    "status": "PLANNED" if case["case_id"] in ATTEMPT_CASES else "NOT_EXECUTED_BY_NOTEBOOK",
+                    "status": "PLANNED" if case["case_id"] in attempt_cases else "NOT_EXECUTED_BY_NOTEBOOK",
                     "failures": [],
                 }
                 for case in config["cases"]
@@ -1230,13 +1244,14 @@ def _baseline_group_summary(rows):
     }
 
 
-def _paired_rows(receiver_rows):
+def _paired_rows(receiver_rows, attempt_cases=ATTEMPT_CASES):
     index = {
         (row["case_id"], row["arm"], row["attack_id"], row["key_label"], row["mode"]): row
         for row in receiver_rows
     }
     result = []
-    for case_id in (*ATTEMPT_CASES, *CONFIRMATION_CASES):
+    attempted = set(attempt_cases)
+    for case_id in ALL_CASES:
         for attack_id in [row["attack_id"] for row in fixed_attack_specs()]:
             for key_label in KEY_LABELS:
                 for mode in MODES:
@@ -1251,7 +1266,7 @@ def _paired_rows(receiver_rows):
                             "key_label": key_label, "mode": mode,
                             "candidate": "PAYLOAD_FRAMEWISE_M05", "comparator": comparator,
                             "status": (
-                                "NOT_EXECUTED_BY_NOTEBOOK" if case_id in CONFIRMATION_CASES
+                                "NOT_EXECUTED_BY_NOTEBOOK" if case_id not in attempted
                                 else "PAIRED" if evaluable else "UNEVALUABLE_PAIR"
                             ),
                             "m05_bit_errors": m05.get("bit_errors"),
@@ -1277,11 +1292,13 @@ def _evaluate_baseline(config, row):
 
 
 def phase_evaluate(store, config):
+    attempt_cases, not_executed_cases = _execution_cases(config)
+    attempted = set(attempt_cases)
     store.phase_start("evaluate")
     try:
         attacks = {row["attack_id"]: row for row in config["attacks"]}
         for row in store.data["receiver_rows"]:
-            if row["case_id"] not in ATTEMPT_CASES:
+            if row["case_id"] not in attempted:
                 continue
             if row["status"] == "READ":
                 expected = _expected_for_key(config, row["key_label"])
@@ -1315,28 +1332,32 @@ def phase_evaluate(store, config):
                     runner_up_is_distinct=clock["estimate"].get("runner_up_path") != clock["estimate"].get("best_path"),
                 )
         for row in store.data["baseline_rows"]:
-            if row["case_id"] not in ATTEMPT_CASES:
+            if row["case_id"] not in attempted:
                 continue
             if row["status"] == "EXTRACTED":
                 try:
                     result = _evaluate_baseline(config, row)
-                    row.update(**result, reason=result.get("reason"))
-                    row.setdefault("missing_bits", 0 if result.get("status") == "EVALUATED" else 32)
+                    row.update(**result)
+                    row["reason"] = result.get("reason")
+                    row["missing_bits"] = 0 if result.get("status") == "EVALUATED" else 32
                 except Exception as exc:
                     row.update(status="FAILED", reason=f"{type(exc).__name__}: {exc}", missing_bits=32)
         summaries = {}
-        for case_id in (*ATTEMPT_CASES, *CONFIRMATION_CASES):
+        for case_id in ALL_CASES:
             summaries[case_id] = {
                 "case_id": case_id,
-                "execution_scope": "ATTEMPTED" if case_id in ATTEMPT_CASES else "NOT_EXECUTED_BY_NOTEBOOK",
+                "execution_scope": "ATTEMPTED" if case_id in attempted else "NOT_EXECUTED_BY_NOTEBOOK",
                 "main_status_counts": _counts(row["status"] for row in _receiver_rows(store, case_id)),
                 "baseline_status_counts": _counts(row["status"] for row in store.data["baseline_rows"] if row["case_id"] == case_id),
                 "main_fixed_summary": _receiver_group_summary(_receiver_rows(store, case_id)),
             }
         grouped = {}
-        for execution_scope, case_ids in (
-            ("PILOT_ATTEMPT", ATTEMPT_CASES), ("CONFIRMATION_NOT_EXECUTED", CONFIRMATION_CASES),
-        ):
+        scope_groups = (
+            (("PILOT_ATTEMPT", attempt_cases), ("CONFIRMATION_NOT_EXECUTED", not_executed_cases))
+            if attempt_cases == PILOT_CASES else
+            (("CONFIRMATION_ATTEMPT", attempt_cases), ("PILOT_NOT_EXECUTED", not_executed_cases))
+        )
+        for execution_scope, case_ids in scope_groups:
             for arm in MAIN_ARMS:
                 for key_label in KEY_LABELS:
                     for mode in MODES:
@@ -1351,11 +1372,9 @@ def phase_evaluate(store, config):
                                 and _condition_group(row["attack_id"]) == condition
                             ]
                             grouped[f"{execution_scope}|{arm}|{key_label}|{mode}|{condition}"] = _receiver_group_summary(rows)
-        paired = _paired_rows(store.data["receiver_rows"])
+        paired = _paired_rows(store.data["receiver_rows"], attempt_cases)
         baseline_grouped = {}
-        for execution_scope, case_ids in (
-            ("PILOT_ATTEMPT", ATTEMPT_CASES), ("CONFIRMATION_NOT_EXECUTED", CONFIRMATION_CASES),
-        ):
+        for execution_scope, case_ids in scope_groups:
             for method in BASELINES:
                 for condition in (
                     "FULL", "CROP37_126", "SPEED075", "SPEED125", "MEAN3", "MEAN5",
@@ -1417,6 +1436,7 @@ def _write_csv(path, rows):
 
 def run_phase(config_path, output, phase, *, case_id=None, temp_root=None):
     config = validate_config(read_json(config_path))
+    attempt_cases, _ = _execution_cases(config)
     if phase == "plan":
         return atomic_json(output, build_plan(config))
     if phase == "init":
@@ -1424,8 +1444,8 @@ def run_phase(config_path, output, phase, *, case_id=None, temp_root=None):
     store = AttackRunStore(output, config, temp_root=temp_root)
     if phase == "evaluate":
         return phase_evaluate(store, config)
-    if case_id not in ATTEMPT_CASES:
-        raise AttackEvalError("only fixed pilot_01/pilot_02 may be attempted")
+    if case_id not in attempt_cases:
+        raise AttackEvalError("case is outside this config's fixed execution scope")
     dispatch = {
         "import-main": lambda: phase_import_main(store, config, case_id),
         "baseline-embed-videoseal": lambda: phase_baseline_embed(store, config, case_id, "videoseal"),
