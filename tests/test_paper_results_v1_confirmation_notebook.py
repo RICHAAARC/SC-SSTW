@@ -1,7 +1,9 @@
 import ast
 import json
+import shutil
 import tempfile
 import unittest
+import urllib.request
 import zipfile
 from pathlib import Path
 
@@ -100,6 +102,37 @@ class ConfirmationNotebookTests(unittest.TestCase):
             self.assertEqual(handoff["pilots"]["status"], "NOT_EXECUTED_BY_NOTEBOOK")
             self.assertEqual(handoff["baseline_status_counts"], {"EVALUATED": 1})
             self.assertEqual(handoff["quality_status_counts"], {"EVALUATED": 1})
+
+    def test_source_loader_refetches_when_old_cache_has_only_real_cli(self):
+        notebook = build_notebook()
+        setup = "".join(next(cell["source"] for cell in notebook["cells"] if cell["id"] == "portable-setup"))
+        tree = ast.parse(setup)
+        function = next(node for node in tree.body if isinstance(node, ast.FunctionDef) and node.name == "load_companion_source")
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            portable = root / "old-source"
+            legacy = portable / "experiments/paper_results_v1/real_cli.py"
+            legacy.parent.mkdir(parents=True); legacy.write_text("# old cache\n")
+            output = root / "output"; output.mkdir()
+            companion = Path(__file__).resolve().parents[1] / "notebooks/paper_results_v1_companion.zip"
+            fetches = []
+            def fetch(_url, target):
+                fetches.append(str(target)); shutil.copyfile(companion, target); return str(target), None
+            def atomic_json(path, value):
+                Path(path).write_text(json.dumps(value), encoding="utf-8"); return str(path)
+            namespace = {
+                "Path": Path, "PORTABLE_ROOT": portable, "OUTPUT_ROOT": output,
+                "COMPANION_ZIP_URL": "https://example.invalid/companion.zip",
+                "SOURCE_REPOSITORY": "https://example.invalid/repo", "SOURCE_REF": "editable-ref",
+                "urllib": type("U", (), {"request": type("R", (), {"urlretrieve": staticmethod(fetch)})}),
+                "zipfile": zipfile, "atomic_json": atomic_json,
+            }
+            exec(compile(ast.Module(body=[function], type_ignores=[]), "source-loader", "exec"), namespace)
+            receipt = namespace["load_companion_source"]()
+            self.assertEqual(len(fetches), 1)
+            self.assertEqual(receipt["status"], "DOWNLOADED_AND_EXTRACTED_MISSING_REQUIRED_SOURCE")
+            self.assertIn("experiments/paper_results_v1/confirmation_v1_cli.py", receipt["missing_before_fetch"])
+            self.assertTrue((portable / "experiments/paper_results_v1/confirmation_v1_cli.py").is_file())
 
 
 if __name__ == "__main__":

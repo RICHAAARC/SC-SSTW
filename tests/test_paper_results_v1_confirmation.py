@@ -45,7 +45,10 @@ class ConfirmationTests(unittest.TestCase):
     def test_successful_confirmation_baseline_clears_initialized_missing_bits(self):
         config = self.config()
         with tempfile.TemporaryDirectory() as directory:
-            store = attack_eval.AttackRunStore(Path(directory) / "attack", config, create=True)
+            root = Path(directory)
+            config_path = root / "config.json"
+            config_path.write_text(json.dumps(config), encoding="utf-8")
+            store = attack_eval.AttackRunStore(root / "attack", config, create=True)
             row = next(item for item in store.data["baseline_rows"] if (
                 item["case_id"], item["method"], item["attack_id"]
             ) == ("confirm_01", "videoseal", "full"))
@@ -58,6 +61,24 @@ class ConfirmationTests(unittest.TestCase):
                 attack_eval.phase_evaluate(store, config)
             self.assertEqual(row["status"], "EVALUATED")
             self.assertEqual(row["missing_bits"], 0)
+            second = next(item for item in store.data["baseline_rows"] if (
+                item["case_id"], item["method"], item["attack_id"]
+            ) == ("confirm_01", "rivagan", "full"))
+            second.update(status="EXTRACTED", missing_bits=32)
+            quality = next(item for item in store.data["quality_rows"] if item["case_id"] == "confirm_01")
+            quality.update(status="EVALUATED", metrics={"PSNR_RGB": {"status": "EVALUATED", "value": 40.0}})
+            store.save()
+            with mock.patch.object(attack_eval, "_evaluate_baseline", return_value=result):
+                code = attack_cli.main([
+                    "--config", str(config_path), "--output", str(store.output), "--phase", "evaluate",
+                ])
+            self.assertEqual(code, 0)
+            refreshed = attack_eval.AttackRunStore(store.output, config)
+            report = json.loads((store.output / "evaluation_report.json").read_text())
+            self.assertEqual(next(item for item in refreshed.data["baseline_rows"] if item["slot_id"] == second["slot_id"])["missing_bits"], 0)
+            self.assertEqual(next(item for item in report["quality_rows"] if item["quality_id"] == quality["quality_id"])["status"], "EVALUATED")
+            self.assertIn("eight-source confirmation", report["claim_ceiling"])
+            self.assertEqual(len(refreshed.data["phases"]["evaluate"]["aggregate_attempts"]), 2)
 
     def test_one_physical_map_keeps_keys_and_source_annotations_separate(self):
         config = self.config()

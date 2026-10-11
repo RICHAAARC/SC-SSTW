@@ -1294,7 +1294,18 @@ def _evaluate_baseline(config, row):
 def phase_evaluate(store, config):
     attempt_cases, not_executed_cases = _execution_cases(config)
     attempted = set(attempt_cases)
-    store.phase_start("evaluate")
+    # Reporting is pure aggregation over retained rows and may be refreshed
+    # after an interrupted notebook finishes additional independent work.
+    # Case phases keep their one-attempt rule.
+    phase = store.data["phases"]["evaluate"]
+    aggregate_attempt = {
+        "attempt": len(phase.setdefault("aggregate_attempts", [])) + 1,
+        "prior_status": phase.get("status"), "started_at_unix": time.time(),
+        "status": "RUNNING",
+    }
+    phase["aggregate_attempts"].append(aggregate_attempt)
+    phase.update(status="RUNNING", started_at_unix=aggregate_attempt["started_at_unix"])
+    store.save()
     try:
         attacks = {row["attack_id"]: row for row in config["attacks"]}
         for row in store.data["receiver_rows"]:
@@ -1396,7 +1407,11 @@ def phase_evaluate(store, config):
             "receiver_group_summaries": grouped,
             "baseline_group_summaries": baseline_grouped,
             "source_summaries": summaries,
-            "claim_ceiling": "two-pilot engineering/evaluation output; confirmation is not executed",
+            "claim_ceiling": (
+                "two-pilot engineering/evaluation output; confirmation is not executed"
+                if attempt_cases == PILOT_CASES else
+                "fixed eight-source confirmation evaluation; pilots are excluded and not executed by this config"
+            ),
         }
         report_path = atomic_json(store.output / "evaluation_report.json", report)
         _write_csv(store.output / "receiver_rows.csv", store.data["receiver_rows"])
@@ -1405,9 +1420,14 @@ def phase_evaluate(store, config):
         _write_csv(store.output / "paired_m05_rows.csv", paired)
         store.data["evaluation_report"] = report_path
         store.save()
+        aggregate_attempt.update(status="COMPLETE", finished_at_unix=time.time())
         store.phase_finish("evaluate")
         return report
     except BaseException as exc:
+        aggregate_attempt.update(
+            status="FAILED", finished_at_unix=time.time(),
+            reason=f"{type(exc).__name__}: {exc}",
+        )
         store.phase_failure("evaluate", exc)
         raise
 

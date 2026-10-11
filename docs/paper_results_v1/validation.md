@@ -604,13 +604,25 @@ kernel find the same unique run directory. The reused environment/source cells
 come from the previously boundary-tested two-pilot notebook; this test does not
 execute their package, network, or model operations again.
 
+The confirmation notebook uses its own editable source directory and checks
+all actual confirmation entrypoints before reuse. A fixture starts with the
+older `real_cli.py` alone, verifies that the ordinary public companion ZIP is
+fetched once, and then opens the new config and confirmation CLI from the
+completed source tree; there is no manifest, digest, source-SHA, clean-Git, or
+version admission gate. Attack `evaluate` is now explicitly reentrant because
+it is report-only aggregation. The recovery fixture writes a partial report,
+adds a newly completed baseline and quality row, calls the real CLI evaluate
+again with return code zero, and verifies that the report, claim ceiling, and
+aggregate-attempt history refresh. Expensive per-case phases retain their
+single-attempt rule.
+
 The focused command was:
 
 ```text
 python3 -B -m unittest tests.test_paper_results_v1_confirmation tests.test_paper_results_v1_confirmation_notebook -v
 ```
 
-All five tests passed. JSON parsing passed for the adopted config and generated
+All six tests passed. JSON parsing passed for the adopted config and generated
 notebook, all generated code cells parsed in the notebook test, companion
 closure includes the config/runner/CLI, and `git diff --check` passed. The local
 stdlib interpreter has no NumPy or Torch, so the older dependency-bearing

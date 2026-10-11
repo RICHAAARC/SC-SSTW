@@ -34,6 +34,10 @@ def build_notebook():
     build_companion_zip()
     base = json.loads(BASE.read_text(encoding="utf-8"))
     setup = _base_cell(base, "portable-setup")
+    setup = setup.replace(
+        'PORTABLE_ROOT = Path("/content/paper-results-v1-source")',
+        'PORTABLE_ROOT = Path("/content/paper-results-v1-confirmation-source")',
+    )
     setup = setup.replace('PILOT_CASES = ("pilot_01", "pilot_02")', 'PILOT_CASES = ()')
     setup = setup.replace(
         'OUTPUT_ROOT = Path("/content/drive/MyDrive/Video-WM/Paper-Results-V1-Two-Pilot") / RUN_ID\nOUTPUT_ROOT.mkdir(parents=True, exist_ok=False)',
@@ -57,6 +61,53 @@ def build_notebook():
                 "preferred_m05_k0_centered_u_rows": 120,
             }
             STAMP ='''),
+        setup,
+        flags=re.S,
+    )
+    setup = re.sub(
+        r"def load_companion_source\(\):.*?\n\ntry:\n",
+        textwrap.dedent('''\
+            def load_companion_source():
+                required_relatives = (
+                    "experiments/paper_results_v1/real_cli.py",
+                    "experiments/paper_results_v1/attack_cli.py",
+                    "experiments/paper_results_v1/confirmation_v1_cli.py",
+                    "experiments/paper_results_v1/confirmation_v1.py",
+                    "experiments/paper_results_v1/confirmation_v1.adopted.json",
+                    "main/tube_state/receiver_controls_v1.py",
+                    "runtime/wan/video_trajectory_temporal_edit_receiver_v1.py",
+                )
+                def missing_required():
+                    return [name for name in required_relatives if not (PORTABLE_ROOT / name).is_file()]
+                archive_path = OUTPUT_ROOT / "companion_source.zip"
+                missing_before = missing_required()
+                status = "REUSED_EDITABLE_WORKING_DIRECTORY"
+                if missing_before:
+                    status = "DOWNLOADED_AND_EXTRACTED_MISSING_REQUIRED_SOURCE"
+                    urllib.request.urlretrieve(COMPANION_ZIP_URL, archive_path)
+                    PORTABLE_ROOT.mkdir(parents=True, exist_ok=True)
+                    root_resolved = PORTABLE_ROOT.resolve()
+                    with zipfile.ZipFile(archive_path) as archive:
+                        for member in archive.infolist():
+                            target = (PORTABLE_ROOT / member.filename).resolve()
+                            if root_resolved not in target.parents and target != root_resolved:
+                                raise RuntimeError("unsafe companion archive member")
+                        archive.extractall(PORTABLE_ROOT)
+                missing_after = missing_required()
+                if missing_after:
+                    raise FileNotFoundError("companion source is missing required files: " + repr(missing_after))
+                receipt = {
+                    "status": status, "source_repository": SOURCE_REPOSITORY,
+                    "source_ref": SOURCE_REF, "companion_zip_url": COMPANION_ZIP_URL,
+                    "source_root": str(PORTABLE_ROOT), "required_source_files": list(required_relatives),
+                    "missing_before_fetch": missing_before, "manifest_required": False,
+                    "digest_required": False, "git_clean_required": False,
+                }
+                atomic_json(OUTPUT_ROOT / "companion_source_receipt.json", receipt)
+                return receipt
+
+            try:
+        '''),
         setup,
         flags=re.S,
     )
