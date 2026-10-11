@@ -74,7 +74,7 @@ G≥γ后 `L_state=0`，其梯度为0；若第二步起点G跌回γ以下，惩�
 
 ## 4. 两个新梯度步骤与同一 BASE 球
 
-设同一保存原终端为z0，当前固定mask为M，δ0=0。首选固定k=0、1：
+设同一保存原终端为z0，当前固定mask为M，δ0=0。已采纳固定k=0、1：
 
 ```text
 zk = z0 + δk
@@ -93,7 +93,7 @@ scale = 1                         if ||candidate||2 == 0
 
 两步均按固定顺序；不根据L、过零位数、G或质量择优、回滚、提前接受、缩步或追加步骤。若第二步变差，仍交付第二步及中点。不产生后续方向的情况包括输入shape/数值语义无效、零pooled support或reader失败、非有限、真实读写/加载/OOM/decoder/VJP失败、零masked梯度，或有梯度作用的state max并列；按实际缺失/工程失败/构造未定义分别保留。不能拿零delta冒充未产生的方向或增加备用VJP。若两个有效非零梯度方向恰好相消使candidate=0，那是合法的累计位移结果，按上式正常保存和decode，不能误判成零梯度或UNDEFINED。
 
-payload最弱位并列不再决定新目标可微性：32项H均一阶连续，“四个min”仅保留描述。对于G，只有G<γ且最大错误offset并列时状态项仍需要一个未唯一确定的梯度，此时保留新依赖行UNDEFINED；若G≥γ状态项平坦，wrong-offset并列只记录，不应误用旧五目标的全局`tied`开关阻断。0与μ、γ边界用上面解析一阶连续定义。该精确活动范围与新数值一并提交采纳，不静默沿用不适用的旧min规则。
+payload最弱位并列不再决定新目标可微性：32项H均一阶连续，“四个min”仅保留描述。对于G，只有G<γ且最大错误offset并列时状态项仍需要一个未唯一确定的梯度，此时保留新依赖行UNDEFINED；若G≥γ状态项平坦，wrong-offset并列只记录，不应误用旧五目标的全局`tied`开关阻断。0与μ、γ边界用上面解析一阶连续定义。该精确活动范围已与新数值一并获采纳，不静默沿用不适用的旧min规则。
 
 ## 5. 固定四视图与真实调用账
 
@@ -106,7 +106,7 @@ payload最弱位并列不再决定新目标可微性：32项H均一阶连续，�
 
 主比较为 ALLBIT_TWO 对 TWO_MEAN_SAVED，另存每行对BASE及 HALF→TWO。不再追加ONE_COMMON/COMMON refresh。历史五视图完整报告仍可链接，但不混进新run分母。旧对照累计半径约0.8198，新方案可能不同；都是同一个L2上限，不能称实际位移完全相等或只凭更高PSNR把原因归到新loss。
 
-完整非退化预算首选为 **1次VAE load、6D、2 decoder VJP；0E/DiT/native/scheduler/codec**：四次普通评分decode，加z0/z1两次梯度decode。普通chunk=4×46=184；梯度原始chunk=2×46=92；名义replay另92。每次梯度decode的重复读数只是工程一致性诊断，不算新样本；普通评分decode不由梯度前向冒充。
+完整非退化固定预算为 **1次VAE load、6D、2 decoder VJP；0E/DiT/native/scheduler/codec**：四次普通评分decode，加z0/z1两次梯度decode。普通chunk=4×46=184；梯度原始chunk=2×46=92；名义replay另92。每次梯度decode的重复读数只是工程一致性诊断，不算新样本；普通评分decode不由梯度前向冒充。
 
 新run固定分母为 **4×88=352 windows、5632 chips、220原指标**（每行22 correlations、G、32 margins），每chip512样本。新loss、四片段min、系数、质量、资源为额外描述字段，不改变原指标分母。BASE与保存旧对照先按各自输入独立执行；若旧delta缺失，该对照明确MISSING，新目标依赖仅z0仍可继续；不得重跑旧Mean Refresh来补对照。若新方向退化，保留四行和实际attempted/completed，不凑满调用。
 

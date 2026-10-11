@@ -55,4 +55,9 @@ A1定向检查包括：Huber分段/边界导数、32项系数及state活动并�
 
 A2 对首个实现候选 `f45d3c9` 给出有范围接受。A3 同版发现两项机械证据问题：目标普通decode/readout失败会覆盖已形成方向的状态；图片索引漏了子目录。已将目标观测失败与方向形成分开，保留DEFINED及对应视图的原始异常；HALF失败使第二步明确MISSING_DEPENDENCY。索引改为相对每个view目录的 `frames/...`、`crops/...`。
 
-修复后仅做受影响验证，**11项通过（26.44秒）**：含新增4个HALF/TWO decode与readout失败边界、完整CPU两步、所有图片索引存在、实际峰值输出与5项notebook/普通ZIP/CLI检查。未重复未变的公式/reader/checkpoint全套。记录见 [修复复检](../../../diagnostics/b-line-all-bit-implementation-20261011/a1_targeted_repair_tests.txt)，修复后的完整CPU产物在同目录 `cpu_repaired_full_run/`、`cpu_repaired_peak_fixture/`；4个失败案例记录在 `cpu_target_failure_cases/`。首版21项检查及首版产物仍保留，未覆盖原始审查证据。等待A2/A3增量确认及A4综合。
+修复后仅做受影响验证，**11项通过（26.44秒）**：含新增4个HALF/TWO decode与readout失败边界、完整CPU两步、所有图片索引存在、实际峰值输出与5项notebook/普通ZIP/CLI检查。未重复未变的公式/reader/checkpoint全套。记录见 [修复复检](../../../diagnostics/b-line-all-bit-implementation-20261011/a1_targeted_repair_tests.txt)，修复后的完整CPU产物在同目录 `cpu_repaired_full_run/`、`cpu_repaired_peak_fixture/`；4个失败案例记录在 `cpu_target_failure_cases/`。首版21项检查及首版产物仍保留，未覆盖原始审查证据。A2/A3增量确认与A4综合均已完成并给出有范围接受。
+
+
+最终受审代码候选为 `40e7faf23503d0d6bee1f0d29579b3f5c7549783`。当前有效意见：[A2增量ACCEPT](../../../diagnostics/b-line-all-bit-implementation-20261011/review_a2_repair.md)、[A3增量ACCEPT](../../../diagnostics/b-line-all-bit-implementation-20261011/review_a3_repair.md)、[A4综合ACCEPT](../../../diagnostics/b-line-all-bit-implementation-20261011/review_a4.md)。两项机械finding已闭合，无遗留分歧或新阻断；首版审查仍原样保留。本段是docs-only收据，不改变受审代码、notebook、builder或ZIP，不重复测试。
+
+A1–A4工程交付已完成。主审已统一启动A5里程碑核验并负责开发分支GitHub发布/读回；本会话未push、未合并main，也未代用户启动真实GPU/Colab任务。当前最多支持“已采纳固定构造的用户Run all候选已实现，并通过必要CPU/static/stub验证及独立审查”，不支持新方法真实成功。
