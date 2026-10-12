@@ -28,7 +28,7 @@ def build_notebook():
         for old,new in (
             ("local_joint_all_bit_v1",NAME),
             ("Local-Joint-State-Payload-V1-All-Bit'","Local-Joint-State-Payload-V1-All-Bit-Continue'"),
-            ("'resumable-task-v1'","'resumable-task-v1-2x010'"),
+            ("OUTPUT = OUTPUT_PARENT / 'resumable-task-v1'","OUTPUT = OUTPUT_PARENT / 'resumable-task-v1-2x010'"),
             ("Video-WM-Local-Joint-All-Bit-","Video-WM-Local-Joint-All-Bit-Continue-"),
             ("('BASE','TWO_MEAN_SAVED','ALLBIT_HALF','ALLBIT_TWO')","('BASE','START_SAVED','CONT_MID','CONT_FINAL')"),
             ("ALLBIT-2H","ALLBIT-CONTINUE-2x010"),

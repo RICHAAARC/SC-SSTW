@@ -27,6 +27,12 @@ def test_notebook_and_ordinary_archive_are_current():
     assert notebook == builder.build_notebook()
     assert code(notebook,0).splitlines() == ["from google.colab import drive","drive.mount('/content/drive')"]
     assert notebook["metadata"]["accelerator"] == "GPU"
+    fixed_assignment=next(node for node in ast.parse(code(notebook,2)).body
+        if isinstance(node,ast.Assign) and any(isinstance(target,ast.Name) and target.id=="FIXED_CONFIG" for target in node.targets))
+    embedded=ast.literal_eval(fixed_assignment.value)
+    assert embedded==json.loads((builder.ROOT/builder.CONFIG_PATH).read_text())
+    assert embedded["source_run"]=="resumable-task-v1"
+    assert "OUTPUT = OUTPUT_PARENT / 'resumable-task-v1-2x010'" in code(notebook,2)
     for cell in notebook["cells"]:
         if cell["cell_type"] == "code":
             ast.parse("".join(cell["source"]))
