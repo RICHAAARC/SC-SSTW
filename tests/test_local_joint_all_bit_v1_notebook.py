@@ -3,6 +3,7 @@ from __future__ import annotations
 import ast
 import io
 import json
+from pathlib import Path
 import subprocess
 import sys
 import types
@@ -59,10 +60,18 @@ def test_fresh_namespace_ordered_run_all_with_stubs(tmp_path,monkeypatch,outcome
     monkeypatch.setattr(urllib.request,"urlopen",lambda *_a,**_k:io.BytesIO(builder.portable_archive()))
     # Only download is stubbed; actual local extraction uses the notebook cell.
     old_path=list(sys.path)
+    old_modules={k:v for k,v in sys.modules.items() if k.split(".",1)[0] in ("main","runtime","experiments")}
     try:
         exec(compile(code(nb,3),"source","exec"),ns)
+        import importlib
+        loaded=importlib.import_module("runtime.wan.local_joint_all_bit_v1")
+        assert Path(loaded.__file__).is_relative_to(ns["WORKSPACE"])
     finally:
         sys.path[:]=old_path
+        for name in list(sys.modules):
+            if name.split(".",1)[0] in ("main","runtime","experiments"):
+                sys.modules.pop(name,None)
+        sys.modules.update(old_modules)
     assert mounts == ["/content/drive"] and not (ns["WORKSPACE"]/".git").exists()
     stages=[]
     def logged(command,stage,**kwargs):
@@ -90,7 +99,7 @@ def test_fresh_namespace_ordered_run_all_with_stubs(tmp_path,monkeypatch,outcome
         with pytest.raises(RuntimeError,match="dependency sentinel"):
             exec(compile(code(nb,4),"environment","exec"),ns)
         assert stages == ["DEPENDENCY_PROBE"]
-        assert (ns["OUTPUT"]/"notebook_failure.json").exists()
+        assert (ns["ATTEMPT_OUTPUT"]/"notebook_failure.json").exists()
         return
     exec(compile(code(nb,4),"environment","exec"),ns)
     if outcome == "killed":
@@ -106,7 +115,7 @@ def test_fresh_namespace_ordered_run_all_with_stubs(tmp_path,monkeypatch,outcome
         exec(compile(code(nb,5),"run","exec"),ns)
         exec(compile(code(nb,6),"summary","exec"),ns)
     assert stages == ["DEPENDENCY_PROBE","DEPENDENCY_REPORT","FIXED_ALL_BIT"]
-    assert (ns["OUTPUT"]/"execution_receipt.json").exists()
+    assert (ns["ATTEMPT_OUTPUT"]/"execution_receipt.json").exists()
 
 
 def test_standalone_no_git_zip_cli_missing_input_never_loads_model(tmp_path):
@@ -125,3 +134,30 @@ def test_standalone_no_git_zip_cli_missing_input_never_loads_model(tmp_path):
     assert all(x == 0 for x in result["counts"].values())
     assert result["totals"]["expected_metrics"] == 220 and result["totals"]["observed_metrics"] == 0
     assert result["status"] == "ENGINEERING_FAILURE"
+
+
+def test_repeated_setup_preserves_task_and_cpu_environment_has_no_cuda_probe(tmp_path,monkeypatch):
+    nb=builder.build_notebook()
+    setup=code(nb,2).replace("/content/drive/MyDrive/Video-WM/Local-Joint-State-Payload-V1-All-Bit",str(tmp_path/"drive"))
+    setup=setup.replace("/content/Video-WM-Local-Joint-All-Bit-",str(tmp_path/"source-"))
+    ns={"__name__":"__notebook_resume_stub__"}
+    exec(compile(setup,"setup1","exec"),ns)
+    task,attempt1=ns["OUTPUT"],ns["ATTEMPT_OUTPUT"]
+    saved=ns["FIXED_CONFIG"]
+    saved["inputs"]["terminal_latent"]="saved-existing-task-input.pt"
+    ns["write_json"](task/"fixed_config.json",saved)
+    exec(compile(setup,"setup2","exec"),ns)
+    assert ns["OUTPUT"]==task and ns["ATTEMPT_OUTPUT"]!=attempt1
+    assert ns["FIXED_CONFIG"]["inputs"]["terminal_latent"]=="saved-existing-task-input.pt"
+    monkeypatch.setattr(runtime,"model_work_remaining",lambda _path:False)
+    def logged(command,stage,**kwargs):
+        if stage=="DEPENDENCY_PROBE":
+            probe=command[-1]
+            assert "cuda" not in probe and "diffusers" not in probe
+            ns["write_json"](task/"dependency_probe.json",dict(model_work_remaining=False))
+        else:
+            assert stage=="DEPENDENCY_REPORT"
+        return 0
+    ns["logged"]=logged
+    exec(compile(code(nb,4),"cpu_environment","exec"),ns)
+    assert not ns["NEEDS_MODEL"]

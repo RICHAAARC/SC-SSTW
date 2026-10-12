@@ -84,7 +84,10 @@ def render_pair(path,name,index,frame,reference, *, box=None):
     draw.text((0,0),f"{name} frame {index}; RGB [0,1]",fill="black")
     draw.text((0,15),f"Residual [-0.25,0.25]; clipped pixels={clipped}",fill="black")
     if box is not None: draw.text((0,30),f"crop y0,y1,x0,x1={box}",fill="black")
-    path.parent.mkdir(parents=True,exist_ok=True);canvas.save(path)
+    path.parent.mkdir(parents=True,exist_ok=True)
+    temporary=path.with_name(path.name+".tmp")
+    canvas.save(temporary,format="PNG")
+    temporary.replace(path)
     return dict(path=path.relative_to(path.parent.parent).as_posix(),display_clipped_pixels=clipped,box=box)
 
 
@@ -105,6 +108,19 @@ def export_visuals(output,base):
             index["views"][name]=dict(status="MISSING",reason="float RGB missing")
             continue
         try:
+            saved_index=output/name/"frames.json"
+            if saved_index.exists():
+                try:
+                    previous=json.loads(saved_index.read_text())
+                    from PIL import Image
+                    if previous["frame_indices"]==frames and previous.get("crop_requests")==crops:
+                        for item in previous["frames"]+previous["crops"]:
+                            with Image.open(output/name/item["path"]) as image:
+                                image.verify()
+                        index["views"][name]=previous
+                        continue
+                except (OSError,ValueError,KeyError,TypeError):
+                    pass
             rgb=base if name=="BASE" else torch.load(path,map_location="cpu",weights_only=True)
             images=[]
             for t in frames:
@@ -115,7 +131,7 @@ def export_visuals(output,base):
                 box=(max(0,y-CROP_RADIUS),min(rgb.shape[1],y+CROP_RADIUS+1),
                      max(0,x-CROP_RADIUS),min(rgb.shape[2],x+CROP_RADIUS+1))
                 crop_images.append(render_pair(output/name/"crops"/f"crop_{n:02d}_{t:03d}.png",name,t,rgb[t],base[t],box=box))
-            view=dict(status="SAVED",frame_indices=frames,frames=images,crops=crop_images)
+            view=dict(status="SAVED",frame_indices=frames,frames=images,crops=crop_images,crop_requests=crops)
             write_json(output/name/"frames.json",view)
             index["views"][name]=view
             del rgb

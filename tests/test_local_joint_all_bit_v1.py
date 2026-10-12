@@ -223,7 +223,8 @@ def test_quality_failure_does_not_gate_method_and_interruption_is_report_only(tm
     monkeypatch.setattr(torch,"load",lambda *a,**kw:(_ for _ in ()).throw(AssertionError("no tensor reload")))
     recovered=runtime.finalize_interrupted(tmp_path/"out","reaped")
     assert recovered["status"]=="INTERRUPTED" and recovered["totals"]["observed_metrics"]==220
-    assert recovered["model_calls"]["step_2_vjp"]["status"]=="INTERRUPTED_COMPLETION_UNKNOWN"
+    # The independently committed call return outranks a stale whole-result row.
+    assert recovered["model_calls"]["step_2_vjp"]["status"]=="RETURNED"
 
 
 def test_actual_peak_neighborhoods_zero_ties_coordinates_and_unclipped_values(tmp_path):

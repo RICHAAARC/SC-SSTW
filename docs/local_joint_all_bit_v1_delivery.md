@@ -1,5 +1,7 @@
 # B 线全 32 位余量目标：用户 Run all 交付
 
+2026-10-12 恢复能力增补：见 [Colab 定时保存与续跑说明](local_joint_all_bit_resume_delivery_20261012.md)。此增补处于本地 A1 交付、待主审发布；下述原方法审查/发布记录保留原时点含义。
+
 日期：2026-10-11。用户已采纳 [v2 整组具体参数](local_joint_all_bit_proposal_20261011.md)，原话为「采用这组参数，进入最小实现」。实现位于 `dev/local-joint-state-payload-v1`；旧 M0 / Mean Refresh 入口、checkpoint 和历史结果保持原样。当前仅 CPU/static/stub 验证；真实 GPU、模型、Colab、Drive 或媒体执行均由用户完成。分支发布由主审处理。
 
 ## 固定构造与入口

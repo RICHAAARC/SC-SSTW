@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import gc
+import copy
 import json
 from pathlib import Path
 import time
@@ -11,8 +12,9 @@ from main.tube_state import local_joint_state_payload_carrier_v1 as carrier
 from main.tube_state import local_joint_state_payload_posthoc_v1 as posthoc
 from main.tube_state import local_joint_terminal_bridge_v1 as observer
 from runtime.wan import generation, vae as adapter
+from runtime.wan import local_joint_all_bit_resume_v1 as resume
 from runtime.wan.local_joint_readout_checkpoint_v1 import ReplayLedger, checkpoint_decode
-from runtime.wan.local_joint_readout_m0_v1 import save_tensor, masked, metric_values
+from runtime.wan.local_joint_readout_m0_v1 import masked, metric_values
 from runtime.wan.local_joint_all_bit_quality_v1 import quality, export_visuals
 from runtime.wan.local_joint_state_payload_provider_v1 import PUBLIC_LATENT_SUPPORT, WanPosteriorBackend
 from runtime.wan.local_joint_terminal_bridge_v1 import KEY, LATENT_SHAPE, tensor_contract, write_json
@@ -24,6 +26,10 @@ CEILING = ("One seen saved JOINT terminal; 32-bit soft margin deficit, two fresh
 EXPECTED = dict(vae_load=1, decode=6, decoder_vjp=2, encode=0, dit=0, native=0, scheduler=0, codec=0,
                 ordinary_chunks=184, gradient_forward_chunks=92, nominal_replay_chunks=92,
                 windows=352, chips=5632, metrics=220)
+
+
+def save_tensor(path, tensor):
+    resume.atomic_tensor(path, tensor.detach().cpu())
 
 
 def initial_result(config):
@@ -76,11 +82,20 @@ def refresh_reports(output, result):
     metrics,losses = {},{}
     for name in method.VIEWS:
         path = output/name/"metrics.json"
-        evaluation = json.loads(path.read_text()) if path.exists() else posthoc.missing_evaluation("not_run")
+        try:
+            evaluation = resume.read_json(path)
+            metric_values(evaluation)
+        except (OSError,ValueError,KeyError,TypeError,AttributeError):
+            evaluation = posthoc.missing_evaluation("unreadable_or_missing_metrics")
         values = metrics[name] = metric_values(evaluation)
         losses[name] = loss_from_values(values)
         raw_path = output/name/"raw.json"
-        rows = json.loads(raw_path.read_text()) if raw_path.exists() else []
+        try:
+            rows = resume.read_json(raw_path)
+            if not isinstance(rows,list) or any(not isinstance(row,dict) for row in rows):
+                raise ValueError("raw rows must be objects")
+        except (OSError,ValueError,TypeError):
+            rows = []
         count = sum(x is not None for x in values["correlations"]+values["margins"]+[values["state_gap"]])
         view = result["views"][name]
         view.update(observed_windows=len(rows), observed_metrics=count, loss=losses[name],
@@ -91,6 +106,8 @@ def refresh_reports(output, result):
             **values)
         if count == 55:
             view.update(status="SCORED", reason=None)
+        elif view["status"] == "SCORED":
+            view.update(status="MISSING",reason="unreadable_or_incomplete_metrics")
     def compare(a,b):
         answer=compare_values(metrics[a],metrics[b])
         answer.update(reference=a,target=b,
@@ -123,10 +140,10 @@ def refresh_reports(output, result):
 
 
 def finalize_interrupted(output, reason):
-    output = Path(output); path = output/"result.json"
-    if not path.exists():
+    output = Path(output)
+    result = resume.read_state(output)
+    if result is None:
         return None
-    result = json.loads(path.read_text())
     if result["status"] != "RUNNING":
         return result
     result["status"] = "INTERRUPTED"
@@ -145,11 +162,102 @@ def finalize_interrupted(output, reason):
         if row["status"] == "NOT_RUN":
             row.update(status="MISSING_DEPENDENCY",reason=reason)
     refresh_reports(output,result)
-    write_json(path,result)
+    for row in result.get("call_history", []):
+        if row["status"] == "RUNNING":
+            row.update(status="INTERRUPTED_COMPLETION_UNKNOWN", reason=reason)
+    resume.Journal(output).save(result)
     return result
 
 
-def run(config, output, *, loader=None, protocol=carrier.PUBLIC, latent_shape=LATENT_SHAPE,
+def validate_raw(rows):
+    import math
+    if not isinstance(rows,list) or len(rows)!=88:
+        raise ValueError("raw observation requires 88 windows")
+    chips=[c for row in rows for c in row["state_chips"]+row["payload_chips"]]
+    if len(chips)!=1408 or any(c["q"] is None or not math.isfinite(c["q"]) for c in chips):
+        raise ValueError("raw observation requires 1408 finite chips")
+
+
+def evaluation_complete(evaluation):
+    import math
+    try:
+        values=metric_values(evaluation)
+        return all(x is not None and math.isfinite(x) for x in values["correlations"]+values["margins"]+[values["state_gap"]])
+    except (TypeError,KeyError,AttributeError):
+        return False
+
+
+def observation_saved(directory):
+    directory=Path(directory)
+    try:
+        if evaluation_complete(resume.read_json(directory/"metrics.json")):
+            return True
+    except (OSError,ValueError):
+        pass
+    try:
+        validate_raw(resume.read_json(directory/"raw.json"))
+        return True
+    except (OSError,ValueError,TypeError,KeyError):
+        return False
+
+
+def terminal_missing_views(output):
+    """Method-defined terminal outcomes keep dependent slots missing permanently."""
+    state=resume.read_state(output)
+    if state is None:
+        return set()
+    terminal={"ZERO_GRADIENT","UNDEFINED_ACTIVE_STATE_MAX_TIE"}
+    if state["steps"]["step_1"]["status"] in terminal:
+        return {"ALLBIT_HALF","ALLBIT_TWO"}
+    if state["steps"]["step_2"]["status"] in terminal:
+        return {"ALLBIT_TWO"}
+    return set()
+
+
+def reports_complete(output):
+    """Small-artifact check for report-only re-entry, without loading model tensors."""
+    output=Path(output)
+    try:
+        skipped=terminal_missing_views(output)
+        for name in method.VIEWS:
+            if name in skipped:
+                continue
+            validate_raw(resume.read_json(output/name/"raw.json"))
+            if not evaluation_complete(resume.read_json(output/name/"metrics.json")):
+                return False
+            quality_row=resume.read_json(output/name/"quality.json")
+            if len(quality_row["framewise"])!=181 or len(quality_row["temporal_framewise"])!=180:
+                return False
+            images=resume.read_json(output/name/"frames.json")
+            if not images["frames"] or not all((output/name/row["path"]).is_file() for row in images["frames"]+images["crops"]):
+                return False
+        return True
+    except (OSError,ValueError,TypeError,KeyError):
+        return False
+
+
+def model_work_remaining(output):
+    """Notebook dependency hint only. The runner validates actual cached units."""
+    output=Path(output)
+    if reports_complete(output):
+        return False
+    skipped=terminal_missing_views(output)
+    if any(not (output/name/"float_rgb.pt").is_file() and not observation_saved(output/name)
+           for name in method.VIEWS if name not in skipped):
+        return True
+    return any(not (output/(step+"_unit.pt")).is_file() and
+               not (output/"gradients"/(step+"_checkpoint.pt")).is_file()
+               for step,target in (("step_1","ALLBIT_HALF"),("step_2","ALLBIT_TWO"))
+               if target not in skipped)
+
+
+def run(config, output, **kwargs):
+    journal = resume.Journal(output)
+    with journal.periodic():
+        return _run(config, output, journal=journal, **kwargs)
+
+
+def _run(config, output, *, journal, loader=None, protocol=carrier.PUBLIC, latent_shape=LATENT_SHAPE,
         support=PUBLIC_LATENT_SUPPORT, source_identity=None):
     import torch
 
@@ -157,15 +265,60 @@ def run(config, output, *, loader=None, protocol=carrier.PUBLIC, latent_shape=LA
     for input_path in config["inputs"].values():
         if output.resolve().is_relative_to(Path(input_path).resolve().parent):
             raise ValueError("fresh output must be outside saved input directories")
-    output.mkdir(parents=True,exist_ok=False)
-    result = initial_result(config)
+    output.mkdir(parents=True,exist_ok=True)
+    prior = resume.read_state(output)
+    result = prior or initial_result(config)
+    # Preserve every physical call and failed process; successful recovery gets a
+    # fresh current-attempt status without erasing the historical evidence.
+    attempt = str(time.time_ns())
+    if prior:
+        resume.atomic_bytes(output/"attempts"/(attempt+"_prior.json"), resume.json_bytes(prior))
+        result.setdefault("attempt_history", []).append(dict(
+            status=prior["status"], failures=copy.deepcopy(prior["failures"]),
+            resources=copy.deepcopy(prior.get("resources",{})),
+            finished_at_unix=prior.get("finished_at_unix")))
+    result.setdefault("call_history", [])
+    for row in result["call_history"]:
+        if row["status"] == "RUNNING":
+            row.update(status="INTERRUPTED_COMPLETION_UNKNOWN", reason="previous process ended before durable return")
+    result["failures"] = []
+    result["status"] = "RUNNING"
+    result["attempt_id"] = attempt
+    result["resume_on_reentry"] = True
+    result["resources"] = {}
+    result["resources_scope"] = "current attempt; earlier attempts retained in attempts/"
     result["source"] = source_identity or {}
     result["started_at_unix"] = time.time()
     model, base_rgb = None, None
     saved = {}
 
     def flush():
-        write_json(output/"result.json",result)
+        journal.save(result)
+
+    def cached(path, validate=None, tensor=False):
+        if not path.exists():
+            return None
+        try:
+            value = torch.load(path,map_location="cpu",weights_only=True) if tensor else resume.read_json(path)
+            if validate is not None:
+                validate(value)
+            return value
+        except Exception as exc:
+            result.setdefault("recovery_events", []).append(dict(path=str(path),reason=repr(exc)))
+            return None
+
+    def tensor_value(path, shape, bounded=False):
+        return cached(path, lambda v:tensor_contract(v,shape,bounded_rgb=bounded), tensor=True)
+
+    def require_model():
+        nonlocal model
+        if model is None:
+            if str(config.get("device","cuda")).startswith("cuda"):
+                torch.cuda.reset_peak_memory_stats()
+            model=call("load",lambda:(loader or generation.load_frozen_vae)(config,device=config.get("device","cuda")))
+            WanPosteriorBackend(model)
+            result["actual_model_execution"]="REAL" if loader is None else "INJECTED_TEST_DOUBLE"
+        return model
 
     def failure(stage,exc):
         result["failures"].append(dict(stage=stage,reason=f"{type(exc).__name__}: {exc}",retry=False))
@@ -174,22 +327,29 @@ def run(config, output, *, loader=None, protocol=carrier.PUBLIC, latent_shape=LA
         flush()
 
     def call(ident,operation):
-        row=result["model_calls"][ident];kind=row["kind"]
-        row.update(status="RUNNING",started_at_unix=time.time())
+        row=dict(id=attempt+"_"+str(len(result["call_history"])).zfill(4), unit=ident,
+                 kind=result["model_calls"][ident]["kind"],status="RUNNING",started_at_unix=time.time())
+        result["call_history"].append(row)
+        result["model_calls"][ident]=row
+        kind=row["kind"]
         result["counts"][kind+"_attempted"]+=1;flush()
         try:
             value=operation()
         except BaseException as exc:
-            row.update(status="FAILED",reason=repr(exc));flush();raise
+            row.update(status="FAILED" if isinstance(exc,Exception) else "INTERRUPTED_COMPLETION_UNKNOWN",reason=repr(exc));flush();raise
         row.update(status="RETURNED",finished_at_unix=time.time())
         result["counts"][kind+"_completed"]+=1;flush()
         return value
 
     def ordinary_decode(name,terminal):
+        require_model()
         original=model.decoder.forward;original_decode=model.decode
         def counted(*args,**kwargs):
+            chunks=result["model_calls"][name].setdefault("ordinary_chunks",dict(attempted=0,completed=0))
+            chunks["attempted"]+=1
             result["ordinary_chunks"]["attempted"]+=1;flush()
             value=original(*args,**kwargs)
+            chunks["completed"]+=1
             result["ordinary_chunks"]["completed"]+=1;flush()
             return value
         model.decoder.forward=counted
@@ -202,40 +362,79 @@ def run(config, output, *, loader=None, protocol=carrier.PUBLIC, latent_shape=LA
     def observe(name,terminal,delta):
         nonlocal base_rgb
         directory=output/name
-        save_tensor(directory/"terminal_latent.pt",terminal)
-        save_tensor(directory/"delta.pt",delta)
+        saved_terminal=tensor_value(directory/"terminal_latent.pt",latent_shape)
+        if saved_terminal is None or not torch.equal(saved_terminal,terminal):
+            save_tensor(directory/"terminal_latent.pt",terminal)
+        saved_delta=tensor_value(directory/"delta.pt",latent_shape)
+        if saved_delta is None or not torch.equal(saved_delta,delta):
+            save_tensor(directory/"delta.pt",delta)
         actual=terminal.double()-z0.double()
         result["views"][name]["displacement"]=dict(planned_delta_l2=float(delta.double().norm()),
             actual_terminal_minus_base_l2=float(actual.norm()),
             planned_mask_outside_l2=float((delta-masked(delta,support)).double().norm()),
             actual_mask_outside_l2=float((actual-masked(actual,support)).norm()),
             addition_rounding_l2=float((actual-delta.double()).norm()))
-        rgb=ordinary_decode(name,terminal)
-        tensor_contract(rgb,protocol.video_shape,bounded_rgb=True)
-        save_tensor(directory/"float_rgb.pt",rgb)
-        rows=observer.read_rgb(rgb,key=KEY,rho=.5,protocol=protocol)
-        write_json(directory/"raw.json",rows)
-        evaluation=observer.evaluate_saved(rows,key=KEY,message=bytes.fromhex("8001a55a"),rho=.5,protocol=protocol)
-        write_json(directory/"metrics.json",evaluation)
+        rows=cached(directory/"raw.json",validate_raw)
+        evaluation=cached(directory/"metrics.json")
+        completed_observation=rows is not None or evaluation_complete(evaluation)
+        rgb=tensor_value(directory/"float_rgb.pt",protocol.video_shape,True)
+        if rgb is None and not completed_observation:
+            rgb=ordinary_decode(name,terminal)
+            tensor_contract(rgb,protocol.video_shape,bounded_rgb=True)
+            save_tensor(directory/"float_rgb.pt",rgb);flush()
+            # This is a new observation, so downstream data must come from this RGB.
+            rows,evaluation=None,None
+        if name=="BASE":
+            base_rgb=rgb  # Remains usable for quality even if the BASE reader fails.
+        if rows is None and rgb is not None:
+            rows=observer.read_rgb(rgb,key=KEY,rho=.5,protocol=protocol)
+            write_json(directory/"raw.json",rows);flush()
+            evaluation=None
+        if not evaluation_complete(evaluation) and rows is not None:
+            evaluation=observer.evaluate_saved(rows,key=KEY,message=bytes.fromhex("8001a55a"),rho=.5,protocol=protocol)
+            write_json(directory/"metrics.json",evaluation);flush()
+        if rows is None:
+            rows=[]
+            failure(name+"_raw",OSError("raw unavailable; completed scores retained without a replacement decode"))
         values=metric_values(evaluation)
         count=sum(x is not None for x in values["correlations"]+values["margins"]+[values["state_gap"]])
         result["views"][name].update(status="SCORED" if count==55 else "MISSING",reason=None if count==55 else "incomplete_readout",
             observed_windows=len(rows),observed_metrics=count,
             observed_chips=sum(c["q"] is not None for r in rows for c in r["state_chips"]+r["payload_chips"]),**values,loss=loss_from_values(values))
         write_json(directory/"loss.json",result["views"][name]["loss"])
-        if name=="BASE":
-            base_rgb=rgb
-        if base_rgb is not None:
-            try:
-                write_json(directory/"quality.json",quality(rgb,base_rgb,protocol))
-            except Exception as exc:
-                # A missing quality artifact does not erase raw or gate fixed method calls.
-                failure(name+"_quality",exc)
+        try:
+            existing_quality=cached(directory/"quality.json")
+            if not isinstance(existing_quality,dict) or len(existing_quality.get("framewise",[]))!=protocol.video_shape[0] or len(existing_quality.get("temporal_framewise",[]))!=protocol.video_shape[0]-1:
+                if rgb is None or base_rgb is None:
+                    raise OSError("quality unavailable: saved RGB or BASE RGB is unreadable; completed observations retained without re-decode")
+                write_json(directory/"quality.json",quality(rgb,base_rgb,protocol));flush()
+        except Exception as exc:
+            # Missing quality does not erase raw or gate the adopted method calls.
+            failure(name+"_quality",exc)
         flush()
         return rgb
 
     def gradient(terminal,step,reference):
-        ledger=ReplayLedger(callback=lambda summary:(result["replay"].update({step:summary}),flush()))
+        checkpoint=output/"gradients"/(step+"_checkpoint.pt")
+        def valid_bundle(bundle):
+            tensor_contract(bundle["input_terminal"],latent_shape)
+            tensor_contract(bundle["gradient"],latent_shape)
+            if torch.count_nonzero(bundle["gradient"]-masked(bundle["gradient"],support)):
+                raise ValueError("saved gradient lies outside adopted support")
+            if not torch.equal(bundle["input_terminal"],terminal):
+                raise ValueError("saved gradient belongs to a different step input")
+        bundle=cached(checkpoint,valid_bundle,tensor=True)
+        if bundle is not None:
+            result["gradient_readouts"][step]=bundle["readout"]
+            if not (output/"gradients"/(step+".pt")).exists():
+                save_tensor(output/"gradients"/(step+".pt"),bundle["gradient"])
+            return bundle["gradient"]
+        require_model()
+        def replay_progress(summary):
+            result["replay"][step]=summary
+            result["model_calls"][step+"_gradient_decode"]["replay"]=summary
+            flush()
+        ledger=ReplayLedger(callback=replay_progress)
         z=terminal.to(config.get("device","cuda")).clone().requires_grad_(True)
         adapter._clear_cache(model)
         original_decode=model.decode
@@ -267,6 +466,9 @@ def run(config, output, *, loader=None, protocol=carrier.PUBLIC, latent_shape=LA
             g=masked(g.detach(),support).cpu()
             if not bool(torch.isfinite(g).all()):
                 raise FloatingPointError("nonfinite masked scalar gradient")
+            resume.atomic_tensor(checkpoint,dict(input_terminal=terminal.detach().cpu(),gradient=g,
+                readout=report))
+            flush()
             save_tensor(output/"gradients"/(step+".pt"),g)
             return g
         finally:
@@ -278,19 +480,33 @@ def run(config, output, *, loader=None, protocol=carrier.PUBLIC, latent_shape=LA
 
     try:
         for name in method.VIEWS:
-            write_json(output/name/"raw.json",[])
-            write_json(output/name/"metrics.json",posthoc.missing_evaluation("not_run"))
+            if not (output/name/"raw.json").exists():
+                write_json(output/name/"raw.json",[])
+            if not (output/name/"metrics.json").exists():
+                write_json(output/name/"metrics.json",posthoc.missing_evaluation("not_run"))
         flush()
         c=config["carrier"]
         if (c["key"],c["message_hex"],c["rho"],c["cap"]) != (KEY,"8001a55a",.5,1.):
             raise ValueError("adopted key/message/rho/total cap required")
-        z0=torch.load(config["inputs"]["terminal_latent"],map_location="cpu",weights_only=True)
+        if config.get("objective") != method.PARAMETERS:
+            raise ValueError("adopted all-bit mu/gamma/weights/two-half-step parameters required")
+        if prior is not None and reports_complete(output):
+            result["status"]="COMPLETE"
+            result["last_resume_action"]="report_only; no model or tensor work"
+            return result
+        z0=tensor_value(output/"inputs/terminal_latent.pt",latent_shape)
+        if z0 is None:
+            z0=torch.load(config["inputs"]["terminal_latent"],map_location="cpu",weights_only=True)
+            tensor_contract(z0,latent_shape)
+            save_tensor(output/"inputs/terminal_latent.pt",z0);flush()
         result["input_contract"]=dict(terminal=tensor_contract(z0,latent_shape))
         support.validate_for(tuple(z0.shape))
         if config.get("objective") != method.PARAMETERS:
             raise ValueError("adopted all-bit mu/gamma/weights/two-half-step parameters required")
         try:
-            delta=torch.load(config["inputs"]["two_mean_delta"],map_location="cpu",weights_only=True)
+            delta=tensor_value(output/"inputs/two_mean_delta.pt",latent_shape)
+            if delta is None:
+                delta=torch.load(config["inputs"]["two_mean_delta"],map_location="cpu",weights_only=True)
             contract=tensor_contract(delta,latent_shape)
             norm=float(delta.double().norm())
             outside=float((delta-masked(delta,support)).double().norm())
@@ -298,14 +514,11 @@ def run(config, output, *, loader=None, protocol=carrier.PUBLIC, latent_shape=LA
             # Validate mathematical semantics; never renormalize or remask the saved comparator.
             if outside!=0 or norm > 1.+8*torch.finfo(delta.dtype).eps:
                 raise ValueError("saved TWO_MEAN delta requires original mask and cumulative L2<=1 (FP32 rounding allowed)")
+            if tensor_value(output/"inputs/two_mean_delta.pt",latent_shape) is None:
+                save_tensor(output/"inputs/two_mean_delta.pt",delta);flush()
             saved["TWO_MEAN_SAVED"]=delta
         except Exception as exc:
             failure("TWO_MEAN_SAVED",exc)
-        if torch.cuda.is_available() and str(config.get("device","cuda")).startswith("cuda"):
-            torch.cuda.reset_peak_memory_stats()
-        model=call("load",lambda:(loader or generation.load_frozen_vae)(config,device=config.get("device","cuda")))
-        WanPosteriorBackend(model)
-        result["actual_model_execution"]="REAL" if loader is None else "INJECTED_TEST_DOUBLE"
         # Both controls are attempted independently before any new direction is formed.
         for name in method.VIEWS[:2]:
             delta=torch.zeros_like(z0) if name=="BASE" else saved.get(name)
@@ -319,6 +532,9 @@ def run(config, output, *, loader=None, protocol=carrier.PUBLIC, latent_shape=LA
         for k,(reference,target) in enumerate((("BASE","ALLBIT_HALF"),("ALLBIT_HALF","ALLBIT_TWO")),1):
             step=f"step_{k}"
             result["steps"][step].update(reference=reference,target=target)
+            if result["steps"][step]["status"] in ("ZERO_GRADIENT","UNDEFINED_ACTIVE_STATE_MAX_TIE"):
+                result["direction_status"]=result["steps"][step]["status"]
+                break
             if result["views"][reference]["status"] != "SCORED":
                 result["steps"][step]["status"]="UNDEFINED_MISSING_START_READ"
                 result["direction_status"]="UNDEFINED_MISSING_START_READ"
@@ -328,17 +544,35 @@ def run(config, output, *, loader=None, protocol=carrier.PUBLIC, latent_shape=LA
                 if ordinary_loss["active_state_tie"]:
                     raise method.UndefinedActiveTie("ACTIVE_STATE_MAX_TIE in ordinary "+reference+" read")
                 terminal=z0+delta
-                g=gradient(terminal,step,reference)
-                updated,report=method.descent_delta(delta,g)
-                report.update(reference=reference,target=target)
+                unit_path=output/(step+"_unit.pt")
+                def valid_step(unit):
+                    tensor_contract(unit["input_terminal"],latent_shape)
+                    if not torch.equal(unit["input_terminal"],terminal):
+                        raise ValueError("saved step belongs to a different input terminal")
+                    if unit["delta"] is not None:
+                        tensor_contract(unit["delta"],latent_shape)
+                        tensor_contract(unit["terminal"],latent_shape)
+                        if torch.count_nonzero(unit["delta"]-masked(unit["delta"],support)) or float(unit["delta"].double().norm()) > 1.+8*torch.finfo(unit["delta"].dtype).eps:
+                            raise ValueError("saved step delta violates adopted mask or cap")
+                        if not torch.equal(unit["terminal"],z0+unit["delta"]):
+                            raise ValueError("saved terminal does not represent the saved BASE-relative delta")
+                unit=cached(unit_path,valid_step,tensor=True)
+                if unit is None:
+                    g=gradient(terminal,step,reference)
+                    updated,report=method.descent_delta(delta,g)
+                    report.update(reference=reference,target=target)
+                    if updated is not None:
+                        actual_increment=(z0+updated).double()-terminal.double()
+                        report.update(actual_terminal_increment_l2=float(actual_increment.norm()),
+                            predicted_loss_change_actual_terminal_increment=float((g.double()*actual_increment).sum()))
+                    resume.atomic_tensor(unit_path,dict(input_terminal=terminal,delta=updated,
+                        terminal=None if updated is None else z0+updated,report=report))
+                    del g;gc.collect()
+                else:
+                    updated,report=unit["delta"],unit["report"]
                 result["steps"][step]=report
                 result["direction_status"]=report["status"]
-                if updated is not None:
-                    actual_increment=(z0+updated).double()-terminal.double()
-                    report.update(actual_terminal_increment_l2=float(actual_increment.norm()),
-                        predicted_loss_change_actual_terminal_increment=float((g.double()*actual_increment).sum()))
                 write_json(output/(step+".json"),report);flush()
-                del g;gc.collect()
                 if updated is None:
                     break
                 delta=updated
@@ -385,8 +619,9 @@ def run(config, output, *, loader=None, protocol=carrier.PUBLIC, latent_shape=LA
                 adapter._clear_cache(model)
             except Exception as exc:
                 result["cleanup_errors"].append(repr(exc))
+        used_model=model is not None
         model=None;gc.collect()
-        if torch.cuda.is_available():
+        if used_model and str(config.get("device","cuda")).startswith("cuda"):
             result["resources"]=dict(cuda_peak_allocated_bytes=torch.cuda.max_memory_allocated(),
                                      cuda_peak_reserved_bytes=torch.cuda.max_memory_reserved())
             torch.cuda.empty_cache()
@@ -408,5 +643,10 @@ def run(config, output, *, loader=None, protocol=carrier.PUBLIC, latent_shape=LA
             if row["observed_metrics"]==0:
                 write_json(output/name/"metrics.json",posthoc.missing_evaluation(row["reason"] or "missing"))
         refresh_reports(output,result)
+        current_calls=[row for row in result["call_history"] if row["id"].startswith(attempt+"_")]
+        result["current_attempt_counts"]={kind+"_"+phase:sum(row["kind"]==kind and
+            (phase=="attempted" or row["status"]=="RETURNED") for row in current_calls)
+            for kind in ("vae_load","decode","decoder_vjp") for phase in ("attempted","completed")}
         result["finished_at_unix"]=time.time();flush()
+        resume.atomic_bytes(output/"attempts"/(attempt+".json"),resume.json_bytes(result))
     return result
