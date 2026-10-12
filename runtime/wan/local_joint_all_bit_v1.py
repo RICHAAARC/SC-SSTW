@@ -32,14 +32,14 @@ def save_tensor(path, tensor):
     resume.atomic_tensor(path, tensor.detach().cpu())
 
 
-def initial_result(config):
+def initial_result(config, *, method=method, ceiling=CEILING):
     calls = {"load": dict(kind="vae_load", status="NOT_RUN")}
     calls.update({name: dict(kind="decode", status="NOT_RUN") for name in method.VIEWS})
     for k in (1,2):
         calls[f"step_{k}_gradient_decode"] = dict(kind="decode", status="NOT_RUN")
         calls[f"step_{k}_vjp"] = dict(kind="decoder_vjp", status="NOT_RUN")
-    return dict(schema="local-joint-all-bit-v1", status="RUNNING", config=config,
-        ceiling=CEILING, scientific_pass=False, expected_cost=EXPECTED, automatic_retry=False,
+    return dict(schema=config.get("schema","local-joint-all-bit-v1"), status="RUNNING", config=config,
+        ceiling=ceiling, scientific_pass=False, expected_cost=EXPECTED, automatic_retry=False,
         counts={**{f"{k}_{phase}": 0 for k in ("vae_load", "decode", "decoder_vjp")
                    for phase in ("attempted", "completed")}, "encode":0, "dit":0, "native":0, "scheduler":0, "codec":0},
         ordinary_chunks=dict(attempted=0, completed=0), replay={}, model_calls=calls,
@@ -52,7 +52,7 @@ def initial_result(config):
         direction_status="NOT_RUN", quality_frames=list(method.FRAMES))
 
 
-def loss_from_values(values):
+def loss_from_values(values, *, method=method):
     if any(x is None for x in values["margins"]+[values["state_gap"]]):
         return None
     return method.loss_summary(values["margins"],values["state_gap"],values["active"]["other_offsets"])
@@ -76,10 +76,12 @@ def compare_values(reference, target):
                       else reference["active"] != target["active"])
 
 
-def refresh_reports(output, result):
+def refresh_reports(output, result, *, method=method):
     """Durable raw/metrics only: no pixel loading, rescoring, VJP or model calls."""
     output = Path(output)
     metrics,losses = {},{}
+    base,start,middle,final=method.VIEWS
+    pairs=getattr(method,"STEP_PAIRS",((base,middle),(middle,final)))
     for name in method.VIEWS:
         path = output/name/"metrics.json"
         try:
@@ -88,7 +90,7 @@ def refresh_reports(output, result):
         except (OSError,ValueError,KeyError,TypeError,AttributeError):
             evaluation = posthoc.missing_evaluation("unreadable_or_missing_metrics")
         values = metrics[name] = metric_values(evaluation)
-        losses[name] = loss_from_values(values)
+        losses[name] = loss_from_values(values,method=method)
         raw_path = output/name/"raw.json"
         try:
             rows = resume.read_json(raw_path)
@@ -115,7 +117,7 @@ def refresh_reports(output, result):
             reference_summary=losses[a],target_summary=losses[b])
         return answer
     step_changes={}
-    for k,(a,b) in enumerate((("BASE","ALLBIT_HALF"),("ALLBIT_HALF","ALLBIT_TWO")),1):
+    for k,(a,b) in enumerate(pairs,1):
         row=compare(a,b)
         row["predicted_loss_change"]=result["steps"][f"step_{k}"].get("predicted_loss_change")
         row["prediction_meaning"]="one scalar loss slope; not 32 component slopes"
@@ -127,21 +129,36 @@ def refresh_reports(output, result):
             return None if margins[a] is None or margins[b] is None else margins[b]-margins[a]
         table.append(dict(fragment=i//8,bit=i%8,margins=margins,
             versus_base={name:change("BASE",name) for name in method.VIEWS[1:]},
-            versus_saved_mean={name:change("TWO_MEAN_SAVED",name) for name in ("ALLBIT_HALF","ALLBIT_TWO")},
-            half_to_two=change("ALLBIT_HALF","ALLBIT_TWO"),
+            **{("versus_saved_mean" if start=="TWO_MEAN_SAVED" else "versus_start"):
+               {name:change(start,name) for name in (middle,final)}},
+            **{("half_to_two" if middle=="ALLBIT_HALF" else "mid_to_final"):change(middle,final)},
             nonpositive_deficits={name:None if x is None else max(0.,-x) for name,x in margins.items()}))
     write_json(output/"comparison.json",dict(metrics=metrics,losses=losses,
         versus_base={name:compare("BASE",name) for name in method.VIEWS[1:]},
-        primary_comparison=compare("TWO_MEAN_SAVED","ALLBIT_TWO"),
-        half_to_two=compare("ALLBIT_HALF","ALLBIT_TWO"),steps=step_changes,bits_32=table,ceiling=CEILING))
+        primary_comparison=compare(start,final),
+        **{("half_to_two" if middle=="ALLBIT_HALF" else "mid_to_final"):compare(middle,final)},
+        steps=step_changes,bits_32=table,ceiling=result["ceiling"]))
+    if hasattr(method,"TRACKED_BITS"):
+        tracking={}
+        for name in method.VIEWS:
+            margins=metrics[name]["margins"]
+            positives=[i for i,x in enumerate(margins) if x is not None and x>0]
+            tracking[name]=dict(six_original_negative_bits={str(i):margins[i] for i in method.TRACKED_BITS},
+                original_26_positive_bits={str(i):margins[i] for i in method.PRIOR_POSITIVE_BITS},
+                lost_original_positive_bits=[i for i in method.PRIOR_POSITIVE_BITS if margins[i] is not None and margins[i]<=0],
+                weak_original_f3b5=margins[29],
+                current_weakest_positive=None if not positives else dict(bit=min(positives,key=lambda i:margins[i]),margin=min(margins[i] for i in positives)),
+                state_gap=metrics[name]["state_gap"],loss=losses[name])
+        write_json(output/"tracked_bits.json",dict(bit_index="fragment*8+bit; zero based",views=tracking,
+            historical_start_positive_count=26,historical_negative_count=6,diagnostic_only=True))
     result["totals"] = {field:sum(x[field] for x in result["views"].values())
                        for field in ("expected_windows","expected_chips","expected_metrics",
                                      "observed_windows","observed_chips","observed_metrics")}
 
 
-def finalize_interrupted(output, reason):
+def finalize_interrupted(output, reason, *, method=method):
     output = Path(output)
-    result = resume.read_state(output)
+    result = resume.read_state(output,views=method.VIEWS)
     if result is None:
         return None
     if result["status"] != "RUNNING":
@@ -161,11 +178,11 @@ def finalize_interrupted(output, reason):
     for row in result["steps"].values():
         if row["status"] == "NOT_RUN":
             row.update(status="MISSING_DEPENDENCY",reason=reason)
-    refresh_reports(output,result)
+    refresh_reports(output,result,method=method)
     for row in result.get("call_history", []):
         if row["status"] == "RUNNING":
             row.update(status="INTERRUPTED_COMPLETION_UNKNOWN", reason=reason)
-    resume.Journal(output).save(result)
+    resume.Journal(output,views=method.VIEWS).save(result)
     return result
 
 
@@ -201,24 +218,24 @@ def observation_saved(directory):
         return False
 
 
-def terminal_missing_views(output):
+def terminal_missing_views(output, *, method=method):
     """Method-defined terminal outcomes keep dependent slots missing permanently."""
-    state=resume.read_state(output)
+    state=resume.read_state(output,views=method.VIEWS)
     if state is None:
         return set()
     terminal={"ZERO_GRADIENT","UNDEFINED_ACTIVE_STATE_MAX_TIE"}
     if state["steps"]["step_1"]["status"] in terminal:
-        return {"ALLBIT_HALF","ALLBIT_TWO"}
+        return set(method.VIEWS[2:])
     if state["steps"]["step_2"]["status"] in terminal:
-        return {"ALLBIT_TWO"}
+        return {method.VIEWS[3]}
     return set()
 
 
-def reports_complete(output):
+def reports_complete(output, *, method=method):
     """Small-artifact check for report-only re-entry, without loading model tensors."""
     output=Path(output)
     try:
-        skipped=terminal_missing_views(output)
+        skipped=terminal_missing_views(output,method=method)
         for name in method.VIEWS:
             if name in skipped:
                 continue
@@ -236,29 +253,29 @@ def reports_complete(output):
         return False
 
 
-def model_work_remaining(output):
+def model_work_remaining(output, *, method=method):
     """Notebook dependency hint only. The runner validates actual cached units."""
     output=Path(output)
-    if reports_complete(output):
+    if reports_complete(output,method=method):
         return False
-    skipped=terminal_missing_views(output)
+    skipped=terminal_missing_views(output,method=method)
     if any(not (output/name/"float_rgb.pt").is_file() and not observation_saved(output/name)
            for name in method.VIEWS if name not in skipped):
         return True
     return any(not (output/(step+"_unit.pt")).is_file() and
                not (output/"gradients"/(step+"_checkpoint.pt")).is_file()
-               for step,target in (("step_1","ALLBIT_HALF"),("step_2","ALLBIT_TWO"))
+               for step,target in (("step_1",method.VIEWS[2]),("step_2",method.VIEWS[3]))
                if target not in skipped)
 
 
-def run(config, output, **kwargs):
-    journal = resume.Journal(output)
+def run(config, output, *, method=method, **kwargs):
+    journal = resume.Journal(output,views=method.VIEWS)
     with journal.periodic():
-        return _run(config, output, journal=journal, **kwargs)
+        return _run(config, output, journal=journal, method=method, **kwargs)
 
 
 def _run(config, output, *, journal, loader=None, protocol=carrier.PUBLIC, latent_shape=LATENT_SHAPE,
-        support=PUBLIC_LATENT_SUPPORT, source_identity=None):
+        support=PUBLIC_LATENT_SUPPORT, source_identity=None, method=method, continuation=False, ceiling=CEILING):
     import torch
 
     output = Path(output)
@@ -266,8 +283,8 @@ def _run(config, output, *, journal, loader=None, protocol=carrier.PUBLIC, laten
         if output.resolve().is_relative_to(Path(input_path).resolve().parent):
             raise ValueError("fresh output must be outside saved input directories")
     output.mkdir(parents=True,exist_ok=True)
-    prior = resume.read_state(output)
-    result = prior or initial_result(config)
+    prior = resume.read_state(output,views=method.VIEWS)
+    result = prior or initial_result(config,method=method,ceiling=ceiling)
     # Preserve every physical call and failed process; successful recovery gets a
     # fresh current-attempt status without erasing the historical evidence.
     attempt = str(time.time_ns())
@@ -291,6 +308,8 @@ def _run(config, output, *, journal, loader=None, protocol=carrier.PUBLIC, laten
     result["started_at_unix"] = time.time()
     model, base_rgb = None, None
     saved = {}
+    base_name,start_name,middle_name,final_name=method.VIEWS
+    pairs=getattr(method,"STEP_PAIRS",((base_name,middle_name),(middle_name,final_name)))
 
     def flush():
         journal.save(result)
@@ -309,6 +328,15 @@ def _run(config, output, *, journal, loader=None, protocol=carrier.PUBLIC, laten
 
     def tensor_value(path, shape, bounded=False):
         return cached(path, lambda v:tensor_contract(v,shape,bounded_rgb=bounded), tensor=True)
+
+    def delta_value(path):
+        def validate(value):
+            if continuation:
+                if value.dtype!=torch.float64 or tuple(value.shape)!=tuple(latent_shape) or not bool(torch.isfinite(value).all()):
+                    raise ValueError("finite FP64 actual displacement required")
+            else:
+                tensor_contract(value,latent_shape)
+        return cached(path,validate,tensor=True)
 
     def require_model():
         nonlocal model
@@ -365,7 +393,7 @@ def _run(config, output, *, journal, loader=None, protocol=carrier.PUBLIC, laten
         saved_terminal=tensor_value(directory/"terminal_latent.pt",latent_shape)
         if saved_terminal is None or not torch.equal(saved_terminal,terminal):
             save_tensor(directory/"terminal_latent.pt",terminal)
-        saved_delta=tensor_value(directory/"delta.pt",latent_shape)
+        saved_delta=delta_value(directory/"delta.pt")
         if saved_delta is None or not torch.equal(saved_delta,delta):
             save_tensor(directory/"delta.pt",delta)
         actual=terminal.double()-z0.double()
@@ -373,7 +401,8 @@ def _run(config, output, *, journal, loader=None, protocol=carrier.PUBLIC, laten
             actual_terminal_minus_base_l2=float(actual.norm()),
             planned_mask_outside_l2=float((delta-masked(delta,support)).double().norm()),
             actual_mask_outside_l2=float((actual-masked(actual,support)).norm()),
-            addition_rounding_l2=float((actual-delta.double()).norm()))
+            addition_rounding_l2=float((actual-delta.double()).norm()),
+            saved_delta_semantics="actual FP64 terminal minus BASE" if continuation else "planned FP32 displacement")
         rows=cached(directory/"raw.json",validate_raw)
         evaluation=cached(directory/"metrics.json")
         completed_observation=rows is not None or evaluation_complete(evaluation)
@@ -400,7 +429,7 @@ def _run(config, output, *, journal, loader=None, protocol=carrier.PUBLIC, laten
         count=sum(x is not None for x in values["correlations"]+values["margins"]+[values["state_gap"]])
         result["views"][name].update(status="SCORED" if count==55 else "MISSING",reason=None if count==55 else "incomplete_readout",
             observed_windows=len(rows),observed_metrics=count,
-            observed_chips=sum(c["q"] is not None for r in rows for c in r["state_chips"]+r["payload_chips"]),**values,loss=loss_from_values(values))
+            observed_chips=sum(c["q"] is not None for r in rows for c in r["state_chips"]+r["payload_chips"]),**values,loss=loss_from_values(values,method=method))
         write_json(directory/"loss.json",result["views"][name]["loss"])
         try:
             existing_quality=cached(directory/"quality.json")
@@ -489,8 +518,8 @@ def _run(config, output, *, journal, loader=None, protocol=carrier.PUBLIC, laten
         if (c["key"],c["message_hex"],c["rho"],c["cap"]) != (KEY,"8001a55a",.5,1.):
             raise ValueError("adopted key/message/rho/total cap required")
         if config.get("objective") != method.PARAMETERS:
-            raise ValueError("adopted all-bit mu/gamma/weights/two-half-step parameters required")
-        if prior is not None and reports_complete(output):
+            raise ValueError("adopted all-bit loss and step parameters required")
+        if prior is not None and reports_complete(output,method=method):
             result["status"]="COMPLETE"
             result["last_resume_action"]="report_only; no model or tensor work"
             return result
@@ -502,34 +531,56 @@ def _run(config, output, *, journal, loader=None, protocol=carrier.PUBLIC, laten
         result["input_contract"]=dict(terminal=tensor_contract(z0,latent_shape))
         support.validate_for(tuple(z0.shape))
         if config.get("objective") != method.PARAMETERS:
-            raise ValueError("adopted all-bit mu/gamma/weights/two-half-step parameters required")
-        try:
-            delta=tensor_value(output/"inputs/two_mean_delta.pt",latent_shape)
-            if delta is None:
-                delta=torch.load(config["inputs"]["two_mean_delta"],map_location="cpu",weights_only=True)
-            contract=tensor_contract(delta,latent_shape)
-            norm=float(delta.double().norm())
-            outside=float((delta-masked(delta,support)).double().norm())
-            result["input_contract"]["two_mean_delta"]={**contract,"l2":norm,"mask_outside_l2":outside}
-            # Validate mathematical semantics; never renormalize or remask the saved comparator.
-            if outside!=0 or norm > 1.+8*torch.finfo(delta.dtype).eps:
-                raise ValueError("saved TWO_MEAN delta requires original mask and cumulative L2<=1 (FP32 rounding allowed)")
-            if tensor_value(output/"inputs/two_mean_delta.pt",latent_shape) is None:
-                save_tensor(output/"inputs/two_mean_delta.pt",delta);flush()
-            saved["TWO_MEAN_SAVED"]=delta
-        except Exception as exc:
-            failure("TWO_MEAN_SAVED",exc)
-        # Both controls are attempted independently before any new direction is formed.
-        for name in method.VIEWS[:2]:
-            delta=torch.zeros_like(z0) if name=="BASE" else saved.get(name)
-            if delta is None:
-                continue
+            raise ValueError("adopted all-bit loss and step parameters required")
+        if continuation:
             try:
-                observe(name,z0+delta,delta)
+                start=tensor_value(output/"inputs/start_terminal.pt",latent_shape)
+                start_was_cached=start is not None
+                if start is None:
+                    bundle=torch.load(config["inputs"]["start_step_unit"],map_location="cpu",weights_only=True)
+                    start=bundle["terminal"]
+                    tensor_contract(start,latent_shape)
+                actual=start.double()-z0.double()
+                outside=float((actual-masked(actual,support)).norm())
+                if outside!=0 or float(actual.norm())>1.:
+                    raise ValueError("actual START requires adopted support and original BASE radius <=1")
+                if not start_was_cached:
+                    save_tensor(output/"inputs/start_terminal.pt",start)
+                saved[start_name]=(start,actual)
+                result["input_contract"]["start_terminal"]=dict(tensor_contract(start,latent_shape),
+                    actual_base_l2=float(actual.norm()),mask_outside_l2=outside,source_field="terminal")
+                flush()
+            except Exception as exc:
+                failure(start_name,exc)
+        else:
+            try:
+                delta=tensor_value(output/"inputs/two_mean_delta.pt",latent_shape)
+                if delta is None:
+                    delta=torch.load(config["inputs"]["two_mean_delta"],map_location="cpu",weights_only=True)
+                contract=tensor_contract(delta,latent_shape)
+                norm=float(delta.double().norm())
+                outside=float((delta-masked(delta,support)).double().norm())
+                result["input_contract"]["two_mean_delta"]={**contract,"l2":norm,"mask_outside_l2":outside}
+                if outside!=0 or norm>1.+8*torch.finfo(delta.dtype).eps:
+                    raise ValueError("saved TWO_MEAN delta requires original mask and cumulative L2<=1 (FP32 rounding allowed)")
+                if tensor_value(output/"inputs/two_mean_delta.pt",latent_shape) is None:
+                    save_tensor(output/"inputs/two_mean_delta.pt",delta);flush()
+                saved[start_name]=(z0+delta,delta)
+            except Exception as exc:
+                failure(start_name,exc)
+        saved[base_name]=(z0,torch.zeros_like(z0,dtype=torch.float64 if continuation else z0.dtype))
+        # Both controls are independent; actual START is never rebuilt from an old delta.
+        for name in method.VIEWS[:2]:
+            if name not in saved:
+                continue
+            control,delta=saved[name]
+            try:
+                observe(name,control,delta)
             except Exception as exc:
                 failure(name,exc)
         delta=torch.zeros_like(z0)
-        for k,(reference,target) in enumerate((("BASE","ALLBIT_HALF"),("ALLBIT_HALF","ALLBIT_TWO")),1):
+        current=saved.get(start_name,(None,None))[0] if continuation else z0
+        for k,(reference,target) in enumerate(pairs,1):
             step=f"step_{k}"
             result["steps"][step].update(reference=reference,target=target)
             if result["steps"][step]["status"] in ("ZERO_GRADIENT","UNDEFINED_ACTIVE_STATE_MAX_TIE"):
@@ -543,39 +594,53 @@ def _run(config, output, *, journal, loader=None, protocol=carrier.PUBLIC, laten
                 ordinary_loss=result["views"][reference]["loss"]
                 if ordinary_loss["active_state_tie"]:
                     raise method.UndefinedActiveTie("ACTIVE_STATE_MAX_TIE in ordinary "+reference+" read")
-                terminal=z0+delta
+                terminal=current if continuation else z0+delta
                 unit_path=output/(step+"_unit.pt")
                 def valid_step(unit):
                     tensor_contract(unit["input_terminal"],latent_shape)
                     if not torch.equal(unit["input_terminal"],terminal):
                         raise ValueError("saved step belongs to a different input terminal")
                     if unit["delta"] is not None:
-                        tensor_contract(unit["delta"],latent_shape)
                         tensor_contract(unit["terminal"],latent_shape)
-                        if torch.count_nonzero(unit["delta"]-masked(unit["delta"],support)) or float(unit["delta"].double().norm()) > 1.+8*torch.finfo(unit["delta"].dtype).eps:
+                        if continuation:
+                            actual=unit["terminal"].double()-z0.double()
+                            if unit["delta"].dtype!=torch.float64 or not torch.equal(unit["delta"],actual):
+                                raise ValueError("saved delta must be the actual FP64 terminal minus BASE")
+                            cap=1.
+                        else:
+                            tensor_contract(unit["delta"],latent_shape)
+                            cap=1.+8*torch.finfo(unit["delta"].dtype).eps
+                            if not torch.equal(unit["terminal"],z0+unit["delta"]):
+                                raise ValueError("saved terminal does not represent the saved BASE-relative delta")
+                        if torch.count_nonzero(unit["delta"]-masked(unit["delta"],support)) or float(unit["delta"].double().norm())>cap:
                             raise ValueError("saved step delta violates adopted mask or cap")
-                        if not torch.equal(unit["terminal"],z0+unit["delta"]):
-                            raise ValueError("saved terminal does not represent the saved BASE-relative delta")
                 unit=cached(unit_path,valid_step,tensor=True)
                 if unit is None:
                     g=gradient(terminal,step,reference)
-                    updated,report=method.descent_delta(delta,g)
+                    if continuation:
+                        next_terminal,report=method.descent_terminal(z0,terminal,g)
+                        updated=None if next_terminal is None else next_terminal.double()-z0.double()
+                    else:
+                        updated,report=method.descent_delta(delta,g)
+                        next_terminal=None if updated is None else z0+updated
+                        if updated is not None:
+                            actual_increment=next_terminal.double()-terminal.double()
+                            report.update(actual_terminal_increment_l2=float(actual_increment.norm()),
+                                predicted_loss_change_actual_terminal_increment=float((g.double()*actual_increment).sum()))
                     report.update(reference=reference,target=target)
-                    if updated is not None:
-                        actual_increment=(z0+updated).double()-terminal.double()
-                        report.update(actual_terminal_increment_l2=float(actual_increment.norm()),
-                            predicted_loss_change_actual_terminal_increment=float((g.double()*actual_increment).sum()))
                     resume.atomic_tensor(unit_path,dict(input_terminal=terminal,delta=updated,
-                        terminal=None if updated is None else z0+updated,report=report))
+                        terminal=next_terminal,report=report))
                     del g;gc.collect()
                 else:
                     updated,report=unit["delta"],unit["report"]
+                    next_terminal=unit["terminal"]
                 result["steps"][step]=report
                 result["direction_status"]=report["status"]
                 write_json(output/(step+".json"),report);flush()
                 if updated is None:
                     break
                 delta=updated
+                current=next_terminal
                 result["views"][target]["direction_status"]="DEFINED"
             except method.UndefinedActiveTie as exc:
                 result["steps"][step].update(status="UNDEFINED_ACTIVE_STATE_MAX_TIE",reason=str(exc))
@@ -589,18 +654,18 @@ def _run(config, output, *, journal, loader=None, protocol=carrier.PUBLIC, laten
             # Direction formation already completed and is durable. A scoring decode/read
             # failure cannot retrospectively make that direction undefined.
             try:
-                observe(target,z0+delta,delta)
+                observe(target,current,delta)
             except Exception as exc:
                 failure(target,exc)
-                if target=="ALLBIT_HALF":
-                    reason="ALLBIT_HALF observation failed: "+repr(exc)
+                if target==middle_name:
+                    reason=middle_name+" observation failed: "+repr(exc)
                     result["steps"]["step_2"].update(status="MISSING_DEPENDENCY",reason=reason,
-                        reference="ALLBIT_HALF",target="ALLBIT_TWO")
-                    result["views"]["ALLBIT_TWO"]["reason"]=reason
+                        reference=middle_name,target=final_name)
+                    result["views"][final_name]["reason"]=reason
                 break
         if base_rgb is not None:
             try:
-                visuals=export_visuals(output,base_rgb)
+                visuals=export_visuals(output,base_rgb,views=method.VIEWS)
                 result["quality_frames"]=visuals["frame_indices"]
                 for error in visuals["failures"]:
                     failure(error["view"]+"_visuals",OSError(error["reason"]))
@@ -638,11 +703,11 @@ def _run(config, output, *, journal, loader=None, protocol=carrier.PUBLIC, laten
                 row["status"]="MISSING_DEPENDENCY"
             elif row["status"]=="RUNNING":
                 row["status"]="INTERRUPTED_COMPLETION_UNKNOWN"
-        refresh_reports(output,result)
+        refresh_reports(output,result,method=method)
         for name,row in result["views"].items():
             if row["observed_metrics"]==0:
                 write_json(output/name/"metrics.json",posthoc.missing_evaluation(row["reason"] or "missing"))
-        refresh_reports(output,result)
+        refresh_reports(output,result,method=method)
         current_calls=[row for row in result["call_history"] if row["id"].startswith(attempt+"_")]
         result["current_attempt_counts"]={kind+"_"+phase:sum(row["kind"]==kind and
             (phase=="attempted" or row["status"]=="RETURNED") for row in current_calls)

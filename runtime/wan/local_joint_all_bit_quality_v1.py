@@ -56,10 +56,10 @@ def quality(rgb,base,protocol):
     return report
 
 
-def selection(reports,frame_count):
+def selection(reports,frame_count, *, views=method.VIEWS):
     frames={t for t in method.FRAMES if 0<=t<frame_count}
     crops=[]
-    for name in method.VIEWS[1:]:
+    for name in views[1:]:
         for event in reports.get(name,{}).get("peak_events",[]):
             frames.update(event["neighborhood"])
             # Temporal events crop both endpoints, at the peak change pixel.
@@ -91,18 +91,18 @@ def render_pair(path,name,index,frame,reference, *, box=None):
     return dict(path=path.relative_to(path.parent.parent).as_posix(),display_clipped_pixels=clipped,box=box)
 
 
-def export_visuals(output,base):
+def export_visuals(output,base, *, views=method.VIEWS):
     """Load one saved view at a time, retaining only BASE and that view on CPU."""
     import torch
     output=Path(output)
     reports={name:json.loads((output/name/"quality.json").read_text())
-             for name in method.VIEWS if (output/name/"quality.json").exists()}
-    frames,crops=selection(reports,len(base))
+             for name in views if (output/name/"quality.json").exists()}
+    frames,crops=selection(reports,len(base),views=views)
     index=dict(frame_indices=frames,crop_requests=crops,views={},failures=[],
         rgb_range=[0,1],residual_range=[-.25,.25],numeric_metrics_unclipped=True,
         coordinates="zero-based; crop upper bounds exclusive",
         path_base="each view directory: <run>/<view>/<path>")
-    for name in method.VIEWS:
+    for name in views:
         path=output/name/"float_rgb.pt"
         if not path.exists():
             index["views"][name]=dict(status="MISSING",reason="float RGB missing")
