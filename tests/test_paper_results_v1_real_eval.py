@@ -130,7 +130,7 @@ def test_run_store_failure_retains_all_planned_rows_and_per_case_phase_state(tmp
             "pilot_01/OFF_NATIVE/TERMINAL", "pilot_01/PAYLOAD_NATIVE/TERMINAL",
         )
     ]
-    assert len(terminals) == 2 and all(row["status"] == "FAILED" for row in terminals)
+    assert len(terminals) == 2 and all(row["status"] == "PLANNED" for row in terminals)
     assert sum(row["status"] == "PLANNED" for row in reopened.data["receiver_slots"]) == 160
 
 
@@ -179,10 +179,10 @@ def test_timed_failure_retains_original_error_and_every_fixed_phase_row(
     assert cost["reason"] == "RuntimeError: original phase root cause"
     slots = [row for row in store.data[slot_key] if slot_filter(row)]
     assert len(slots) == expected_slots
-    assert all(row["status"] == "FAILED" and row["reason"] == cost["reason"] for row in slots)
+    assert all(row["status"] == "PLANNED" for row in slots)
     artifacts = [row for row in store.data["artifacts"] if artifact_filter(row)]
     assert len(artifacts) == expected_artifacts
-    assert all(row["status"] == "FAILED" and row["reason"] == cost["reason"] for row in artifacts)
+    assert all(row["status"] == "PLANNED" for row in artifacts)
     assert denominator == {
         "artifacts": len(store.data["artifacts"]),
         "baseline_slots": len(store.data["baseline_slots"]),
@@ -726,13 +726,15 @@ def test_videoseal_reducer_rejects_missing_or_extra_frames(monkeypatch, tmp_path
     assert "shape" in result["reason"]
 
 
-def test_expensive_phase_is_single_attempt_but_evaluate_can_regenerate(tmp_path):
+def test_unfinished_phase_can_resume_with_prior_failure_retained(tmp_path):
     config = one_case_config()
     store = real_eval.RunStore(tmp_path / "run", config, create=True)
     store.phase_start("generate", "pilot_01")
     store.phase_failure("generate", RuntimeError("synthetic first attempt"), "pilot_01")
-    with pytest.raises(real_eval.RealEvalConfigError, match="already attempted"):
-        store.phase_start("generate", "pilot_01")
+    store.phase_start("generate", "pilot_01")
+    case = store.data["phases"]["generate"]["cases"]["pilot_01"]
+    assert case["status"] == "RUNNING"
+    assert case["resume_history"][-1]["prior"]["status"] == "FAILED"
     assert store.data["phases"]["generate"]["cases"]["pilot_01"]["failures"] == [
         "RuntimeError: synthetic first attempt"
     ]

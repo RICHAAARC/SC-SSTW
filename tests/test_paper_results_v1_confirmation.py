@@ -89,7 +89,7 @@ class ConfirmationTests(unittest.TestCase):
             artifact_id = "confirm_01/OFF_NATIVE/full/RECEIVED"
             (attack / "attack_run_state.json").write_text(json.dumps({
                 "artifacts": [{"artifact_id": artifact_id, "status": "AVAILABLE", "shape": [5, 320, 512, 3]}],
-                "receiver_rows": [], "baseline_rows": [], "quality_rows": [], "records": {},
+                "receiver_rows": [], "baseline_rows": [], "quality_rows": [], "records": {}, "phases": {},
             }), encoding="utf-8")
             store = confirmation_v1.initialize(attack, root / "confirmation", config)
             maps = ([0, 1, 2, 3, 4], [4, 5, 6, 7, 8])
@@ -139,11 +139,14 @@ class ConfirmationTests(unittest.TestCase):
             fake_numpy = types.SimpleNamespace(
                 savez_compressed=lambda stream, **_arrays: stream.write(b"synthetic-npz"),
             )
-            with mock.patch.dict(sys.modules, {"numpy": fake_numpy}):
+            fake_torch = types.SimpleNamespace(cuda=types.SimpleNamespace(is_available=lambda:False))
+            with mock.patch.dict(sys.modules, {"numpy": fake_numpy, "torch": fake_torch}):
                 confirmation_v1.read_case(
                     store, "confirm_01", load_vae=lambda: object(), encode=encode,
                     payload_read=payload_read, load_rgb=lambda _group, _artifact: object(),
                     operate=lambda _received, _mapping: _TensorLike(),
+                    save_latent=lambda path, value: (path.parent.mkdir(parents=True, exist_ok=True), path.write_bytes(b"stub-latent")),
+                    load_latent=lambda path: _TensorLike(),
                 )
             self.assertEqual(calls["encode"], 1)
             self.assertEqual(calls["keys"], [config["keys"]["K0"], config["keys"]["K1"]])

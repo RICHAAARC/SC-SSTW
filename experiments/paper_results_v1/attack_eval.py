@@ -7,6 +7,9 @@ Receiver selection is blind; weighted edit truth is joined only in evaluation.
 """
 from __future__ import annotations
 
+from experiments.paper_results_v1.resume_state import retry_row, unit_attempt, remember
+from experiments.paper_results_v1.resume_media import load_rgb
+
 import copy
 import csv
 import gc
@@ -232,10 +235,15 @@ class AttackRunStore:
     def __init__(self, output, config, *, create=False, temp_root=None):
         self.output = Path(output).resolve()
         self.path = self.output / "attack_run_state.json"
+        from experiments.paper_results_v1.resume_state import StateJournal
+        self.journal = StateJournal(self.path)
         self.config = validate_config(config)
         self.temp_root = Path(temp_root).resolve() if temp_root else self.output / "temporary_rgb"
+        from experiments.paper_results_v1.resume_state import state_exists
+        if create and state_exists(self.path):
+            create = False
         if create:
-            self.output.mkdir(parents=True, exist_ok=False)
+            self.output.mkdir(parents=True, exist_ok=True)
             plan = build_plan(config)
             attempt_cases, _ = _execution_cases(config)
             cases = {
@@ -257,10 +265,12 @@ class AttackRunStore:
             }
             self.save()
         else:
-            self.data = read_json(self.path)
+            from experiments.paper_results_v1.resume_state import read_state
+            self.data = read_state(self.path)
+            self.journal.seed_cache(self.data)
 
     def save(self):
-        atomic_json(self.path, self.data)
+        self.journal.save(self.data)
 
     def artifact(self, artifact_id):
         return next(row for row in self.data["artifacts"] if row["artifact_id"] == artifact_id)
@@ -269,7 +279,8 @@ class AttackRunStore:
         row = self.data["phases"][phase]
         target = row if case_id is None else row["cases"][case_id]
         if target["status"] != "PLANNED":
-            raise AttackEvalError(f"{phase}/{case_id} already attempted as {target['status']}")
+            from experiments.paper_results_v1.resume_state import remember
+            remember(target, "resume unfinished phase; committed units skipped")
         target.update(status="RUNNING", started_at_unix=time.time())
         row["status"] = "RUNNING"
         self.save()
@@ -277,7 +288,16 @@ class AttackRunStore:
     def phase_finish(self, phase, case_id=None):
         row = self.data["phases"][phase]
         target = row if case_id is None else row["cases"][case_id]
-        target.update(status="COMPLETE", finished_at_unix=time.time())
+        pending = []
+        if case_id is not None:
+            pending += [item for item in self.data["artifacts"]
+                        if item["case_id"] == case_id and _phase_owns_artifact(phase, item)
+                        and item["status"] not in ("AVAILABLE", "NOT_EXECUTED_BY_NOTEBOOK")]
+            for collection in ("receiver_rows", "baseline_rows", "quality_rows"):
+                pending += [item for item in self.data[collection] if item["case_id"] == case_id
+                            and _phase_owns(phase, collection, item)
+                            and item["status"] in ("FAILED", "MISSING", "PLANNED", "PARTIAL", "RUNNING", "INTERRUPTED", "RECOVERY_PENDING", "RECOVERY_RUNNING")]
+        target.update(status="PARTIAL" if pending else "COMPLETE", finished_at_unix=time.time())
         if case_id is None:
             row["status"] = "COMPLETE"
         else:
@@ -296,18 +316,6 @@ class AttackRunStore:
         row["status"] = "FAILED"
         if phase == "quality" and case_id is not None:
             _seal_interrupted_quality_rows(self, case_id, reason)
-        if case_id is not None and not self.data.get("recovery", {}).get("retain_pending_on_interrupt"):
-            for item in self.data["artifacts"]:
-                if item["case_id"] == case_id and item["status"] == "PLANNED" and _phase_owns_artifact(phase, item):
-                    item.update(status="FAILED", reason=reason)
-            for collection in ("receiver_rows", "baseline_rows", "quality_rows"):
-                for item in self.data[collection]:
-                    if (
-                        item["case_id"] == case_id
-                        and item["status"] in ("PLANNED", "CLOCK_READY")
-                        and _phase_owns(phase, collection, item)
-                    ):
-                        item.update(status="FAILED", reason=reason)
         self.save()
         return reason
 
@@ -336,15 +344,19 @@ def _phase_owns_artifact(phase, row):
 
 
 def _timed(store, phase, case_id, function):
+    if store.data["phases"][phase]["cases"][case_id]["status"] == "COMPLETE":
+        return
     store.phase_start(phase, case_id)
     started = time.perf_counter()
     try:
-        value = function()
+        with store.journal.periodic():
+            value = function()
         store.data["costs"].append({
             "case_id": case_id, "phase": phase, "status": "COMPLETE",
             "seconds": time.perf_counter() - started,
         })
         store.phase_finish(phase, case_id)
+        store.journal.checkpoint("phase-complete")
         return value
     except BaseException as exc:
         store.data["costs"].append({
@@ -352,6 +364,7 @@ def _timed(store, phase, case_id, function):
             "seconds": time.perf_counter() - started, "reason": f"{type(exc).__name__}: {exc}",
         })
         store.phase_failure(phase, exc, case_id)
+        store.journal.checkpoint("phase-interrupted")
         raise
 
 
@@ -419,13 +432,17 @@ def _record_path(store, case_id, *parts):
 def phase_import_main(store, config, case_id):
     def execute():
         source_root = Path(config["source_run"]["run_dir"]).expanduser().resolve()
-        source_state = read_json(source_root / config["source_run"].get("run_state", "run_state.json"))
+        from experiments.paper_results_v1.resume_state import read_state
+        source_state = read_state(source_root / config["source_run"].get("run_state", "run_state.json"))
         source_artifacts = {row["artifact_id"]: row for row in source_state.get("artifacts", [])}
         imported = {}
         for arm in MAIN_ARMS:
             for phase in ("PRE", "POST"):
                 artifact_id = f"{case_id}/{arm}/{phase}"
                 target = store.artifact(artifact_id)
+                if target["status"] == "AVAILABLE":
+                    continue
+                retry_row(target)
                 source = source_artifacts.get(artifact_id)
                 try:
                     if not isinstance(source, dict) or source.get("status") != "AVAILABLE":
@@ -502,17 +519,21 @@ def phase_baseline_embed(store, config, case_id, method):
     phase = f"baseline-embed-{method}"
     def execute():
         target = store.artifact(f"{case_id}/{method}/NATIVE_PRE")
+        if target["status"] == "AVAILABLE":
+            return
+        retry_row(target)
         source = store.artifact(f"{case_id}/OFF_NATIVE/PRE")
         adapter = None
         try:
             if source["status"] != "AVAILABLE":
                 raise ValueError(f"OFF PRE is {source['status']}")
-            rgb = _load_rgb8(source)
+            rgb = load_rgb(store, source)
             adapter = _adapter(config, method, _record_path(store, case_id, method, "embed_sidecars"))
             bits = config["models"][method]["native_message_bits"]
             media_input = rgb.numpy() if method == "rivagan" else rgb
-            embedded, receipt = adapter.embed(media_input, bits)
-            media = _save_rgb8(store.temp_root / case_id / method / "native_pre.rgb8", embedded)
+            with unit_attempt(store, target["artifact_id"], operation="baseline_embed"):
+                embedded, receipt = adapter.embed(media_input, bits)
+            media = _save_rgb8(store.output / "pre_media" / case_id / method / "native_pre.rgb8", embedded)
             record = atomic_json(_record_path(store, case_id, method, "embed.json"), receipt)
             target.update(status="AVAILABLE", **media, embed_record=record)
             store.save()
@@ -531,15 +552,20 @@ def phase_baseline_codec(store, config, case_id):
         from runtime.wan.variable_rgb_media import roundtrip
         for method in BASELINES:
             target = store.artifact(f"{case_id}/{method}/NATIVE_POST")
+            if target["status"] == "AVAILABLE":
+                continue
+            retry_row(target)
             source = store.artifact(f"{case_id}/{method}/NATIVE_PRE")
             try:
                 if source["status"] != "AVAILABLE":
                     raise ValueError(f"{method} NATIVE_PRE is {source['status']}")
-                rgb = _load_rgb8(source)
-                received, receipt = roundtrip(
-                    rgb, store.temp_root / case_id / method / "native_codec",
-                    media_output=store.output / "media" / case_id / method / "native_codec",
-                )
+                rgb = load_rgb(store, source)
+                with unit_attempt(store, target["artifact_id"], operation="baseline_codec") as attempt:
+                    suffix = "attempt-" + str(attempt["attempt"])
+                    received, receipt = roundtrip(
+                        rgb, store.temp_root / case_id / method / "native_codec" / suffix,
+                        media_output=store.output / "media" / case_id / method / "native_codec" / suffix,
+                    )
                 media = _available_media(receipt["received_rgb"])
                 record = atomic_json(_record_path(store, case_id, method, "codec.json"), receipt)
                 target.update(**media, codec_record=record)
@@ -562,6 +588,9 @@ def phase_attack_media(store, config, case_id):
             for spec in config["attacks"]:
                 attack_id = spec["attack_id"]
                 target = store.artifact(f"{case_id}/{method}/{attack_id}/RECEIVED")
+                if target["status"] == "AVAILABLE":
+                    continue
+                retry_row(target)
                 try:
                     if source["status"] != "AVAILABLE":
                         target.update(
@@ -578,12 +607,14 @@ def phase_attack_media(store, config, case_id):
                         )
                         receipt = recipe_receipt(spec)
                     else:
-                        full = _load_rgb8(source)
+                        full = load_rgb(store, source)
                         edited, receipt = apply_edit_rgb8(full, spec)
-                        received, codec = roundtrip(
-                            edited, store.temp_root / case_id / method / attack_id,
-                            media_output=store.output / "media" / case_id / method / attack_id,
-                        )
+                        with unit_attempt(store, target["artifact_id"], operation="temporal_codec") as attempt:
+                            suffix = "attempt-" + str(attempt["attempt"])
+                            received, codec = roundtrip(
+                                edited, store.temp_root / case_id / method / attack_id / suffix,
+                                media_output=store.output / "media" / case_id / method / attack_id / suffix,
+                            )
                         media = _available_media(codec["received_rgb"])
                         target.update(
                             **media, publication_count_from_pre=2,
@@ -626,7 +657,8 @@ def _persist_actual_calls(store, case_id, field, calls):
         "attempted": len(records),
         "completed": sum(row["status"] == "COMPLETE" for row in records),
         "failed": sum(row["status"] == "FAILED" for row in records),
-        "unfinished": sum(row["status"] == "RUNNING" for row in records),
+        "unfinished": sum(row["status"] in ("RUNNING", "INTERRUPTED") for row in records),
+        "interrupted": sum(row["status"] == "INTERRUPTED" for row in records),
         "records": records,
     }
     store.data["records"].setdefault(case_id, {})[field] = summary
@@ -669,6 +701,7 @@ def phase_receiver_clock(store, config, case_id):
                     for row in _receiver_rows(
                         store, case_id, arm=arm, attack_id=spec["attack_id"], mode="RAW",
                     ):
+                        retry_row(row)
                         if row["status"] not in ("PLANNED", "RECOVERY_PENDING"):
                             continue
                         if source["status"] == "AVAILABLE":
@@ -687,14 +720,8 @@ def phase_receiver_clock(store, config, case_id):
                 store.data.get("records", {}).get(case_id, {}).get("framewise_clock_encodes", {}).get("records", [])
             )
             _persist_actual_calls(store, case_id, "framewise_clock_encodes", clock_calls)
-            prior_clock_ids = {item.get("call_id") for item in clock_calls}
             for row in _receiver_rows(store, case_id, mode="BLIND_PATH"):
-                call_id = f"{case_id}/{row['arm']}/{row['attack_id']}"
-                if row["status"] in ("PLANNED", "RECOVERY_PENDING") and call_id in prior_clock_ids:
-                    row.update(
-                        status="FAILED", missing_bits=32,
-                        reason="PRIOR_FRAMEWISE_ENCODE_ATTEMPT_RETAINED_NO_REPEAT",
-                    )
+                retry_row(row)
             store.save()
             if not any(
                 row["mode"] == "BLIND_PATH" and row["status"] in ("PLANNED", "RECOVERY_PENDING")
@@ -722,28 +749,24 @@ def phase_receiver_clock(store, config, case_id):
                             store.save()
                             continue
                         call_id = f"{case_id}/{arm}/{attack_id}"
-                        previous = next((item for item in clock_calls if item.get("call_id") == call_id), None)
-                        if previous is not None:
-                            for row in pending_blind:
-                                row.update(
-                                    status="FAILED", missing_bits=32,
-                                    reason="PRIOR_FRAMEWISE_ENCODE_ATTEMPT_RETAINED_NO_REPEAT",
-                                )
-                            store.save()
-                            continue
-                        rgb = _load_rgb8(source)
+                        rgb = load_rgb(store, source)
                         call = {
                             "call_id": call_id,
+                            "attempt": 1 + sum(item.get("call_id") == call_id for item in clock_calls),
                             "artifact_id": source["artifact_id"], "status": "RUNNING",
                             "started_at_unix": time.time(),
                         }
+                        for prior in clock_calls:
+                            if prior.get("call_id") == call_id and prior.get("status") == "RUNNING":
+                                prior.update(status="INTERRUPTED", previous_status="RUNNING")
                         clock_calls.append(call)
                         _persist_actual_calls(store, case_id, "framewise_clock_encodes", clock_calls)
                         try:
-                            latent = backend.encode(rgb)
-                        except Exception as exc:
+                            with unit_attempt(store, "clock/" + call_id, operation="framewise_clock_encode"):
+                                latent = backend.encode(rgb)
+                        except BaseException as exc:
                             call.update(
-                                status="FAILED", finished_at_unix=time.time(),
+                                status="FAILED" if isinstance(exc, Exception) else "INTERRUPTED", finished_at_unix=time.time(),
                                 reason=f"{type(exc).__name__}: {exc}",
                             )
                             _persist_actual_calls(store, case_id, "framewise_clock_encodes", clock_calls)
@@ -877,7 +900,7 @@ def phase_receiver_read(store, config, case_id):
                         if previous is not None:
                             raise RuntimeError("PRIOR_PHYSICAL_WAN_ENCODE_ATTEMPT_RETAINED_NO_REPEAT")
                         try:
-                            received = _load_rgb8(source)
+                            received = load_rgb(store, source)
                             corrected = operate_map(received, list(map_key)).float().div(255.0)
                             call = {
                                 "call_id": physical_id,
@@ -949,18 +972,9 @@ def phase_baseline_extract(store, config, case_id, method):
                 store.data.get("records", {}).get(case_id, {}).get("baseline_extract_calls", {}).get("records", [])
             )
             _persist_actual_calls(store, case_id, "baseline_extract_calls", calls)
-            prior_call_ids = {item.get("call_id") for item in calls}
             for row in store.data["baseline_rows"]:
-                call_id = f"{case_id}/{method}/{row['attack_id']}"
-                if (
-                    row["case_id"] == case_id and row["method"] == method
-                    and row["status"] in ("PLANNED", "RECOVERY_PENDING")
-                    and call_id in prior_call_ids
-                ):
-                    row.update(
-                        status="FAILED", missing_bits=32,
-                        reason="PRIOR_BASELINE_EXTRACT_ATTEMPT_RETAINED_NO_REPEAT",
-                    )
+                if row["case_id"] == case_id and row["method"] == method:
+                    retry_row(row)
             store.save()
             pending = [
                 row for row in store.data["baseline_rows"]
@@ -983,23 +997,25 @@ def phase_baseline_extract(store, config, case_id, method):
                         adapter.native_output_store = _native_store(
                             _record_path(store, case_id, method, attack_id, "sidecars"),
                         )
-                    media_input = _load_rgb8(source)
+                    media_input = load_rgb(store, source)
                     if method == "rivagan":
                         media_input = media_input.numpy()
                     call_id = f"{case_id}/{method}/{attack_id}"
-                    previous = next((item for item in calls if item.get("call_id") == call_id), None)
-                    if previous is not None:
-                        raise RuntimeError("PRIOR_BASELINE_EXTRACT_ATTEMPT_RETAINED_NO_REPEAT")
-                    call = {"call_id": call_id, "status": "RUNNING", "started_at_unix": time.time()}
+                    for prior in calls:
+                        if prior.get("call_id") == call_id and prior.get("status") == "RUNNING":
+                            prior.update(status="INTERRUPTED", previous_status="RUNNING")
+                    call = {"call_id": call_id, "attempt": 1 + sum(item.get("call_id") == call_id for item in calls),
+                            "status": "RUNNING", "started_at_unix": time.time()}
                     calls.append(call); _persist_actual_calls(store, case_id, "baseline_extract_calls", calls)
                     try:
-                        record = adapter.extract(media_input)
+                        with unit_attempt(store, "baseline-extract/" + call_id, operation="baseline_extract"):
+                            record = adapter.extract(media_input)
                         call.update(status="COMPLETE", finished_at_unix=time.time())
                         _persist_actual_calls(store, case_id, "baseline_extract_calls", calls)
                     except BaseException as exc:
-                        if isinstance(exc, Exception):
-                            call.update(status="FAILED", finished_at_unix=time.time(), reason=f"{type(exc).__name__}: {exc}")
-                            _persist_actual_calls(store, case_id, "baseline_extract_calls", calls)
+                        call.update(status="FAILED" if isinstance(exc, Exception) else "INTERRUPTED",
+                                    finished_at_unix=time.time(), reason=f"{type(exc).__name__}: {exc}")
+                        _persist_actual_calls(store, case_id, "baseline_extract_calls", calls)
                         raise
                     receipt = atomic_json(_record_path(store, case_id, method, attack_id, "extract.json"), record)
                     row.update(status="EXTRACTED", reason=None, extract_record=receipt, expected_frames=source["shape"][0])
@@ -1118,24 +1134,29 @@ def phase_quality(store, config, case_id):
 
     def execute():
         for row in (item for item in store.data["quality_rows"] if item["case_id"] == case_id):
-            if row["status"] == "RECOVERY_RUNNING":
-                _seal_quality_row(row, "interrupted before recovery re-entry")
-                store.save()
-            if row["status"] not in ("PLANNED", "RECOVERY_PENDING"):
+            needs_preview = (row["candidate"], row["reference"]) in (
+                ("PAYLOAD_FRAMEWISE_M05", "PAYLOAD_FRAMEWISE_RECON"),
+                ("PAYLOAD_FRAMEWISE_M05", "OFF_NATIVE"),
+            ) and row.get("side_by_side", {}).get("status") != "SAVED"
+            if row["status"] == "EVALUATED" and not needs_preview:
                 continue
+            remember(row, "resume unfinished quality metrics")
             row.update(status="RECOVERY_RUNNING", attempt_started_at_unix=time.time(), metrics=row.get("metrics", {}))
             store.save()
             try:
-                reference = _load_rgb8(_post_artifact(store, case_id, row["reference"]))
-                candidate = _load_rgb8(_post_artifact(store, case_id, row["candidate"]))
+                reference = load_rgb(store, _post_artifact(store, case_id, row["reference"]))
+                candidate = load_rgb(store, _post_artifact(store, case_id, row["candidate"]))
                 metrics = row["metrics"]
                 for name, function in metric_functions:
-                    if name in metrics and metrics[name].get("status") not in ("RUNNING", "MISSING"):
+                    if name in metrics and metrics[name].get("status") not in ("RUNNING", "MISSING", "FAILED", "INTERRUPTED"):
                         continue
-                    metrics[name] = {"status": "RUNNING", "attempt_started_at_unix": time.time()}
+                    previous = metrics.get(name)
+                    metrics[name] = {"status": "RUNNING", "attempt_started_at_unix": time.time(),
+                                     "prior_attempt": previous}
                     store.save()
                     try:
-                        value = function(reference, candidate)
+                        with unit_attempt(store, row["quality_id"] + "/" + name, operation="quality_metric"):
+                            value = function(reference, candidate)
                         status = value.get("status", "EVALUATED") if isinstance(value, dict) else "EVALUATED"
                         metrics[name] = {"status": status, "value": value}
                     except Exception as exc:
@@ -1145,15 +1166,16 @@ def phase_quality(store, config, case_id):
                     status="EVALUATED" if all(item["status"] == "EVALUATED" for item in metrics.values()) else "PARTIAL",
                     metrics=metrics,
                 )
-                if (row["candidate"], row["reference"]) in (
+                if row.get("side_by_side", {}).get("status") != "SAVED" and (row["candidate"], row["reference"]) in (
                     ("PAYLOAD_FRAMEWISE_M05", "PAYLOAD_FRAMEWISE_RECON"),
                     ("PAYLOAD_FRAMEWISE_M05", "OFF_NATIVE"),
                 ):
                     try:
-                        row["side_by_side"] = _side_by_side_mp4(
-                            reference, candidate,
-                            store.output / "quality_media" / case_id / (row["candidate"] + "_vs_" + row["reference"] + ".mp4"),
-                        )
+                        with unit_attempt(store, row["quality_id"] + "/side_by_side", operation="quality_preview_codec") as attempt:
+                            row["side_by_side"] = _side_by_side_mp4(
+                                reference, candidate,
+                                store.output / "quality_media" / case_id / (row["candidate"] + "_vs_" + row["reference"] + ".attempt-" + str(attempt["attempt"]) + ".mp4"),
+                            )
                     except Exception as exc:
                         row["side_by_side"] = {"status": "FAILED", "reason": f"{type(exc).__name__}: {exc}"}
                         row["status"] = "PARTIAL"

@@ -1,8 +1,12 @@
 import ast
 import json
 import shutil
+import sys
 import tempfile
+import time
+import types
 import unittest
+from unittest import mock
 import urllib.request
 import zipfile
 from pathlib import Path
@@ -56,7 +60,11 @@ class ConfirmationNotebookTests(unittest.TestCase):
                 "baseline_pythons": {"videoseal": "vs-python", "rivagan": "rv-python"},
                 "record_stage": lambda *_a, **_k: None, "LOG_PATH": root / "log", "STAGE_RECEIPTS": root / "receipts",
                 "FIXED_ATTEMPT_SCOPE": {}, "RUN_ID": "stub",
+                "time": time, "EVENT_LOG_TARGETS": {},
             }
+            helpers = [n for n in ast.parse(cells["portable-setup"]).body if isinstance(n,ast.FunctionDef)
+                       and n.name in ("read_event_log","write_event_log")]
+            exec(compile(ast.Module(body=helpers,type_ignores=[]),"log-helpers","exec"),ns)
             # Source config is read from PORTABLE_ROOT; the local config remains unchanged.
             exec(compile(cells["confirmation-plans"], "confirmation-plans", "exec"), ns)
             self.assertEqual(len(logged_calls), 4)
@@ -82,6 +90,19 @@ class ConfirmationNotebookTests(unittest.TestCase):
             exec(compile(cells["fixed-confirmation-execution"], "fixed-execution-rerun", "exec"), ns)
             self.assertEqual([stage for stage, _command in logged_calls], [
                 "None:generation:preflight", "None:attack:evaluate", "None:confirmation:report",
+            ])
+            # Restart enters partial/running stages, retaining the same run directory.
+            generation_phases["framewise"]["cases"]["confirm_01"]["status"] = "RUNNING"
+            attack_phases["receiver-clock"]["cases"]["confirm_01"]["status"] = "PARTIAL"
+            confirm_phases["read"]["confirm_01"]["status"] = "INTERRUPTED"
+            (ns["RUN_OUTPUT"] / "run_state.json").write_text(json.dumps({"phases":generation_phases}))
+            (ns["ATTACK_OUTPUT"] / "attack_run_state.json").write_text(json.dumps({"phases":attack_phases}))
+            (ns["CONFIRM_OUTPUT"] / "confirmation_state.json").write_text(json.dumps({"phases":confirm_phases}))
+            logged_calls.clear()
+            exec(compile(cells["fixed-confirmation-execution"], "partial-rerun", "exec"), ns)
+            self.assertEqual([stage for stage, _ in logged_calls], [
+                "None:generation:preflight", "confirm_01:generation:framewise", "confirm_01:attack:receiver-clock",
+                "confirm_01:confirmation:read", "None:attack:evaluate", "None:confirmation:report",
             ])
             (ns["ATTACK_OUTPUT"] / "evaluation_report.json").write_text(json.dumps({
                 "baseline_rows": [
@@ -130,9 +151,76 @@ class ConfirmationNotebookTests(unittest.TestCase):
             exec(compile(ast.Module(body=[function], type_ignores=[]), "source-loader", "exec"), namespace)
             receipt = namespace["load_companion_source"]()
             self.assertEqual(len(fetches), 1)
-            self.assertEqual(receipt["status"], "DOWNLOADED_AND_EXTRACTED_MISSING_REQUIRED_SOURCE")
+            self.assertEqual(receipt["status"], "DOWNLOADED_AND_EXTRACTED_AVAILABLE_SOURCE")
             self.assertIn("experiments/paper_results_v1/confirmation_v1_cli.py", receipt["missing_before_fetch"])
             self.assertTrue((portable / "experiments/paper_results_v1/confirmation_v1_cli.py").is_file())
+            namespace["load_companion_source"]()
+            self.assertEqual(len(fetches), 2) # a complete old cache must still refresh
+            def unsafe_fetch(_url,target):
+                with zipfile.ZipFile(target,"w") as archive: archive.writestr("../escaped.py","bad")
+            namespace["urllib"].request.urlretrieve = staticmethod(unsafe_fetch)
+            with self.assertRaisesRegex(RuntimeError,"unsafe companion"):
+                namespace["load_companion_source"]()
+            self.assertFalse((root/"escaped.py").exists())
+
+    def test_active_pointer_recovers_same_run_and_rejects_unsafe_directory_name(self):
+        notebook=build_notebook()
+        source="".join(next(c["source"] for c in notebook["cells"] if c["id"]=="portable-setup"))
+        function=next(n for n in ast.parse(source).body if isinstance(n,ast.FunctionDef) and n.name=="saved_run_id")
+        ns={"json":json,"Path":Path}
+        exec(compile(ast.Module(body=[function],type_ignores=[]),"pointer","exec"),ns)
+        with tempfile.TemporaryDirectory() as directory:
+            root=Path(directory); pointer=root/"active_confirmation_run.json"
+            run=root/"fixed-task"; (run/"run_state").mkdir(parents=True)
+            pointer.write_text(json.dumps({"run_id":"fixed-task"}))
+            self.assertEqual(ns["saved_run_id"](root,pointer),"fixed-task")
+            pointer.write_text("{")
+            self.assertEqual(ns["saved_run_id"](root,pointer),"fixed-task")
+            pointer.write_text(json.dumps({"run_id":".."}))
+            self.assertEqual(ns["saved_run_id"](root,pointer),"fixed-task")
+            for value in (None, []):
+                pointer.write_text(json.dumps(value))
+                self.assertEqual(ns["saved_run_id"](root,pointer),"fixed-task")
+
+    def test_corrupt_auxiliary_logs_preserved_without_blocking_run(self):
+        source="".join(next(c["source"] for c in build_notebook()["cells"] if c["id"]=="portable-setup"))
+        helpers=[n for n in ast.parse(source).body if isinstance(n,ast.FunctionDef) and n.name in ("read_event_log","write_event_log")]
+        ns={"json":json,"Path":Path,"time":time,"EVENT_LOG_TARGETS":{},
+            "atomic_json":lambda p,v:Path(p).write_text(json.dumps(v))}
+        exec(compile(ast.Module(body=helpers,type_ignores=[]),"log-helpers","exec"),ns)
+        with tempfile.TemporaryDirectory() as directory:
+            for name in ("stage_receipts.json","phase_attempts.json"):
+                path=Path(directory)/name
+                path.with_name(name+".previous").write_text('[{"status":"COMPLETE"}]')
+                for raw in ("{","null","{}"):
+                    path.write_text(raw)
+                    rows=ns["read_event_log"](path)
+                    self.assertEqual(rows,[{"status":"COMPLETE"}])
+                    self.assertTrue(any(p.read_text()==raw for p in Path(directory).glob(name+".unreadable.*")))
+                    rows.append({"status":"CONTINUED"})
+                    ns["write_event_log"](path,rows)
+                    self.assertEqual(json.loads(path.read_text())[-1]["status"],"CONTINUED")
+
+    def test_reused_kernel_drops_old_experiments_package_paths(self):
+        source="".join(next(c["source"] for c in build_notebook()["cells"] if c["id"]=="identity-and-init"))
+        nodes=[]
+        for node in ast.parse(source).body:
+            nodes.append(node)
+            if isinstance(node,ast.ImportFrom) and node.module=="experiments.paper_results_v1.resume_state": break
+        with tempfile.TemporaryDirectory() as directory:
+            old={}
+            for name in ("experiments","experiments.paper_results_v1","experiments.paper_results_v1.colab_orchestration"):
+                mod=types.ModuleType(name); mod.__path__=[str(Path(directory)/name.replace(".","/"))]; old[name]=mod
+            ns={"PORTABLE_ROOT":Path(__file__).resolve().parents[1]}
+            prior_path=list(sys.path)
+            try:
+                with mock.patch.dict(sys.modules,old):
+                    exec(compile(ast.Module(body=nodes,type_ignores=[]),"source-package-refresh","exec"),ns)
+                    loaded=sys.modules["experiments.paper_results_v1.resume_state"]
+                    self.assertTrue(str(loaded.__file__).startswith(str(ns["PORTABLE_ROOT"])))
+                    self.assertNotIn("experiments.paper_results_v1.colab_orchestration",sys.modules)
+            finally:
+                sys.path[:]=prior_path
 
 
 if __name__ == "__main__":

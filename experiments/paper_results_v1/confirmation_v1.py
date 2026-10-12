@@ -17,6 +17,7 @@ from pathlib import Path
 import time
 
 from experiments.paper_results_v1 import attack_eval
+from experiments.paper_results_v1.resume_state import StateJournal, read_state, remember, unit_attempt
 
 
 SCHEMA = "paper-results-v1-confirmation-receiver-v1"
@@ -96,15 +97,19 @@ class ConfirmationStore:
     def __init__(self, output, config, *, create=False, attack_output=None, temp_root=None):
         self.output = Path(output).resolve()
         self.path = self.output / "confirmation_state.json"
+        self.journal = StateJournal(self.path)
         self.config = validate_config(config)
         self.temp_root = Path(temp_root).resolve() if temp_root else self.output / "temporary_rgb"
+        from experiments.paper_results_v1.resume_state import state_exists
+        if create and state_exists(self.path):
+            create = False
         if create:
             if attack_output is None:
                 raise ValueError("attack_output is required for initialization")
             attack_path = Path(attack_output).resolve() / "attack_run_state.json"
-            if not attack_path.is_file():
+            if not state_exists(attack_path):
                 raise FileNotFoundError(f"attack state is unavailable: {attack_path}")
-            self.output.mkdir(parents=True, exist_ok=False)
+            self.output.mkdir(parents=True, exist_ok=True)
             plan = build_plan(config)
             self.data = {
                 "schema": SCHEMA, "status": "INITIALIZED",
@@ -119,10 +124,13 @@ class ConfirmationStore:
             }
             self.save()
         else:
-            self.data = _read(self.path)
+            self.data = read_state(self.path)
+            self.journal.seed_cache(self.data)
+            if temp_root is not None:
+                self.data["temp_root"] = str(self.temp_root)
 
     def save(self):
-        _atomic_json(self.path, self.data)
+        self.journal.save(self.data)
 
     def rows(self, case_id=None, **match):
         return [row for row in self.data["rows"] if (case_id is None or row["case_id"] == case_id)
@@ -151,7 +159,7 @@ def initialize(attack_output, output, config, *, temp_root=None):
 
 
 def _attack_state(store):
-    return _read(store.data["attack_state"])
+    return read_state(store.data["attack_state"])
 
 
 def _attack_row(source, case_id, arm, attack_id, key_label):
@@ -180,8 +188,12 @@ def _group_for(store, artifact_id, operation):
     group = next((row for row in store.data["physical_inputs"]
                   if row["artifact_id"] == artifact_id and row["received_index_map"] == mapping), None)
     if group is None:
+        occupied = {row["physical_id"] for row in store.data["physical_inputs"]}
+        number = len(occupied)
+        while f"map_{number:04d}" in occupied:
+            number += 1
         group = {
-            "physical_id": f"map_{len(store.data['physical_inputs']):04d}",
+            "physical_id": f"map_{number:04d}",
             "artifact_id": artifact_id,
             "received_index_map": mapping,
             "output_frames": operation["output_frames"],
@@ -192,9 +204,19 @@ def _group_for(store, artifact_id, operation):
 
 
 def prepare_case(store, case_id):
+    with store.journal.periodic():
+        return _prepare_case(store, case_id)
+
+
+def _prepare_case(store, case_id):
     from main.tube_state.receiver_controls_v1 import receive_scores
 
     phase = store.data["phases"]["prepare"][case_id]
+    for row in store.rows(case_id):
+        if row["status"] in ("FAILED", "MISSING") and not row.get("operation"):
+            remember(row, "retry missing selector evidence")
+            row.update(status="PLANNED", reason=None)
+            phase["status"] = "PARTIAL"
     if phase["status"] == "COMPLETE":
         return store
     phase["status"] = "RUNNING"; store.save()
@@ -238,12 +260,13 @@ def prepare_case(store, case_id):
                             if row["status"] == "PLANNED":
                                 row.update(status=status, reason=_reason(exc), missing_bits=32)
                         store.save()
-        phase["status"] = "COMPLETE"
+        phase["status"] = "PARTIAL" if any(row["status"] in ("FAILED", "MISSING", "PLANNED") and not row.get("operation") for row in store.rows(case_id)) else "COMPLETE"
     except BaseException as exc:
         phase["status"] = "INTERRUPTED" if not isinstance(exc, Exception) else "FAILED"
         phase["failures"].append(_reason(exc)); raise
     finally:
         store.save()
+        store.journal.checkpoint("prepare-exit")
     return store
 
 
@@ -262,6 +285,8 @@ def _save_key_read(store, group, key_label, result):
     temporary = sidecar.with_suffix(".npz.tmp")
     with temporary.open("wb") as stream:
         np.savez_compressed(stream, signed_votes=result.pop("signed_votes"), zero_mask=result.pop("zero_mask"))
+        stream.flush()
+        os.fsync(stream.fileno())
     os.replace(temporary, sidecar)
     result["vote_sidecar"] = {
         "path": str(sidecar), "arrays": ["signed_votes", "zero_mask"],
@@ -276,7 +301,7 @@ def _save_key_read(store, group, key_label, result):
 
 def _adopt_key_read(store, group, key_label, result, record):
     for row in _rows_for_group(store, group, key_label):
-        if row["status"] not in ("PENDING_READ", "READ"):
+        if row["status"] not in ("PENDING_READ", "FAILED", "MISSING"):
             continue
         operation = row["operation"]
         annotation = {
@@ -305,152 +330,199 @@ def _adopt_key_read(store, group, key_label, result, record):
 
 def _restore_key_reads(store, group):
     restored = set()
-    for key_label in KEYS:
+    changed = False
+    for key_label in _pending_keys(store, group):
         record = store.output / "physical" / group["physical_id"] / key_label / "read.json"
         if not record.is_file():
             continue
-        result = _read(record)
+        try:
+            result = _read(record)
+            if len(result["decoded_bits"]) != 32 or any(bit not in (0, 1) for bit in result["decoded_bits"]):
+                raise ValueError("key read must contain 32 binary bits")
+            if not isinstance(result["votes"], list) or not isinstance(result["bit_rows"], list) or int(result["R"]) < 1:
+                raise ValueError("key read is missing valid vote evidence")
+            with Path(result["vote_sidecar"]["path"]).open("rb") as stream:
+                if not stream.read(1): raise ValueError("empty vote sidecar")
+        except (OSError, ValueError, KeyError, TypeError) as exc:
+            group.setdefault("checkpoint_errors", []).append({"path": str(record), "reason": _reason(exc)})
+            changed = True
+            continue
         _adopt_key_read(store, group, key_label, result, record)
         group["key_reads"][key_label] = {"status": "DURABLE", "record": str(record)}
         restored.add(key_label)
-    store.save()
+    if restored or changed:
+        store.save()
     return restored
 
 
 def _received_rgb(store, group, artifact):
-    import numpy as np
+    from experiments.paper_results_v1.resume_media import load_rgb
+    return load_rgb(store, artifact, artifacts=_attack_state(store)["artifacts"])
+
+
+def _save_latent(path, value):
     import torch
-    from runtime.wan.variable_rgb_media import decode_published
-
-    receipt = artifact
-    try:
-        return attack_eval._load_rgb8(receipt)
-    except (FileNotFoundError, OSError):
-        pass
-    frames = int(receipt["shape"][0])
-    target = Path(store.data["temp_root"]) / group["physical_id"] / "received.rgb8"
-    mp4 = Path(receipt.get("source_mp4", ""))
-    call = {"artifact_id": artifact["artifact_id"], "path": str(mp4), "status": "RUNNING", "started_at": time.time()}
-    store.data["media_decodes"].append(call); store.save()
-    try:
-        data, result = decode_published(mp4, target, expected_frames=frames)
-        call.update(status="COMPLETE", finished_at=time.time(), receipt=result); store.save()
-        return torch.from_numpy(np.asarray(data, dtype=np.uint8))
-    except BaseException as exc:
-        call.update(status="FAILED" if isinstance(exc, Exception) else "INTERRUPTED",
-                    finished_at=time.time(), reason=_reason(exc)); store.save(); raise
+    if value.ndim != 5 or value.shape[0] != 1 or value.shape[1] != 16 or not bool(torch.isfinite(value).all()):
+        raise ValueError("Wan checkpoint must be a finite [1,16,T,H,W] latent")
+    path.parent.mkdir(parents=True, exist_ok=True)
+    temporary = path.with_suffix(".pt.tmp")
+    with temporary.open("wb") as stream:
+        torch.save(value, stream)
+        stream.flush()
+        os.fsync(stream.fileno())
+    os.replace(temporary, path)
 
 
-def _seal_prior_group(store, group, reason):
-    restored = _restore_key_reads(store, group)
-    if group["status"] == "RUNNING":
-        group.update(status="INTERRUPTED", reason=reason, finished_at=time.time())
-    if group["status"] in ("RUNNING", "INTERRUPTED", "COMPLETE", "FAILED"):
-        for key_label in KEYS:
-            if key_label in restored:
-                continue
-            for row in _rows_for_group(store, group, key_label):
-                if row["status"] == "PENDING_READ":
-                    row.update(status="FAILED", missing_bits=32,
-                               reason="PRIOR_PHYSICAL_ATTEMPT_NO_DURABLE_KEY_READ: " + reason)
-    store.save()
+def _load_latent(path):
+    import torch
+    value = torch.load(path, map_location="cpu", weights_only=True)
+    if value.ndim != 5 or value.shape[0] != 1 or value.shape[1] != 16 or not bool(torch.isfinite(value).all()):
+        raise ValueError("saved Wan checkpoint has invalid shape/nonfinite values")
+    return value
+
+
+def _pending_keys(store, group):
+    return [key for key in KEYS if any(
+        row["status"] not in ("READ", "EVALUATED", "UNSUPPORTED", "UNRESOLVED", "NOT_EXECUTED_BY_NOTEBOOK")
+        for row in _rows_for_group(store, group, key)
+    )]
+
+
+def _resume_group(store, group):
+    # Durable successful or negative scientific output is never reconsidered.
+    changed = False
+    for row in _rows_for_group(store, group):
+        if row["status"] in ("FAILED", "MISSING"):
+            remember(row, "resume technical read failure")
+            row.update(status="PENDING_READ", reason=None)
+            changed = True
+    _restore_key_reads(store, group)
+    if _pending_keys(store, group) and group.get("status") != "PLANNED":
+        remember(group, "continue missing keys; preserve prior encode/key attempts")
+        changed = True
+    if changed:
+        store.save()
 
 
 def read_case(
     store, case_id, *, load_vae=None, encode=None, payload_read=None,
-    load_rgb=None, operate=None,
+    load_rgb=None, operate=None, save_latent=None, load_latent=None,
 ):
     phase = store.data["phases"]["read"][case_id]
-    if phase["status"] == "COMPLETE":
-        return store
-    phase["status"] = "RUNNING"; store.save()
-    if load_vae is None:
-        from runtime.wan.generation import load_frozen_vae
-        load_vae = lambda: load_frozen_vae(
-            {"model": {"id": store.config["models"]["wan"]["local_snapshot_path"]}},
-            device=store.config["models"]["wan"].get("device", "cuda"),
-        )
-    if encode is None:
-        from runtime.wan.vae import reencode_rgb24_readback
-        encode = reencode_rgb24_readback
-    if payload_read is None or operate is None:
-        from runtime.wan.video_trajectory_temporal_edit_receiver_v1 import (
-            operate_map as runtime_operate_map,
-            read_payload_general,
-        )
-        payload_read = payload_read or read_payload_general
-        operate = operate or runtime_operate_map
     source = _attack_state(store)
     groups = [row for row in store.data["physical_inputs"] if any(
         slot.startswith(case_id + "/") for slot in row["logical_slots"]
     )]
+    def case_complete():
+        return all(row["status"] in ("READ", "EVALUATED", "UNSUPPORTED", "UNRESOLVED", "NOT_EXECUTED_BY_NOTEBOOK")
+                   for row in store.rows(case_id))
     for group in groups:
-        if group["status"] != "PLANNED":
-            _seal_prior_group(store, group, "read re-entry retains prior physical attempt")
-    todo = [group for group in groups if group["status"] == "PLANNED"]
+        if _pending_keys(store, group):
+            _resume_group(store, group)
+    todo = [group for group in groups if _pending_keys(store, group)]
+    if not todo:
+        phase["status"] = "COMPLETE" if case_complete() else "PARTIAL"; store.save()
+        store.journal.checkpoint("read-already-complete")
+        return store
+    remember(phase, "resume read at missing physical map/key")
+    phase["status"] = "RUNNING"; store.save()
+    save_latent = save_latent or _save_latent
+    load_latent = load_latent or _load_latent
     vae = None
     try:
-        if todo:
-            call = {"case_id": case_id, "status": "RUNNING", "started_at": time.time()}
-            store.data["vae_loads"].append(call); store.save()
-            try:
-                vae = load_vae()
-            except BaseException as exc:
-                call.update(status="FAILED" if isinstance(exc, Exception) else "INTERRUPTED",
-                            finished_at=time.time(), reason=_reason(exc)); store.save(); raise
-            call.update(status="COMPLETE", finished_at=time.time()); store.save()
-        for group in todo:
-            artifact = _artifact(source, group["artifact_id"])
-            normalized = None
-            try:
-                received = load_rgb(group, artifact) if load_rgb else _received_rgb(store, group, artifact)
-                corrected = operate(received, group["received_index_map"]).float().div(255.0)
-
-                def observe(event, error):
-                    if event == "STARTED":
-                        group.update(status="RUNNING", started_at=time.time())
-                    elif event == "RETURNED":
-                        group.update(status="COMPLETE", finished_at=time.time())
-                    elif event == "FAILED":
-                        group.update(status="FAILED" if isinstance(error, Exception) else "INTERRUPTED",
-                                     finished_at=time.time(), reason=_reason(error))
-                    store.save()
-
-                encoded = encode(vae, corrected, encode_observer=observe)
-                normalized = encoded.detach().cpu()
-                for key_label in KEYS:
-                    key_rows = _rows_for_group(store, group, key_label)
-                    if not any(row["status"] == "PENDING_READ" for row in key_rows):
-                        continue
-                    try:
-                        result = payload_read(
-                            normalized, store.config["keys"][key_label], group["output_frames"],
-                            [None] * group["output_frames"],
-                        )
-                        result, record = _save_key_read(store, group, key_label, result)
-                        _adopt_key_read(store, group, key_label, result, record)
-                    except Exception as exc:
-                        group["key_reads"][key_label] = {"status": "FAILED", "reason": _reason(exc)}
-                        for row in key_rows:
-                            if row["status"] == "PENDING_READ":
-                                row.update(status="FAILED", reason=_reason(exc), missing_bits=32)
-                        store.save()
-            except Exception as exc:
-                if group["status"] == "PLANNED":
-                    group.update(status="PREPROCESS_FAILED", reason=_reason(exc))
-                for row in _rows_for_group(store, group):
-                    if row["status"] == "PENDING_READ":
-                        row.update(status="FAILED", reason=_reason(exc), missing_bits=32)
-                store.save()
-            finally:
+        with store.journal.periodic():
+            for group in todo:
                 normalized = None
-        phase["status"] = "COMPLETE"
+                checkpoint = store.output / "physical" / group["physical_id"] / "latent.pt"
+                try:
+                    if checkpoint.is_file():
+                        try:
+                            normalized = load_latent(checkpoint)
+                        except Exception as exc:
+                            group.setdefault("checkpoint_errors", []).append(
+                                {"path": str(checkpoint), "reason": _reason(exc), "at": time.time()})
+                            store.save()
+                    if normalized is None:
+                        if load_vae is None:
+                            from runtime.wan.generation import load_frozen_vae
+                            load_vae = lambda: load_frozen_vae(
+                                {"model": {"id": store.config["models"]["wan"]["local_snapshot_path"]}},
+                                device=store.config["models"]["wan"].get("device", "cuda"))
+                        if vae is None:
+                            with unit_attempt(store, case_id + "/vae-load", operation="model_load"):
+                                vae = load_vae()
+                        if encode is None:
+                            from runtime.wan.vae import reencode_rgb24_readback
+                            encode = reencode_rgb24_readback
+                        if operate is None:
+                            from runtime.wan.video_trajectory_temporal_edit_receiver_v1 import operate_map
+                            operate = operate_map
+                        artifact = _artifact(source, group["artifact_id"])
+                        received = load_rgb(group, artifact) if load_rgb else _received_rgb(store, group, artifact)
+                        corrected = operate(received, group["received_index_map"]).float().div(255.0)
+                        attempt = {"attempt": len(group.setdefault("encode_attempts", [])) + 1,
+                                   "status": "RUNNING", "started_at": time.time()}
+                        for prior in group["encode_attempts"]:
+                            if prior["status"] == "RUNNING":
+                                prior.update(status="INTERRUPTED", previous_status="RUNNING")
+                        group["encode_attempts"].append(attempt)
+                        group["status"] = "RUNNING"; store.save()
+
+                        def observe(event, error):
+                            attempt["last_event"] = event
+                            if event == "RETURNED":
+                                attempt.update(status="COMPLETE", finished_at=time.time())
+                            elif event == "FAILED":
+                                attempt.update(status="FAILED" if isinstance(error, Exception) else "INTERRUPTED",
+                                               reason=_reason(error), finished_at=time.time())
+                            store.save()
+                        try:
+                            normalized = encode(vae, corrected, encode_observer=observe).detach().cpu()
+                            attempt.update(status="COMPLETE", finished_at=time.time())
+                            # This durable boundary precedes both keyed reads.
+                            save_latent(checkpoint, normalized)
+                            group.update(status="LATENT_SAVED", latent_checkpoint=str(checkpoint))
+                            store.save()
+                        except BaseException as exc:
+                            attempt.setdefault("reason", _reason(exc))
+                            if attempt["status"] == "RUNNING":
+                                attempt.update(status="FAILED" if isinstance(exc, Exception) else "INTERRUPTED")
+                            store.save()
+                            raise
+                    if payload_read is None:
+                        from runtime.wan.video_trajectory_temporal_edit_receiver_v1 import read_payload_general
+                        payload_read = read_payload_general
+                    for key in _pending_keys(store, group):
+                        try:
+                            with unit_attempt(store, group["physical_id"] + "/" + key, operation="key_payload_read"):
+                                result = payload_read(normalized, store.config["keys"][key],
+                                                      group["output_frames"], [None] * group["output_frames"])
+                                result, record = _save_key_read(store, group, key, result)
+                                _adopt_key_read(store, group, key, result, record)
+                        except Exception as exc:
+                            group["key_reads"][key] = {"status": "FAILED", "reason": _reason(exc)}
+                            for row in _rows_for_group(store, group, key):
+                                if row["status"] not in ("READ", "EVALUATED"):
+                                    row.update(status="FAILED", reason=_reason(exc), missing_bits=32)
+                            store.save()
+                    if not _pending_keys(store, group):
+                        group["status"] = "COMPLETE"; store.save()
+                        # Delete only this owned temporary checkpoint, after all keys are durable.
+                        if checkpoint.is_file():
+                            checkpoint.unlink()
+                        group["latent_checkpoint_released"] = True; store.save()
+                except Exception as exc:
+                    group.update(status="FAILED", reason=_reason(exc))
+                    for row in _rows_for_group(store, group):
+                        if row["status"] not in ("READ", "EVALUATED", "UNSUPPORTED", "UNRESOLVED"):
+                            row.update(status="FAILED", reason=_reason(exc), missing_bits=32)
+                    store.save()
+                finally:
+                    normalized = None
+            phase["status"] = "COMPLETE" if case_complete() else "PARTIAL"
     except BaseException as exc:
         phase["status"] = "INTERRUPTED" if not isinstance(exc, Exception) else "FAILED"
-        phase["failures"].append(_reason(exc))
-        for group in groups:
-            if group["status"] == "RUNNING":
-                _seal_prior_group(store, group, _reason(exc))
+        phase.setdefault("failures", []).append(_reason(exc))
         raise
     finally:
         vae = None; gc.collect()
@@ -460,19 +532,16 @@ def read_case(
                 torch.cuda.empty_cache()
         except ImportError:
             pass
-        store.save()
+        store.save(); store.journal.checkpoint("read-exit")
     return store
 
 
 def record_external_failure(store, case_id, reason):
-    for group in store.data["physical_inputs"]:
-        if any(slot.startswith(case_id + "/") for slot in group["logical_slots"]):
-            _seal_prior_group(store, group, reason)
     phase = store.data["phases"]["read"][case_id]
-    if phase["status"] == "RUNNING":
-        phase.update(status="INTERRUPTED", finished_at=time.time())
-        phase["failures"].append(reason)
-    store.save()
+    phase.setdefault("failures", []).append(reason)
+    phase["status"] = "INTERRUPTED"
+    # Keep pending rows and latent/key checkpoints resumable.
+    store.save(); store.journal.checkpoint("external-interruption")
 
 
 def _path_metrics(store, row):
@@ -556,8 +625,8 @@ def report(store):
     baseline_index = {(row["case_id"], row["attack_id"], row["method"]): row for row in baselines}
     comparison_rows = []
     for case_id in CASES:
-        for attack in store.config["attacks"]:
-            attack_id = attack["attack_id"]
+        for attack_spec in store.config["attacks"]:
+            attack_id = attack_spec["attack_id"]
             main = next(row for row in store.data["rows"] if (
                 row["case_id"], row["arm"], row["attack_id"], row["key_label"], row["receiver"]
             ) == (case_id, "PAYLOAD_FRAMEWISE_M05", attack_id, "K0", "CENTERED_U"))
@@ -576,9 +645,19 @@ def report(store):
                     ),
                 })
 
-    actual = [group for group in store.data["physical_inputs"] if "started_at" in group]
+    actual = [attempt for group in store.data["physical_inputs"] for attempt in group.get(
+        "encode_attempts", [dict(status=group["status"], started_at=group["started_at"])] if "started_at" in group else [])]
+    unit_calls = store.data.get("unit_attempts", {})
+    vae_calls = [attempt for rows in unit_calls.values() for attempt in rows if attempt.get("operation") == "model_load"]
+    decode_calls = [attempt for rows in unit_calls.values() for attempt in rows if attempt.get("operation") == "decode_existing_mp4"]
+    pending = {
+        "receiver_rows": sum(row["case_id"] in CASES and row["status"] not in ("EVALUATED", "UNSUPPORTED", "UNRESOLVED") for row in store.data["rows"]),
+        "baseline_rows": sum(row["status"] not in ("EVALUATED", "UNSUPPORTED", "UNRESOLVED") for row in baselines),
+        "quality_rows": sum(row["status"] != "EVALUATED" for row in qualities),
+    }
     result = {
-        "schema": SCHEMA, "status": "COMPLETE_WITH_RETAINED_ITEM_STATUSES",
+        "schema": SCHEMA, "status": "PARTIAL_RESUMABLE" if any(pending.values()) else "COMPLETE_WITH_RETAINED_ITEM_STATUSES",
+        "pending_technical_units": pending,
         "fixed_denominator": store.data["fixed_denominator"],
         "receiver_status_counts": dict(sorted(Counter(
             row["status"] for row in store.data["rows"] if row["case_id"] in CASES
@@ -594,15 +673,19 @@ def report(store):
             "physical_wan_calls": {
                 "attempted": len(actual),
                 "status_counts": dict(sorted(Counter(group["status"] for group in actual).items())),
+                "extra_attempts": sum(max(0, len(group.get("encode_attempts", [])) - 1) for group in store.data["physical_inputs"]),
+                "budget_semantics": "0..2880 is unique maps; interrupted missing units may add explicitly counted attempts",
             },
             "vae_loads": {
-                "attempted": len(store.data["vae_loads"]),
-                "status_counts": dict(sorted(Counter(row["status"] for row in store.data["vae_loads"]).items())),
+                "attempted": len(store.data["vae_loads"]) + len(vae_calls),
+                "status_counts": dict(sorted(Counter(row["status"] for row in [*store.data["vae_loads"], *vae_calls]).items())),
             },
             "media_decodes": {
-                "attempted": len(store.data["media_decodes"]),
-                "status_counts": dict(sorted(Counter(row["status"] for row in store.data["media_decodes"]).items())),
+                "attempted": len(store.data["media_decodes"]) + len(decode_calls),
+                "status_counts": dict(sorted(Counter(row["status"] for row in [*store.data["media_decodes"], *decode_calls]).items())),
             },
+            "unit_attempts": unit_calls,
+            "attack_unit_attempts": attack.get("unit_attempts", {}),
             "attack_actual_records": attack.get("records", {}),
         },
     }
@@ -619,4 +702,5 @@ def report(store):
         writer = csv.DictWriter(stream, fieldnames=list(compact[0]), lineterminator="\n")
         writer.writeheader(); writer.writerows(compact)
     store.data["status"] = result["status"]; store.save()
+    store.journal.checkpoint("report-complete")
     return result

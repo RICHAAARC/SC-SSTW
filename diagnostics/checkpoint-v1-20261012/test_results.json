@@ -1,0 +1,47 @@
+[
+  {
+    "command": [
+      "/home/richar/projects/CEG-WM/alive/CEG-WM/.venv/bin/python",
+      "-B",
+      "-m",
+      "unittest",
+      "tests.test_paper_results_v1_checkpoint",
+      "tests.test_paper_results_v1_stage_resume",
+      "tests.test_paper_results_v1_confirmation",
+      "tests.test_paper_results_v1_confirmation_notebook",
+      "-v"
+    ],
+    "exit_code": 0,
+    "seconds": 36.346,
+    "log": "/home/richar/projects/Video-WM/worktrees/Paper-Results-V1/diagnostics/checkpoint-v1-20261012/targeted_tests.log"
+  },
+  {
+    "command": [
+      "/home/richar/projects/CEG-WM/alive/CEG-WM/.venv/bin/python",
+      "-B",
+      "-m",
+      "pytest",
+      "tests/test_paper_results_v1_real_eval.py",
+      "-q",
+      "--tb=short",
+      "-p",
+      "no:cacheprovider"
+    ],
+    "exit_code": 0,
+    "seconds": 2.191,
+    "log": "/home/richar/projects/Video-WM/worktrees/Paper-Results-V1/diagnostics/checkpoint-v1-20261012/real_eval_tests.log"
+  },
+  {
+    "command": [
+      "/home/richar/projects/CEG-WM/alive/CEG-WM/.venv/bin/python",
+      "-B",
+      "-m",
+      "unittest",
+      "tests.test_paper_results_v1_attack_eval",
+      "-v"
+    ],
+    "exit_code": 0,
+    "seconds": 6.558,
+    "log": "/home/richar/projects/Video-WM/worktrees/Paper-Results-V1/diagnostics/checkpoint-v1-20261012/attack_eval_tests.log"
+  }
+]

@@ -81,7 +81,7 @@ VideoSeal repeat32 是同 32 个有效信息位、不同 native 通道冗余/开
 
 ## 5. 确定调用量与物理复用边界
 
-以下是固定方案的调用预算，不是 GPU 时间或峰值显存估计。
+以下是没有中断重试时的固定方案调用量，不是 GPU 时间或峰值显存估计。2026-10-12 采用的续跑机制允许补做未提交的技术单元；额外实际尝试单独保留，不能把本表当作重试后的实际调用上限。
 
 | 层 | 每 source | 8 sources | 计数口径 |
 | --- | ---: | ---: | --- |
@@ -107,7 +107,7 @@ VideoSeal repeat32 是同 32 个有效信息位、不同 native 通道冗余/开
 
 Wan payload 物理 encode 按完整 `(received artifact, selected index map)` 共享；key/receiver 标签本身不能阻止相同 map 共享，也不能强迫不同 map 合并。共享仅止于 VAE latent：同 map 的 K0/K1 必须分别执行各自 key 的 FFT coordinate、votes 和 bit read，并分别持久化 keyed logical evidence。逻辑分母固定为 360/source，不随共享改变：
 
-- 无条件实际范围为 **0..360/source，0..2,880 total**。媒体、clock、路径或支持不足可以令某些甚至全部 Wan payload encode 不发生，固定逻辑行仍保留。
+- 唯一物理输入范围为 **0..360/source，0..2,880 total**。媒体、clock、路径或支持不足可以令某些甚至全部 Wan payload encode 不发生，固定逻辑行仍保留。运行中断后的重复尝试另计。
 - 条件下界：只有在每个 `arm × attack` 至少产生一个可读 map、且三接收器和两 key 全部共享该 map 时，才是 **60/source，480 total**；这不是无条件预算下界。
 - 无共享保守上界：每个逻辑行 map 不同，为 **360/source，2,880 total**。
 - FULL 的盲路径不假定不同 key/receiver 得到同一 map，因此不据此收紧保守上界。
@@ -120,6 +120,18 @@ Wan payload 物理 encode 按完整 `(received artifact, selected index map)` �
 Run all 只执行 confirm_01..08；两 pilot 保留为开发证据，不加入 confirmation 分母。每个 source 分阶段运行，以便释放显存和局部恢复：plan/init → OFF/P0 generation → framewise P1/M05 → four main codecs → baseline embed → two baseline native codecs → temporal edits/codecs → main clock → main payload reads → baseline extracts → quality → report。
 
 任何 source/arm/attack/key/receiver 缺失、失败、歧义或不支持均保留固定行。独立阶段失败不得抹掉已完成的其他方法；已有 COMPLETE 或有 durable sidecar 的昂贵调用不因 Run all/restart 静默重做。阶段 COMPLETE 只表示遍历结束，不能代替逐行科学成功。confirmation 输出与 pilot 输出分目录、分 cohort 汇总。
+
+### 2026-10-12：Colab 到期后的固定任务续跑
+
+新版真实 notebook 默认在 `MyDrive/Video-WM/Paper-Results-V1-Checkpoint-V1` 下创建任务，并以 `active_confirmation_run.json` 保持运行目录。之后挂载同一 Drive、Run all 自动接续。旧 confirmation 目录保留；旧轮 853 READ 的迁移不作为此次交付条件。
+
+每个单元提交后立即保存结果与状态，模型执行阶段及 selector 准备阶段每 60 秒保存最近已提交的完整状态；每 32 次状态提交、阶段退出也保存 checkpoint。保留上一可读状态、两份快照和逐单元记录，`progress.json` 指向可实际恢复的快照。全状态损坏时读取可读快照并回放较新的单元；未知固定行 ID、缺少核心字段的单元只报告问题，不扩大固定分母或覆盖有效记录。动态物理 group 先于引用它的逻辑行提交。
+
+恢复粒度：完整生成 trajectory、每臂 decode、共享 framewise latent 与各臂输出、每次媒体发布、clock 观测/已提交 key、baseline 嵌入/逐观测提取、逐项质量指标。payload VAE latent 先保存，再分别读取 K0/K1；全部 key 完成后可回收该 latent。latent/votes 临时文件先 flush/fsync 再替换。不能从未保存的 CUDA kernel、denoising step 或编码器内部 batch 接续；未提交单元可能重做，`unit_attempts`、`encode_attempts` 和阶段历史保留额外尝试及失败。
+
+baseline PRE 和其他必要阶段输入保存于任务目录。`/content` 丢失时从已发布 MP4 恢复 RGB 缓存，沿 FULL 别名找到来源，避免重新生成或再次发布已提交的视频。已读、已评估、UNSUPPORTED/UNRESOLVED 及科学负结果保持不变；上游仍缺失的读取阶段为 PARTIAL，不能误标 COMPLETE。辅助日志损坏保留原文件并继续；同一 kernel 重跑时清理旧 experiments 包路径缓存，加载新源码。没有摘要、manifest、版本或严格模式门禁。
+
+只借鉴 CEG-WM `formal_experiment.py:588-715` 的固定 JOB_ID、逐单元提交与按时间/数量 checkpoint 做法，不引入该参考的身份、精确一致性或连续序列限制。本地交付通过 CPU/stub 强退与真实 CPU 小张量持久化验证；Drive 挂载实际 I/O、Colab 运行时到期、模型执行和耗时仍待用户真实 Run all 验证。
 
 ## 7. 当前待决项与明确不变项
 

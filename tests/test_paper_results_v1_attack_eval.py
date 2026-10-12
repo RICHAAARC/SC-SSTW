@@ -39,7 +39,8 @@ class AttackEvalTests(unittest.TestCase):
             raw = [row for row in store.data["receiver_rows"] if row["case_id"] == "pilot_01" and row["mode"] == "RAW"]
             blind = [row for row in store.data["receiver_rows"] if row["case_id"] == "pilot_01" and row["mode"] == "BLIND_PATH"]
             self.assertEqual({row["status"] for row in raw}, {"CLOCK_READY"})
-            self.assertEqual({row["status"] for row in blind}, {"FAILED"})
+            self.assertEqual({row["status"] for row in blind}, {"PLANNED"})
+            self.assertEqual(store.data["phases"]["receiver-clock"]["cases"]["pilot_01"]["status"], "FAILED")
             self.assertTrue(all(row["operation"]["source_coordinate_map"] == [None] * 181 for row in raw if row["attack_id"] == "full"))
 
     def test_fixed_report_retains_missing_and_confirmation(self):
@@ -185,7 +186,7 @@ class AttackEvalTests(unittest.TestCase):
             reopened = AttackRunStore(run, config)
             actual = reopened.data["records"]["pilot_01"]["framewise_clock_encodes"]
             self.assertEqual((actual["attempted"], actual["completed"], actual["failed"], actual["unfinished"]), (2, 1, 0, 1))
-            self.assertEqual([row["status"] for row in actual["records"]], ["COMPLETE", "RUNNING"])
+            self.assertEqual([row["status"] for row in actual["records"]], ["COMPLETE", "INTERRUPTED"])
 
     def test_external_failure_closes_running_only_and_preserves_internal_failure(self):
         config = self.config()
@@ -206,7 +207,7 @@ class AttackEvalTests(unittest.TestCase):
             reopened = AttackRunStore(run, config)
             self.assertEqual(reopened.data["phases"]["receiver-read"]["cases"]["pilot_01"]["status"], "FAILED")
             self.assertEqual(reopened.data["receiver_rows"][0]["status"], "READ")
-            self.assertEqual(reopened.data["receiver_rows"][1]["status"], "FAILED")
+            self.assertEqual(reopened.data["receiver_rows"][1]["status"], "CLOCK_READY")
 
             record_external_failure(config_path, run, "attack-media", "pilot_02", "external before launch")
             self.assertEqual(
@@ -215,6 +216,9 @@ class AttackEvalTests(unittest.TestCase):
             )
 
             reopened = AttackRunStore(run, config)
+            for row in reopened.data["artifacts"]:
+                if row["case_id"] == "pilot_02" and row["kind"] == "IMPORTED_MAIN":
+                    row.update(status="AVAILABLE", path="/fixture/imported-media")
             reopened.phase_start("import-main", "pilot_02")
             reopened.phase_finish("import-main", "pilot_02")
             record_external_failure(config_path, run, "import-main", "pilot_02", "late generic error")

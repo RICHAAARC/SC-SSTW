@@ -6,6 +6,8 @@ together.  Importing this module performs no heavyweight imports or model I/O.
 """
 from __future__ import annotations
 
+from experiments.paper_results_v1.resume_state import unit_attempt, remember
+
 import copy
 import csv
 import hashlib
@@ -523,9 +525,14 @@ class RunStore:
     def __init__(self, output, config, *, create=False):
         self.output = Path(output).resolve()
         self.path = self.output / "run_state.json"
+        from experiments.paper_results_v1.resume_state import StateJournal
+        self.journal = StateJournal(self.path)
         self.config = config
+        from experiments.paper_results_v1.resume_state import state_exists
+        if create and state_exists(self.path):
+            create = False
         if create:
-            self.output.mkdir(parents=True, exist_ok=False)
+            self.output.mkdir(parents=True, exist_ok=True)
             planned = build_plan(config)
             case_states = {case["case_id"]: {"status": "PLANNED", "failures": []} for case in config["cases"]}
             self.data = {
@@ -551,14 +558,16 @@ class RunStore:
             }
             self.save()
         else:
-            self.data = json.loads(self.path.read_text(encoding="utf-8"))
+            from experiments.paper_results_v1.resume_state import read_state
+            self.data = read_state(self.path)
+            self.journal.seed_cache(self.data)
             self.data.setdefault(
                 "config_path_semantics",
                 "LOADED_VALUES_USED_WITHOUT_DIGEST_ADMISSION_GATE",
             )
 
     def save(self):
-        _json_dump(self.path, self.data)
+        self.journal.save(self.data)
 
     def artifact(self, artifact_id, *, status, **fields):
         row = next(row for row in self.data["artifacts"] if row["artifact_id"] == artifact_id)
@@ -575,7 +584,7 @@ class RunStore:
             row["status"] = "FAILED"
         elif states and all(state == "COMPLETE" for state in states):
             row["status"] = "COMPLETE"
-        elif "COMPLETE" in states:
+        elif "COMPLETE" in states or "PARTIAL" in states:
             row["status"] = "PARTIAL"
         else:
             row["status"] = "PLANNED"
@@ -583,11 +592,9 @@ class RunStore:
     def phase_start(self, phase, case_id=None):
         row = self.data["phases"][phase]
         target = row if case_id is None else row["cases"][case_id]
-        if phase != "evaluate" and target["status"] != "PLANNED":
-            raise RealEvalConfigError(
-                f"{phase}/{case_id} already attempted with status {target['status']}; "
-                "start a new explicit run for another attempt"
-            )
+        if target["status"] != "PLANNED":
+            from experiments.paper_results_v1.resume_state import remember
+            remember(target, "resume unfinished phase; committed units skipped")
         target.update(status="RUNNING", started_at_unix=time.time())
         if case_id is None:
             row["status"] = "RUNNING"
@@ -598,7 +605,13 @@ class RunStore:
     def phase_finish(self, phase, case_id=None):
         row = self.data["phases"][phase]
         target = row if case_id is None else row["cases"][case_id]
-        target.update(status="COMPLETE", finished_at_unix=time.time())
+        missing = []
+        if case_id is not None:
+            ids = self._phase_artifacts(phase, case_id)
+            if phase == "codec":
+                ids = [_artifact_id(case_id, arm, "POST") for arm in MAIN_ARMS]
+            missing = [item for item in self.data["artifacts"] if item["artifact_id"] in ids and item["status"] != "AVAILABLE"]
+        target.update(status="PARTIAL" if missing else "COMPLETE", finished_at_unix=time.time())
         if case_id is None:
             row["status"] = "COMPLETE"
         else:
@@ -615,24 +628,6 @@ class RunStore:
             row["status"] = "FAILED"
         else:
             self._refresh_case_phase_status(row)
-        if case_id is not None:
-            for artifact_id in self._phase_artifacts(phase, case_id):
-                artifact = next(item for item in self.data["artifacts"] if item["artifact_id"] == artifact_id)
-                if artifact["status"] == "PLANNED":
-                    artifact.update(status="FAILED", reason=reason)
-            if phase.startswith("baseline-extract-"):
-                method = phase.removeprefix("baseline-extract-")
-                for slot in self.data["baseline_slots"]:
-                    if slot["case_id"] == case_id and slot["method"] == method and slot["status"] == "PLANNED":
-                        slot.update(status="FAILED", reason=reason)
-            if phase == "receiver-sync":
-                for slot in self.data["receiver_slots"]:
-                    if slot["case_id"] == case_id and slot["status"] == "PLANNED":
-                        slot.update(status="FAILED", reason=reason)
-            if phase == "quality":
-                for quality in self.data["quality_rows"]:
-                    if quality["case_id"] == case_id and quality["status"] == "PLANNED":
-                        quality.update(status="FAILED", reason=reason)
         self.save()
         return reason
 
@@ -670,6 +665,7 @@ class RunStore:
     def cost(self, case_id, phase, *, status, seconds=None, reason=None):
         cost_id = f"{case_id}/{phase}"
         row = next(row for row in self.data["costs"] if row["cost_id"] == cost_id)
+        row.setdefault("attempts", []).append({"status": status, "seconds": seconds, "reason": reason, "at": time.time()})
         row.update(status=status, seconds=seconds, reason=reason, budget_status="NO_BUDGET_ADOPTED")
         self.save()
 
@@ -727,8 +723,10 @@ class ArtifactFiles:
 
         path = self.root / f"{name}.npy"
         path.parent.mkdir(parents=True, exist_ok=True)
-        with path.open("wb") as stream:
+        temporary = path.with_suffix(".npy.tmp")
+        with temporary.open("wb") as stream:
             np.save(stream, value, allow_pickle=False)
+        os.replace(temporary, path)
         array = np.asarray(value)
         receipt = self._receipt(path, shape=[int(part) for part in array.shape], dtype=str(array.dtype))
         self.store.artifact(artifact_id, status="AVAILABLE", **receipt)
@@ -918,18 +916,23 @@ def _artifact(store, artifact_id):
 
 
 def _run_timed(store, phase, case_id, function):
+    if store.data["phases"][phase]["cases"][case_id]["status"] == "COMPLETE":
+        return
     store.phase_start(phase, case_id)
     started = time.perf_counter()
     try:
-        value = function()
+        with store.journal.periodic():
+            value = function()
         elapsed = time.perf_counter() - started
         store.cost(case_id, phase, status="SUCCEEDED", seconds=elapsed)
         store.phase_finish(phase, case_id)
+        store.journal.checkpoint("phase-complete")
         return value
     except BaseException as exc:
         elapsed = time.perf_counter() - started
         reason = store.phase_failure(phase, exc, case_id)
         store.cost(case_id, phase, status="FAILED", seconds=elapsed, reason=reason)
+        store.journal.checkpoint("phase-interrupted")
         raise
 
 
@@ -937,50 +940,43 @@ def phase_generate(store, config, case_id):
     def execute():
         import torch
         from runtime.wan import video_trajectory_conditional_joint_v1 as runtime
-
-        case = _case(config, case_id)
-        cfg = _runtime_generation_config(config, case)
+        arms = [arm for arm in ("OFF_NATIVE", "PAYLOAD_NATIVE")
+                if _artifact(store, _artifact_id(case_id, arm, "TERMINAL"))["status"] != "AVAILABLE"]
+        if not arms:
+            return
+        cfg = _runtime_generation_config(config, _case(config, case_id))
         device, dtype = runtime.execution_device_dtype()
-        pipe, initial, prompt, negative, input_dtype = runtime.generation.prepare_generation(
-            cfg, load_vae=False, device=device, model_dtype=dtype,
-        )
+        with unit_attempt(store, case_id + "/generation-model-load", operation="model_load"):
+            pipe, initial, prompt, negative, input_dtype = runtime.generation.prepare_generation(
+                cfg, load_vae=False, device=device, model_dtype=dtype)
         pristine = copy.deepcopy(pipe.scheduler)
-        records = {}
+        records = store.data["records"].setdefault(case_id, {}).setdefault("generation", {})
         try:
-            for arm in ("OFF_NATIVE", "PAYLOAD_NATIVE"):
-                steps = []
-                if arm == "OFF_NATIVE":
-                    terminal, receipt = run_off_trajectory(
-                        pipe, initial, copy.deepcopy(pristine), prompt, negative,
-                        input_dtype, None, steps.append,
-                    )
-                else:
-                    terminal, receipt = runtime.run_trajectory(
-                        pipe, initial, copy.deepcopy(pristine), prompt, negative,
-                        input_dtype, config["keys"]["K0"], list(config["payload_bits"]),
-                        lambda name, done: None, steps.append,
-                    )
-                    receipt["message_interface"] = "EXPLICIT_32_BITS_OUTER_INTERFACE_NEW_NOT_HISTORICAL_CAPACITY_EVIDENCE"
-                path = store.output / "artifacts" / case_id / arm / "terminal.pt"
-                path.parent.mkdir(parents=True, exist_ok=True)
-                torch.save(terminal, path)
+            for arm in arms:
                 artifact_id = _artifact_id(case_id, arm, "TERMINAL")
-                file_receipt = {
-                    "path": str(path), "bytes": path.stat().st_size,
-                    "shape": list(terminal.shape), "dtype": str(terminal.dtype),
-                }
-                file_receipt["sha256"] = _observe_file_identity(file_receipt)
-                store.artifact(
-                    artifact_id, status="AVAILABLE", **file_receipt,
-                )
-                records[arm] = {"receipt": receipt, "steps": steps}
-                del terminal
+                with unit_attempt(store, artifact_id, operation="50_step_trajectory"):
+                    steps = []
+                    if arm == "OFF_NATIVE":
+                        terminal, receipt = run_off_trajectory(
+                            pipe, initial, copy.deepcopy(pristine), prompt, negative,
+                            input_dtype, None, steps.append)
+                    else:
+                        terminal, receipt = runtime.run_trajectory(
+                            pipe, initial, copy.deepcopy(pristine), prompt, negative,
+                            input_dtype, config["keys"]["K0"], list(config["payload_bits"]),
+                            lambda name, done: None, steps.append)
+                        receipt["message_interface"] = "EXPLICIT_32_BITS_OUTER_INTERFACE_NEW_NOT_HISTORICAL_CAPACITY_EVIDENCE"
+                    path = store.output / "artifacts" / case_id / arm / "terminal.pt"
+                    path.parent.mkdir(parents=True, exist_ok=True)
+                    temporary = path.with_suffix(".pt.tmp")
+                    torch.save(terminal, temporary); os.replace(temporary, path)
+                    records[arm] = {"receipt": receipt, "steps": steps}
+                    store.artifact(artifact_id, status="AVAILABLE", path=str(path),
+                                   bytes=path.stat().st_size, shape=list(terminal.shape), dtype=str(terminal.dtype))
+                    del terminal
         finally:
             pipe = initial = prompt = negative = pristine = None
             runtime.release()
-        store.data["records"].setdefault(case_id, {})["generation"] = records
-        store.save()
-
     return _run_timed(store, "generate", case_id, execute)
 
 
@@ -988,66 +984,61 @@ def phase_decode(store, config, case_id):
     def execute():
         import torch
         from runtime.wan import video_trajectory_conditional_joint_v1 as runtime
-
-        case = _case(config, case_id)
-        cfg = _runtime_generation_config(config, case)
+        arms = [arm for arm in ("OFF_NATIVE", "PAYLOAD_NATIVE")
+                if _artifact(store, _artifact_id(case_id, arm, "PRE"))["status"] != "AVAILABLE"]
+        if not arms:
+            return
+        cfg = _runtime_generation_config(config, _case(config, case_id))
         files = ArtifactFiles(store, case_id)
         device, _dtype = runtime.execution_device_dtype()
         vae = runtime.generation.load_frozen_vae(cfg, device=device)
         try:
-            for arm in ("OFF_NATIVE", "PAYLOAD_NATIVE"):
+            for arm in arms:
                 terminal_row = _artifact(store, _artifact_id(case_id, arm, "TERMINAL"))
                 if terminal_row["status"] != "AVAILABLE":
                     raise ValueError(f"{arm} terminal unavailable")
-                _observe_file_identity(terminal_row)
-                terminal = torch.load(terminal_row["path"], map_location="cpu", weights_only=True)
-                rgb = runtime.vae.decode_normalized_latent(
-                    vae, terminal.to(device=next(vae.parameters()).device, dtype=torch.float32),
-                )
-                q8 = runtime.vae.quantize_rgb8_no_codec(rgb)
-                files.save_rgb8(_artifact_id(case_id, arm, "PRE"), q8, f"{arm}/pre")
-                del terminal, rgb, q8
+                with unit_attempt(store, _artifact_id(case_id, arm, "PRE"), operation="native_decode"):
+                    terminal = torch.load(terminal_row["path"], map_location="cpu", weights_only=True)
+                    rgb = runtime.vae.decode_normalized_latent(
+                        vae, terminal.to(device=next(vae.parameters()).device, dtype=torch.float32))
+                    files.save_rgb8(_artifact_id(case_id, arm, "PRE"), runtime.vae.quantize_rgb8_no_codec(rgb), f"{arm}/pre")
+                    del terminal, rgb
         finally:
-            vae = None
-            runtime.release()
-
+            vae = None; runtime.release()
     return _run_timed(store, "decode", case_id, execute)
 
 
 def phase_framewise(store, config, case_id):
     def execute():
-        from runtime.wan import video_trajectory_conditional_joint_v1 as runtime
-
-        case = _case(config, case_id)
-        cfg = _runtime_generation_config(config, case)
+        import numpy as np
         files = ArtifactFiles(store, case_id)
-        p0 = _artifact(store, _artifact_id(case_id, "PAYLOAD_NATIVE", "PRE"))
-        source = files.load_rgb8(p0)
+        pending = [arm for arm in ("PAYLOAD_FRAMEWISE_RECON", "PAYLOAD_FRAMEWISE_M05")
+                   if _artifact(store, _artifact_id(case_id, arm, "PRE"))["status"] != "AVAILABLE"]
+        if not pending:
+            return
         model = load_local_framewise_backend(config["models"]["framewise"])
         try:
-            latent = model.encode(source)
-            before = hashlib.sha256(latent.tobytes()).hexdigest()
-            files.save_numpy(_artifact_id(case_id, "SHARED_FRAMEWISE", "LATENT"), latent, "framewise/shared_latent")
-            written, write_receipt = model.write(latent.copy(), config["keys"]["K0"])
-            if hashlib.sha256(latent.tobytes()).hexdigest() != before:
-                raise RuntimeError("M05 write changed shared framewise latent")
-            outputs = {
-                "PAYLOAD_FRAMEWISE_RECON": model.decode(latent.copy()),
-                "PAYLOAD_FRAMEWISE_M05": model.decode(written.copy()),
-            }
-            for arm, rgb in outputs.items():
-                files.save_rgb8(_artifact_id(case_id, arm, "PRE"), rgb, f"{arm}/pre")
-            receipt = _json_dump(files.root / "framewise" / "m05_write_receipt.json", write_receipt)
-            store.data["records"].setdefault(case_id, {})["framewise"] = {
-                "single_encode": True,
-                "independent_decode_inputs": True,
-                "shared_latent_sha256": before,
-                "write_receipt": receipt,
-            }
-            store.save()
+            shared = _artifact(store, _artifact_id(case_id, "SHARED_FRAMEWISE", "LATENT"))
+            if shared["status"] == "AVAILABLE":
+                latent = np.load(shared["path"], allow_pickle=False)
+            else:
+                with unit_attempt(store, shared["artifact_id"], operation="framewise_writer_encode"):
+                    source = files.load_rgb8(_artifact(store, _artifact_id(case_id, "PAYLOAD_NATIVE", "PRE")))
+                    latent = model.encode(source)
+                    files.save_numpy(shared["artifact_id"], latent, "framewise/shared_latent")
+            records = store.data["records"].setdefault(case_id, {}).setdefault("framewise", {})
+            records.update(single_encode=True, independent_decode_inputs=True)
+            for arm in pending:
+                with unit_attempt(store, _artifact_id(case_id, arm, "PRE"), operation="framewise_writer_decode"):
+                    if arm == "PAYLOAD_FRAMEWISE_M05":
+                        written, receipt = model.write(latent.copy(), config["keys"]["K0"])
+                        records["write_receipt"] = _json_dump(files.root / "framewise" / "m05_write_receipt.json", receipt)
+                        rgb = model.decode(written.copy())
+                    else:
+                        rgb = model.decode(latent.copy())
+                    files.save_rgb8(_artifact_id(case_id, arm, "PRE"), rgb, f"{arm}/pre")
         finally:
             model.close()
-
     return _run_timed(store, "framewise", case_id, execute)
 
 
@@ -1091,11 +1082,13 @@ def phase_codec(store, config, case_id):
         files = ArtifactFiles(store, case_id)
         targets = [(arm, "PRE", "POST") for arm in MAIN_ARMS]
         targets += [(method, "NATIVE_PRE", "NATIVE_POST") for method in BASELINES]
-        records = {}
+        records = store.data["records"].setdefault(case_id, {}).setdefault("codec", {})
         for stage, pre_phase, post_phase in targets:
             artifact_id = _artifact_id(case_id, stage, pre_phase)
             row = _artifact(store, artifact_id)
             post_id = _artifact_id(case_id, stage, post_phase)
+            if _artifact(store, post_id)["status"] == "AVAILABLE":
+                continue
             if row["status"] != "AVAILABLE":
                 store.artifact(post_id, status="BLOCKED_DEPENDENCY", reason=f"{artifact_id} is {row['status']}")
                 records[stage] = {"status": "BLOCKED_DEPENDENCY"}
@@ -1106,11 +1099,13 @@ def phase_codec(store, config, case_id):
             started = time.perf_counter()
             try:
                 actual_raster_sha = _observe_file_identity(row)
-                fixed_rgb_media.mp4_roundtrip(
-                    row["path"], actual_raster_sha, root / "source.mp4", root / "received.rgb8",
-                    count=lambda name, done: calls.update([f"{name}:{'completed' if done else 'attempted'}"]),
-                    event=lambda name, value: events.__setitem__(name, value),
-                )
+                with unit_attempt(store, post_id, operation="main_publication_codec") as attempt:
+                    root = root / ("attempt-" + str(attempt["attempt"]))
+                    fixed_rgb_media.mp4_roundtrip(
+                        row["path"], actual_raster_sha, root / "source.mp4", root / "received.rgb8",
+                        count=lambda name, done: calls.update([f"{name}:{'completed' if done else 'attempted'}"]),
+                        event=lambda name, value: events.__setitem__(name, value),
+                    )
                 receipt = events["rgb24"]
                 store.artifact(
                     post_id, status="AVAILABLE", path=receipt["path"], sha256=receipt["sha256"],

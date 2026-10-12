@@ -1,0 +1,30 @@
+{
+  "status": "PASS_CPU_STATIC_ONLY",
+  "notebook": "/home/richar/projects/Video-WM/worktrees/Paper-Results-V1/notebooks/paper_results_v1_confirmation_v1_colab.ipynb",
+  "clean_code_cells": 7,
+  "companion": "/home/richar/projects/Video-WM/worktrees/Paper-Results-V1/notebooks/paper_results_v1_companion.zip",
+  "companion_files": 71,
+  "companion_bytes": 223868,
+  "notebook_builder_and_zip_synced": true,
+  "no_git_cli_checks": [
+    {
+      "module": "real_cli",
+      "phase": "init",
+      "no_git_source": true,
+      "exit_code": 0
+    },
+    {
+      "module": "attack_cli",
+      "phase": "init",
+      "no_git_source": true,
+      "exit_code": 0
+    },
+    {
+      "module": "confirmation_v1_cli",
+      "phase": "init",
+      "no_git_source": true,
+      "exit_code": 0
+    }
+  ],
+  "model_gpu_codec_drive_execution": false
+}
