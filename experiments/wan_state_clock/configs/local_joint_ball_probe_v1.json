@@ -1,0 +1,19 @@
+{
+  "schema": "local-joint-ball-probe-v1",
+  "source_run": "resumable-protected-common-v1",
+  "source_arm": "CONT_FINAL",
+  "model": {
+    "id": "Wan-AI/Wan2.1-T2V-1.3B-Diffusers",
+    "revision": "0fad780a534b6463e45facd96134c9f345acfa5b"
+  },
+  "carrier": {
+    "key": "local-joint-state-payload-v1-first-mechanism",
+    "message_hex": "8001a55a",
+    "rho": 0.5,
+    "cap": 1.0
+  },
+  "device": "cuda",
+  "inputs": {
+    "protected_run": "/content/drive/MyDrive/Video-WM/Local-Joint-State-Payload-V1-Protected-Common/resumable-protected-common-v1/run"
+  }
+}
