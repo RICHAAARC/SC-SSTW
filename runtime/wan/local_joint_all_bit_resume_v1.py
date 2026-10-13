@@ -50,16 +50,16 @@ def atomic_tensor(path, value):
     os.replace(temporary, path)
 
 
-def _valid_state(path, views=DEFAULT_VIEWS):
+def _valid_state(path, views=DEFAULT_VIEWS, steps=("step_1", "step_2")):
     value = read_json(path)
     if not isinstance(value, dict) or not all(isinstance(value.get(k), dict) for k in ("views", "steps", "counts", "model_calls")):
         raise ValueError("incomplete result state")
-    if not set(views) <= value["views"].keys() or not {"step_1","step_2"} <= value["steps"].keys():
+    if not set(views) <= value["views"].keys() or not set(steps) <= value["steps"].keys():
         raise ValueError("result is missing fixed method slots")
     return value
 
 
-def read_state(output, *, views=DEFAULT_VIEWS):
+def read_state(output, *, views=DEFAULT_VIEWS, steps=("step_1", "step_2")):
     output = Path(output)
     candidates = [output / "result.json", output / "result.json.previous",
                   output / "checkpoints/latest.json", output / "checkpoints/previous.json"]
@@ -69,7 +69,7 @@ def read_state(output, *, views=DEFAULT_VIEWS):
         if not path.exists():
             continue
         try:
-            value = _valid_state(path,views)
+            value = _valid_state(path,views,steps)
             break
         except (OSError, ValueError, TypeError) as exc:
             problems.append(dict(path=str(path), reason=repr(exc)))
@@ -111,10 +111,11 @@ def recount(value):
 
 
 class Journal:
-    def __init__(self, output, interval=INTERVAL_SECONDS, *, views=DEFAULT_VIEWS):
+    def __init__(self, output, interval=INTERVAL_SECONDS, *, views=DEFAULT_VIEWS, steps=("step_1", "step_2")):
         self.output = Path(output)
         self.interval = interval
         self.views = views
+        self.steps = steps
         self.lock = threading.RLock()
         self.call_cache = {}
 
@@ -130,7 +131,7 @@ class Journal:
             path = self.output / "result.json"
             if path.exists():
                 try:
-                    _valid_state(path,self.views)
+                    _valid_state(path,self.views,self.steps)
                 except (OSError, ValueError, TypeError):
                     pass
                 else:
@@ -142,11 +143,11 @@ class Journal:
             path = self.output / "result.json"
             if not path.exists():
                 return
-            value = _valid_state(path,self.views)
+            value = _valid_state(path,self.views,self.steps)
             latest = self.output / "checkpoints/latest.json"
             if latest.exists():
                 try:
-                    _valid_state(latest,self.views)
+                    _valid_state(latest,self.views,self.steps)
                 except (OSError, ValueError, TypeError):
                     pass
                 else:

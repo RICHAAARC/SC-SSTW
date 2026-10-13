@@ -64,7 +64,7 @@ def tensor_readout(rgb, *, key, message, protocol=carrier.PUBLIC):
 
 
 def simplex_minimum(gram):
-    """Solve the five-variable PSD simplex QP by its 31 faces, with no ridge.
+    """Solve a small PSD simplex QP by its nonempty faces, with no ridge.
 
     Face enumeration solves one algebraic problem, not model candidate selection.
     Scale-relative FP64 residual checks are numerical diagnostics, not score gates.
@@ -72,17 +72,18 @@ def simplex_minimum(gram):
     import numpy as np
 
     gram = np.asarray(gram, dtype=np.float64)
-    if gram.shape != (5, 5) or not np.isfinite(gram).all():
-        raise ValueError("finite 5x5 Gram required")
+    if gram.ndim != 2 or gram.shape[0] != gram.shape[1] or not 1 <= len(gram) <= 6 or not np.isfinite(gram).all():
+        raise ValueError("finite square Gram with 1..6 rows required")
+    n = len(gram)
     scale = float(np.max(np.abs(gram)))
     if scale == 0:
-        return dict(status="EXACT_ZERO", weights=[.2]*5, squared_norm=0., kkt_residual=0.,
+        return dict(status="EXACT_ZERO", weights=[1/n]*n, squared_norm=0., kkt_residual=0.,
                     numerical_tolerance=0.)
     a = (gram + gram.T) / (2*scale)
     tol = 4096*np.finfo(np.float64).eps
     best = None
-    for size in range(1, 6):
-        for face in combinations(range(5), size):
+    for size in range(1, n+1):
+        for face in combinations(range(n), size):
             ids = list(face)
             block = np.zeros((size+1, size+1))
             block[:size, :size] = a[np.ix_(ids, ids)]
@@ -91,7 +92,7 @@ def simplex_minimum(gram):
             sol = np.linalg.lstsq(block, rhs, rcond=None)[0]
             if np.max(np.abs(block@sol-rhs)) > tol or min(sol[:size]) < -tol:
                 continue
-            weights = np.zeros(5); weights[ids] = np.maximum(sol[:size], 0)
+            weights = np.zeros(n); weights[ids] = np.maximum(sol[:size], 0)
             weights /= weights.sum()
             norm2 = float(weights@a@weights)
             residual = max(0., float(norm2 - min(a@weights)))

@@ -1,0 +1,28 @@
+{
+  "schema": "local-joint-six-bit-final-v1",
+  "source_run": "resumable-task-v1-2x010",
+  "source_arm": "CONT_FINAL",
+  "model": {
+    "id": "Wan-AI/Wan2.1-T2V-1.3B-Diffusers",
+    "revision": "0fad780a534b6463e45facd96134c9f345acfa5b"
+  },
+  "carrier": {
+    "key": "local-joint-state-payload-v1-first-mechanism",
+    "message_hex": "8001a55a",
+    "rho": 0.5,
+    "cap": 1.0
+  },
+  "device": "cuda",
+  "inputs": {
+    "terminal_latent": "/content/drive/MyDrive/Video-WM/Local-Joint-State-Payload-V1-All-Bit-Continue/resumable-task-v1-2x010/run/inputs/terminal_latent.pt",
+    "final_step_unit": "/content/drive/MyDrive/Video-WM/Local-Joint-State-Payload-V1-All-Bit-Continue/resumable-task-v1-2x010/run/step_2_unit.pt",
+    "saved_final_result": "/content/drive/MyDrive/Video-WM/Local-Joint-State-Payload-V1-All-Bit-Continue/resumable-task-v1-2x010/run/result.json"
+  },
+  "bits": [4, 12, 18, 20, 27, 30],
+  "loss": {
+    "mu": 0.02,
+    "gamma": 0.01,
+    "payload_weight": 0.8,
+    "state_weight": 0.2
+  }
+}
