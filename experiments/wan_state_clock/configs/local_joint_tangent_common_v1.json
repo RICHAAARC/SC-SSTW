@@ -1,0 +1,22 @@
+{
+  "schema": "local-joint-tangent-common-v1",
+  "source_run": "resumable-six-bit-final-v1",
+  "source_arm": "CONT_FINAL",
+  "step_size": 0.1,
+  "model": {
+    "id": "Wan-AI/Wan2.1-T2V-1.3B-Diffusers",
+    "revision": "0fad780a534b6463e45facd96134c9f345acfa5b"
+  },
+  "carrier": {
+    "key": "local-joint-state-payload-v1-first-mechanism",
+    "message_hex": "8001a55a",
+    "rho": 0.5,
+    "cap": 1.0
+  },
+  "device": "cuda",
+  "inputs": {
+    "six_bit_inputs": "/content/drive/MyDrive/Video-WM/Local-Joint-State-Payload-V1-Six-Bit-Final/resumable-six-bit-final-v1/run/inputs/fixed_inputs.pt",
+    "directions": "/content/drive/MyDrive/Video-WM/Local-Joint-State-Payload-V1-Six-Bit-Final/resumable-six-bit-final-v1/run/diagnostic_directions.pt",
+    "gradient_units": "/content/drive/MyDrive/Video-WM/Local-Joint-State-Payload-V1-Six-Bit-Final/resumable-six-bit-final-v1/run/units"
+  }
+}
