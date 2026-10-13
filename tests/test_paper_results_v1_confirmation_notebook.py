@@ -163,6 +163,49 @@ class ConfirmationNotebookTests(unittest.TestCase):
                 namespace["load_companion_source"]()
             self.assertFalse((root/"escaped.py").exists())
 
+    def test_pending_quality_repairs_main_lpips_once_and_keeps_failure_evidence_path(self):
+        notebook = build_notebook()
+        source = "".join(next(c["source"] for c in notebook["cells"]
+                              if c["id"] == "fixed-confirmation-execution"))
+        functions = [n for n in ast.parse(source).body if isinstance(n, ast.FunctionDef)
+                     and n.name in ("prepare_pending_lpips", "invoke_owned")]
+        for metric_status, phase_status, probe_results, expected_stages in (
+            ("FAILED", "PARTIAL", [1, 0, 0], ["QUALITY_LPIPS_IMPORT_PROBE", "QUALITY_LPIPS_IMPORT_REPAIR", "QUALITY_LPIPS_IMPORT_REPROBE"]),
+            ("FAILED", "PARTIAL", [0], ["QUALITY_LPIPS_IMPORT_PROBE"]),
+            ("FAILED", "PARTIAL", [1, 1, 1], ["QUALITY_LPIPS_IMPORT_PROBE", "QUALITY_LPIPS_IMPORT_REPAIR", "QUALITY_LPIPS_IMPORT_REPROBE"]),
+            ("EVALUATED", "PARTIAL", [], []),
+            ("EVALUATED", "COMPLETE", [], []),
+        ):
+            with self.subTest(metric=metric_status, phase=phase_status, returns=probe_results):
+                calls, invocations, retained = [], [], []
+                results = iter(probe_results)
+                def logged(command, stage, **kwargs):
+                    calls.append((list(command), stage, kwargs))
+                    return next(results)
+                ns = {
+                    "quality_lpips_checked": False, "Path": Path, "PYTHON": "/main/python",
+                    "PORTABLE_ROOT": Path("/source"), "portable_env": {}, "ATTACK_OUTPUT": Path("/attack"),
+                    "read_state": lambda _path: {"quality_rows": [{"case_id": "confirm_01", "metrics": {"LPIPS": {"status": metric_status}}}]},
+                    "phase_status": lambda *_args: phase_status, "logged": logged,
+                    "retain_attempt": lambda *args: retained.append(args),
+                    "invoke": lambda *args, **kwargs: invocations.append((args, kwargs)),
+                }
+                exec(compile(ast.Module(body=functions, type_ignores=[]), "quality-preparation", "exec"), ns)
+                for _ in range(2):
+                    ns["invoke_owned"](["quality"], "confirm_01", "attack", "quality")
+                self.assertEqual([stage for _, stage, _ in calls], expected_stages)
+                self.assertTrue(all(command[0] == "/main/python" for command, _, _ in calls))
+                self.assertTrue(all(kwargs["check"] is False for _, _, kwargs in calls))
+                if phase_status == "COMPLETE":
+                    self.assertFalse(invocations)
+                    self.assertEqual(len(retained), 2)
+                else:
+                    # Failed dependency repair still reaches the real metric path,
+                    # which retains its import/model-load error in the saved row.
+                    self.assertEqual(len(invocations), 2)
+                installs = [cmd for cmd, _, _ in calls if "install" in cmd]
+                self.assertTrue(all(cmd == ["/main/python", "-m", "pip", "install", "lpips"] for cmd in installs))
+
     def test_active_pointer_recovers_same_run_and_rejects_unsafe_directory_name(self):
         notebook=build_notebook()
         source="".join(next(c["source"] for c in notebook["cells"] if c["id"]=="portable-setup"))

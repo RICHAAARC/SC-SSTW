@@ -292,11 +292,43 @@ def build_notebook():
             except Exception as exc:
                 print("State read requires CLI recovery:", family, phase, type(exc).__name__, str(exc))
                 return None
+        quality_lpips_checked = False
+        def prepare_pending_lpips(case_id):
+            # Quality runs in PYTHON, not the isolated VideoSeal interpreter.
+            # Probe/install only when this case still needs its LPIPS metric.
+            global quality_lpips_checked
+            if quality_lpips_checked:
+                return
+            try:
+                rows = read_state(ATTACK_OUTPUT / "attack_run_state.json")["quality_rows"]
+                rows = [row for row in rows if row.get("case_id") == case_id]
+                pending = not rows or any(
+                    row.get("metrics", {}).get("LPIPS", {}).get("status")
+                    in (None, "RUNNING", "MISSING", "FAILED", "INTERRUPTED")
+                    for row in rows
+                )
+            except (OSError, ValueError, KeyError, TypeError) as exc:
+                print("Quality state requires CLI recovery:", type(exc).__name__, str(exc))
+                pending = True
+            if not pending:
+                return
+            quality_lpips_checked = True
+            probe = [PYTHON, "-c", "import lpips; print('QUALITY_LPIPS_IMPORT_READY')"]
+            if logged(probe, "QUALITY_LPIPS_IMPORT_PROBE", cwd=PORTABLE_ROOT,
+                      env=portable_env, check=False) != 0:
+                logged([PYTHON, "-m", "pip", "install", "lpips"],
+                       "QUALITY_LPIPS_IMPORT_REPAIR", cwd=PORTABLE_ROOT,
+                       env=portable_env, check=False)
+                logged(probe, "QUALITY_LPIPS_IMPORT_REPROBE", cwd=PORTABLE_ROOT,
+                       env=portable_env, check=False)
+            # Actual import/model-load failures remain per-metric FAILED evidence.
         def invoke_owned(command, case_id, family, phase, *, interpreter=PYTHON):
             prior = phase_status(family, case_id, phase)
             if prior == "COMPLETE":
                 retain_attempt(case_id, family, phase, "SKIPPED_DURABLE_COMPLETE")
                 return 0
+            if family == "attack" and phase == "quality":
+                prepare_pending_lpips(case_id)
             return invoke(command, case_id, family, phase, interpreter=interpreter)
         def invoke(command, case_id, family, phase, *, interpreter=PYTHON):
             command = [interpreter, *command]
