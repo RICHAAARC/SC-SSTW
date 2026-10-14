@@ -161,9 +161,10 @@ class LocalFramewiseBackend:
         self.vae.eval().to(self.device)
         framewise.verify_scaling_factor(self.vae)
 
-    def encode(self, rgb):
+    def encode(self, rgb, *, batch_observer=None):
         return self.framewise.encode_rgb_frames(
             self.vae, rgb.float().div(255), batch_frames=self.batch_frames,
+            batch_observer=batch_observer,
         ).numpy()
 
     @staticmethod

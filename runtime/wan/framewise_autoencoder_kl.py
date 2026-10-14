@@ -66,6 +66,7 @@ def encode_rgb_frames(
     rgb: Any,
     *,
     batch_frames: int,
+    batch_observer=None,
 ) -> Any:
     """Deterministic posterior mode in explicit float32 scaled-latent units."""
 
@@ -82,7 +83,17 @@ def encode_rgb_frames(
     batches = []
     with torch.inference_mode():
         for start in range(0, int(normalized.shape[0]), batch_frames):
-            encoded = vae.encode(normalized[start : start + batch_frames])
+            stop = min(start + batch_frames, int(normalized.shape[0]))
+            if batch_observer is not None:
+                batch_observer("STARTED", start, stop, None)
+            try:
+                encoded = vae.encode(normalized[start:stop])
+            except BaseException as exc:
+                if batch_observer is not None:
+                    batch_observer("FAILED", start, stop, exc)
+                raise
+            if batch_observer is not None:
+                batch_observer("RETURNED", start, stop, None)
             distribution = getattr(encoded, "latent_dist", None)
             mode = getattr(distribution, "mode", None)
             if distribution is None or not callable(mode):
