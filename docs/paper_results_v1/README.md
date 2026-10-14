@@ -1,5 +1,10 @@
 # Paper Results V1
 
+The fixed user-run validation that reuses four saved residual candidates for
+separate clean-MP4 and same-MP4 delete_g0 joint clock/payload reports is
+documented in [residual_joint_v1.md](residual_joint_v1.md). Its direct Run-all
+handoff is `notebooks/paper_results_v1_residual_joint_v1_colab.ipynb`.
+
 The adopted fixed two-pilot temporal-edit extension is documented in [temporal_attack_eval_v1.md](temporal_attack_eval_v1.md). Its independent CLI is `python -m experiments.paper_results_v1.attack_cli`; its Run-all handoff is `notebooks/paper_results_v1_temporal_attack_two_pilot_colab.ipynb`. This extension reuses saved main PRE/POST artifacts and never regenerates a missing main arm.
 
 The original `cli` entry turns an explicit predeclared slot manifest plus saved

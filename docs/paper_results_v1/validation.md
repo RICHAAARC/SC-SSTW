@@ -1,5 +1,44 @@
 # Paper Results V1 validation
 
+## 2026-10-14 saved-residual joint Run-all handoff
+
+The new `residual_joint_v1` runner and notebook reuse exactly four saved
+residual RGB8 candidates. CPU/stub execution covered the complete fixed path:
+four codec publications, four same-MP4 delete_g0 edits, eight blind
+`CENTERED_U` selections, the nominal 176 framewise batch attempts, eight Wan
+reads, separate clean/delete reports, and the post-read truth join. The same
+test executes the bounded saved-RGB peak-quality report/contact-sheet path and
+checks its changed-pixel and new boundary-value channel-fraction fields, with
+no quality gate or effect on the eight joint rows.
+
+Focused command:
+
+```text
+<project-python> -m pytest -q tests/test_residual_joint_v1.py
+```
+
+Result: `7 passed in 3.67s`. The stub path also proves that a correct payload
+with one wrong clock path counts as payload-exact but not clock-exact or
+joint-exact; no path/payload truth is joined before the Wan terminal phase or
+written into shared row state. Initialization rejects payload bits that differ
+from the saved residual run while retaining a missing candidate as one failed
+clean row and one blocked delete row in the fixed eight-row report. Wan rejects
+nonfinite latents and non-binary decoded bits. Payload-read attempts use a
+cumulative ledger and attempt-numbered artifacts. A fresh-kernel resume with a
+saved framewise latent still advertises its possible `wan-after-clock` work, so
+the Run-all environment cell prepares Wan dependencies before clock recovery.
+The builder test also
+validates nbformat, empty
+code-cell outputs, the exact mount-only first code cell, companion ZIP Python
+syntax, the no-`.git` portable CLI `--help` entry, required runtime files, and
+absence of source-SHA/dirty/strict admission code.
+
+A related selected regression command added residual-clock, attack-matrix, and
+checkpoint tests and completed `20 passed, 12 deselected in 5.87s` under the
+repository's marker filter. Python compilation and `git diff --check` also
+passed. These are CPU/static/stub checks. No real model, GPU, codec, Colab,
+Drive write, or scientific experiment was executed.
+
 ## 2026-10-10 companion-source notebook revision
 
 The two Run-all notebooks now fetch the ordinary public
