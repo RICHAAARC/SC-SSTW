@@ -48,15 +48,23 @@ def delete_spec():
     }
 
 
-def _slot_ids():
-    return [f"{group.lower()}/{case}" for group in GROUPS for case in CASES]
+def validate_cases(cases):
+    cases = tuple(cases)
+    if (len(cases) != 4 or len(set(cases)) != 4 or
+            any(not isinstance(case, str) or not case or not case.replace("_", "").isalnum() for case in cases)):
+        raise ValueError("four distinct safe case IDs are required")
+    return cases
 
 
-def _new_rows():
+def _slot_ids(cases=CASES):
+    return [f"{group.lower()}/{case}" for group in GROUPS for case in cases]
+
+
+def _new_rows(cases=CASES):
     rows = []
     for group in GROUPS:
         frames = 181 if group == "CLEAN_MP4" else 163
-        for case in CASES:
+        for case in cases:
             rows.append({
                 "slot_id": f"{group.lower()}/{case}", "group": group,
                 "case_id": case, "status": "PENDING", "reason": None,
@@ -75,7 +83,8 @@ class Store:
         self.data = read_state(self.path)
         if self.data.get("schema") != SCHEMA:
             raise ValueError("residual-joint schema changed")
-        if [row.get("slot_id") for row in self.data.get("rows", [])] != _slot_ids():
+        self.cases = validate_cases(self.data.get("fixed_denominator", {}).get("cases", CASES))
+        if [row.get("slot_id") for row in self.data.get("rows", [])] != _slot_ids(self.cases):
             raise ValueError("fixed eight-row denominator changed")
         self.journal = StateJournal(self.path)
         self.data.setdefault("payload_read_calls", [])
@@ -137,7 +146,8 @@ def _candidate_path(source_run, case):
     return Path(source_run) / "run_state" / "rgb" / case / "residual_clock_pre.rgb8"
 
 
-def initialize(source_run, output, config):
+def initialize(source_run, output, config, *, cases=CASES):
+    cases = validate_cases(cases)
     output = Path(output).resolve()
     state_path = output / "residual_joint_state.json"
     source_run = Path(source_run).resolve()
@@ -165,14 +175,16 @@ def initialize(source_run, output, config):
         raise ValueError("payload_bits differ from the saved residual candidate method truth")
     if state_path.is_file():
         store = Store(output)
+        if store.cases != cases:
+            raise ValueError("initialized joint case roster differs")
         if store.data.get("key") != key:
             raise ValueError("K0 differs from the initialized joint run")
         return store
     expected_bytes = math.prod(RGB_SHAPE)
-    rows = _new_rows()
+    rows = _new_rows(cases)
     sources = {}
     initialization_errors = []
-    for case in CASES:
+    for case in cases:
         path = _candidate_path(source_run, case)
         failure = None
         if not path.is_file():
@@ -198,7 +210,7 @@ def initialize(source_run, output, config):
         "source_effective_config": str(source_effective_config.resolve()),
         "key": key, "sources": sources, "rows": rows,
         "fixed_denominator": {
-            "cases": list(CASES), "groups": list(GROUPS), "joint_rows": 8,
+            "cases": list(cases), "groups": list(GROUPS), "joint_rows": 8,
             "joint_bits": 256, "rows_per_group": 4, "bits_per_row": 32,
             "key_label": "K0", "receiver": "CENTERED_U",
         },
@@ -349,7 +361,7 @@ def run_quality(store):
         rows = []
         panels = []
         checkpoint_documents = set()
-        for case in CASES:
+        for case in store.cases:
             quality_path = Path(store.data["source_run"]) / "run_state" / "quality" / case / "residual_vs_native.json"
             if not quality_path.is_file():
                 raise FileNotFoundError(quality_path)
@@ -397,7 +409,7 @@ def run_quality(store):
         contact.save(contact_path)
         report_path = output / "peak_quality_report.json"
         report_value = {
-            "status": "COMPLETE", "cases": list(CASES), "rows": rows,
+            "status": "COMPLETE", "cases": list(store.cases), "rows": rows,
             "source_reports": "saved residual_vs_native quality JSON for each case",
             "checkpoint_documents": sorted(checkpoint_documents),
             "contact_sheet": str(contact_path), "quality_gate": None,
@@ -438,7 +450,7 @@ def run_media(store, *, roundtrip=None, apply_edit=None, load_rgb=None):
     store.data["phases"]["media"] = "RUNNING"
     store.save()
     with store.journal.periodic():
-        for case in CASES:
+        for case in store.cases:
             clean = _row(store, "CLEAN_MP4", case)
             if clean["media"]["status"] not in ("AVAILABLE", "FAILED"):
                 call = {"case_id": case, "status": "RUNNING", "started_at": time.time()}

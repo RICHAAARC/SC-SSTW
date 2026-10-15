@@ -699,7 +699,8 @@ class ArtifactFiles:
         path = self.root / f"{name}.rgb8"
         path.parent.mkdir(parents=True, exist_ok=True)
         temporary = path.with_suffix(".tmp")
-        temporary.write_bytes(array.tobytes(order="C"))
+        with temporary.open("wb") as stream:
+            stream.write(array.tobytes(order="C")); stream.flush(); os.fsync(stream.fileno())
         os.replace(temporary, path)
         receipt = self._receipt(path, shape=[int(part) for part in array.shape], dtype="uint8")
         self.store.artifact(artifact_id, status="AVAILABLE", **receipt)
@@ -726,6 +727,7 @@ class ArtifactFiles:
         temporary = path.with_suffix(".npy.tmp")
         with temporary.open("wb") as stream:
             np.save(stream, value, allow_pickle=False)
+            stream.flush(); os.fsync(stream.fileno())
         os.replace(temporary, path)
         array = np.asarray(value)
         receipt = self._receipt(path, shape=[int(part) for part in array.shape], dtype=str(array.dtype))
@@ -936,6 +938,21 @@ def _run_timed(store, phase, case_id, function):
         raise
 
 
+def _source_call(store, name, function):
+    observer = getattr(store, "observe_call", None)
+    if observer is not None:
+        observer(name, "STARTED")
+    try:
+        result = function()
+    except BaseException as exc:
+        if observer is not None:
+            observer(name, "FAILED" if isinstance(exc, Exception) else "INTERRUPTED", str(exc))
+        raise
+    if observer is not None:
+        observer(name, "RETURNED")
+    return result
+
+
 def phase_generate(store, config, case_id):
     def execute():
         import torch
@@ -947,8 +964,11 @@ def phase_generate(store, config, case_id):
         cfg = _runtime_generation_config(config, _case(config, case_id))
         device, dtype = runtime.execution_device_dtype()
         with unit_attempt(store, case_id + "/generation-model-load", operation="model_load"):
-            pipe, initial, prompt, negative, input_dtype = runtime.generation.prepare_generation(
-                cfg, load_vae=False, device=device, model_dtype=dtype)
+            pipe, initial, prompt, negative, input_dtype = _source_call(store, "generation_pipeline_load", lambda:
+                runtime.generation.prepare_generation(cfg, load_vae=False, device=device, model_dtype=dtype))
+        observer = getattr(store, "observe_call", None)
+        count = ((lambda name, done: observer(name, "RETURNED" if done else "STARTED"))
+                 if observer is not None else (lambda name, done: None))
         pristine = copy.deepcopy(pipe.scheduler)
         records = store.data["records"].setdefault(case_id, {}).setdefault("generation", {})
         try:
@@ -959,17 +979,19 @@ def phase_generate(store, config, case_id):
                     if arm == "OFF_NATIVE":
                         terminal, receipt = run_off_trajectory(
                             pipe, initial, copy.deepcopy(pristine), prompt, negative,
-                            input_dtype, None, steps.append)
+                            input_dtype, count, steps.append)
                     else:
                         terminal, receipt = runtime.run_trajectory(
                             pipe, initial, copy.deepcopy(pristine), prompt, negative,
                             input_dtype, config["keys"]["K0"], list(config["payload_bits"]),
-                            lambda name, done: None, steps.append)
+                            count, steps.append)
                         receipt["message_interface"] = "EXPLICIT_32_BITS_OUTER_INTERFACE_NEW_NOT_HISTORICAL_CAPACITY_EVIDENCE"
                     path = store.output / "artifacts" / case_id / arm / "terminal.pt"
                     path.parent.mkdir(parents=True, exist_ok=True)
                     temporary = path.with_suffix(".pt.tmp")
-                    torch.save(terminal, temporary); os.replace(temporary, path)
+                    with temporary.open("wb") as stream:
+                        torch.save(terminal, stream); stream.flush(); os.fsync(stream.fileno())
+                    os.replace(temporary, path)
                     records[arm] = {"receipt": receipt, "steps": steps}
                     store.artifact(artifact_id, status="AVAILABLE", path=str(path),
                                    bytes=path.stat().st_size, shape=list(terminal.shape), dtype=str(terminal.dtype))
@@ -991,7 +1013,7 @@ def phase_decode(store, config, case_id):
         cfg = _runtime_generation_config(config, _case(config, case_id))
         files = ArtifactFiles(store, case_id)
         device, _dtype = runtime.execution_device_dtype()
-        vae = runtime.generation.load_frozen_vae(cfg, device=device)
+        vae = _source_call(store, "native_wan_load", lambda: runtime.generation.load_frozen_vae(cfg, device=device))
         try:
             for arm in arms:
                 terminal_row = _artifact(store, _artifact_id(case_id, arm, "TERMINAL"))
@@ -999,8 +1021,8 @@ def phase_decode(store, config, case_id):
                     raise ValueError(f"{arm} terminal unavailable")
                 with unit_attempt(store, _artifact_id(case_id, arm, "PRE"), operation="native_decode"):
                     terminal = torch.load(terminal_row["path"], map_location="cpu", weights_only=True)
-                    rgb = runtime.vae.decode_normalized_latent(
-                        vae, terminal.to(device=next(vae.parameters()).device, dtype=torch.float32))
+                    rgb = _source_call(store, "native_wan_decode", lambda: runtime.vae.decode_normalized_latent(
+                        vae, terminal.to(device=next(vae.parameters()).device, dtype=torch.float32)))
                     files.save_rgb8(_artifact_id(case_id, arm, "PRE"), runtime.vae.quantize_rgb8_no_codec(rgb), f"{arm}/pre")
                     del terminal, rgb
         finally:
@@ -1016,7 +1038,10 @@ def phase_framewise(store, config, case_id):
                    if _artifact(store, _artifact_id(case_id, arm, "PRE"))["status"] != "AVAILABLE"]
         if not pending:
             return
-        model = load_local_framewise_backend(config["models"]["framewise"])
+        model = _source_call(store, "writer_framewise_load", lambda: load_local_framewise_backend(config["models"]["framewise"]))
+        observer = getattr(store, "observe_call", None)
+        def batch(name):
+            return lambda event, start, stop, error: observer(name, event, str(error) if error else None)
         try:
             shared = _artifact(store, _artifact_id(case_id, "SHARED_FRAMEWISE", "LATENT"))
             if shared["status"] == "AVAILABLE":
@@ -1024,18 +1049,21 @@ def phase_framewise(store, config, case_id):
             else:
                 with unit_attempt(store, shared["artifact_id"], operation="framewise_writer_encode"):
                     source = files.load_rgb8(_artifact(store, _artifact_id(case_id, "PAYLOAD_NATIVE", "PRE")))
-                    latent = model.encode(source)
+                    latent = _source_call(store, "writer_framewise_encode_clip", lambda: model.encode(
+                        source, **({"batch_observer": batch("writer_framewise_encode_batch")} if observer else {})))
                     files.save_numpy(shared["artifact_id"], latent, "framewise/shared_latent")
             records = store.data["records"].setdefault(case_id, {}).setdefault("framewise", {})
             records.update(single_encode=True, independent_decode_inputs=True)
             for arm in pending:
                 with unit_attempt(store, _artifact_id(case_id, arm, "PRE"), operation="framewise_writer_decode"):
                     if arm == "PAYLOAD_FRAMEWISE_M05":
-                        written, receipt = model.write(latent.copy(), config["keys"]["K0"])
+                        written, receipt = _source_call(store, "m05_write", lambda: model.write(latent.copy(), config["keys"]["K0"]))
                         records["write_receipt"] = _json_dump(files.root / "framewise" / "m05_write_receipt.json", receipt)
-                        rgb = model.decode(written.copy())
+                        rgb = _source_call(store, "writer_framewise_decode_clip", lambda: model.decode(
+                            written.copy(), **({"batch_observer": batch("writer_framewise_decode_batch")} if observer else {})))
                     else:
-                        rgb = model.decode(latent.copy())
+                        rgb = _source_call(store, "writer_framewise_decode_clip", lambda: model.decode(
+                            latent.copy(), **({"batch_observer": batch("writer_framewise_decode_batch")} if observer else {})))
                     files.save_rgb8(_artifact_id(case_id, arm, "PRE"), rgb, f"{arm}/pre")
         finally:
             model.close()

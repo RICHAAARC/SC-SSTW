@@ -113,6 +113,7 @@ def decode_rgb_frames(
     latent: Any,
     *,
     batch_frames: int,
+    batch_observer=None,
 ) -> Any:
     """Decode explicit scaled latent to CPU float RGB [T,H,W,3] in [0,1]."""
 
@@ -131,9 +132,17 @@ def decode_rgb_frames(
     scale = verify_scaling_factor(vae)
     with torch.inference_mode():
         for start in range(0, int(latent.shape[0]), batch_frames):
-            decoded = vae.decode(
-                latent[start : start + batch_frames].to(device=device, dtype=dtype) / scale
-            )
+            stop = min(start + batch_frames, int(latent.shape[0]))
+            if batch_observer is not None:
+                batch_observer("STARTED", start, stop, None)
+            try:
+                decoded = vae.decode(latent[start:stop].to(device=device, dtype=dtype) / scale)
+            except BaseException as exc:
+                if batch_observer is not None:
+                    batch_observer("FAILED", start, stop, exc)
+                raise
+            if batch_observer is not None:
+                batch_observer("RETURNED", start, stop, None)
             sample = getattr(decoded, "sample", None)
             if sample is None and isinstance(decoded, tuple) and decoded:
                 sample = decoded[0]

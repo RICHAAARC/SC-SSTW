@@ -186,12 +186,12 @@ class LocalFramewiseBackend:
             latent, key, receiver.sync.PUBLIC, target_margin=0.5,
         )
 
-    def decode(self, latent):
+    def decode(self, latent, *, batch_observer=None):
         from runtime.wan import video_trajectory_conditional_joint_v1 as runtime
 
         value = self.torch.from_numpy(latent.copy())
         rgb = self.framewise.decode_rgb_frames(
-            self.vae, value, batch_frames=self.batch_frames,
+            self.vae, value, batch_frames=self.batch_frames, batch_observer=batch_observer,
         )
         return runtime.vae.quantize_rgb8_no_codec(rgb)
 

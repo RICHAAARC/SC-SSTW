@@ -20,7 +20,7 @@ from experiments.paper_results_v1.residual_joint_v1 import (
     CASES, CODEC, DELETE_POSITIONS, DELETE_SHAPE, GROUPS, RGB_SHAPE,
     _atomic_npy, _atomic_rgb8, _atomic_torch, _default_payload_read,
     _default_wan_encode, _load_npy, _load_npy_from_value, _load_rgb_path,
-    _load_torch, _posthoc_path_metrics, _select_clock, delete_spec,
+    _load_torch, _posthoc_path_metrics, _select_clock, delete_spec, validate_cases,
 )
 
 
@@ -46,12 +46,12 @@ def _slot_id(arm, group, case):
     return f"{arm.lower()}/{group.lower()}/{case}"
 
 
-def _slot_ids():
-    return [_slot_id(arm, group, case) for arm in ARMS for group in GROUPS for case in CASES]
+def _slot_ids(cases=CASES):
+    return [_slot_id(arm, group, case) for arm in ARMS for group in GROUPS for case in cases]
 
 
-def _quality_ids():
-    return [f"{group.lower()}/{case}/{reference.lower()}" for group in GROUPS for case in CASES
+def _quality_ids(cases=CASES):
+    return [f"{group.lower()}/{case}/{reference.lower()}" for group in GROUPS for case in cases
             for reference in QUALITY_REFERENCES]
 
 
@@ -63,11 +63,11 @@ def _key_label(arm):
     return "K1" if arm == "WM_K1" else "K0"
 
 
-def _new_rows():
+def _new_rows(cases=CASES):
     rows = []
     for arm in ARMS:
         for group in GROUPS:
-            for case in CASES:
+            for case in cases:
                 reused = arm == "WM_K0_REUSED"
                 rows.append({
                     "slot_id": _slot_id(arm, group, case), "arm": arm, "group": group,
@@ -83,12 +83,12 @@ def _new_rows():
     return rows
 
 
-def _new_quality_rows():
+def _new_quality_rows(cases=CASES):
     return [{
         "quality_id": f"{group.lower()}/{case}/{reference.lower()}",
         "group": group, "case_id": case, "reference": reference,
         "status": "PENDING", "reason": None, "quality_gate": None,
-    } for group in GROUPS for case in CASES for reference in QUALITY_REFERENCES]
+    } for group in GROUPS for case in cases for reference in QUALITY_REFERENCES]
 
 
 class Store:
@@ -98,9 +98,10 @@ class Store:
         self.data = read_state(self.path)
         if self.data.get("schema") != SCHEMA:
             raise ValueError("residual-controls schema changed")
-        if [row.get("slot_id") for row in self.data.get("rows", [])] != _slot_ids():
+        self.cases = validate_cases(self.data.get("fixed_denominator", {}).get("cases", CASES))
+        if [row.get("slot_id") for row in self.data.get("rows", [])] != _slot_ids(self.cases):
             raise ValueError("fixed 24-row denominator changed")
-        if [row.get("quality_id") for row in self.data.get("quality_rows", [])] != _quality_ids():
+        if [row.get("quality_id") for row in self.data.get("quality_rows", [])] != _quality_ids(self.cases):
             raise ValueError("fixed quality plan changed")
         self.journal = StateJournal(self.path)
         self.journal.seed_cache(self.data)
@@ -171,7 +172,8 @@ def _checkpoint_artifact(state, case, arm, phase):
     return matches[0]
 
 
-def initialize(source_joint_run, checkpoint_run, output, config):
+def initialize(source_joint_run, checkpoint_run, output, config, *, cases=CASES):
+    cases = validate_cases(cases)
     output = Path(output).resolve(); output.mkdir(parents=True, exist_ok=True)
     state_path = output / "residual_controls_state.json"
     cfg = read_json(config); keys, payload_bits = _validate_config(cfg)
@@ -181,12 +183,14 @@ def initialize(source_joint_run, checkpoint_run, output, config):
     checkpoint_state_path = checkpoint_run / "run_state/run_state.json"
     if state_path.is_file():
         store = Store(output)
+        if store.cases != cases:
+            raise ValueError("initialized control case roster differs")
         if store.data.get("keys") != keys:
             raise ValueError("keys differ from initialized control run")
         return store
 
-    rows = _new_rows(); errors = []
-    quality_rows = _new_quality_rows()
+    rows = _new_rows(cases); errors = []
+    quality_rows = _new_quality_rows(cases)
     source_joint = {"rows": [], "sources": {}}
     checkpoint = {"artifacts": []}
     source_problem = checkpoint_problem = None
@@ -217,7 +221,7 @@ def initialize(source_joint_run, checkpoint_run, output, config):
         errors.append({"at": time.time(), "phase": "initialize", "slot_id": row["slot_id"], "reason": why})
 
     for group in GROUPS:
-        for case in CASES:
+        for case in cases:
             reused = next(row for row in rows if row["arm"] == "WM_K0_REUSED" and row["group"] == group and row["case_id"] == case)
             wrong = next(row for row in rows if row["arm"] == "WM_K1" and row["group"] == group and row["case_id"] == case)
             matches = [row for row in source_joint.get("rows", [])
@@ -237,6 +241,11 @@ def initialize(source_joint_run, checkpoint_run, output, config):
                 reused["payload"] = {**source.get("payload", {}), "reuse": "SOURCE_RESIDUAL_JOINT"}
             else:
                 fail(reused, "payload", "source K0 row is not a completed READ")
+                # Keep the original unresolved/unsupported/failed result, not a
+                # lossy generic FAILED label in the aggregated same-batch row.
+                reused.update(status=source.get("status", "MISSING"), reason=source.get("reason"))
+                for component in ("media", "clock", "payload"):
+                    reused[component] = {**source.get(component, {}), "reuse": "SOURCE_RESIDUAL_JOINT"}
             if source.get("media", {}).get("status") == "AVAILABLE":
                 wrong["media"] = {**source["media"], "reuse": "SAME_RECEIVED_RGB_AS_WM_K0"}
                 wrong.update(status="MEDIA_READY")
@@ -245,7 +254,7 @@ def initialize(source_joint_run, checkpoint_run, output, config):
             else:
                 fail(wrong, "media", "source watermarked received RGB unavailable")
 
-    for case in CASES:
+    for case in cases:
         try:
             artifact = _checkpoint_artifact(checkpoint, case, "OFF_NATIVE", "POST")
         except Exception as exc:
@@ -271,7 +280,7 @@ def initialize(source_joint_run, checkpoint_run, output, config):
         "source_joint_state": str(source_joint_state_path), "checkpoint_run": str(checkpoint_run),
         "checkpoint_state": str(checkpoint_state_path), "effective_config": str(Path(config).resolve()),
         "keys": keys, "payload_bits": payload_bits, "rows": rows, "quality_rows": quality_rows,
-        "fixed_denominator": {"cases": list(CASES), "groups": list(GROUPS), "arms": list(ARMS),
+        "fixed_denominator": {"cases": list(cases), "groups": list(GROUPS), "arms": list(ARMS),
                               "rows": 24, "bits": 768, "rows_per_arm": 8, "bits_per_row": 32},
         "method": {
             "wm_k0": "reuse completed same-run K0 rows without model calls",
@@ -501,7 +510,7 @@ def run_media(store, *, load_rgb=None, apply_edit=None):
     load_rgb = load_rgb or _load_rgb_path; apply_edit = apply_edit or apply_edit_rgb8
     store.data["phases"]["media"] = "RUNNING"; store.save()
     with store.journal.periodic():
-        for case in CASES:
+        for case in store.cases:
             clean = _row(store, "OFF_K0", "CLEAN_MP4", case)
             artifact = clean["media"].get("source_artifact", {})
             if clean["media"]["status"] not in ("AVAILABLE", "FAILED", "MISSING"):
@@ -735,7 +744,8 @@ def run_wan(store, *, load_vae=None, encode=None, payload_read=None, load_rgb=No
                     if latent is None and reuse_path is not None:
                         latent = _load_torch(reuse_path, output_frames)
                         reuse = {"slot_id": row["slot_id"], "status": "COMPLETE", "source_latent": str(reuse_path),
-                                 "semantics": "same received RGB and equal full blind operation maps", "finished_at": time.time()}
+                                 "semantics": "same received RGB and equal full blind operation maps",
+                                 "started_at": time.time(), "finished_at": time.time()}
                         store.data["wan_reuses"].append(reuse); row["payload"]["wan_latent_reuse"] = reuse; store.save()
                     if latent is None:
                         if vae is None:
