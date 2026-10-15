@@ -1,0 +1,37 @@
+{
+  "schema": "local-joint-fixed-paired-tail-v1",
+  "selection_status": "ADOPTED_BY_USER_20261016",
+  "model": {
+    "id": "Wan-AI/Wan2.1-T2V-1.3B-Diffusers"
+  },
+  "generation": {
+    "height": 320,
+    "width": 512,
+    "frames": 181,
+    "steps": 50,
+    "guidance_scale": 5,
+    "max_sequence_length": 512,
+    "prompt": "locked camera, a small yellow ceramic sailboat gently drifting across a shallow clear glass tank on a stone tabletop, steady soft daylight, no people, no cuts",
+    "negative_prompt": "text, watermark, logo, camera motion, cuts, multiple objects, flicker",
+    "seed": 2026100701
+  },
+  "carrier": {
+    "key": "local-joint-state-payload-v1-first-mechanism",
+    "message_hex": "8001a55a",
+    "rho": 0.5
+  },
+  "source": {
+    "source_id": "yellow_sailboat_dev_s2026100701",
+    "development_only": true
+  },
+  "views": [
+    "ZERO_TAIL",
+    "CONTROL_TAIL"
+  ],
+  "objective": "historical_allbit_v1",
+  "amplitude": 0.1,
+  "control_index": 48,
+  "device": "cuda",
+  "transformer_dtype": "bfloat16",
+  "source_run": "/content/drive/MyDrive/Video-WM/Local-Joint-State-Payload-V1-Paired-Transfer/resumable-paired-transfer-v1/run"
+}
