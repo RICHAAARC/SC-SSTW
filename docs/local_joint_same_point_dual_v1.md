@@ -42,9 +42,9 @@ Run `python -m experiments.wan_state_clock.local_joint_same_point_dual_v1_run
 --config experiments/wan_state_clock/configs/local_joint_same_point_dual_v1.json
 --output <new-task-run>`. The editable no-.git source copy works as well.
 The matching `local_joint_same_point_dual_v1_colab.ipynb` is a fixed Run-all task.
-Its builder and ordinary portable source ZIP are delivered together. The current
-local package is not yet published; its GitHub companion URL needs publication
-before that default remote source locator can load it.
+Its builder and ordinary portable source ZIP are published on
+`dev/local-joint-state-payload-v1`; the notebook downloads the ordinary source ZIP
+from that editable branch and is ready for the user to run in Colab.
 
 The existing Journal saves last committed state every60 seconds. Inputs, complete
 gradient units, candidate latents, ordinary RGB, raw/q/scoring, and quality artifacts
