@@ -1,0 +1,65 @@
+{
+  "status": "NUMERICALLY_UNRESOLVED",
+  "solver": "CLARABEL",
+  "solver_tolerance": 1e-10,
+  "max_iter": 200,
+  "arithmetic_resolution": 1e-08,
+  "certificate_tolerance": 1e-06,
+  "secondary_target": 0.3510973330917523,
+  "physical_candidates": 0,
+  "automatic_retry": false,
+  "primary_solve_count": 0,
+  "secondary_solve_count": 1,
+  "formulation": "min ||u||^2; h@u <= -original_target; ||u||<=1; ||ac+u||<=1",
+  "gradient_norms": [
+    0.20118390502113603,
+    0.15191488496204836,
+    0.9868195322662112,
+    2.478544793887443
+  ],
+  "span_dimension": 5,
+  "span_residual": 5.774036488131e-15,
+  "original_primary_primal_saved": false,
+  "original_primary_dual_saved": false,
+  "secondary_status": "optimal_inaccurate",
+  "secondary_primal": [
+    -0.35109733310742774,
+    -0.34676546564898086,
+    -0.23499593083413828,
+    -0.34924383255413266,
+    -0.7611110502476931
+  ],
+  "secondary_dual": {
+    "objective": [
+      9.747355843022484,
+      11.635327445802195,
+      5.121727710694028,
+      7.04356182113024
+    ],
+    "delta_ball": 1.280520589900748,
+    "control_ball": 16.996171380857643
+  },
+  "solver_stats": {
+    "num_iters": 11,
+    "solve_time": 0.000207657,
+    "setup_time": null
+  },
+  "secondary_objective": 0.9999999983767511,
+  "secondary_certificate": {
+    "realized_t": 0.3510973330995715,
+    "delta_scaled_l2": 0.9999999991883756,
+    "control_scaled_l2": 1.0000000000079075,
+    "primal_residual": 7.907452470590215e-12,
+    "dual_nonnegative_residual": 0.0,
+    "stationarity_residual": 2.6186873980371672e-06,
+    "complementarity_residual": 1.0393017994223087e-09,
+    "dual_norm_subgradient_identified": true
+  },
+  "reloaded_gradient_norms": [
+    0.20118390502113603,
+    0.15191488496204836,
+    0.9868195322662112,
+    2.478544793887443
+  ],
+  "reason": "fixed-target secondary solver did not return optimal"
+}
