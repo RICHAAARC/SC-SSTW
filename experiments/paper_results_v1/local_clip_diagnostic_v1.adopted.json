@@ -1,0 +1,21 @@
+{
+  "schema": "paper-results-v1-local-clip-diagnostic-v1",
+  "adopted_date": "2026-10-16",
+  "source_task": "resumable-independent-four-v1",
+  "cases": ["independent_20261015_01", "independent_20261015_02", "independent_20261015_03", "independent_20261015_04"],
+  "source_frames": 181,
+  "key": "watermark",
+  "receivers": ["RAW_U", "CENTERED_U"],
+  "crop_start": 37,
+  "crop_length": 89,
+  "edit_positions_local": [0, 11, 23, 35, 47, 59, 71, 88],
+  "views": ["CROP_MID", "CROP_DELETE", "CROP_DUPLICATE"],
+  "delete_each": 1,
+  "duplicate_extra_copies_each": 1,
+  "payload_hex_posthoc_only": "A6D39C5E",
+  "planned_rows": 24,
+  "planned_bits": 768,
+  "independent_sources": 4,
+  "related_views": 12,
+  "budget": {"wan_loads_max": 1, "wan_encodes_max": 24, "payload_reads_max": 24, "cpu_mp4_decodes_max": 4, "cpu_selectors": 24, "new_framewise_encodes": 0, "new_video_encodes": 0, "new_generation": 0}
+}
