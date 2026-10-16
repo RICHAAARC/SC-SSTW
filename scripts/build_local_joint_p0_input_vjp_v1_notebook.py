@@ -39,7 +39,8 @@ def build_notebook():
         "Run all downloads the ordinary source ZIP from the existing development branch below. No manual ZIP upload is needed. GPU execution belongs to the user.\n\n",
         "Only P0 is adopted: fixed CONTROL_TAIL_after48, saved prompt/negative/BF16 arithmetic and exact units/gradient.pt direction d as test output cotangent. No new writer, P48/P49, quality caps, fork regeneration or baseline. Native Wan keep-in-FP32 exceptions and attention processors remain unchanged.\n\n",
         "Budget: 1 Transformer preparation; conditional/unconditional each one forward and input VJP; 30 native blocks per branch, at most one checkpoint replay per block (60 total). Serial branch graphs with disk checkpoint boundaries. 0 native/VAE/decode/writer/new video/encode/codec. Record GPU allocated/reserved peaks, sampled host RSS, spool storage/traffic and every attempted call/block. Actual full-size backward resources remain unknown until user execution.\n\n",
-        "Save raw outputs/cotangents before reports, including zero/nonfinite/failed units. Failed or interrupted work is never automatically retried. Completed units are readable on same-Drive Run all; a lost graph or consumed preparation is not recreated. Resume of an existing logical task is report-only, so later untouched units can remain missing under this fixed budget.\n\n",
+        "Save raw outputs/cotangents before reports, including zero/nonfinite/failed units. Physical calls are never retried. A source-precheck failure with confirmed zero preparation/forward/VJP/block attempts may repeat the corrected precheck on same-Drive Run all and enter its first physical attempt. Keep old failures and both rows. Any physical call or uncertain history stays report-only; lost graphs and consumed preparations are not recreated.\n\n",
+        "The original saved direction is FP64: keep its values and dtype unchanged, without scaling or renormalizing. Pass it directly as grad_outputs to the FP32 output; native autograd performs the backward dtype conversions along the FP32/BF16 path.\n\n",
         "An ordinary branch-local error ends that unit, then the other independently planned branch may run within the fixed budget. OOM, nonfinite forward/VJP or process interruption stops later work, retaining missing rows. Actual embedding/model dtypes are checked; saved dtype labels are only notes.\n\n",
         "Differences against old saved predictions span preparations and cannot isolate gradmode effects. BF16 autograd is an approximate path cotangent, not a verified derivative of the discrete finite map or writer success. No scientific PASS. Return the whole task directory, including failures.\n",
     ]))
@@ -128,8 +129,8 @@ def build_notebook():
         """))
     cells.append(code("""
         try:
-            from runtime.wan.local_joint_p0_input_vjp_v1 import read_state
-            NEEDS_MODEL = read_state(RUN_OUTPUT) is None
+            from runtime.wan.local_joint_p0_input_vjp_v1 import needs_model_work
+            NEEDS_MODEL = needs_model_work(RUN_OUTPUT)
             probe = 'import torch, numpy' + ('; from diffusers import WanTransformer3DModel' if NEEDS_MODEL else '')
             rc = logged([PYTHON, '-u', '-c', probe], 'DEPENDENCY_IMPORT')
             if rc:
@@ -179,7 +180,9 @@ def build_notebook():
             print(branch, row)
         print('Resources:', result['resources'])
         print('Spool/replay:', result['replay'])
-        print('Failures:', result['failures'])
+        print('Current attempt:', result.get('current_attempt'))
+        print('Earlier zero-call preflight snapshots:', len(result.get('preflight_history', [])), '; retained for history; current-attempt status is separate')
+        print('Failures (includes earlier preflight/report history):', result['failures'])
         print(result['ceiling'])
         print('Return whole task directory:', OUTPUT)
         """))

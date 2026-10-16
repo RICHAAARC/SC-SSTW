@@ -4,7 +4,7 @@
 
 固定 `CONTROL_TAIL_after48` FP32 输入，使用其原 BF16 转换、保存 prompt/negative 与 index49 timestep。读取原 `units/gradient.pt[direction]` 为**未缩放的输出测试 cotangent d**；保存的 d 所属 input_terminal 必须数值等于原 ZERO，旧 step49 prediction 的 input 必须数值等于 CONTROL_TAIL_after48。没有差分方向代理、重新编码或新模型基线。输入 finite/shape/support/unit norm 与实际输入点检查服务于方法语义；来源版本/schema/status 标签不作为准入条件。
 
-每分支从独立 FP32 leaf 经过原 BF16 cast、原 Transformer、FP32 output，以 `autograd.grad(output, input, grad_outputs=d)` 求输入 cotangent。保留 native attention processor/参数；`from_pretrained(torch_dtype=bfloat16)` 的原生 keep-in-FP32 层仍保留，不强制重铸。模型 eval、参数 frozen，不求参数梯度。
+每分支从独立 FP32 leaf 经过原 BF16 cast、原 Transformer、FP32 output，以 `autograd.grad(output, input, grad_outputs=d)` 求输入 cotangent。原 paired-transfer 以 FP64 归一化并保存 d；P0 保留它的原值和 dtype，直接传入 `grad_outputs`，不 cast、不重新归一化、不缩放。原生 autograd 将进入 FP32 output 的 cotangent 转为 FP32，沿原 BF16 转换继续反传，最终输入 cotangent 为 FP32；这不意味着保留 FP64 反向算术。`vjp.json` 记录实际 dtype。保留 native attention processor/参数；`from_pretrained(torch_dtype=bfloat16)` 的原生 keep-in-FP32 层仍保留，不强制重铸。模型 eval、参数 frozen，不求参数梯度。
 
 两个分支串行，使用原 Transformer 的 block checkpoint 接口，non-reentrant、preserve_rng_state=True。每block至多一次重算，外层 saved-tensor hooks 用已跑通的边界 storage/view 存盘机制；16MiB分块传输，释放 pack dedup 的原GPU storage引用，VJP结束/异常后释放独立spool。当前活block、非block激活和workspace仍可能超出资源；没有显存可行性保证，也不靠empty_cache或换精度/kernel重试。
 
@@ -12,7 +12,9 @@
 
 固定分母只有conditional/unconditional两行、两个forward和两个VJP单元；不建立接收器读出/视频窗口分母。输出保存为各分支`output.pt`，VJP保存为`input_cotangent.pt`，包括零和非有限值。`forward.json`与`vjp.json`区分forward-only；`result.json`、`report.json`和`calls/`保存全部失败/缺失。
 
-原始失败或中断不重试。1 preparation预算意味着跨进程不能重建丢失活图，也不能加载第二个模型来补做未进入分支。相同输出目录再次Run all只读取已完成单元和恢复报告；消耗过预算的未完成部分保持FAILED/UNKNOWN/MISSING。读不到已保存单元会报告具体文件错误，不暗中重算。要增加一次真实尝试属于新物理预算决定。
+物理调用失败或中断不重试。1 preparation预算意味着跨进程不能重建丢失活图，也不能加载第二个模型来补做未进入分支。仅当此前失败发生于源预检、保存的 preparation/forward/VJP/block 尝试全部明确为0、没有分支输出或调用痕迹时，相同输出目录再次 Run all 可重新进行修正后的源预检，并**首次**进入原定1 prep/2F/2VJP预算。旧失败和原两行保存在 `failures` 与 `preflight_history`；`current_attempt` 单独报告当前尝试，已解决的旧预检错误不强制本次失败。Notebook 的依赖/CUDA检查与 runner 共用此判定，不需删除任务目录。
+
+任何实际调用、未知完成情况或无法判定的历史仍走 report-only。消耗过预算的未完成部分保持FAILED/UNKNOWN/MISSING。读不到已保存单元会报告具体文件错误，不暗中重算。要增加一次真实尝试属于新物理预算决定。
 
 同进程的普通单分支工程错误只终结该分支及依赖VJP，释放后继续另一个预定独立分支，仍不超过固定预算。按已采用P0源定义，OOM、任何非有限forward/VJP或进程中断则停止后续分支、保留MISSING，不变更精度/内核重试。完成/失败恢复会核验已保存input、exact d、forward及cotangent的实际形状/dtype/数值；非有限cotangent保留NONFINITE，零cotangent是有效零观测。
 

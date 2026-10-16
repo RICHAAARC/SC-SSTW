@@ -71,6 +71,63 @@ def initial_result(config):
                 ceiling=method.CEILING, created_at_unix=time.time())
 
 
+def zero_physical_record(result, *, report=False):
+    """Positive evidence of no entry, including stored counters before recount."""
+    if not isinstance(result, dict):
+        return False
+    if not report and (result.get("actual_model_execution") != "NOT_STARTED" or result.get("calls") != []):
+        return False
+    if result.get("resources") != [] or result.get("replay") != {}:
+        return False
+    for field, kinds in (("counts", KINDS), ("block_counts", ("forward", "recompute"))):
+        counts = result.get(field)
+        if not isinstance(counts, dict) or not set(kinds).issubset(counts):
+            return False
+        for row in counts.values():
+            if not isinstance(row, dict) or row.get("attempted") != 0 or any(type(v) is not int or v != 0 for v in row.values()):
+                return False
+    rows = result.get("branches", {})
+    return isinstance(rows, dict) and set(rows) == set(method.BRANCHES) and all(
+        isinstance(row, dict) and row.get("status") == "MISSING" and row.get("forward") == row.get("vjp") == "NOT_RUN"
+        for row in rows.values())
+
+
+def source_precheck_can_continue(output, result):
+    """A failed precheck may precede the first physical attempt, never a retry."""
+    if result.get("model_work_resume_blocked_reason") or result.get("recovery_notes"):
+        return False
+    failures = result.get("failures", [])
+    if result.get("status") != "ENGINEERING_FAILURE" or not isinstance(failures, list) or not failures or any(not isinstance(f, dict) for f in failures):
+        return False
+    if not any(f.get("stage") == "saved_source" for f in failures) or any(
+            f.get("stage") not in ("saved_source", "saved_input_or_exact_d") for f in failures):
+        return False
+    if not zero_physical_record(result):
+        return False
+    output = Path(output)
+    try:
+        # A receipt, partial branch output or unreadable prior record makes the
+        # physical history uncertain. Do not erase that uncertainty by recounting.
+        for directory in (output / "calls", *(output / b for b in method.BRANCHES)):
+            if directory.exists() and any(directory.iterdir()):
+                return False
+        if list(output.glob("result*.tmp")):
+            return False
+        for name in ("result.json", "result.previous.json", "report.json"):
+            path = output / name
+            if path.exists() and not zero_physical_record(json.loads(path.read_text()), report=name == "report.json"):
+                return False
+    except (OSError, ValueError, TypeError, AttributeError):
+        return False
+    return True
+
+
+def needs_model_work(output):
+    """Shared notebook/runner decision; no torch/model dependency is imported."""
+    result = read_state(output)
+    return result is None or source_precheck_can_continue(output, result)
+
+
 def resource_snapshot(device):
     import resource
     import torch
@@ -265,6 +322,8 @@ def save_report(output, result):
     report = dict(status=result["status"], branches=result["branches"], counts=result["counts"],
                   block_counts=result["block_counts"], fixed_denominators=result["fixed_denominators"],
                   resources=result["resources"], replay=result["replay"], failures=result["failures"],
+                  current_attempt=result.get("current_attempt"), preflight_history=result.get("preflight_history", []),
+                  model_work_resume_blocked_reason=result.get("model_work_resume_blocked_reason"),
                   scientific_pass=False, ceiling=method.CEILING)
     write_json(Path(output) / "report.json", report)
     return report
@@ -273,6 +332,8 @@ def save_report(output, result):
 def resume_report(output, result, *, reason="existing task: no repeated physical work"):
     """A new process cannot recreate a lost graph under the one-preparation budget."""
     import torch
+    if not source_precheck_can_continue(output, result):
+        result.setdefault("model_work_resume_blocked_reason", "physical work entered or zero-call precheck evidence is uncertain; report-only")
     for call in result["calls"]:
         if call["status"] == "RUNNING":
             call.update(status="INTERRUPTED_COMPLETION_UNKNOWN", reason=reason)
@@ -345,7 +406,7 @@ def run(config, output, *, preparer=None, source_loader=None, expected_blocks=30
     import torch
     output = Path(output)
     existing = read_state(output)
-    if existing is not None:
+    if existing is not None and not source_precheck_can_continue(output, existing):
         return resume_report(output, existing)
     validate_config(config)
     for name in ("source_run", "tail_run"):
@@ -353,13 +414,23 @@ def run(config, output, *, preparer=None, source_loader=None, expected_blocks=30
         if source == output.resolve() or source in output.resolve().parents or output.resolve() in source.parents:
             raise ValueError("P0 output must be separate from both saved source directories")
     output.mkdir(parents=True, exist_ok=True)
-    result = initial_result(config)
+    result = initial_result(config) if existing is None else existing
+    if existing is not None:
+        snapshot = copy.deepcopy(existing)
+        snapshot.pop("preflight_history", None)
+        result.setdefault("preflight_history", []).append(snapshot)
+        result.update(status="RUNNING", config=copy.deepcopy(config), branches=initial_result(config)["branches"],
+                      resume_policy="zero-call saved-source precheck repeated before first physical attempt")
+        for key in ("finished_at_unix", "saved_evidence_status"):
+            result.pop(key, None)
     device = config.get("device", "cuda")
     journal = Journal(output, result, device)
     model = None
     stage = "saved_source"
     attempt = str(time.time_ns())
     result["attempt_id"] = attempt
+    failure_start = len(result["failures"])
+    result["current_attempt"] = dict(id=attempt, failure_start_index=failure_start, status="RUNNING")
 
     def call(kind, branch, fn):
         limit = method.EXPECTED[kind]
@@ -432,6 +503,9 @@ def run(config, output, *, preparer=None, source_loader=None, expected_blocks=30
                 parameter_gradients_created = any(p.grad is not None or p.requires_grad for p in model.parameters())
                 write_json(directory / "vjp.json", dict(cotangent_statistics=row["cotangent_statistics"],
                            output_cotangent="exact saved d, unscaled", input_coordinate="FP32 before native BF16 cast",
+                           saved_direction_dtype=str(source["direction"].dtype), grad_outputs_dtype=str(d.dtype),
+                           output_dtype=str(prediction.dtype), input_cotangent_dtype=str(gradient.dtype),
+                           arithmetic_note="d is passed unchanged; native autograd converts cotangents along the FP32 output/BF16 path",
                            mathematical_discrete_derivative=False, parameter_gradients_created=parameter_gradients_created))
                 row["status"] = "COMPLETE" if row["cotangent_statistics"]["finite"] else "NONFINITE"
                 if parameter_gradients_created:
@@ -451,6 +525,7 @@ def run(config, output, *, preparer=None, source_loader=None, expected_blocks=30
             # Persist actual inputs for same-task recovery/comparison without model work.
             save_tensor(output / "saved_input.pt", source["input"])
             save_tensor(output / "saved_cotangent.pt", source["direction"])
+            result["saved_evidence_status"] = "READABLE_VALID_NUMERICAL_INPUTS"
             stage = "transformer_prepare"
             result["actual_model_execution"] = "STARTED"
             model = call("transformer_prepare", None, lambda: (preparer or prepare_transformer)(config, device))
@@ -474,12 +549,12 @@ def run(config, output, *, preparer=None, source_loader=None, expected_blocks=30
                     row = result["branches"][branch]
                     row.update(status="FAILED", reason=repr(exc))
                     terminate_phases(result, branch, "FAILED")
-                    result["failures"].append(dict(stage=branch, reason=repr(exc), time_unix=time.time()))
+                    result["failures"].append(dict(stage=branch, reason=repr(exc), time_unix=time.time(), attempt_id=attempt))
                     journal.save()
-            result["status"] = "ENGINEERING_FAILURE" if result["failures"] else "COMPLETE"
+            result["status"] = "ENGINEERING_FAILURE" if result["failures"][failure_start:] else "COMPLETE"
         except BaseException as exc:
             result["status"] = "ENGINEERING_FAILURE" if isinstance(exc, Exception) else "INTERRUPTED"
-            result["failures"].append(dict(stage=stage, reason=repr(exc), time_unix=time.time()))
+            result["failures"].append(dict(stage=stage, reason=repr(exc), time_unix=time.time(), attempt_id=attempt))
             if stage in result["branches"]:
                 row = result["branches"][stage]
                 if row["status"] != "NONFINITE":
@@ -495,6 +570,8 @@ def run(config, output, *, preparer=None, source_loader=None, expected_blocks=30
             model = None
             gc.collect()
             result["finished_at_unix"] = time.time()
+            result["current_attempt"].update(status=result["status"], failure_end_index=len(result["failures"]),
+                                             failures=copy.deepcopy(result["failures"][failure_start:]))
             result["storage_bytes"] = sum(p.stat().st_size for p in output.rglob("*") if p.is_file())
             save_report(output, result)
             journal.save()

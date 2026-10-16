@@ -168,8 +168,13 @@ def test_interrupted_vjp_keeps_forward_and_consumes_attempt(tmp_path, monkeypatc
     assert result["branches"]["unconditional"]["status"] == "MISSING"
 
 
-def test_saved_source_checks_numeric_point_not_labels(tmp_path):
+@pytest.mark.parametrize("direction_dtype", [torch.float32, torch.float64])
+def test_saved_source_checks_numeric_point_not_labels(tmp_path, direction_dtype):
     c, data = config(tmp_path), inputs()
+    data["direction"] = data["direction"].to(direction_dtype)
+    if direction_dtype == torch.float64:
+        data["direction"][:, :, 1] = torch.tensor([[.1, .2], [.3, .4]], dtype=direction_dtype)
+        data["direction"] /= data["direction"].norm()
     source, tail = Path(c["source_run"]), Path(c["tail_run"])
     runtime.save_tensor(tail / "native/CONTROL_TAIL_after48.pt", data["input"])
     prediction = dict(input=data["input"], **data["predictions"])
@@ -182,6 +187,7 @@ def test_saved_source_checks_numeric_point_not_labels(tmp_path):
     runtime.validate_config(c)
     loaded = runtime.load_source(c, shape=SHAPE, rois=((0, 2, 0, 2),), time_range=(0, 2))
     assert torch.equal(loaded["direction"], data["direction"])
+    assert loaded["direction"].dtype == direction_dtype
     for dtype_label in (None, "changed optional label"):
         context = dict(prompt=data["prompt"], negative=data["negative"])
         if dtype_label is not None: context["dtype"] = dtype_label
@@ -205,6 +211,99 @@ def test_preparation_failure_stays_failed_with_both_fixed_rows(tmp_path):
     reread = runtime.run(config(tmp_path), tmp_path / "output", preparer=forbidden, source_loader=forbidden)
     assert reread["counts"]["transformer_prepare"]["attempted"] == 1
     assert reread["counts"]["dit_forward"]["attempted"] == 0
+
+
+def test_native_autograd_accepts_float64_seed_without_mutating_it():
+    d = torch.tensor([1 + 2**-30, .5001 + 2**-30], dtype=torch.float64)
+    original = d.clone()
+    x = torch.tensor([.25, .75], dtype=torch.float32, requires_grad=True)
+    y = x * 3
+    received = []
+    y.register_hook(lambda g: received.append(g.detach().clone()))
+    g = torch.autograd.grad(y, x, grad_outputs=d)[0]
+    assert d.dtype == torch.float64 and torch.equal(d, original)
+    assert received[0].dtype == g.dtype == torch.float32
+    assert torch.equal(received[0], d.float()) and not torch.equal(received[0].double(), d)
+    assert torch.equal(g, d.float() * 3)
+    native = x.bfloat16()
+    output = native.float()
+    seen = []
+    native.register_hook(lambda g: seen.append(g.detach().clone()))
+    pulled = torch.autograd.grad(output, x, grad_outputs=d)[0]
+    assert seen[0].dtype == torch.bfloat16 and pulled.dtype == torch.float32
+    assert torch.equal(pulled, d.float().bfloat16().float())
+    assert not torch.equal(pulled, d.float()) and torch.equal(d, original)
+
+
+def test_zero_call_source_failure_continues_first_attempt_and_keeps_history(tmp_path, monkeypatch):
+    data = inputs()
+    data["direction"] = data["direction"].double()
+    data["direction"][:, :, 1] = torch.tensor([[.1, .2], [.3, .4]], dtype=torch.float64)
+    data["direction"] /= data["direction"].norm()
+    original = data["direction"].clone()
+    output = tmp_path / "output"
+    def old_source_check(_):
+        method.finite_tensor(data["direction"], SHAPE, "saved exact direction", torch.float32)
+    failed = runtime.run(config(tmp_path), output, preparer=forbidden, source_loader=old_source_check)
+    assert failed["status"] == "ENGINEERING_FAILURE" and failed["calls"] == []
+    failed = runtime.finalize_interrupted(output, "old notebook report-only finalization")
+    old_failures, old_rows = copy.deepcopy(failed["failures"]), copy.deepcopy(failed["branches"])
+    assert runtime.needs_model_work(output)
+    received = []
+    native_grad = torch.autograd.grad
+    def capture(*args, **kwargs):
+        received.append(kwargs["grad_outputs"].detach().cpu().clone())
+        return native_grad(*args, **kwargs)
+    monkeypatch.setattr(torch.autograd, "grad", capture)
+    result = runtime.run(config(tmp_path), output, expected_blocks=2,
+                         source_loader=lambda _: data, preparer=lambda *_: TinyTransformer())
+    assert result["status"] == result["current_attempt"]["status"] == "COMPLETE"
+    assert result["current_attempt"]["failures"] == [] and result["failures"] == old_failures
+    assert result["preflight_history"][0]["branches"] == old_rows
+    assert result["preflight_history"][0]["calls"] == []
+    assert [result["counts"][k]["attempted"] for k in runtime.KINDS] == [1, 2, 2]
+    assert result["fixed_denominators"]["branches"] == 2
+    saved = runtime.tensor(output / "saved_cotangent.pt")
+    assert saved.dtype == torch.float64 and torch.equal(saved, original)
+    assert len(received) == 2 and all(d.dtype == torch.float64 and torch.equal(d, original) for d in received)
+    for b in method.BRANCHES:
+        receipt = json.loads((output / b / "vjp.json").read_text())
+        assert receipt["saved_direction_dtype"] == receipt["grad_outputs_dtype"] == "torch.float64"
+        assert receipt["output_dtype"] == receipt["input_cotangent_dtype"] == "torch.float32"
+    assert not runtime.needs_model_work(output)
+    reread = runtime.run(config(tmp_path), output, preparer=forbidden, source_loader=forbidden)
+    assert reread["status"] == "COMPLETE" and reread["failures"] == old_failures and len(reread["calls"]) == 5
+
+
+@pytest.mark.parametrize("trace", ["RETURNED", "FAILED", "RUNNING", "INTERRUPTED_COMPLETION_UNKNOWN",
+    "orphan_receipt", "unknown_block", "nonzero_counter", "missing_counter", "partial_output",
+    "prior_call", "report_nonzero", "resource_trace"])
+def test_nonzero_or_uncertain_history_cannot_reopen_model_work(tmp_path, trace):
+    output = tmp_path / "output"
+    r = runtime.initial_result(config(tmp_path))
+    r.update(status="ENGINEERING_FAILURE", failures=[dict(stage="saved_source", reason="old precheck")])
+    runtime.recount(r)
+    prior, report = copy.deepcopy(r), copy.deepcopy(r)
+    call = dict(id="old-call", kind="transformer_prepare", branch=None, status="INTERRUPTED_COMPLETION_UNKNOWN")
+    if trace in ("RETURNED", "FAILED", "RUNNING", "INTERRUPTED_COMPLETION_UNKNOWN"):
+        r["calls"] = [dict(call, status=trace)]
+    elif trace == "orphan_receipt": runtime.write_json(output / "calls/old-call.json", call)
+    elif trace == "unknown_block": r["replay"] = {"conditional": dict(blocks=[dict(forward="INTERRUPTED_COMPLETION_UNKNOWN", recompute="NOT_RUN")])}
+    elif trace == "nonzero_counter": r["counts"]["transformer_prepare"]["attempted"] = 1
+    elif trace == "missing_counter": r.pop("block_counts")
+    elif trace == "partial_output": runtime.save_tensor(output / "conditional/output.pt.tmp", torch.ones(1))
+    elif trace == "prior_call": prior["calls"] = [call]
+    elif trace == "report_nonzero": report["counts"]["dit_forward"]["attempted"] = 1
+    elif trace == "resource_trace": r["resources"] = [dict(name="transformer_prepare")]
+    runtime.write_json(output / "result.json", r)
+    runtime.write_json(output / "result.previous.json", prior)
+    runtime.write_json(output / "report.json", report)
+    assert not runtime.needs_model_work(output)
+    reread = runtime.run(config(tmp_path), output, preparer=forbidden, source_loader=forbidden)
+    assert reread["model_work_resume_blocked_reason"] and reread["status"] == "ENGINEERING_FAILURE"
+    # Recount/report writes must not turn a previously uncertain history into 0.
+    assert not runtime.needs_model_work(output)
+    runtime.run(config(tmp_path), output, preparer=forbidden, source_loader=forbidden)
 
 
 @pytest.mark.parametrize("artifact,damage", [

@@ -27,7 +27,11 @@ def finite_tensor(value, shape=None, name="tensor", dtype=None, *, allow_nonfini
 
 def direction_contract(direction, shape=LATENT_SHAPE, rois=ROIS, time_range=(1, 45)):
     import torch
-    finite_tensor(direction, shape, "saved exact direction", torch.float32)
+    finite_tensor(direction, shape, "saved exact direction")
+    if not direction.is_floating_point():
+        raise ValueError("saved exact direction must be a real floating-point tensor")
+    # The original paired-transfer producer normalizes in FP64. Validate the
+    # saved values without converting, renormalizing or replacing the cotangent.
     mask = torch.zeros_like(direction, dtype=torch.bool)
     for y0, y1, x0, x1 in rois:
         mask[:, :, time_range[0]:time_range[1], y0:y1, x0:x1] = True
