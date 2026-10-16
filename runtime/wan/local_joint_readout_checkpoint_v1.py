@@ -205,6 +205,9 @@ def checkpoint_call(ledger: ReplayLedger, kind: str, function, *args, boundary=N
     def measured(*inputs):
         nonlocal calls
         phase = "forward" if calls == 0 else "recompute"
+        maximum = getattr(ledger, "maximum_recomputes", None)
+        if maximum is not None and calls > maximum:
+            raise RuntimeError("checkpoint replay budget exhausted before another entry")
         calls += 1
         try:
             ledger.start(kind, phase)

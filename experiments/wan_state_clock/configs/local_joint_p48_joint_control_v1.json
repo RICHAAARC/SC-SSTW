@@ -1,0 +1,12 @@
+{
+  "model": {"id": "Wan-AI/Wan2.1-T2V-1.3B-Diffusers"},
+  "views": ["ZERO", "ANCHOR", "CANDIDATE"],
+  "objectives": ["S", "P", "W", "Q"],
+  "guidance": 5,
+  "cap": 0.02,
+  "block_count": 30,
+  "transformer_dtype": "bfloat16",
+  "device": "cuda",
+  "source_run": "/content/drive/MyDrive/Video-WM/Local-Joint-State-Payload-V1-Paired-Transfer/resumable-paired-transfer-v1/run",
+  "spool_root": "/content"
+}
