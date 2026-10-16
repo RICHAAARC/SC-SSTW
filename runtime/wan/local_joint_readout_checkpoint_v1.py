@@ -13,9 +13,9 @@ TRANSFER_BYTES = 16 * 1024 * 1024
 class BoundarySpool:
     """Own exact VAE checkpoint storage until its VJP finishes."""
 
-    def __init__(self):
-        kind = self.kind = "VAE"
-        root = Path(os.environ.get("M0_BOUNDARY_SPOOL_ROOT") or (
+    def __init__(self, *, kind="VAE", root=None):
+        kind = self.kind = kind
+        root = Path(root or os.environ.get("M0_BOUNDARY_SPOOL_ROOT") or (
             "/content" if Path("/content").is_dir() else "/tmp"
         ))
         free = shutil.disk_usage(root).free

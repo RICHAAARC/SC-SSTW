@@ -1,0 +1,13 @@
+{
+  "schema": "local-joint-p0-input-vjp-v1",
+  "selection_status": "P0_ADOPTED_BY_USER_20261016",
+  "model": {"id": "Wan-AI/Wan2.1-T2V-1.3B-Diffusers"},
+  "branches": ["conditional", "unconditional"],
+  "index": 49,
+  "block_count": 30,
+  "transformer_dtype": "bfloat16",
+  "device": "cuda",
+  "source_run": "/content/drive/MyDrive/Video-WM/Local-Joint-State-Payload-V1-Paired-Transfer/resumable-paired-transfer-v1/run",
+  "tail_run": "/content/drive/MyDrive/Video-WM/Local-Joint-State-Payload-V1-Fixed-Paired-Tail/resumable-fixed-paired-tail-v1/run",
+  "spool_root": "/content"
+}
