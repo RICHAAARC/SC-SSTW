@@ -64,9 +64,29 @@ def build():
             if code and check:raise RuntimeError(label+' failed; see '+str(LOG))
             return code
         def ensure_imports(probe,packages,label):
-            if command([sys.executable,'-c',probe],'Probe '+label,check=False):
-                command([sys.executable,'-m','pip','install','--upgrade',*packages],'Repair '+label)
-                command([sys.executable,'-c',probe],'Recheck '+label)
+            import re
+            module_packages={package.replace('-','_'):package for package in packages}
+            repaired=set()
+            while True:
+                offset=LOG.stat().st_size if LOG.exists() else 0
+                if not command([sys.executable,'-c',probe],('Recheck ' if repaired else 'Probe ')+label,check=False):return
+                with LOG.open('rb') as stream:
+                    stream.seek(offset);failure=stream.read().decode('utf-8',errors='replace')
+                missing=re.search("ModuleNotFoundError: No module named ['\\\"]([^'\\\"]+)['\\\"]",failure)
+                if "cannot import name 'FqnToConfig'" in failure and 'torchao.quantization' in failure:
+                    # This experiment does not use torchao quantization. Remove only
+                    # this observed optional-package conflict, then probe afresh.
+                    action='remove incompatible optional torchao'
+                    args=[sys.executable,'-m','pip','uninstall','-y','torchao']
+                elif missing and missing.group(1) in module_packages:
+                    package=module_packages[missing.group(1)]
+                    action='install missing '+package
+                    args=[sys.executable,'-m','pip','install',package]
+                else:
+                    raise RuntimeError(label+' failed without a known targeted repair; see '+str(LOG))
+                if action in repaired:raise RuntimeError(label+' still fails after '+action+'; see '+str(LOG))
+                repaired.add(action)
+                command(args,'Repair '+label+': '+action)
         ensure_imports('import numpy',['numpy'],'array dependency')
         command([*CLI,'--output',str(OUTPUT),'--worker','init'],'Initialize fixed 36 rows')
         summary=json.loads((OUTPUT/'summary.json').read_text())
