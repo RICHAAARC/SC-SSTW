@@ -8,7 +8,7 @@ import zipfile
 import numpy as np
 from experiments.paper_results_v1.resume_state import StateJournal, atomic_bytes, read_state, state_exists, unit_attempt
 from main.tube_state import video_trajectory_payload_framewise_sync_v1 as clock
-from main.tube_state.receiver_controls_v1 import select_score_path
+from main.tube_state.receiver_controls_v1 import received_scores, select_score_path
 from main.tube_state.video_trajectory_temporal_edit_receiver_v1 import decode_visible_span
 
 CASES=tuple(f'independent_20261015_{i:02d}' for i in range(1,5))
@@ -47,9 +47,9 @@ def public_templates(key=KEY):
 
 def observed_scores(y,templates):
     """Received Y + public templates only; framewise, no clip statistics."""
-    if y.dtype!=np.float32 or y.shape!=(181,4,40,64) or not np.isfinite(y).all():
-        raise ValueError('clock Y must be finite float32 [181,4,40,64]')
-    patches=y.astype(np.float64).reshape(181,4,10,4,16,4).transpose(0,2,4,1,3,5).reshape(181,-1)
+    if y.dtype!=np.float32 or y.ndim!=4 or y.shape[0]<1 or y.shape[1:]!=(4,40,64) or not np.isfinite(y).all():
+        raise ValueError('clock Y must be finite float32 [N>=1,4,40,64]')
+    patches=y.astype(np.float64).reshape(len(y),4,10,4,16,4).transpose(0,2,4,1,3,5).reshape(len(y),-1)
     w,e,rho=templates
     return patches@w.T/rho[None,:],patches@e.T/rho[None,:]
 
@@ -61,6 +61,34 @@ def blind_select(q):
                 status=operation['status'] if operation else estimate['status'],
                 reason=operation.get('reason') if operation else estimate.get('reason'),
                 truth_inputs=False,message_inputs=False,attack_inputs=False)
+
+
+def distinct_reference_scores(q_ref):
+    """One column-background vote per exactly equal received REF score row.
+
+    Only the supplied observations enter. First representatives define classes;
+    every original row remains in order for the unchanged downstream U search.
+    This opt-in candidate does not change ARMS or the existing run() defaults.
+    """
+    q=received_scores(q_ref)
+    representatives=[]
+    classes=[]
+    for row in q:
+        for group,index in enumerate(representatives):
+            if np.array_equal(row,q[index]):
+                classes.append(group)
+                break
+        else:
+            classes.append(len(representatives))
+            representatives.append(len(classes)-1)
+    with np.errstate(over='raise',invalid='raise'):
+        background=np.median(q[representatives],axis=0)
+        corrected=q-background
+    if not np.isfinite(corrected).all():
+        raise FloatingPointError('distinct REF background subtraction is nonfinite')
+    return dict(q=corrected,background=background,
+                representative_indices=np.asarray(representatives,dtype=np.int64),
+                class_indices=np.asarray(classes,dtype=np.int64))
 
 
 def planned_rows():
