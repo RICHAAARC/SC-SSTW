@@ -1,0 +1,204 @@
+{
+  "slot_id": "distinct_confirm_20261017_01/SHORT17_HOLD_MEDIA/DISTINCT_RAW_U",
+  "case_id": "distinct_confirm_20261017_01",
+  "view": "SHORT17_HOLD_MEDIA",
+  "receiver": "DISTINCT_RAW_U",
+  "key": "watermark",
+  "plan": {
+    "operation": {
+      "status": "SUPPORTED",
+      "reason": null,
+      "source_start": 37,
+      "source_end": 53,
+      "visible_span_frames": 18,
+      "anchor": 36,
+      "front_boundary_copies": 1,
+      "tail_discarded_source_positions": 1,
+      "output_frames": 17,
+      "source_coordinate_map": [
+        36,
+        37,
+        38,
+        39,
+        40,
+        41,
+        42,
+        43,
+        44,
+        45,
+        46,
+        47,
+        48,
+        49,
+        50,
+        51,
+        52
+      ],
+      "received_index_map": [
+        0,
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        9,
+        27,
+        28,
+        29,
+        30,
+        31,
+        32,
+        33
+      ],
+      "synthetic_output_indices": [
+        0
+      ],
+      "repeated_output_indices": [
+        1
+      ],
+      "dropped_received_indices": [
+        8,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        18,
+        19,
+        20,
+        21,
+        22,
+        23,
+        24,
+        25,
+        26,
+        34
+      ],
+      "wan_support": 4,
+      "wan_input_rule": "output_frames == 1 + 4*k; R=min(44,k); first Wan latent excluded",
+      "mapping_rule": "nearest received source estimate; equal distance chooses earlier received index",
+      "truth_inputs": false
+    },
+    "segments": [
+      {
+        "segment": 0,
+        "cells": [
+          {
+            "receiver_wan_time": 1,
+            "source_wan_time": 10,
+            "source_frames": [
+              37,
+              38,
+              39,
+              40
+            ]
+          },
+          {
+            "receiver_wan_time": 2,
+            "source_wan_time": 11,
+            "source_frames": [
+              41,
+              42,
+              43,
+              44
+            ]
+          }
+        ],
+        "status": "SUPPORTED",
+        "observed_cells": 2,
+        "planned_bits": 8
+      },
+      {
+        "segment": 1,
+        "cells": [
+          {
+            "receiver_wan_time": 3,
+            "source_wan_time": 12,
+            "source_frames": [
+              45,
+              46,
+              47,
+              48
+            ]
+          },
+          {
+            "receiver_wan_time": 4,
+            "source_wan_time": 13,
+            "source_frames": [
+              49,
+              50,
+              51,
+              52
+            ]
+          }
+        ],
+        "status": "SUPPORTED",
+        "observed_cells": 2,
+        "planned_bits": 8
+      },
+      {
+        "segment": 2,
+        "cells": [],
+        "status": "MISSING",
+        "observed_cells": 0,
+        "planned_bits": 8
+      },
+      {
+        "segment": 3,
+        "cells": [],
+        "status": "MISSING",
+        "observed_cells": 0,
+        "planned_bits": 8
+      }
+    ],
+    "estimated_path": [
+      37,
+      38,
+      39,
+      40,
+      41,
+      42,
+      43,
+      44,
+      44,
+      45,
+      45,
+      45,
+      45,
+      45,
+      45,
+      45,
+      45,
+      45,
+      45,
+      45,
+      45,
+      45,
+      45,
+      45,
+      45,
+      45,
+      45,
+      46,
+      47,
+      48,
+      49,
+      50,
+      51,
+      52,
+      53
+    ],
+    "truth_inputs": false,
+    "message_inputs": false,
+    "support_rule": "Only four source positions actually represented by received indices in estimated path; synthetic fill is context, not votes."
+  },
+  "truth_inputs": false,
+  "message_inputs": false,
+  "score_or_selector_required": false
+}
