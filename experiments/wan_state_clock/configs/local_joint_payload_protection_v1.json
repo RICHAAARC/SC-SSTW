@@ -1,0 +1,6 @@
+{
+  "source_p": "/content/drive/MyDrive/Video-WM/B-Positive-Projection-Margin-V1/fixed-clean-pair-v1/features/PAYLOAD_ONLY/terminal.pt",
+  "source_j0": "/content/drive/MyDrive/Video-WM/B-Positive-Projection-Margin-V1/fixed-clean-pair-v1/features/PROJECTION_MARGIN/terminal.pt",
+  "output": "/content/drive/MyDrive/Video-WM/B-Local-Payload-Protection-V1/fixed-clean-triple-v1",
+  "model_id": "Wan-AI/Wan2.1-T2V-1.3B-Diffusers"
+}
