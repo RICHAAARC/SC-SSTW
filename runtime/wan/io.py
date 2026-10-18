@@ -24,3 +24,16 @@ def encode_rgb(rgb: Any, path: Path, fps: int, crf: int) -> None:
     path.parent.mkdir(parents=True,exist_ok=True)
     t,h,w,_=map(int,rgb.shape); pixels=quantize_rgb8_no_codec(rgb).numpy()
     subprocess.run(["ffmpeg","-v","error","-threads","1","-f","rawvideo","-pix_fmt","rgb24","-s",f"{w}x{h}","-r",str(fps),"-i","pipe:0","-an","-c:v","libx264","-crf",str(crf),"-pix_fmt","yuv420p","-n",str(path)],input=pixels.tobytes(),check=True,capture_output=True)
+
+
+def encode_rgb8(pixels: Any, path: Path, fps: int, crf: int) -> None:
+    """Encode an already quantized RGB24 tensor without a second quantization."""
+    import torch
+    if not isinstance(pixels, torch.Tensor) or pixels.dtype != torch.uint8 or pixels.ndim != 4 or pixels.shape[-1] != 3:
+        raise ValueError("prequantized codec input must be uint8 [T,H,W,3]")
+    path.parent.mkdir(parents=True, exist_ok=True)
+    _, h, w, _ = pixels.shape
+    subprocess.run(["ffmpeg", "-v", "error", "-threads", "1", "-f", "rawvideo", "-pix_fmt", "rgb24",
+                    "-s", f"{w}x{h}", "-r", str(fps), "-i", "pipe:0", "-an", "-c:v", "libx264",
+                    "-crf", str(crf), "-pix_fmt", "yuv420p", "-n", str(path)],
+                   input=pixels.detach().cpu().contiguous().numpy().tobytes(), check=True, capture_output=True)

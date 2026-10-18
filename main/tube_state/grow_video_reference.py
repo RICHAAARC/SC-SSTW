@@ -146,7 +146,8 @@ def read_latent_bits(normalized,key,public=PUBLIC):
                 votes=raw[:,bit::8].reshape(-1).tolist()
                 decoded.append(Counter(votes).most_common(1)[0][0])
                 ones=sum(votes);vote_rows.append(dict(ones=ones,zeros=len(votes)-ones,
-                    count=len(votes),tie=ones*2==len(votes)))
+                    count=len(votes),tie=ones*2==len(votes),first_vote=votes[0],
+                    vote_order="time-major then coordinate repetition"))
     return dict(status="READ",decoded_bits=decoded,votes=vote_rows,truth_used=False,
         payload_bits=32,temporal_interpretation="repeat voting over all46; no synchronization",
         normalized_shape=list(normalized.shape),transform="fft2_ortho_real")
