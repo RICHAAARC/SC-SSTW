@@ -1,0 +1,7 @@
+{
+  "source_terminal": "/content/drive/MyDrive/Video-WM/Paper-Results-V1-Segmented-Payload-V1/resumable-segmented-payload-v1/data/independent_20261015_01/terminal.npy",
+  "source_native": "/content/drive/MyDrive/Video-WM/Paper-Results-V1-Segmented-Payload-V1/resumable-segmented-payload-v1/data/independent_20261015_01/native.npy",
+  "truth_record": "/content/drive/MyDrive/Video-WM/Paper-Results-V1-Segmented-Payload-V1/resumable-segmented-payload-v1/segmented_payload_state.json",
+  "output": "/content/drive/MyDrive/Video-WM/B-Segmented-Native-Terminal-Sync-V1/fixed-clean-pair-v1",
+  "model_id": "Wan-AI/Wan2.1-T2V-1.3B-Diffusers"
+}
