@@ -1,0 +1,6 @@
+{
+  "source_root": "/content/drive/MyDrive/Video-WM/B-Segmented-Native-Terminal-Sync-V1/fixed-clean-pair-v1",
+  "output": "/content/drive/MyDrive/Video-WM/B-Blind-Temporal-Segmented-V1/fixed-four-phase-v1",
+  "truth_record": "/content/drive/MyDrive/Video-WM/Paper-Results-V1-Segmented-Payload-V1/resumable-segmented-payload-v1/segmented_payload_state.json",
+  "model_id": "Wan-AI/Wan2.1-T2V-1.3B-Diffusers"
+}
