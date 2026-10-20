@@ -1,0 +1,7 @@
+{
+  "source_p": "/content/drive/MyDrive/Video-WM/B-C73-Identity-V1/fixed-seen-host-v1/features/P0/terminal.pt",
+  "output": "/content/drive/MyDrive/Video-WM/B-Legacy-Position-Margin-V1/fixed-clean-transfer-v1",
+  "truth_path": "/content/drive/MyDrive/Video-WM/Paper-Results-V1-Segmented-Payload-V1/resumable-segmented-payload-v1/segmented_payload_state.json",
+  "model_id": "Wan-AI/Wan2.1-T2V-1.3B-Diffusers",
+  "gamma": 1.0
+}
