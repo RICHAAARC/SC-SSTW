@@ -1,0 +1,30 @@
+{
+  "scope": "preserved prior saved observations, not a new operator outcome or pure-blind legacy baseline",
+  "source_report": "diagnostics/b-blind-temporal-segmented-result-principal-20261019/REPORT.md",
+  "correct_source_cells": 50,
+  "true_complete_source_cells": 55,
+  "correctly_assigned_raw_local_bits": 400,
+  "true_complete_raw_local_bits": 440,
+  "errors_on_correctly_assigned_raw_bits": 0,
+  "P_S_true_complete_same_position_errors": [
+    0,
+    0
+  ],
+  "true_complete_same_position_bits": 440,
+  "S_correct_key_crop_cells": [
+    19,
+    22
+  ],
+  "S_correct_key_delete_cells": [
+    31,
+    33
+  ],
+  "S_missing_segment_false_coverage_bits_per_view": 8,
+  "scope_limits": [
+    "estimated boundaries wrong",
+    "all8 true paths outside stored maxima",
+    "not a full blind synchronization PASS",
+    "fixed known host; no new run"
+  ],
+  "C73_fixed_probe": "valid execution negative, complete A/D/F 0/3; retained alongside prior positives"
+}

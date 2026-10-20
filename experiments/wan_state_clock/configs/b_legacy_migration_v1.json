@@ -1,0 +1,6 @@
+{
+  "c73_root": "/content/drive/MyDrive/Video-WM/B-C73-Identity-V1/fixed-seen-host-v1",
+  "output": "/content/drive/MyDrive/Video-WM/B-Legacy-Migration-V1/fixed-seen-operator-control-v1",
+  "legacy_summary": "docs/evidence/legacy_score_replay_v1.json",
+  "model_id": "Wan-AI/Wan2.1-T2V-1.3B-Diffusers"
+}

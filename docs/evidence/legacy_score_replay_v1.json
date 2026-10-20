@@ -1,0 +1,1264 @@
+{
+  "scope": "old framewise saved score replay and writer-trace contribution at frozen old thresholds; not current blind baseline",
+  "records": 21000,
+  "thresholds": {
+    "frame_prc": 0.047811,
+    "tubelet_only": 0.096422,
+    "tubelet_sync": 0.098595
+  },
+  "clip_boundary_rows": 0,
+  "issues": [],
+  "group_counts": [
+    {
+      "method": "frame_prc",
+      "split": "calibration",
+      "role": "attacked_negative",
+      "n": 1300,
+      "with_before_after": 0,
+      "bonus_nonzero": 0,
+      "saved_threshold_positive": 0,
+      "record_decision_positive": 0,
+      "record_threshold_mismatch": 0,
+      "no_trace_held_gate_positive": 0,
+      "no_trace_regated_positive": 0,
+      "rescue_applied": 0,
+      "regated_rescue_applied": 0
+    },
+    {
+      "method": "frame_prc",
+      "split": "calibration",
+      "role": "clean_negative",
+      "n": 100,
+      "with_before_after": 0,
+      "bonus_nonzero": 0,
+      "saved_threshold_positive": 0,
+      "record_decision_positive": 0,
+      "record_threshold_mismatch": 0,
+      "no_trace_held_gate_positive": 0,
+      "no_trace_regated_positive": 0,
+      "rescue_applied": 0,
+      "regated_rescue_applied": 0
+    },
+    {
+      "method": "frame_prc",
+      "split": "dev",
+      "role": "attacked_negative",
+      "n": 1300,
+      "with_before_after": 0,
+      "bonus_nonzero": 0,
+      "saved_threshold_positive": 6,
+      "record_decision_positive": 6,
+      "record_threshold_mismatch": 0,
+      "no_trace_held_gate_positive": 6,
+      "no_trace_regated_positive": 6,
+      "rescue_applied": 0,
+      "regated_rescue_applied": 0
+    },
+    {
+      "method": "frame_prc",
+      "split": "dev",
+      "role": "attacked_positive",
+      "n": 1300,
+      "with_before_after": 1300,
+      "bonus_nonzero": 0,
+      "saved_threshold_positive": 242,
+      "record_decision_positive": 242,
+      "record_threshold_mismatch": 0,
+      "no_trace_held_gate_positive": 242,
+      "no_trace_regated_positive": 242,
+      "rescue_applied": 0,
+      "regated_rescue_applied": 0
+    },
+    {
+      "method": "frame_prc",
+      "split": "dev",
+      "role": "clean_negative",
+      "n": 100,
+      "with_before_after": 0,
+      "bonus_nonzero": 0,
+      "saved_threshold_positive": 1,
+      "record_decision_positive": 1,
+      "record_threshold_mismatch": 0,
+      "no_trace_held_gate_positive": 1,
+      "no_trace_regated_positive": 1,
+      "rescue_applied": 0,
+      "regated_rescue_applied": 0
+    },
+    {
+      "method": "frame_prc",
+      "split": "dev",
+      "role": "watermarked_positive",
+      "n": 100,
+      "with_before_after": 100,
+      "bonus_nonzero": 0,
+      "saved_threshold_positive": 100,
+      "record_decision_positive": 100,
+      "record_threshold_mismatch": 0,
+      "no_trace_held_gate_positive": 100,
+      "no_trace_regated_positive": 100,
+      "rescue_applied": 0,
+      "regated_rescue_applied": 0
+    },
+    {
+      "method": "frame_prc",
+      "split": "test",
+      "role": "attacked_negative",
+      "n": 1300,
+      "with_before_after": 0,
+      "bonus_nonzero": 0,
+      "saved_threshold_positive": 3,
+      "record_decision_positive": 3,
+      "record_threshold_mismatch": 0,
+      "no_trace_held_gate_positive": 3,
+      "no_trace_regated_positive": 3,
+      "rescue_applied": 0,
+      "regated_rescue_applied": 0
+    },
+    {
+      "method": "frame_prc",
+      "split": "test",
+      "role": "attacked_positive",
+      "n": 1300,
+      "with_before_after": 1300,
+      "bonus_nonzero": 0,
+      "saved_threshold_positive": 246,
+      "record_decision_positive": 246,
+      "record_threshold_mismatch": 0,
+      "no_trace_held_gate_positive": 246,
+      "no_trace_regated_positive": 246,
+      "rescue_applied": 0,
+      "regated_rescue_applied": 0
+    },
+    {
+      "method": "frame_prc",
+      "split": "test",
+      "role": "clean_negative",
+      "n": 100,
+      "with_before_after": 0,
+      "bonus_nonzero": 0,
+      "saved_threshold_positive": 1,
+      "record_decision_positive": 1,
+      "record_threshold_mismatch": 0,
+      "no_trace_held_gate_positive": 1,
+      "no_trace_regated_positive": 1,
+      "rescue_applied": 0,
+      "regated_rescue_applied": 0
+    },
+    {
+      "method": "frame_prc",
+      "split": "test",
+      "role": "watermarked_positive",
+      "n": 100,
+      "with_before_after": 100,
+      "bonus_nonzero": 0,
+      "saved_threshold_positive": 100,
+      "record_decision_positive": 100,
+      "record_threshold_mismatch": 0,
+      "no_trace_held_gate_positive": 100,
+      "no_trace_regated_positive": 100,
+      "rescue_applied": 0,
+      "regated_rescue_applied": 0
+    },
+    {
+      "method": "tubelet_only",
+      "split": "calibration",
+      "role": "attacked_negative",
+      "n": 1300,
+      "with_before_after": 0,
+      "bonus_nonzero": 0,
+      "saved_threshold_positive": 0,
+      "record_decision_positive": 0,
+      "record_threshold_mismatch": 0,
+      "no_trace_held_gate_positive": 0,
+      "no_trace_regated_positive": 0,
+      "rescue_applied": 0,
+      "regated_rescue_applied": 0
+    },
+    {
+      "method": "tubelet_only",
+      "split": "calibration",
+      "role": "clean_negative",
+      "n": 100,
+      "with_before_after": 0,
+      "bonus_nonzero": 0,
+      "saved_threshold_positive": 0,
+      "record_decision_positive": 0,
+      "record_threshold_mismatch": 0,
+      "no_trace_held_gate_positive": 0,
+      "no_trace_regated_positive": 0,
+      "rescue_applied": 0,
+      "regated_rescue_applied": 0
+    },
+    {
+      "method": "tubelet_only",
+      "split": "dev",
+      "role": "attacked_negative",
+      "n": 1300,
+      "with_before_after": 0,
+      "bonus_nonzero": 0,
+      "saved_threshold_positive": 0,
+      "record_decision_positive": 0,
+      "record_threshold_mismatch": 0,
+      "no_trace_held_gate_positive": 0,
+      "no_trace_regated_positive": 0,
+      "rescue_applied": 0,
+      "regated_rescue_applied": 0
+    },
+    {
+      "method": "tubelet_only",
+      "split": "dev",
+      "role": "attacked_positive",
+      "n": 1300,
+      "with_before_after": 1300,
+      "bonus_nonzero": 1300,
+      "saved_threshold_positive": 504,
+      "record_decision_positive": 504,
+      "record_threshold_mismatch": 0,
+      "no_trace_held_gate_positive": 0,
+      "no_trace_regated_positive": 0,
+      "rescue_applied": 0,
+      "regated_rescue_applied": 0
+    },
+    {
+      "method": "tubelet_only",
+      "split": "dev",
+      "role": "clean_negative",
+      "n": 100,
+      "with_before_after": 0,
+      "bonus_nonzero": 0,
+      "saved_threshold_positive": 0,
+      "record_decision_positive": 0,
+      "record_threshold_mismatch": 0,
+      "no_trace_held_gate_positive": 0,
+      "no_trace_regated_positive": 0,
+      "rescue_applied": 0,
+      "regated_rescue_applied": 0
+    },
+    {
+      "method": "tubelet_only",
+      "split": "dev",
+      "role": "watermarked_positive",
+      "n": 100,
+      "with_before_after": 100,
+      "bonus_nonzero": 100,
+      "saved_threshold_positive": 46,
+      "record_decision_positive": 46,
+      "record_threshold_mismatch": 0,
+      "no_trace_held_gate_positive": 0,
+      "no_trace_regated_positive": 0,
+      "rescue_applied": 0,
+      "regated_rescue_applied": 0
+    },
+    {
+      "method": "tubelet_only",
+      "split": "test",
+      "role": "attacked_negative",
+      "n": 1300,
+      "with_before_after": 0,
+      "bonus_nonzero": 0,
+      "saved_threshold_positive": 0,
+      "record_decision_positive": 0,
+      "record_threshold_mismatch": 0,
+      "no_trace_held_gate_positive": 0,
+      "no_trace_regated_positive": 0,
+      "rescue_applied": 0,
+      "regated_rescue_applied": 0
+    },
+    {
+      "method": "tubelet_only",
+      "split": "test",
+      "role": "attacked_positive",
+      "n": 1300,
+      "with_before_after": 1300,
+      "bonus_nonzero": 1300,
+      "saved_threshold_positive": 647,
+      "record_decision_positive": 647,
+      "record_threshold_mismatch": 0,
+      "no_trace_held_gate_positive": 1,
+      "no_trace_regated_positive": 1,
+      "rescue_applied": 0,
+      "regated_rescue_applied": 0
+    },
+    {
+      "method": "tubelet_only",
+      "split": "test",
+      "role": "clean_negative",
+      "n": 100,
+      "with_before_after": 0,
+      "bonus_nonzero": 0,
+      "saved_threshold_positive": 0,
+      "record_decision_positive": 0,
+      "record_threshold_mismatch": 0,
+      "no_trace_held_gate_positive": 0,
+      "no_trace_regated_positive": 0,
+      "rescue_applied": 0,
+      "regated_rescue_applied": 0
+    },
+    {
+      "method": "tubelet_only",
+      "split": "test",
+      "role": "watermarked_positive",
+      "n": 100,
+      "with_before_after": 100,
+      "bonus_nonzero": 100,
+      "saved_threshold_positive": 58,
+      "record_decision_positive": 58,
+      "record_threshold_mismatch": 0,
+      "no_trace_held_gate_positive": 0,
+      "no_trace_regated_positive": 0,
+      "rescue_applied": 0,
+      "regated_rescue_applied": 0
+    },
+    {
+      "method": "tubelet_sync",
+      "split": "calibration",
+      "role": "attacked_negative",
+      "n": 1300,
+      "with_before_after": 0,
+      "bonus_nonzero": 0,
+      "saved_threshold_positive": 3,
+      "record_decision_positive": 3,
+      "record_threshold_mismatch": 0,
+      "no_trace_held_gate_positive": 3,
+      "no_trace_regated_positive": 3,
+      "rescue_applied": 3,
+      "regated_rescue_applied": 3
+    },
+    {
+      "method": "tubelet_sync",
+      "split": "calibration",
+      "role": "clean_negative",
+      "n": 100,
+      "with_before_after": 0,
+      "bonus_nonzero": 0,
+      "saved_threshold_positive": 0,
+      "record_decision_positive": 0,
+      "record_threshold_mismatch": 0,
+      "no_trace_held_gate_positive": 0,
+      "no_trace_regated_positive": 0,
+      "rescue_applied": 0,
+      "regated_rescue_applied": 0
+    },
+    {
+      "method": "tubelet_sync",
+      "split": "dev",
+      "role": "attacked_negative",
+      "n": 1300,
+      "with_before_after": 0,
+      "bonus_nonzero": 0,
+      "saved_threshold_positive": 3,
+      "record_decision_positive": 3,
+      "record_threshold_mismatch": 0,
+      "no_trace_held_gate_positive": 3,
+      "no_trace_regated_positive": 3,
+      "rescue_applied": 5,
+      "regated_rescue_applied": 5
+    },
+    {
+      "method": "tubelet_sync",
+      "split": "dev",
+      "role": "attacked_positive",
+      "n": 1300,
+      "with_before_after": 1300,
+      "bonus_nonzero": 1300,
+      "saved_threshold_positive": 854,
+      "record_decision_positive": 854,
+      "record_threshold_mismatch": 0,
+      "no_trace_held_gate_positive": 0,
+      "no_trace_regated_positive": 0,
+      "rescue_applied": 593,
+      "regated_rescue_applied": 0
+    },
+    {
+      "method": "tubelet_sync",
+      "split": "dev",
+      "role": "clean_negative",
+      "n": 100,
+      "with_before_after": 0,
+      "bonus_nonzero": 0,
+      "saved_threshold_positive": 1,
+      "record_decision_positive": 1,
+      "record_threshold_mismatch": 0,
+      "no_trace_held_gate_positive": 1,
+      "no_trace_regated_positive": 1,
+      "rescue_applied": 1,
+      "regated_rescue_applied": 1
+    },
+    {
+      "method": "tubelet_sync",
+      "split": "dev",
+      "role": "watermarked_positive",
+      "n": 100,
+      "with_before_after": 100,
+      "bonus_nonzero": 100,
+      "saved_threshold_positive": 58,
+      "record_decision_positive": 58,
+      "record_threshold_mismatch": 0,
+      "no_trace_held_gate_positive": 0,
+      "no_trace_regated_positive": 0,
+      "rescue_applied": 33,
+      "regated_rescue_applied": 0
+    },
+    {
+      "method": "tubelet_sync",
+      "split": "test",
+      "role": "attacked_negative",
+      "n": 1300,
+      "with_before_after": 0,
+      "bonus_nonzero": 0,
+      "saved_threshold_positive": 0,
+      "record_decision_positive": 0,
+      "record_threshold_mismatch": 0,
+      "no_trace_held_gate_positive": 0,
+      "no_trace_regated_positive": 0,
+      "rescue_applied": 0,
+      "regated_rescue_applied": 0
+    },
+    {
+      "method": "tubelet_sync",
+      "split": "test",
+      "role": "attacked_positive",
+      "n": 1300,
+      "with_before_after": 1300,
+      "bonus_nonzero": 1300,
+      "saved_threshold_positive": 996,
+      "record_decision_positive": 996,
+      "record_threshold_mismatch": 0,
+      "no_trace_held_gate_positive": 1,
+      "no_trace_regated_positive": 1,
+      "rescue_applied": 624,
+      "regated_rescue_applied": 0
+    },
+    {
+      "method": "tubelet_sync",
+      "split": "test",
+      "role": "clean_negative",
+      "n": 100,
+      "with_before_after": 0,
+      "bonus_nonzero": 0,
+      "saved_threshold_positive": 0,
+      "record_decision_positive": 0,
+      "record_threshold_mismatch": 0,
+      "no_trace_held_gate_positive": 0,
+      "no_trace_regated_positive": 0,
+      "rescue_applied": 0,
+      "regated_rescue_applied": 0
+    },
+    {
+      "method": "tubelet_sync",
+      "split": "test",
+      "role": "watermarked_positive",
+      "n": 100,
+      "with_before_after": 100,
+      "bonus_nonzero": 100,
+      "saved_threshold_positive": 69,
+      "record_decision_positive": 69,
+      "record_threshold_mismatch": 0,
+      "no_trace_held_gate_positive": 0,
+      "no_trace_regated_positive": 0,
+      "rescue_applied": 32,
+      "regated_rescue_applied": 0
+    }
+  ],
+  "test_attack_counts": [
+    {
+      "method": "frame_prc",
+      "role": "attacked_negative",
+      "attack": "blur",
+      "n": 100,
+      "historical_positive": 1,
+      "without_trace_held_gate_positive": 1,
+      "without_trace_regated_positive": 1
+    },
+    {
+      "method": "frame_prc",
+      "role": "attacked_negative",
+      "attack": "crop_resize",
+      "n": 100,
+      "historical_positive": 0,
+      "without_trace_held_gate_positive": 0,
+      "without_trace_regated_positive": 0
+    },
+    {
+      "method": "frame_prc",
+      "role": "attacked_negative",
+      "attack": "frame_dropping",
+      "n": 100,
+      "historical_positive": 0,
+      "without_trace_held_gate_positive": 0,
+      "without_trace_regated_positive": 0
+    },
+    {
+      "method": "frame_prc",
+      "role": "attacked_negative",
+      "attack": "gaussian_noise",
+      "n": 100,
+      "historical_positive": 0,
+      "without_trace_held_gate_positive": 0,
+      "without_trace_regated_positive": 0
+    },
+    {
+      "method": "frame_prc",
+      "role": "attacked_negative",
+      "attack": "h264_compression",
+      "n": 100,
+      "historical_positive": 1,
+      "without_trace_held_gate_positive": 1,
+      "without_trace_regated_positive": 1
+    },
+    {
+      "method": "frame_prc",
+      "role": "attacked_negative",
+      "attack": "h265_compression",
+      "n": 100,
+      "historical_positive": 0,
+      "without_trace_held_gate_positive": 0,
+      "without_trace_regated_positive": 0
+    },
+    {
+      "method": "frame_prc",
+      "role": "attacked_negative",
+      "attack": "local_clip",
+      "n": 400,
+      "historical_positive": 0,
+      "without_trace_held_gate_positive": 0,
+      "without_trace_regated_positive": 0
+    },
+    {
+      "method": "frame_prc",
+      "role": "attacked_negative",
+      "attack": "spatial_resize",
+      "n": 100,
+      "historical_positive": 1,
+      "without_trace_held_gate_positive": 1,
+      "without_trace_regated_positive": 1
+    },
+    {
+      "method": "frame_prc",
+      "role": "attacked_negative",
+      "attack": "speed_change",
+      "n": 100,
+      "historical_positive": 0,
+      "without_trace_held_gate_positive": 0,
+      "without_trace_regated_positive": 0
+    },
+    {
+      "method": "frame_prc",
+      "role": "attacked_negative",
+      "attack": "temporal_crop",
+      "n": 100,
+      "historical_positive": 0,
+      "without_trace_held_gate_positive": 0,
+      "without_trace_regated_positive": 0
+    },
+    {
+      "method": "frame_prc",
+      "role": "attacked_positive",
+      "attack": "blur",
+      "n": 100,
+      "historical_positive": 66,
+      "without_trace_held_gate_positive": 66,
+      "without_trace_regated_positive": 66
+    },
+    {
+      "method": "frame_prc",
+      "role": "attacked_positive",
+      "attack": "crop_resize",
+      "n": 100,
+      "historical_positive": 2,
+      "without_trace_held_gate_positive": 2,
+      "without_trace_regated_positive": 2
+    },
+    {
+      "method": "frame_prc",
+      "role": "attacked_positive",
+      "attack": "frame_dropping",
+      "n": 100,
+      "historical_positive": 0,
+      "without_trace_held_gate_positive": 0,
+      "without_trace_regated_positive": 0
+    },
+    {
+      "method": "frame_prc",
+      "role": "attacked_positive",
+      "attack": "gaussian_noise",
+      "n": 100,
+      "historical_positive": 61,
+      "without_trace_held_gate_positive": 61,
+      "without_trace_regated_positive": 61
+    },
+    {
+      "method": "frame_prc",
+      "role": "attacked_positive",
+      "attack": "h264_compression",
+      "n": 100,
+      "historical_positive": 26,
+      "without_trace_held_gate_positive": 26,
+      "without_trace_regated_positive": 26
+    },
+    {
+      "method": "frame_prc",
+      "role": "attacked_positive",
+      "attack": "h265_compression",
+      "n": 100,
+      "historical_positive": 10,
+      "without_trace_held_gate_positive": 10,
+      "without_trace_regated_positive": 10
+    },
+    {
+      "method": "frame_prc",
+      "role": "attacked_positive",
+      "attack": "local_clip",
+      "n": 400,
+      "historical_positive": 10,
+      "without_trace_held_gate_positive": 10,
+      "without_trace_regated_positive": 10
+    },
+    {
+      "method": "frame_prc",
+      "role": "attacked_positive",
+      "attack": "spatial_resize",
+      "n": 100,
+      "historical_positive": 71,
+      "without_trace_held_gate_positive": 71,
+      "without_trace_regated_positive": 71
+    },
+    {
+      "method": "frame_prc",
+      "role": "attacked_positive",
+      "attack": "speed_change",
+      "n": 100,
+      "historical_positive": 0,
+      "without_trace_held_gate_positive": 0,
+      "without_trace_regated_positive": 0
+    },
+    {
+      "method": "frame_prc",
+      "role": "attacked_positive",
+      "attack": "temporal_crop",
+      "n": 100,
+      "historical_positive": 0,
+      "without_trace_held_gate_positive": 0,
+      "without_trace_regated_positive": 0
+    },
+    {
+      "method": "frame_prc",
+      "role": "clean_negative",
+      "attack": "no_attack",
+      "n": 100,
+      "historical_positive": 1,
+      "without_trace_held_gate_positive": 1,
+      "without_trace_regated_positive": 1
+    },
+    {
+      "method": "frame_prc",
+      "role": "watermarked_positive",
+      "attack": "no_attack",
+      "n": 100,
+      "historical_positive": 100,
+      "without_trace_held_gate_positive": 100,
+      "without_trace_regated_positive": 100
+    },
+    {
+      "method": "tubelet_only",
+      "role": "attacked_negative",
+      "attack": "blur",
+      "n": 100,
+      "historical_positive": 0,
+      "without_trace_held_gate_positive": 0,
+      "without_trace_regated_positive": 0
+    },
+    {
+      "method": "tubelet_only",
+      "role": "attacked_negative",
+      "attack": "crop_resize",
+      "n": 100,
+      "historical_positive": 0,
+      "without_trace_held_gate_positive": 0,
+      "without_trace_regated_positive": 0
+    },
+    {
+      "method": "tubelet_only",
+      "role": "attacked_negative",
+      "attack": "frame_dropping",
+      "n": 100,
+      "historical_positive": 0,
+      "without_trace_held_gate_positive": 0,
+      "without_trace_regated_positive": 0
+    },
+    {
+      "method": "tubelet_only",
+      "role": "attacked_negative",
+      "attack": "gaussian_noise",
+      "n": 100,
+      "historical_positive": 0,
+      "without_trace_held_gate_positive": 0,
+      "without_trace_regated_positive": 0
+    },
+    {
+      "method": "tubelet_only",
+      "role": "attacked_negative",
+      "attack": "h264_compression",
+      "n": 100,
+      "historical_positive": 0,
+      "without_trace_held_gate_positive": 0,
+      "without_trace_regated_positive": 0
+    },
+    {
+      "method": "tubelet_only",
+      "role": "attacked_negative",
+      "attack": "h265_compression",
+      "n": 100,
+      "historical_positive": 0,
+      "without_trace_held_gate_positive": 0,
+      "without_trace_regated_positive": 0
+    },
+    {
+      "method": "tubelet_only",
+      "role": "attacked_negative",
+      "attack": "local_clip",
+      "n": 400,
+      "historical_positive": 0,
+      "without_trace_held_gate_positive": 0,
+      "without_trace_regated_positive": 0
+    },
+    {
+      "method": "tubelet_only",
+      "role": "attacked_negative",
+      "attack": "spatial_resize",
+      "n": 100,
+      "historical_positive": 0,
+      "without_trace_held_gate_positive": 0,
+      "without_trace_regated_positive": 0
+    },
+    {
+      "method": "tubelet_only",
+      "role": "attacked_negative",
+      "attack": "speed_change",
+      "n": 100,
+      "historical_positive": 0,
+      "without_trace_held_gate_positive": 0,
+      "without_trace_regated_positive": 0
+    },
+    {
+      "method": "tubelet_only",
+      "role": "attacked_negative",
+      "attack": "temporal_crop",
+      "n": 100,
+      "historical_positive": 0,
+      "without_trace_held_gate_positive": 0,
+      "without_trace_regated_positive": 0
+    },
+    {
+      "method": "tubelet_only",
+      "role": "attacked_positive",
+      "attack": "blur",
+      "n": 100,
+      "historical_positive": 59,
+      "without_trace_held_gate_positive": 0,
+      "without_trace_regated_positive": 0
+    },
+    {
+      "method": "tubelet_only",
+      "role": "attacked_positive",
+      "attack": "crop_resize",
+      "n": 100,
+      "historical_positive": 52,
+      "without_trace_held_gate_positive": 0,
+      "without_trace_regated_positive": 0
+    },
+    {
+      "method": "tubelet_only",
+      "role": "attacked_positive",
+      "attack": "frame_dropping",
+      "n": 100,
+      "historical_positive": 55,
+      "without_trace_held_gate_positive": 0,
+      "without_trace_regated_positive": 0
+    },
+    {
+      "method": "tubelet_only",
+      "role": "attacked_positive",
+      "attack": "gaussian_noise",
+      "n": 100,
+      "historical_positive": 54,
+      "without_trace_held_gate_positive": 0,
+      "without_trace_regated_positive": 0
+    },
+    {
+      "method": "tubelet_only",
+      "role": "attacked_positive",
+      "attack": "h264_compression",
+      "n": 100,
+      "historical_positive": 52,
+      "without_trace_held_gate_positive": 0,
+      "without_trace_regated_positive": 0
+    },
+    {
+      "method": "tubelet_only",
+      "role": "attacked_positive",
+      "attack": "h265_compression",
+      "n": 100,
+      "historical_positive": 48,
+      "without_trace_held_gate_positive": 0,
+      "without_trace_regated_positive": 0
+    },
+    {
+      "method": "tubelet_only",
+      "role": "attacked_positive",
+      "attack": "local_clip",
+      "n": 400,
+      "historical_positive": 162,
+      "without_trace_held_gate_positive": 0,
+      "without_trace_regated_positive": 0
+    },
+    {
+      "method": "tubelet_only",
+      "role": "attacked_positive",
+      "attack": "spatial_resize",
+      "n": 100,
+      "historical_positive": 57,
+      "without_trace_held_gate_positive": 0,
+      "without_trace_regated_positive": 0
+    },
+    {
+      "method": "tubelet_only",
+      "role": "attacked_positive",
+      "attack": "speed_change",
+      "n": 100,
+      "historical_positive": 59,
+      "without_trace_held_gate_positive": 1,
+      "without_trace_regated_positive": 1
+    },
+    {
+      "method": "tubelet_only",
+      "role": "attacked_positive",
+      "attack": "temporal_crop",
+      "n": 100,
+      "historical_positive": 49,
+      "without_trace_held_gate_positive": 0,
+      "without_trace_regated_positive": 0
+    },
+    {
+      "method": "tubelet_only",
+      "role": "clean_negative",
+      "attack": "no_attack",
+      "n": 100,
+      "historical_positive": 0,
+      "without_trace_held_gate_positive": 0,
+      "without_trace_regated_positive": 0
+    },
+    {
+      "method": "tubelet_only",
+      "role": "watermarked_positive",
+      "attack": "no_attack",
+      "n": 100,
+      "historical_positive": 58,
+      "without_trace_held_gate_positive": 0,
+      "without_trace_regated_positive": 0
+    },
+    {
+      "method": "tubelet_sync",
+      "role": "attacked_negative",
+      "attack": "blur",
+      "n": 100,
+      "historical_positive": 0,
+      "without_trace_held_gate_positive": 0,
+      "without_trace_regated_positive": 0
+    },
+    {
+      "method": "tubelet_sync",
+      "role": "attacked_negative",
+      "attack": "crop_resize",
+      "n": 100,
+      "historical_positive": 0,
+      "without_trace_held_gate_positive": 0,
+      "without_trace_regated_positive": 0
+    },
+    {
+      "method": "tubelet_sync",
+      "role": "attacked_negative",
+      "attack": "frame_dropping",
+      "n": 100,
+      "historical_positive": 0,
+      "without_trace_held_gate_positive": 0,
+      "without_trace_regated_positive": 0
+    },
+    {
+      "method": "tubelet_sync",
+      "role": "attacked_negative",
+      "attack": "gaussian_noise",
+      "n": 100,
+      "historical_positive": 0,
+      "without_trace_held_gate_positive": 0,
+      "without_trace_regated_positive": 0
+    },
+    {
+      "method": "tubelet_sync",
+      "role": "attacked_negative",
+      "attack": "h264_compression",
+      "n": 100,
+      "historical_positive": 0,
+      "without_trace_held_gate_positive": 0,
+      "without_trace_regated_positive": 0
+    },
+    {
+      "method": "tubelet_sync",
+      "role": "attacked_negative",
+      "attack": "h265_compression",
+      "n": 100,
+      "historical_positive": 0,
+      "without_trace_held_gate_positive": 0,
+      "without_trace_regated_positive": 0
+    },
+    {
+      "method": "tubelet_sync",
+      "role": "attacked_negative",
+      "attack": "local_clip",
+      "n": 400,
+      "historical_positive": 0,
+      "without_trace_held_gate_positive": 0,
+      "without_trace_regated_positive": 0
+    },
+    {
+      "method": "tubelet_sync",
+      "role": "attacked_negative",
+      "attack": "spatial_resize",
+      "n": 100,
+      "historical_positive": 0,
+      "without_trace_held_gate_positive": 0,
+      "without_trace_regated_positive": 0
+    },
+    {
+      "method": "tubelet_sync",
+      "role": "attacked_negative",
+      "attack": "speed_change",
+      "n": 100,
+      "historical_positive": 0,
+      "without_trace_held_gate_positive": 0,
+      "without_trace_regated_positive": 0
+    },
+    {
+      "method": "tubelet_sync",
+      "role": "attacked_negative",
+      "attack": "temporal_crop",
+      "n": 100,
+      "historical_positive": 0,
+      "without_trace_held_gate_positive": 0,
+      "without_trace_regated_positive": 0
+    },
+    {
+      "method": "tubelet_sync",
+      "role": "attacked_positive",
+      "attack": "blur",
+      "n": 100,
+      "historical_positive": 71,
+      "without_trace_held_gate_positive": 0,
+      "without_trace_regated_positive": 0
+    },
+    {
+      "method": "tubelet_sync",
+      "role": "attacked_positive",
+      "attack": "crop_resize",
+      "n": 100,
+      "historical_positive": 75,
+      "without_trace_held_gate_positive": 0,
+      "without_trace_regated_positive": 0
+    },
+    {
+      "method": "tubelet_sync",
+      "role": "attacked_positive",
+      "attack": "frame_dropping",
+      "n": 100,
+      "historical_positive": 75,
+      "without_trace_held_gate_positive": 0,
+      "without_trace_regated_positive": 0
+    },
+    {
+      "method": "tubelet_sync",
+      "role": "attacked_positive",
+      "attack": "gaussian_noise",
+      "n": 100,
+      "historical_positive": 70,
+      "without_trace_held_gate_positive": 0,
+      "without_trace_regated_positive": 0
+    },
+    {
+      "method": "tubelet_sync",
+      "role": "attacked_positive",
+      "attack": "h264_compression",
+      "n": 100,
+      "historical_positive": 72,
+      "without_trace_held_gate_positive": 0,
+      "without_trace_regated_positive": 0
+    },
+    {
+      "method": "tubelet_sync",
+      "role": "attacked_positive",
+      "attack": "h265_compression",
+      "n": 100,
+      "historical_positive": 67,
+      "without_trace_held_gate_positive": 0,
+      "without_trace_regated_positive": 0
+    },
+    {
+      "method": "tubelet_sync",
+      "role": "attacked_positive",
+      "attack": "local_clip",
+      "n": 400,
+      "historical_positive": 343,
+      "without_trace_held_gate_positive": 0,
+      "without_trace_regated_positive": 0
+    },
+    {
+      "method": "tubelet_sync",
+      "role": "attacked_positive",
+      "attack": "spatial_resize",
+      "n": 100,
+      "historical_positive": 69,
+      "without_trace_held_gate_positive": 0,
+      "without_trace_regated_positive": 0
+    },
+    {
+      "method": "tubelet_sync",
+      "role": "attacked_positive",
+      "attack": "speed_change",
+      "n": 100,
+      "historical_positive": 74,
+      "without_trace_held_gate_positive": 1,
+      "without_trace_regated_positive": 1
+    },
+    {
+      "method": "tubelet_sync",
+      "role": "attacked_positive",
+      "attack": "temporal_crop",
+      "n": 100,
+      "historical_positive": 80,
+      "without_trace_held_gate_positive": 0,
+      "without_trace_regated_positive": 0
+    },
+    {
+      "method": "tubelet_sync",
+      "role": "clean_negative",
+      "attack": "no_attack",
+      "n": 100,
+      "historical_positive": 0,
+      "without_trace_held_gate_positive": 0,
+      "without_trace_regated_positive": 0
+    },
+    {
+      "method": "tubelet_sync",
+      "role": "watermarked_positive",
+      "attack": "no_attack",
+      "n": 100,
+      "historical_positive": 69,
+      "without_trace_held_gate_positive": 0,
+      "without_trace_regated_positive": 0
+    }
+  ],
+  "direct_aligned_penalized_gap_counts": [
+    {
+      "role": "attacked_negative",
+      "gap": 0.0,
+      "n": 3900
+    },
+    {
+      "role": "clean_negative",
+      "gap": 0.0,
+      "n": 300
+    },
+    {
+      "role": "attacked_positive",
+      "gap": 0.09,
+      "n": 2595
+    },
+    {
+      "role": "attacked_positive",
+      "gap": 0.090001,
+      "n": 1
+    },
+    {
+      "role": "watermarked_positive",
+      "gap": 0.09,
+      "n": 200
+    },
+    {
+      "role": "attacked_positive",
+      "gap": 0.089999,
+      "n": 4
+    }
+  ],
+  "actual_search_branches": [
+    {
+      "attack": "blur",
+      "alignment_mode": "offset",
+      "estimated_scale": 1.0,
+      "search_rule": "penalized_prior",
+      "candidate_count": 17,
+      "n": 500
+    },
+    {
+      "attack": "crop_resize",
+      "alignment_mode": "offset",
+      "estimated_scale": 1.0,
+      "search_rule": "penalized_prior",
+      "candidate_count": 17,
+      "n": 500
+    },
+    {
+      "attack": "frame_dropping",
+      "alignment_mode": "offset",
+      "estimated_scale": 1.0,
+      "search_rule": "penalized_prior",
+      "candidate_count": 17,
+      "n": 500
+    },
+    {
+      "attack": "gaussian_noise",
+      "alignment_mode": "offset",
+      "estimated_scale": 1.0,
+      "search_rule": "penalized_prior",
+      "candidate_count": 17,
+      "n": 500
+    },
+    {
+      "attack": "h264_compression",
+      "alignment_mode": "offset",
+      "estimated_scale": 1.0,
+      "search_rule": "penalized_prior",
+      "candidate_count": 17,
+      "n": 500
+    },
+    {
+      "attack": "h265_compression",
+      "alignment_mode": "offset",
+      "estimated_scale": 1.0,
+      "search_rule": "penalized_prior",
+      "candidate_count": 17,
+      "n": 500
+    },
+    {
+      "attack": "local_clip",
+      "alignment_mode": "offset",
+      "estimated_scale": 1.0,
+      "search_rule": "hybrid_no_prior",
+      "candidate_count": 37,
+      "n": 500
+    },
+    {
+      "attack": "local_clip",
+      "alignment_mode": "offset",
+      "estimated_scale": 1.0,
+      "search_rule": "hybrid_no_prior",
+      "candidate_count": 33,
+      "n": 500
+    },
+    {
+      "attack": "local_clip",
+      "alignment_mode": "offset",
+      "estimated_scale": 1.0,
+      "search_rule": "hybrid_no_prior",
+      "candidate_count": 29,
+      "n": 500
+    },
+    {
+      "attack": "local_clip",
+      "alignment_mode": "offset",
+      "estimated_scale": 1.0,
+      "search_rule": "hybrid_no_prior",
+      "candidate_count": 25,
+      "n": 500
+    },
+    {
+      "attack": "spatial_resize",
+      "alignment_mode": "offset",
+      "estimated_scale": 1.0,
+      "search_rule": "penalized_prior",
+      "candidate_count": 17,
+      "n": 500
+    },
+    {
+      "attack": "speed_change",
+      "alignment_mode": "offset",
+      "estimated_scale": 1.0,
+      "search_rule": "penalized_prior",
+      "candidate_count": 17,
+      "n": 500
+    },
+    {
+      "attack": "temporal_crop",
+      "alignment_mode": "offset",
+      "estimated_scale": 1.0,
+      "search_rule": "penalized_prior",
+      "candidate_count": 21,
+      "n": 500
+    },
+    {
+      "attack": "no_attack",
+      "alignment_mode": "offset",
+      "estimated_scale": 1.0,
+      "search_rule": "penalized_prior",
+      "candidate_count": 17,
+      "n": 500
+    }
+  ],
+  "test_geometry": [
+    {
+      "attack": "blur",
+      "n": 100,
+      "detected": 71
+    },
+    {
+      "attack": "crop_resize",
+      "n": 100,
+      "detected": 75
+    },
+    {
+      "attack": "frame_dropping",
+      "n": 100,
+      "detected": 75
+    },
+    {
+      "attack": "gaussian_noise",
+      "n": 100,
+      "detected": 70
+    },
+    {
+      "attack": "h264_compression",
+      "n": 100,
+      "detected": 72
+    },
+    {
+      "attack": "h265_compression",
+      "n": 100,
+      "detected": 67
+    },
+    {
+      "attack": "local_clip",
+      "n": 400,
+      "detected": 343,
+      "error_present": 400,
+      "exact": 57,
+      "absolute_error_sum": 3996
+    },
+    {
+      "attack": "spatial_resize",
+      "n": 100,
+      "detected": 69
+    },
+    {
+      "attack": "speed_change",
+      "n": 100,
+      "detected": 74
+    },
+    {
+      "attack": "temporal_crop",
+      "n": 100,
+      "detected": 80,
+      "error_present": 100,
+      "exact": 22,
+      "absolute_error_sum": 624
+    }
+  ],
+  "physical_calls": 0
+}
