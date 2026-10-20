@@ -1,0 +1,25 @@
+# Card85 fixed local Wan observation user run
+
+Adopted: from each existing P0/PM actual MP4 RGB readback tensor, slice[60,105) and[61,106). All45 RGB frames enter one fresh E; only local latent0 is excluded from Q and votes. No writer/strength/net32/default/A change. No D/codec/MP4 decode fallback. First frame is context, not deleted. Local latent11 is read, not treated as global guard45.
+
+Run notebooks/b_real_local_wan_v1.ipynb in Colab with Run all. First cell is only Drive mount. The notebook embeds ordinary editable source and installs only actually missing tensor/Wan dependencies, then invokes the fixed CLI; no manual ZIP upload, unpublished URL dependency, GPU model whitelist, exact-version/hash/manifest/Git-clean/resource admission or mode menu. Companion portable_source.zip supports editable no-.git CLI:
+
+    python -m experiments.wan_state_clock.b_real_local_wan_v1_run
+
+Fixed input is media/{P0,PM}/readback.pt in the previous B-Legacy-Position-Margin-V1/fixed-clean-transfer-v1. Flat32-bit truth references/truth.json and stored full-history Q/local bits are post-only. New output is B-Real-Local-Wan-V1/fixed-45-frame-phase01-v1. Actual unreadable/invalid inputs retain failed and upstream slots; no silent source regeneration/media decode. Failure/interruption spends the one attempt. Later Run all/CLI is saved-result only, including after a failed or incomplete first attempt; no source/model reentry.
+
+## Observation and budget
+
+VAEload1, cached RGB loads2, preparation4, E4, nominal encoder48/decoder0, FFT4, keyed raw reads8 and conditional reducers8. Same normalized E supplies both signed pilot Q and payload spectrum, and two keys share each spectrum. E uses existing clear-cache, RGB[-1,1], posterior.mode and(raw-mean)/std FP32 normalization; expected local latent[1,16,12,40,64]. Actual module hook counts recorded; nominal48 is not a resource hard stop. No warmup, alternate context, retry or extra model probe.
+
+Original round8 position book/sign/768D support and fourROIs/channels4:16 unchanged. Read times1..11, full candidate columns1..44, L11 match over all34 source starts. New8 Q tables:15488 ROI dots/3872 pooled values;272 sequence scores/2992 terms. New704 raw local bits; signed/zero slots84480 each;256 message slots/352 source occupancy rows. Source starts/phase/arm differences/message never enter local observe/match/map/reduce functions. Each clip/key is independent; no cross-clip collision rejection. A unique single-query start already gives11 distinct proposed source cells, including under a wrong key.
+
+All8 new raw Q/match/ties/map/votes/conditional payload/failure tables are saved before numeric completion. Only then read known-origin old MP4 Q rows16..26 for four references, computing136 additional CPU sequence scores/1496 terms; total408/4488. These rows were not the old Card83 windows: raw values are reused, these reference scores are newly calculated by the user runner post-only. No new reference E/FFT/dot/coeff reducer. Old352 same-cell raw-bit values are only an A reference. Source/runtime differences remain interpretive context, not a gate or sole reset cause claim.
+
+## Geometry and truth ceiling
+
+A nominal post-first groups match source j16..26. Reset history differs from original full-history; a four-frame bin is not the complete causal receptive field. B post-first groups each cross two adjacent source cells, with3+1 nominal RGB frame membership, not a linear latent/q mixture. Its exact cell identity is undefined: never floor to one cell, choose a truth by message, rephase or reject using the true variant before evaluation. Both clips physically contain complete source16..26 plus one partial source cell; B did not delete those full cells.
+
+B rows1..6 have group1-only reference, row7 crosses group1/2 and has8 undefined target bits, rows8..11 group2-only. Thus across8 key/clip cases:88 observed rows=44 singleton geometry+44 mixed;704 raw local slots=352 singleton-cell references+320 group-only+32 mixed-group undefined. Full32 task retained per input: groups1/2 support16 bits, groups0/3 structurally missing16; total256=128 present+128 missing. False output over missing groups is false coverage even if message values coincide. Mixed attribution, unread, absent/partial physical source and bit errors are separate. No readonly oracle facts feed back to choices.
+
+Unique maxima, gaps, conditional decoded bits and group agreement do not authenticate identity/phase. accepted identity/FPR/trusted full messages/scientific_pass remain null. No actual local GPU E run by agent; CPU/static/fake dispatch and the two adopted index geometries are engineering validation only. User Colab Run all performs the unrun physical experiment after main-thread review/publication.
