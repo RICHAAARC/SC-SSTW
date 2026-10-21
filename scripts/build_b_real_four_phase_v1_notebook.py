@@ -16,6 +16,27 @@ EXTRA=['main/tube_state/b_phase_centered_saved_v1.py','main/tube_state/b_real_fo
 SOURCE_FILES=sorted(set(PREVIOUS_FILES+EXTRA))
 SETUP=PREVIOUS_SETUP.replace('experiments.wan_state_clock.b_real_local_wan_v1_run',
                            'experiments.wan_state_clock.b_real_four_phase_v1_run')
+PROGRESS=r'''
+def report_progress(output):
+    # Drive visibility can change between a file check and open. Progress is
+    # informational; its read failure must not abandon or relaunch the worker.
+    try:
+        ledger = json.loads((output/"ledger.json").read_text())
+        returned = sum(row.get("status") == "RETURNED" for row in ledger.values())
+        active = [name for name, row in ledger.items() if row.get("status") == "STARTED"]
+    except (OSError, ValueError, TypeError, AttributeError) as error:
+        print("Progress temporarily unavailable; observing the same worker:",
+              type(error).__name__, str(error), flush=True)
+        return
+    print(f"Completed core units: {returned}/{len(ledger)}; active: {active}", flush=True)
+'''
+SETUP=PROGRESS+'\n'+SETUP.replace('''            ledger_path = OUTPUT/"ledger.json"
+            if ledger_path.exists():
+                ledger = json.loads(ledger_path.read_text())
+                returned = sum(row["status"] == "RETURNED" for row in ledger.values())
+                active = [name for name, row in ledger.items() if row["status"] == "STARTED"]
+                print(f"Completed core units: {returned}/{len(ledger)}; active: {active}")''',
+    '            report_progress(OUTPUT)')
 OUTPUT='/content/drive/MyDrive/Video-WM/B-Real-Four-Phase-V1/fixed-seen-prefix-completion-v1'
 DISPLAY=r'''
 saved={}

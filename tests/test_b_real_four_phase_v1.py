@@ -8,7 +8,7 @@ import subprocess
 import sys
 import tempfile
 import zipfile
-from unittest.mock import patch
+from unittest.mock import Mock, patch
 import pytest
 import torch
 from main.tube_state import b_phase_centered_saved_v1 as cpu
@@ -172,6 +172,40 @@ def test_phase_specific_support_comparison_and_mixed_undefined():
     assert result['group_correct_support_retained'] is None
     assert result['exact_source_coverage_status']=='UNDEFINED_MIXED_IDENTITY'
     assert result['correct_source_added'] is None
+
+
+@pytest.mark.parametrize('unavailable',[
+    FileNotFoundError('transient Drive visibility'),
+    OSError('transient Drive I/O'),
+    '{"model":',
+    '[]',
+    '{"model":null}',
+])
+def test_notebook_progress_read_failure_keeps_same_worker(tmp_path,capsys,unavailable):
+    from scripts.build_b_real_four_phase_v1_notebook import SETUP
+    tree=ast.parse(SETUP)
+    helper=next(n for n in tree.body if isinstance(n,ast.FunctionDef) and n.name=='report_progress')
+    launch=next(n for n in tree.body if isinstance(n,ast.If))
+    monitor=next(n for n in launch.body if isinstance(n,ast.Try))
+    returned=next(n for n in launch.body if isinstance(n,ast.Expr)
+        and isinstance(n.value,ast.Call) and n.value.args
+        and isinstance(n.value.args[0],ast.Constant) and n.value.args[0].value=='Runner return code:')
+    code=compile(ast.Module(body=[helper,monitor,returned],type_ignores=[]),'<actual notebook monitor>','exec')
+    process=Mock(returncode=7)
+    process.poll.side_effect=[None,None,7]
+    saved=json.dumps({'input':{'status':'RETURNED'},'model':{'status':'STARTED'}})
+    scope=dict(json=json,OUTPUT=tmp_path,process=process,time=Mock())
+    with patch.object(Path,'read_text',side_effect=[unavailable,saved]) as read,\
+         patch.object(subprocess,'Popen',side_effect=AssertionError('no worker relaunch')):
+        exec(code,scope)
+    text=capsys.readouterr().out
+    assert 'Progress temporarily unavailable' in text
+    assert "Completed core units: 1/2; active: ['model']" in text
+    assert 'Runner return code: 7' in text
+    assert read.call_count==2 and scope['time'].sleep.call_count==2
+    process.terminate.assert_not_called()
+    process.kill.assert_not_called()
+    process.wait.assert_not_called()
 
 
 def test_notebook_package_readonly_and_portable_cli(tmp_path):
