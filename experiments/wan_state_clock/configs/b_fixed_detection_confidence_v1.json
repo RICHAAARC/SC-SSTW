@@ -1,0 +1,90 @@
+{
+  "adopted_card": 94,
+  "output": "/content/drive/MyDrive/Video-WM/B-Fixed-Detection-Confidence-V1/fixed-2cal-2confirm-v1",
+  "model_id": "Wan-AI/Wan2.1-T2V-1.3B-Diffusers",
+  "hosts": [
+    {
+      "id": "b93-c01",
+      "role": "calibration",
+      "seed": 2026102101,
+      "prompt": "A continuous wide shot of a stone suspension bridge over a misty river at dawn. A small white ferry moves slowly beneath the bridge while the camera stays on the river bank.",
+      "negative_prompt": ""
+    },
+    {
+      "id": "b93-c02",
+      "role": "calibration",
+      "seed": 2026102102,
+      "prompt": "A fixed overhead shot of orange and white koi fish circling in a clear garden pond, with ripples crossing reflections of green leaves.",
+      "negative_prompt": ""
+    },
+    {
+      "id": "b93-v01",
+      "role": "confirmation",
+      "seed": 2026102103,
+      "prompt": "A continuous street level shot of a cyclist in a blue jacket riding past a curved glass building on an overcast day. The camera slowly pans to follow the cyclist.",
+      "negative_prompt": ""
+    },
+    {
+      "id": "b93-v02",
+      "role": "confirmation",
+      "seed": 2026102104,
+      "prompt": "A continuous wide shot of two giraffes walking across dry golden grass in a savanna. Scattered acacia trees sway gently while the camera remains still.",
+      "negative_prompt": ""
+    }
+  ],
+  "generation": {
+    "height": 320,
+    "width": 512,
+    "frames": 181,
+    "fps": 8,
+    "steps": 50,
+    "guidance_scale": 5.0,
+    "max_sequence_length": 512
+  },
+  "writer": {
+    "key": "watermark",
+    "bits": [
+      1,
+      0,
+      1,
+      0,
+      0,
+      1,
+      1,
+      0,
+      1,
+      1,
+      0,
+      1,
+      0,
+      0,
+      1,
+      1,
+      1,
+      0,
+      0,
+      1,
+      1,
+      1,
+      0,
+      0,
+      0,
+      1,
+      0,
+      1,
+      1,
+      1,
+      1,
+      0
+    ],
+    "gamma": 1.0
+  },
+  "origins": [
+    0,
+    4,
+    17,
+    62,
+    107,
+    136
+  ]
+}
