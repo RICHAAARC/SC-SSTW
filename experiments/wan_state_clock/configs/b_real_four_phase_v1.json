@@ -1,0 +1,7 @@
+{
+  "source_root": "/content/drive/MyDrive/Video-WM/B-Legacy-Position-Margin-V1/fixed-clean-transfer-v1",
+  "output": "/content/drive/MyDrive/Video-WM/B-Real-Four-Phase-V1/fixed-seen-prefix-completion-v1",
+  "truth_path": "/content/drive/MyDrive/Video-WM/B-Real-Local-Wan-V1/fixed-45-frame-phase01-v1/references/truth.json",
+  "saved_sidecar": "experiments/wan_state_clock/data/b_real_four_phase_v1_saved.zip",
+  "model_id": "Wan-AI/Wan2.1-T2V-1.3B-Diffusers"
+}
