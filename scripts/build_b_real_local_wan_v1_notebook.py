@@ -1,4 +1,4 @@
-"""Fixed local45 user notebook with ordinary embedded editable source."""
+"""Fixed local45 notebook that loads its published dev source from GitHub."""
 from pathlib import Path
 import ast,json,zipfile
 from scripts.build_b_legacy_position_margin_v1_notebook import SOURCE_FILES as PREVIOUS_FILES
@@ -10,6 +10,8 @@ EXTRA=['main/tube_state/b_real_local_wan_v1.py','runtime/wan/b_real_local_wan_v1
  'experiments/wan_state_clock/configs/b_real_local_wan_v1.json','scripts/build_b_real_local_wan_v1_notebook.py',
  'tests/test_b_real_local_wan_v1.py','docs/b_real_local_wan_v1.md']
 SOURCE_FILES=sorted(set(PREVIOUS_FILES+EXTRA))
+SOURCE_REPOSITORY='https://github.com/RICHAAARC/SC-SSTW.git'
+SOURCE_BRANCH='dev/local-joint-state-payload-v1'
 SETUP=PREVIOUS_SETUP.replace('experiments.wan_state_clock.b_legacy_migration_v1_run','experiments.wan_state_clock.b_real_local_wan_v1_run')
 DISPLAY=r"""
 saved={}
@@ -52,15 +54,27 @@ def build(root=ROOT):
 单查询不继承Card83跨窗碰撞拒读；错钥也可能有完整错误条件声称。身份/相位/FPR/可信消息未校准。
 所有盲Q/分数/ties/原位票/条件消息及失败先存，之后才读取geometry/message/旧full-history参考后评。
 
-直接Run all，无手工上传ZIP/未发布URL依赖。普通可编辑源码内置，同步提供portable_source.zip和独立CLI。
+直接Run all，从GitHub现有dev分支拉取源码后调用独立CLI，无需手工上传ZIP。Notebook不内嵌源码副本。
 首个代码cell只Drive mount；attempt/科学残留存在则后续Run all仅显示保存结果，不补跑或覆盖源码。
 无hash/manifest/版本/Git-clean/GPU型号或资源硬上限。agent仅CPU/static/fake与两固定几何检查，尚未真实执行本VAE/FFT任务。
 """)
     code("from google.colab import drive\ndrive.mount('/content/drive')\n")
     runtime=(root/'runtime/wan/b_real_local_wan_v1.py').read_text()
     helper=ast.get_source_segment(runtime,next(n for n in ast.parse(runtime).body if isinstance(n,ast.FunctionDef) and n.name=='execution_artifacts'))
-    payload={name:(root/name).read_text() for name in SOURCE_FILES}
-    code("from pathlib import Path\nimport json\nOUTPUT=Path('/content/drive/MyDrive/Video-WM/B-Real-Local-Wan-V1/fixed-45-frame-phase01-v1')\n"+helper+"\nEXISTING_ARTIFACTS=execution_artifacts(OUTPUT)\nif not EXISTING_ARTIFACTS:\n    SOURCE_ROOT=Path('/content/b_real_local_wan_source')\n    SOURCE_TEXT="+repr(payload)+"\n    for name,text in SOURCE_TEXT.items():\n        path=SOURCE_ROOT/name\n        path.parent.mkdir(parents=True,exist_ok=True)\n        path.write_text(text,encoding='utf-8')\n    OUTPUT.mkdir(parents=True,exist_ok=True)\n    print('Available editable source',SOURCE_ROOT)\nelse:\n    print('Existing attempt: saved records only; source/model not reentered')\n")
+    bootstrap="from pathlib import Path\nimport json, subprocess, tempfile\n"
+    bootstrap+="OUTPUT=Path('/content/drive/MyDrive/Video-WM/B-Real-Local-Wan-V1/fixed-45-frame-phase01-v1')\n"+helper
+    bootstrap+="\nSOURCE_REPOSITORY="+repr(SOURCE_REPOSITORY)+"\nSOURCE_BRANCH="+repr(SOURCE_BRANCH)+"\n"
+    bootstrap+="""EXISTING_ARTIFACTS=execution_artifacts(OUTPUT)
+if not EXISTING_ARTIFACTS:
+    SOURCE_ROOT=Path(tempfile.mkdtemp(prefix='b_real_local_wan_source_', dir='/content'))
+    subprocess.run(['git', 'clone', '--depth', '1', '--single-branch', '--branch',
+                    SOURCE_BRANCH, SOURCE_REPOSITORY, str(SOURCE_ROOT)], check=True)
+    OUTPUT.mkdir(parents=True,exist_ok=True)
+    print('Available source', SOURCE_REPOSITORY, SOURCE_BRANCH, SOURCE_ROOT)
+else:
+    print('Existing attempt: saved records only; source/model not reentered')
+"""
+    code(bootstrap)
     md('沿已成功Wan依赖／缓存路径执行固定任务，只修复实际缺失导入。只读已存RGB像素，无FFmpeg安装或解码回退。')
     code(SETUP)
     md('保存结果：技术失败、mixed/undefined、结构缺失、错误归属与假覆盖分别保留，不能由最高分认证。')

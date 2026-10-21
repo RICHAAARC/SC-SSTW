@@ -2,7 +2,7 @@
 
 Adopted: from each existing P0/PM actual MP4 RGB readback tensor, slice[60,105) and[61,106). All45 RGB frames enter one fresh E; only local latent0 is excluded from Q and votes. No writer/strength/net32/default/A change. No D/codec/MP4 decode fallback. First frame is context, not deleted. Local latent11 is read, not treated as global guard45.
 
-Run notebooks/b_real_local_wan_v1.ipynb in Colab with Run all. First cell is only Drive mount. The notebook embeds ordinary editable source and installs only actually missing tensor/Wan dependencies, then invokes the fixed CLI; no manual ZIP upload, unpublished URL dependency, GPU model whitelist, exact-version/hash/manifest/Git-clean/resource admission or mode menu. Companion portable_source.zip supports editable no-.git CLI:
+Run notebooks/b_real_local_wan_v1.ipynb in Colab with Run all. First cell is only Drive mount. When no prior attempt exists, the notebook shallow-clones the published `dev/local-joint-state-payload-v1` branch from `https://github.com/RICHAAARC/SC-SSTW.git` into a fresh `/content` source directory, installs only actually missing tensor/Wan dependencies, then invokes the fixed CLI. It contains no embedded source dictionary or manual ZIP upload step. The branch is editable; no expected commit, hash, manifest, Git-clean, GPU model, exact dependency version or resource admission is checked. Existing attempts skip source download and model execution. Companion portable_source.zip remains an optional editable no-.git CLI copy, not a notebook input:
 
     python -m experiments.wan_state_clock.b_real_local_wan_v1_run
 

@@ -191,7 +191,7 @@ def test_match_map_failure_propagates_root_cause(tmp_path,monkeypatch,failed_sta
     assert before==(backend.events,len(invocations),len(fft_calls))
 
 
-def test_package_schema_local_interface_and_editable_cli(tmp_path):
+def test_package_schema_local_interface_and_editable_cli(tmp_path,monkeypatch):
     import nbformat
     from scripts.build_b_real_local_wan_v1_notebook import build,SOURCE_FILES
     core=ast.parse((ROOT/'main/tube_state/b_real_local_wan_v1.py').read_text());functions={n.name:n for n in core.body if isinstance(n,ast.FunctionDef)}
@@ -204,14 +204,32 @@ def test_package_schema_local_interface_and_editable_cli(tmp_path):
     codes=[c.source for c in nb.cells if c.cell_type=='code']
     assert codes[0]=="from google.colab import drive\ndrive.mount('/content/drive')\n"
     for code in codes:ast.parse(code)
+    assert 'SOURCE_TEXT' not in codes[1]
     tree=ast.parse(codes[1]);out=tmp_path/'out';src=tmp_path/'src'
     for node in ast.walk(tree):
-        if isinstance(node,ast.Assign) and isinstance(node.targets[0],ast.Name) and node.targets[0].id in ('OUTPUT','SOURCE_ROOT'):
-            node.value=ast.Call(func=ast.Name(id='Path',ctx=ast.Load()),args=[ast.Constant(str(out if node.targets[0].id=='OUTPUT' else src))],keywords=[])
-    ast.fix_missing_locations(tree);exec(compile(tree,'source-only','exec'),{})
-    for name in SOURCE_FILES:assert (src/name).read_text()==(ROOT/name).read_text()
-    (out/'attempt.json').write_text('{}');sentinel=src/SOURCE_FILES[0];sentinel.write_text('edited')
-    exec(compile(tree,'source-only','exec'),{});assert sentinel.read_text()=='edited'
+        if isinstance(node,ast.Assign) and isinstance(node.targets[0],ast.Name) and node.targets[0].id=='OUTPUT':
+            node.value=ast.Call(func=ast.Name(id='Path',ctx=ast.Load()),args=[ast.Constant(str(out))],keywords=[])
+    ast.fix_missing_locations(tree)
+    clone_calls=[]
+    def clone(args,**kwargs):
+        clone_calls.append((args,kwargs))
+        assert args==['git','clone','--depth','1','--single-branch','--branch',
+                     'dev/local-joint-state-payload-v1','https://github.com/RICHAAARC/SC-SSTW.git',str(src)]
+        assert kwargs==dict(check=True)
+        with zipfile.ZipFile(archive) as z:z.extractall(src)
+        return subprocess.CompletedProcess(args,0)
+    def temporary_source(**kwargs):
+        assert kwargs==dict(prefix='b_real_local_wan_source_',dir='/content')
+        src.mkdir();return str(src)
+    with monkeypatch.context() as patch:
+        import tempfile
+        patch.setattr(subprocess,'run',clone);patch.setattr(tempfile,'mkdtemp',temporary_source)
+        exec(compile(tree,'github-source','exec'),{})
+        assert len(clone_calls)==1
+        for name in SOURCE_FILES:assert (src/name).read_text()==(ROOT/name).read_text()
+        (out/'attempt.json').write_text('{}');sentinel=src/SOURCE_FILES[0];sentinel.write_text('edited')
+        exec(compile(tree,'github-source','exec'),{})
+        assert len(clone_calls)==1 and sentinel.read_text()=='edited'
     portable=tmp_path/'editable';portable.mkdir()
     with zipfile.ZipFile(archive) as z:z.extractall(portable)
     help_result=subprocess.run([sys.executable,'-m','experiments.wan_state_clock.b_real_local_wan_v1_run','--help'],cwd=portable,capture_output=True,text=True)
