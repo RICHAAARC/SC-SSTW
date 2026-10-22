@@ -1,0 +1,88 @@
+{
+  "adopted_card": 99,
+  "output": "/content/drive/MyDrive/Video-WM/B-Absolute-Compatibility-V1/fixed-four-unseen-v1",
+  "model_id": "Wan-AI/Wan2.1-T2V-1.3B-Diffusers",
+  "hosts": [
+    {
+      "id": "b97-s01",
+      "seed": 2026102201,
+      "prompt": "A continuous wide shot of a white windmill turning beside a wheat field in soft afternoon light. Clouds move slowly while the camera remains fixed.",
+      "negative_prompt": ""
+    },
+    {
+      "id": "b97-s02",
+      "seed": 2026102202,
+      "prompt": "A close view of a potter shaping a clay vase on a spinning wheel in a quiet studio. The camera remains fixed on the hands and the clay.",
+      "negative_prompt": ""
+    },
+    {
+      "id": "b97-s03",
+      "seed": 2026102203,
+      "prompt": "A continuous shot of two penguins walking along a rocky shore beside small ocean waves. The camera slowly follows them from the side.",
+      "negative_prompt": ""
+    },
+    {
+      "id": "b97-s04",
+      "seed": 2026102204,
+      "prompt": "A continuous wide shot of a night market with hanging red lanterns and people carrying umbrellas. The camera pans slowly along the stalls.",
+      "negative_prompt": ""
+    }
+  ],
+  "generation": {
+    "height": 320,
+    "width": 512,
+    "frames": 181,
+    "fps": 8,
+    "steps": 50,
+    "guidance_scale": 5.0,
+    "max_sequence_length": 512
+  },
+  "writer": {
+    "key": "watermark",
+    "bits": [
+      1,
+      0,
+      1,
+      0,
+      0,
+      1,
+      1,
+      0,
+      1,
+      1,
+      0,
+      1,
+      0,
+      0,
+      1,
+      1,
+      1,
+      0,
+      0,
+      1,
+      1,
+      1,
+      0,
+      0,
+      0,
+      1,
+      0,
+      1,
+      1,
+      1,
+      1,
+      0
+    ],
+    "gamma": 1.0
+  },
+  "origins": [
+    0,
+    4,
+    17,
+    62,
+    107,
+    136
+  ],
+  "card": 99,
+  "roles": "one uniform pair among six before observations, persisted once"
+}
