@@ -1,0 +1,38 @@
+{
+  "card": 103,
+  "model_id": "Wan-AI/Wan2.1-T2V-1.3B-Diffusers",
+  "private_roster": [
+    {
+      "id": "b101-s01",
+      "role": "calibration",
+      "a": 1,
+      "b": 74,
+      "d": 59
+    },
+    {
+      "id": "b101-s03",
+      "role": "calibration",
+      "a": 18,
+      "b": 53,
+      "d": 23
+    },
+    {
+      "id": "b101-s02",
+      "role": "evaluation",
+      "a": 2,
+      "b": 74,
+      "d": 58
+    },
+    {
+      "id": "b101-s04",
+      "role": "evaluation",
+      "a": 29,
+      "b": 57,
+      "d": 25
+    }
+  ],
+  "development_only": true,
+  "writer_unchanged": true,
+  "gamma": 1,
+  "net_bits": 32
+}
