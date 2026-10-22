@@ -1,0 +1,32 @@
+{
+  "status": "ADOPTED_FIXED_USER_RUN_NOT_EXECUTED",
+  "model_id": "Wan-AI/Wan2.1-T2V-1.3B-Diffusers",
+  "hosts": [
+    "b101-s01",
+    "b101-s03",
+    "b101-s02",
+    "b101-s04"
+  ],
+  "key": "key00",
+  "frozen_old_local_tau": 0.4959127627330064,
+  "delta": "1/sqrt(12)",
+  "alpha": 1,
+  "code_radius": 3,
+  "pilot_max_errors": 1,
+  "full_frames": 181,
+  "full_latent_times": 46,
+  "target_cells": [
+    1,
+    44
+  ],
+  "guard_cells": [
+    0,
+    45
+  ],
+  "new_full_rows": 176,
+  "clean_pairs": 200,
+  "anchor_pairs": 40,
+  "other_pairs": 160,
+  "new_full_nulls": 0,
+  "full_FPR_claim": false
+}
