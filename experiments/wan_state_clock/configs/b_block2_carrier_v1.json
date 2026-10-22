@@ -1,0 +1,31 @@
+{
+  "status": "ADOPTED_FULL_ONLY",
+  "hosts": [
+    "b101-s01",
+    "b101-s03",
+    "b101-s02",
+    "b101-s04"
+  ],
+  "arms": [
+    "OFF",
+    "P0",
+    "RANDOM",
+    "BLOCK2"
+  ],
+  "model_id": "Wan-AI/Wan2.1-T2V-1.3B-Diffusers",
+  "source": "/content/drive/MyDrive/Video-WM/B-Background-Normalized-Match-V1/fixed-four-unseen-v1",
+  "output": "/content/drive/MyDrive/Video-WM/B-Block2-Carrier-V1/fixed-viewed-full-v1",
+  "families": [
+    "RANDOM64",
+    "BLOCK2-16"
+  ],
+  "delta": "1/sqrt(12)",
+  "alpha": 1,
+  "radius": 3,
+  "pilot_max_errors": 1,
+  "tau": 0.4959127627330064,
+  "tau_scope": "old local description only",
+  "E41": 0,
+  "new_sourceprep": 0,
+  "retries": 0
+}

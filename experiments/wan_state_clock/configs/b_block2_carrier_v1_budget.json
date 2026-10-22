@@ -1,0 +1,181 @@
+{
+  "status": "ENGINEERING_CANDIDATE_NOT_REAL_EXECUTED",
+  "date": "2026-10-23",
+  "executed_now": {
+    "real_cached_tensor_or_media_reads": 0,
+    "real_model_loads": 0,
+    "real_D_or_E": 0,
+    "real_MP4_calls": 0,
+    "real_payload_FFT_or_keyed_reads": 0,
+    "real_physical_carrier_writes": 0,
+    "Drive_scientific_data_reads_or_writes": 0,
+    "GPU_or_Colab_runs": 0,
+    "commits": 0,
+    "pushes": 0,
+    "merges": 0
+  },
+  "hosts": [
+    "b101-s01",
+    "b101-s03",
+    "b101-s02",
+    "b101-s04"
+  ],
+  "independent_confirmation_hosts": 0,
+  "arms": [
+    "OFF",
+    "P0",
+    "RANDOM",
+    "BLOCK2"
+  ],
+  "keys": [
+    "key00",
+    "key01"
+  ],
+  "layers": {
+    "native": {
+      "cells": 44
+    },
+    "full": {
+      "frames": 181,
+      "cells": 44
+    }
+  },
+  "physical": {
+    "sourceprep": 0,
+    "source_generation_DiT": 0,
+    "payload_gradient": 0,
+    "training": 0,
+    "cached_native_loads": 8,
+    "cached_OFF_readback_loads": 4,
+    "metadata_writer_terminal_constructions": 8,
+    "metadata_writer_cells": 352,
+    "metadata_writer_QIM_constraints": 16896,
+    "metadata_writer_coordinate_updates": 1081344,
+    "VAE_loads": 1,
+    "D181": 12,
+    "decoder_chunks_expected": 552,
+    "RGB8_quantize": 12,
+    "MP4_encode": 12,
+    "MP4_probe": 12,
+    "MP4_decode": 12,
+    "E181": 16,
+    "E41": 0,
+    "E_total": 16,
+    "encoder_chunks_full_expected": 736,
+    "encoder_chunks_local_expected": 0,
+    "encoder_chunks_total_expected": 736,
+    "RGB_E_preparations": 16,
+    "E121": 0,
+    "new_attacks": 0,
+    "automatic_retries": 0
+  },
+  "books": {
+    "legacy_HMAC": 6336,
+    "block2_carrier_HMAC": 1536,
+    "total_HMAC": 7872,
+    "family_key_entries": 4,
+    "book_selection_scans": 0,
+    "rejection_resampling": 0,
+    "direction_correlation_description": "Same family and same chip only: key00 vs key01; 2 families x48 chips=96 64D dots, 6144 coordinate products. Same physical support wrong-key correlation/parallel or antiparallel overlap only; no cross-chip comparisons, selection, resampling, calibration or authentication claim."
+  },
+  "tag_reader": {
+    "raw_tables": {
+      "native": 48,
+      "full": 48,
+      "total": 96
+    },
+    "final_tables": 96,
+    "rows": {
+      "native": 2112,
+      "full": 2112,
+      "total": 4224
+    },
+    "projection_dot_products_64D": 202752,
+    "projection_coordinate_products": 12976128,
+    "QIM_demodulations": 202752,
+    "unmask_bits": 135168,
+    "pilot_cosines_and_H_comparisons": 67584,
+    "codeword_distances_nominal": 270336,
+    "hamming_bit_comparisons_nominal": 8650752,
+    "codeword_distances_note": "Nominal if no data erasure; erased rows keep 64 undefined distances, actual operations reported separately."
+  },
+  "tag_writer_extra": {
+    "projection_dot_products_64D": 33792,
+    "projection_coordinate_products": 2162688,
+    "note": "q_before and q_after each 16896; distinct from receiver. FP32 source checks/update/energy accounting additional, not FFT or Counter."
+  },
+  "book_correlation": {
+    "unique_pair_dots_64D": 96,
+    "coordinate_products": 6144,
+    "scheme": "For each of 2 fixed families and each chip 0..47, compare key00 with key01 at the same physical ROI/channel support. No cross-chip or cross-family pairs. Correlation and parallel/antiparallel overlap descriptive only; no direction selection, resampling, calibration or authentication."
+  },
+  "denominators": {
+    "positive_rows_all_layers": 704,
+    "null_rows_all_layers": 3520,
+    "null_per_family": {
+      "native": 880,
+      "full": 880
+    },
+    "primary_full_carrier_pairs": 176,
+    "failed_missing_undefined": "Remain in planned denominators; no replacement."
+  },
+  "payload": {
+    "arms": [
+      "P0",
+      "RANDOM",
+      "BLOCK2"
+    ],
+    "OFF_reads": 0,
+    "native_FFT": 0,
+    "full": {
+      "FFT": 12,
+      "FFT_2D_planes": 2112,
+      "keyed_reads": 24,
+      "Counter_per_read": 384,
+      "Counter": 9216,
+      "group_bit_outputs": 768,
+      "cell_bit_outputs": 8448,
+      "signed_vote_slots": 1013760
+    },
+    "total": {
+      "FFT": 12,
+      "FFT_2D_planes": 2112,
+      "keyed_reads": 24,
+      "Counter": 9216,
+      "signed_vote_slots": 1013760,
+      "zero_mask_slots": 1013760
+    },
+    "correct_key_P0_candidate_pairs": {
+      "full_net32_bits": 256,
+      "full_cell_bits": 2816
+    },
+    "full_API": "b_legacy_position_margin_v1.payload_spectrum -> payload_from_spectrum -> payload_from_votes",
+    "blind": "All full raw payload votes/readouts saved before opening writer bits; known public unedited span only, no tag-guided sync claim."
+  },
+  "quality": {
+    "P0_candidate_layer_pairs": 24,
+    "layers": [
+      "preclip",
+      "RGB8",
+      "MP4_readback"
+    ],
+    "frame_records": 4344,
+    "adjacent_frame_records": 4320,
+    "new_D_clipping_records": 12,
+    "OFF_new_chain_quality_comparisons": 0
+  },
+  "accounting_notes": [
+    "Physical counts describe the adopted planned user run, not executed real observations, resource caps or admission gates. CPU synthetic/stub engineering is separately recorded.",
+    "Internal chunks depend on actual existing Wan path, report actual counts without version/hash gating.",
+    "No raw demodulation repeated when final table uses frozen tau; blind q/core outputs shared.",
+    "HMAC is the existing keyed carrier construction, not file-integrity verification."
+  ],
+  "future_scope": "Real cropped E41, reset/history, unknown phase and tag-guided payload untested; future independent stage only.",
+  "CPU_engineering": {
+    "unique_targeted_cases_passed": 19,
+    "controlled_synthetic_carrier_books_generated": true,
+    "controlled_synthetic_tensor_and_payload_helpers_executed": true,
+    "stub_only_full_planned_call_graph_executed": true,
+    "not_physical_experiment_evidence": true
+  }
+}
