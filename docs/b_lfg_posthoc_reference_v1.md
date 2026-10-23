@@ -1,6 +1,6 @@
 # LFG公开公式 Post-hoc K0 阶段1参考包
 
-这是四个VIEWED pre-tag P0来源、全181帧的普通固定消息通道诊断。用户授权本地隔离实现和必要CPU/静态/stub检查；真实模型/GPU/Colab由用户运行，当前新包没有发布/commit/push/merge授权。没有获得作者源码，不能称LFG-WM等价复现、用户432位增容、time-ID/局部化或同步成功。A/default/原用户净32位与历史QIM/RANDOM/BLOCK2源码不改。
+这是四个VIEWED pre-tag P0来源、全181帧的普通固定消息通道诊断。用户授权隔离实现、必要CPU/静态/stub检查及在现有dev/local-joint-state-payload-v1分支提交push交付；真实模型/GPU/Colab由用户运行，不合并main。没有获得作者源码，不能称LFG-WM等价复现、用户432位增容、time-ID/局部化或同步成功。A/default/原用户净32位与历史QIM/RANDOM/BLOCK2源码不改。
 
 论文来源：本地ssrn-7467115.pdf物理18-20、35-36、43、48页，相关定义/配置见16-17、23-24、40-42。论文N为coded bits512，而M为LLL coefficient总数。公式W=sum((2*b_i-1)*c_i)/sqrt512；LLL'=LLL+alpha*sigma_c*W；r_i=mean(LLL*c_i)，r>0为1、否则0。p23的BitAcc默认在BCH-decoded序列上计算，不能直接当raw512准确率或完整消息成功率；BCH失败计分细节未详，本包分列raw512、BCH状态、decoded432位与整432 exact。
 
@@ -20,4 +20,4 @@ BCH通用构造参考：[galois作者文档](https://mhostetter.github.io/galois
 
 python -m experiments.wan_state_clock.b_lfg_posthoc_reference_v1_run 是完整固定CLI，仅允许source/output定位。attempt独占创建、每call STARTED先落盘，失败/中断消费；已有科学残留即只读saved JSON，不续算、重试、fallback或生成新host。全部raw scores/code、BCH消息与原payload保存并回读后，才打开新固定message truth和旧protocol.config.writer.bits/quality后评。中间保存失败不能以预写占位冒充盲完成；真实上游未进入槽保留未决。BCH有效负结果不冒充工程失败。
 
-Notebook首codecell只有Drive mount，随后直接GitHub clone可用代码，不内嵌SOURCE_TEXT/B64或hash/manifest/版本/Git-clean门禁，不要求手工ZIP。ffmpeg/ffprobe缺少才处理依赖。新源码尚未发布，当前本地候选并非已可运行的远程发布版；CPU验证与真实运行计数分别记录，无科学PASS。
+Notebook首codecell只有Drive mount，随后直接GitHub clone可用代码，不内嵌SOURCE_TEXT/B64或hash/manifest/版本/Git-clean门禁，不要求手工ZIP。ffmpeg/ffprobe缺少才处理依赖。源码与Notebook按用户授权发布在现有dev/local-joint-state-payload-v1分支，直接Run all入口：https://colab.research.google.com/github/RICHAAARC/SC-SSTW/blob/dev/local-joint-state-payload-v1/notebooks/b_lfg_posthoc_reference_v1.ipynb 。CPU验证与真实运行计数分别记录，无科学PASS。
