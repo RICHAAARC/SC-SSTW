@@ -1,0 +1,140 @@
+{
+  "status": "ADOPTED_LOCAL_IMPLEMENTATION_CPU_CHECKED_NOT_REAL_EXECUTED",
+  "date": "2026-10-23",
+  "hosts": [
+    "b101-s01",
+    "b101-s03",
+    "b101-s02",
+    "b101-s04"
+  ],
+  "seen_development_only": true,
+  "arms": [
+    "P0",
+    "MSG"
+  ],
+  "alpha": 0.15,
+  "K": 0,
+  "shape": [
+    1,
+    16,
+    46,
+    40,
+    64
+  ],
+  "LLL_shape": [
+    16,
+    23,
+    20,
+    32
+  ],
+  "M": 235520,
+  "N": 512,
+  "information_bits": 432,
+  "views": [
+    "native",
+    "rgb8_clean_E",
+    "mp4_E"
+  ],
+  "keys": [
+    "key00",
+    "key01"
+  ],
+  "physical_plan": {
+    "sourceprep": 0,
+    "DiT_or_gradient": 0,
+    "training": 0,
+    "cached_pre_tag_native_loads": 4,
+    "message_constructs": 4,
+    "VAE_load": 1,
+    "D181": 8,
+    "expected_decoder_chunks": 368,
+    "RGB8_quantize": 8,
+    "MP4_encode": 8,
+    "MP4_probe": 8,
+    "MP4_decode": 8,
+    "CRF": 23,
+    "fps": 8,
+    "pixel_format": "yuv420p",
+    "frames": 181,
+    "height": 320,
+    "width": 512,
+    "E181_RGB8_clean": 8,
+    "E181_mp4": 8,
+    "E181_total": 16,
+    "expected_encoder_chunks": 736,
+    "E_float_clean": 0,
+    "E41": 0,
+    "payload_FFT": 16,
+    "payload_keyed_reads": 32,
+    "payload_Counter": 12288,
+    "retries": 0
+  },
+  "method_plan": {
+    "writer_Haar_full_forward": 4,
+    "writer_Haar_inverse": 4,
+    "reader_LLL_forward_shared_between_keys": 24,
+    "correlation_tables": 48,
+    "correlation_dots_M_dimensions": 24576,
+    "correlation_coordinate_products": 5788139520,
+    "BCH_encode_fixed_fixture": 1,
+    "BCH_decode": 48,
+    "PN_seed_HMAC": 1024,
+    "PN_SHAKE_streams": 1024,
+    "PN_packed_bytes": 30146560,
+    "writer_PN_row_superpositions": 2048,
+    "expanded_PN_rows_writer_plus_reader": 26624,
+    "writer_Haar_FP32_receipt_forward": 4,
+    "writer_Haar_full_forward_total": 8
+  },
+  "fixed_denominators": {
+    "message_tables": 48,
+    "raw_coded_bit_slots": 24576,
+    "decoded_info_bit_slots": 20736,
+    "positive_message_tables": 12,
+    "positive_raw_bits": 6144,
+    "positive_info_bits": 5184,
+    "baseline_wrong_key_tables": 36,
+    "payload_tables": 32,
+    "payload_group_pairs": 256,
+    "payload_cell_pairs": 2816,
+    "quality_pairs": 16,
+    "quality_frames": 2896,
+    "quality_adjacent": 2880,
+    "clipping": 8
+  },
+  "real_execution_now": {
+    "model": 0,
+    "GPU": 0,
+    "VAE": 0,
+    "codec": 0,
+    "real_cached_tensors": 0,
+    "Drive_scientific_data": 0
+  },
+  "ceiling": "Formula reference only; no author-code equivalence, user net-payload increase, real multi-step sync, local/phase/path robustness or scientific PASS.",
+  "BCH": {
+    "mother_n": 1023,
+    "mother_k": 943,
+    "t": 8,
+    "GF_degree": 10,
+    "primitive_polynomial": "0x409",
+    "generator_roots": "alpha^1..alpha^16; binary coset closure",
+    "generator_degree": 80,
+    "shortened_leading_info_bits": 511,
+    "transmitted_code_bits": 512,
+    "information_bits": 432,
+    "extra_padding_bits": 0,
+    "bitorder": "MSB-first",
+    "author_code_equivalence": false
+  },
+  "CPU_engineering": {
+    "targeted_suite_passed": 19,
+    "targeted_suite_seconds": 40.42,
+    "affected_followup_passed": 2,
+    "affected_followup_seconds": 1.82,
+    "distinct_cases": 21,
+    "independent_C_oracle_encode_messages": 3,
+    "independent_C_oracle_error_cases_0_to8": 27,
+    "single_bit_positions_exhausted": 512,
+    "not_real_channel_or_scientific_evidence": true
+  }
+}

@@ -1,0 +1,31 @@
+{
+  "stage": "STAGE1_PUBLIC_FORMULA_REFERENCE_K0",
+  "model": "Wan-AI/Wan2.1-T2V-1.3B-Diffusers",
+  "hosts": [
+    "b101-s01",
+    "b101-s03",
+    "b101-s02",
+    "b101-s04"
+  ],
+  "arms": [
+    "P0",
+    "MSG"
+  ],
+  "views": [
+    "native",
+    "rgb8_clean",
+    "mp4"
+  ],
+  "alpha": 0.15,
+  "K": 0,
+  "N": 512,
+  "M": 235520,
+  "information_bits": 432,
+  "CRF": 23,
+  "frames": 181,
+  "fps": 8,
+  "new_user_capacity": false,
+  "source": "/content/drive/MyDrive/Video-WM/B-Background-Normalized-Match-V1/fixed-four-unseen-v1",
+  "output": "/content/drive/MyDrive/Video-WM/B-LFG-Posthoc-Reference-V1/fixed-viewed-stage1-v1",
+  "paper_author_code_available": false
+}
