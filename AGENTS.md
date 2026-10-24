@@ -1,14 +1,23 @@
-# SC-SSTW main release contract
+# SC-SSTW main working rules
 
-Read .codex/project_contract.md before changing main. Main is the sole release
-branch. Keep the original GROW chain and the narrow M05 / global alignment /
-fixed single-deletion / conditional joint V1 whitelist; no full development-tree merge.
+Read .codex/project_contract.md before changing main. Main contains confirmed
+public mechanisms. Selectively integrate adopted scope; do not merge whole
+research trees. Keep existing GROW/receiver mathematics and public multistep
+segmented payload semantics intact. A/B synchronization research stays on dev.
+
 main/tube_state must not import runtime, experiments or governance. Runtime must
-not import experiments/governance. Stable receiver extraction must preserve
-vote ordering, strict zero and Counter ties; GROW keeps its own 46-time reader.
-Blind selection uses received input/public protocol/key, never truth or writer
-state. Retain all fixed failed/alias rows; semantic truth parsing follows seals.
-Complete CLIs must work without notebook/scripts and from a no-.git source copy;
-record real manifest content identity, never invent a Git SHA or inherit parent
-Git. Model execution/Colab and Git publication require the current user scope.
-CPU/fixture and release checks are engineering evidence, not scientific PASS.
+not import experiments/governance. Preserve vote ordering, strict zero and
+Counter encounter ties; GROW keeps its separate all46-time reader. A supplied
+time map is conditional input, not a blind synchronization result. Never feed
+truth, writer state or message answers into a blind decision.
+
+Current user rules override historical strong-binding requirements. Source,
+config, data and environment metadata are optional locating records. B64,
+hashes, manifests, signatures, Git cleanliness, fixed source references and
+exact dependency versions are not execution/readout/delivery gates. Add no
+strict/override mode. Preserve real file/import/model failures, format/numeric
+validity, unsafe-extraction protection, blind isolation and fixed denominators.
+Keep actual notebooks and builders synchronized if changing them. Use only
+checks needed for the change; no automatic full multi-role workflow.
+Model/GPU/Colab work and Git publication require current scope authorization.
+CPU/synthetic/interface checks are engineering evidence, not scientific PASS.

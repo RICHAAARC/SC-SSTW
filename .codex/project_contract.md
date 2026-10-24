@@ -1,32 +1,39 @@
-# SC-SSTW release contract
+# SC-SSTW public mechanism contract
 
-Main is the authoritative release branch. Retain complete GROW and only the
-adopted M05 terminal framewise synchronization, fixed-geometry blind offset/phase,
-fixed internal single-deletion receiver mechanisms and conditional joint V1. OLD8/DWELL4/T05 and
-unclosed historical backprop/combined paths remain on development history.
+Main is the public release branch. Retain the existing complete GROW chain,
+adopted M05/global alignment/fixed single-deletion/conditional joint V1, and the
+confirmed public multistep segmented payload. Keep historical and ongoing A/B
+synchronization methods on their development branches; no full dev-tree merge.
 
-Do not replace existing generation/vae/GROW mathematics wholesale. Core has no
+Public segmented payload: native 50 steps, control indices25..49, effective
+latent times1..44 in four11-time segments, eight bits/segment, net32. Physical
+mask still includes guard times0/45 with first/last segment targets; guards are
+not read votes. Preserve alpha.5, coordinates, local real/ortho FFT mean-MSE,
+eta5520, conditional Flow update, FP32 CFG5 and native scheduler history.
+Existing repeated-payload R44/R22 time-major bit::8 extraction stays unchanged,
+as do existing saved-input181/177/89 geometries and the fixed conditional-joint
+source roster.
+Readout given a caller-supplied time map is conditional: no path estimator,
+detection/authentication, missing-frame recovery or edited blind-sync claim.
+
+Do not replace existing generation/VAE/GROW mathematics wholesale. Core has no
 runtime/experiments/governance dependency; runtime has no outer-layer import.
-The new stable repeated-payload reader preserves original R44/R22 extraction,
-FFT real/ortho, time-major bit::8 order, strict zero and Counter encounter ties.
-GROW's own all46-time reader and full native50-step chain remain separate.
+Preserve original strict-zero and Counter encounter-tie rules. GROW's own all46
+reader remains separate. Synthetic context frames cannot vote for missing cells.
 
-Receiver arguments contain received RGB, public protocol and the current key.
-Preparation can know fixture indices, but blind estimators/plans/corrections
-cannot consume truth. Identity hashing may precede seals; oracle-map semantic
-parsing follows blind payload sealing, and message parsing follows final oracle
-sealing. Preserve fixed failure slots and aliases; oracle cannot retry cached
-failures or fill blind unresolved slots. No new thresholds or scientific PASS.
+Blind estimators use received input, key and public protocol only. Oracle maps
+and true messages belong to conditional evaluation, after blind output saving
+when both are compared. Existing blind payload seals precede oracle-map semantic
+parsing, and true-message evaluation follows final oracle sealing. Preserve
+fixed failures, aliases, missing support and uncertainty;
+no retries filling old failed slots and no scientific PASS from engineering.
 
-The saved-input CLIs require explicit input configs within frozen 181/177/89
-geometry; conditional joint V1 uses its fixed bundled config and source roster.
-Historical exact configs are separately labeled. External config bytes and the
-complete runtime source closure are recorded. A standalone no-.git copy must
-work, including under an unrelated parent Git repository. Git identity is used
-only when root/.git exists; otherwise use the bundled content manifest.
-
-Notebooks begin with the two-line mount. Publish reviewed source S, then bind
-all formal notebooks to S and publish N. Source drafts remain None; the strict
-published-binding gate stays pending until N. Schema/CPU/full portability
-checks must actually run; they do not execute real models. Real evidence stays
-at its original version and source. No automatic paper-experiment preparation.
+Current user AGENTS supersedes historical identity/binding contracts. Source,
+config, environment and data identity are optional records, never admission
+requirements. No B64/hash/manifest/Git-clean/fixed-version/source-binding gates
+or strict/override modes. Keep real file/format/numeric and information-isolation
+checks. Public CLIs work from ordinary source copies without .git. Notebooks
+load available source; synchronize a changed notebook with its builder.
+Run only checks covering the actual change. No model/media/GPU/Colab execution
+or Git publication beyond current authorization. Old evidence retains its
+original source, denominator and claim ceiling; integration is not a new run.

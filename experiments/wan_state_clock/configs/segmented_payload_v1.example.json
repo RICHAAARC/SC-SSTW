@@ -1,0 +1,52 @@
+{
+  "model": {
+    "id": "Wan-AI/Wan2.1-T2V-1.3B-Diffusers"
+  },
+  "generation": {
+    "prompt": "A small boat moving slowly across a calm lake.",
+    "negative_prompt": "",
+    "seed": 2026101701,
+    "steps": 50,
+    "frames": 181,
+    "height": 320,
+    "width": 512,
+    "max_sequence_length": 512
+  },
+  "writer": {
+    "key": "segmented-payload-example",
+    "bits": [
+      1,
+      0,
+      1,
+      0,
+      0,
+      1,
+      1,
+      0,
+      1,
+      1,
+      0,
+      1,
+      0,
+      0,
+      1,
+      1,
+      1,
+      0,
+      0,
+      1,
+      1,
+      1,
+      0,
+      0,
+      0,
+      1,
+      0,
+      1,
+      1,
+      1,
+      1,
+      0
+    ]
+  }
+}

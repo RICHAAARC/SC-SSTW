@@ -1,0 +1,263 @@
+{
+  "mechanism": "segmented_payload_v1",
+  "status_as_of": "2026-10-24",
+  "scope": "Selected public segmented-payload mechanism. Historical A evidence is retained at its original execution scope; this integration is not a new main-version model run.",
+  "public_entry": {
+    "module": "experiments.wan_state_clock.segmented_payload_v1_run",
+    "subcommands": [
+      "plan",
+      "read-votes",
+      "read-latent",
+      "read-rgb",
+      "generate-latent"
+    ],
+    "example_config": "experiments/wan_state_clock/configs/segmented_payload_v1.example.json",
+    "documentation": "docs/segmented_payload_v1.md"
+  },
+  "method": {
+    "native_generation_steps": 50,
+    "controlled_step_indices_zero_based": [
+      25,
+      26,
+      27,
+      28,
+      29,
+      30,
+      31,
+      32,
+      33,
+      34,
+      35,
+      36,
+      37,
+      38,
+      39,
+      40,
+      41,
+      42,
+      43,
+      44,
+      45,
+      46,
+      47,
+      48,
+      49
+    ],
+    "control": "Existing conditional-clean FFT-real local payload gradient and native scheduler path",
+    "net_payload_bits": 32,
+    "temporal_segments": 4,
+    "effective_wan_times_per_segment": 11,
+    "bits_per_segment": 8,
+    "channels": [
+      0,
+      1,
+      2,
+      3
+    ],
+    "effective_wan_times_inclusive": [
+      1,
+      44
+    ],
+    "guard_wan_times": [
+      0,
+      45
+    ],
+    "guard_assignment": {
+      "0": 0,
+      "45": 3
+    },
+    "guard_bits_counted_as_net_payload": false,
+    "writer_mask_coefficients_including_guards": 44160,
+    "effective_reader_votes": 42240,
+    "votes_per_fully_observed_net_bit": 1320,
+    "absolute_fft_target_amplitude": 0.5,
+    "existing_reference_eta": 200,
+    "effective_eta": 5520,
+    "fft": "fft2, norm=ortho, real component",
+    "vote_rule": "strict coefficient > 0; exact zero votes 0",
+    "reduction_order": "channel, eligible receiver time, coordinate slot::8; Counter first-encounter ties",
+    "read_scope": "Conditional read with caller-supplied received-to-source temporal mapping; no blind synchronization or mapping selection",
+    "eligibility": "All four nominal source-frame positions of a cell must be represented by actual received indices in the supplied map. Filled context supplies no votes.",
+    "missing_segment": "MISSING with zero votes; never filled from a neighbouring segment"
+  },
+  "evidence_records": [
+    {
+      "id": "A_segmented_same_run_20261016",
+      "source_branch": "dev/paper-results-v1",
+      "execution": "User-completed real Wan generation, media and reads; principal saved-evidence review without physical rerun",
+      "sources": 4,
+      "source_roster": "Four previously used A prompt/seed sources; new segmented trajectories, not new held-out sources",
+      "message_hex": "A6D39C5E",
+      "messages": 1,
+      "keys": 1,
+      "fixed_denominator": {
+        "logical_rows": 36,
+        "planned_segments": 144,
+        "planned_bits": 1152,
+        "present_bits": 896,
+        "structural_missing_bits": 256
+      },
+      "clean_correct_time": {
+        "rows": 4,
+        "planned_bits": 128,
+        "present_bits": 128,
+        "read_bits": 128,
+        "wrong_bits": 0,
+        "unread_present_bits": 0,
+        "structural_missing_bits": 0,
+        "false_attribution_bits": 0
+      },
+      "attack_correct_time_oracle": {
+        "rows": 8,
+        "planned_bits": 256,
+        "present_bits": 192,
+        "read_bits": 192,
+        "wrong_bits": 0,
+        "unread_present_bits": 0,
+        "structural_missing_bits": 64,
+        "false_attribution_bits": 0
+      },
+      "original_blind_context_not_part_of_public_sync_entry": {
+        "centered": {
+          "rows": 8,
+          "present_bits": 192,
+          "read_bits": 192,
+          "wrong_bits": 0,
+          "unread_present_bits": 0,
+          "false_attribution_bits": 0,
+          "structural_missing_bits": 64
+        },
+        "raw": {
+          "rows": 8,
+          "present_bits": 192,
+          "read_bits": 144,
+          "wrong_bits": 0,
+          "unread_present_bits": 48,
+          "false_attribution_bits": 0,
+          "structural_missing_bits": 64,
+          "full_present_bit_ber": null
+        },
+        "unaligned": {
+          "rows": 8,
+          "present_bits": 192,
+          "read_bits": 160,
+          "wrong_bits": 52,
+          "unread_present_bits": 32,
+          "false_attribution_bits": 32,
+          "structural_missing_bits": 64,
+          "full_present_bit_ber": null
+        }
+      },
+      "interpretation": "144 is the number of planned segment outputs, not independent messages or source videos. Eight exact-input aliases remain identified.",
+      "local_evidence": {
+        "principal_report": "/home/richar/projects/Video-WM/diagnostics/a-segmented-payload-result-principal-audit-20261016/REPORT.md",
+        "principal_acceptance": "/home/richar/projects/Video-WM/diagnostics/a-segmented-payload-result-principal-audit-20261016/root_acceptance.json",
+        "row_checks": "/home/richar/projects/Video-WM/diagnostics/a-segmented-payload-result-principal-audit-20261016/root_saved_row_checks.json",
+        "vote_plan_checks": "/home/richar/projects/Video-WM/diagnostics/a-segmented-payload-result-principal-audit-20261016/root_saved_vote_plan_checks.json",
+        "saved_run": "/home/richar/projects/Video-WM/diagnostics/a-line-segmented-payload-result-20261016/same_run"
+      },
+      "drive_folder": "https://drive.google.com/drive/folders/1GMc7M5cmgLvQCIk7c_jJiLbZP_KYftWD"
+    },
+    {
+      "id": "A_P2_confirmation_20261017",
+      "source_branch": "dev/paper-results-v1",
+      "execution": "User-completed fixed four-new-source run; principal and A5 acceptance with claim ceiling",
+      "source_seeds": [
+        2026101701,
+        2026101702,
+        2026101703,
+        2026101704
+      ],
+      "sources": 4,
+      "related_attack_views_per_source": 8,
+      "related_attack_views": 32,
+      "message_hex": "A6D39C5E",
+      "messages": 1,
+      "keys": 1,
+      "fixed_denominator": {
+        "logical_rows": 196,
+        "planned_segments": 784,
+        "planned_bits": 6272,
+        "present_bits": 3968,
+        "structural_missing_bits": 2304,
+        "blind_rows": 160,
+        "attack_oracle_rows": 32,
+        "clean_rows": 4
+      },
+      "retained_row_statuses": {
+        "READ": 188,
+        "UNRESOLVED": 4,
+        "UNSUPPORTED": 4
+      },
+      "clean_correct_time": {
+        "rows": 4,
+        "planned_bits": 128,
+        "present_bits": 128,
+        "read_bits": 128,
+        "wrong_bits": 0,
+        "unread_present_bits": 0,
+        "structural_missing_bits": 0,
+        "false_attribution_bits": 0
+      },
+      "attack_correct_time_oracle": {
+        "rows": 32,
+        "planned_bits": 1024,
+        "present_bits": 640,
+        "read_bits": 640,
+        "wrong_bits": 0,
+        "unread_present_bits": 0,
+        "structural_missing_bits": 384,
+        "false_attribution_bits": 0
+      },
+      "original_blind_context_not_part_of_public_sync_entry": {
+        "candidate_present_bits_correct": 640,
+        "candidate_present_bits_total": 640,
+        "candidate_exact_paths": 30,
+        "candidate_exact_intervals": 31,
+        "candidate_path_denominator": 32,
+        "retained_nonexact_paths": [
+          "distinct_confirm_20261017_02/DELETE_S1/DISTINCT_REF_U",
+          "distinct_confirm_20261017_02/SHORT17_HOLD_MEDIA/DISTINCT_REF_U"
+        ],
+        "relative_centered_path_gains": 5,
+        "relative_centered_path_losses": 1,
+        "structural_missing_bits_per_attack_arm": 384,
+        "physical_reads": 98,
+        "logical_read_rows": 188,
+        "read_aliases": 90
+      },
+      "interpretation": "32 related views and multiple receiver rows do not increase the four-source or single-message denominator. The original failed/unresolved/unsupported rows remain in the source evidence.",
+      "local_evidence": {
+        "principal_report": "/home/richar/projects/Video-WM/diagnostics/a-p2-confirmation-result-principal-review-20261017/REPORT.md",
+        "principal_acceptance": "/home/richar/projects/Video-WM/diagnostics/a-p2-confirmation-result-principal-review-20261017/root_acceptance.json",
+        "independent_review": "/home/richar/projects/Video-WM/diagnostics/a-p2-confirmation-result-principal-review-20261017/A5_RESULT_REVIEW.md",
+        "original_review": "/home/richar/projects/Video-WM/diagnostics/a-line-p2-confirmation-result-20261017/REVIEW.md",
+        "saved_run": "/home/richar/projects/Video-WM/diagnostics/a-line-p2-confirmation-result-20261017/same_run"
+      },
+      "drive_folder": "https://drive.google.com/drive/folders/1pQBcfof8-G_udLD1giUD9zCeefePLhuT"
+    }
+  ],
+  "public_development_method_references": [
+    "https://github.com/RICHAAARC/SC-SSTW/blob/dev/paper-results-v1/docs/paper_results_v1/segmented_payload_v1.md",
+    "https://github.com/RICHAAARC/SC-SSTW/blob/dev/paper-results-v1/docs/paper_results_v1/distinct_confirmation_p2.md",
+    "https://github.com/RICHAAARC/SC-SSTW/blob/dev/paper-results-v1/main/tube_state/segmented_payload_v1.py"
+  ],
+  "claim_ceiling": {
+    "new_main_real_model_execution": false,
+    "scientific_pass": false,
+    "blind_sync_provided_by_public_entry": false,
+    "independent_messages_from_related_views": false,
+    "total_payload_writer_quality_vs_off_established": false,
+    "quality_reference": "Already segmented-payload-watermarked NATIVE_PRE",
+    "saved_quality_scope": "candidate_PRE minus NATIVE_PRE measures the extra clock residual; candidate_POST minus NATIVE_PRE includes clock and codec",
+    "historical_quality_transfer": "Old repeated-message quality is not a payload-versus-OFF control for this segmented writer",
+    "unsupported_claims": [
+      "Blind temporal alignment or general edit robustness from the conditional public reader",
+      "Recovery of structurally absent bits",
+      "Universal synchronization necessity or BER advantage over correct-time oracle/REF",
+      "Arbitrary-message/key generalization, population FPR, external competitiveness or publication readiness",
+      "A/B end-to-end joint generation-time synchronization and payload success"
+    ]
+  },
+  "locating_information_policy": "Paths and source references are optional locating records, not runtime or delivery gates; no hash, manifest, exact-version or Git-status equality is required."
+}

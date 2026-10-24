@@ -25,3 +25,12 @@ The conditional-joint audit verified result SHA256 `a3e3d64286514817d5ee3c6ce1fe
 | Uncertainty follow-up | [source 1fb1b129](https://github.com/RICHAAARC/SC-SSTW/tree/1fb1b129ba27b58705e407c7ef2d7627aaf47b1e) / [Notebook c8dda3e](https://github.com/RICHAAARC/SC-SSTW/blob/c8dda3ef18bd9df3af8b677d1befeb5e4489a1de/notebooks/video_trajectory_attribution_uncertainty_v1_colab.ipynb) | 22/22 complete, 16 ACCEPT / 6 REJECT / 0 UNCERTAIN / 0 technical missing. Same ten primary queries give both 0/10 coverage denominators; **complete but not covered**. `diagnostics/trajectory-attribution-uncertainty-v1-real-run-audit-20261009/root_raw_audit.json` |
 
 Both are already implemented, user-run, audited and published on the research branch. The follow-up reuses C1/C2 and adds zero independent sources. Its positive/negative controls remain 2/2 and 6/6, false accepts 0/22, no actual same-action alias tie. It does not validate correct abstention or establish population FPR. Exact source/run/result/audit identities and main-inclusion flags are in [machine-readable evidence](evidence/temporal_mechanisms.json); the [formal requirement comparison](research_status_2026-10-09.md) preserves the Stage1 counterexample, known DEV calibration and remaining mechanism gaps. No raw audit or experiment was repeated for this documentation update.
+
+
+## 2026-10-24 public multistep segmented payload integration
+
+[Mechanism and conditional readout](segmented_payload_v1.md) · [fixed evidence summary](evidence/segmented_payload_v1.json).
+Only four temporal bytes, their native50-step controller and caller-map support/readout are integrated.
+Original A/P2 evidence is retained at its original source and fixed denominator; no new model run.
+A/B temporal estimators/selectors are excluded. Net capacity remains32 bits, not128.
+Identity metadata is optional provenance, not a runtime or delivery gate.

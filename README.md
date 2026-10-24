@@ -1,5 +1,17 @@
 # SC-SSTW trajectory-sampling video watermark mechanisms
 
+> 2026-10-24：已精选整合[公共多步分段载荷](docs/segmented_payload_v1.md)：50步中25..49控制，四段各8位，净32位；只提供给定时间映射及完整支撑下的读取，不包含A/B盲同步研究。已有真实结果沿用原实验分母，本次整合未重跑模型。分支用途见[入口索引](docs/branch_guide.md)。
+>
+> 当前用户规则：源码、配置及环境身份仅供定位，B64/哈希/manifest/Git状态/固定版本不作为运行或交付门禁。下方旧入口中的发布绑定与摘要说明属于历史发布流程；新公共载荷入口直接使用可用源码，不依赖该流程。
+
+公共载荷独立入口（无需Notebook或Git元数据）：
+
+```bash
+python -m experiments.wan_state_clock.segmented_payload_v1_run --help
+```
+
+`generate-latent`执行原生50步并保存终态；`plan`、`read-votes`、`read-latent`、`read-rgb`接收调用方明确给出的时间映射。模型运行由用户启动；纯保存票读取不加载模型。具体格式、命令和证据边界见[公共机制说明](docs/segmented_payload_v1.md)。
+
 > 2026-10-09 当前状态：[正式要求与证据对照](docs/research_status_2026-10-09.md)。Attribution V1 已真实运行并审计：C1/C2 两个确认源为 16 ACCEPT / 112 REJECT / 0 UNCERTAIN / 0 技术缺失。后续不确定补充 22/22 完整，16 ACCEPT / 6 REJECT / 0 UNCERTAIN；两类不确定共用同十个探测查询，均 0/10，**完整但未覆盖**。两项均已在研究分支发布，实现尚未进入 main。查询数不是独立来源数；不宣称总体 FPR 为零。
 
 `main` is the release branch. The research position is **基于轨迹采样嵌入思想的视频水印方法**. GROW remains a concrete implementation source rather than the umbrella method name: the [author repository](https://github.com/luopengchen/GROW), retained implementation commit `6aa69a9c5d4a9e75df457fcca8dfc71b64a6b870`, and the [CVPR 2026 paper](https://openaccess.thecvf.com/content/CVPR2026/papers/Luo_GROW_Watermark_Generation_with_Progressive_Guidance_for_Diffusion_Models_CVPR_2026_paper.pdf) remain attributed. The executable FFT-real construction and its distinction from the paper's DCT setup stay documented in [the fixed GROW reference](docs/grow_video_reference_v1.md). This tree keeps the complete GROW payload chain and a narrow whitelist of measured terminal synchronization/receiver mechanisms. Conditional joint V1 is integrated from its audited source closure; this release integration does not merge the development branch or claim a new main-version real-model execution.
