@@ -71,7 +71,10 @@ failure journal, B3 binding, notebook and builder.
   defined C and D=false.
 - Each member has `candidate_id, phase, source_start, s, O_h,
   query_source_origin_hypothesis, received_query_start` and
-  `local_received_to_source_map[10]`. Each map entry has `local_row,
+  `local_received_to_source_map[45]`: query-local offset j=0..44 corresponds to
+  received x=w+j and source O_h+j. These are45 integer source-frame values,
+  matching B3's explicit-map consumer; w is not added to source O_h again.
+  The separate `nominal_cell_mappings[10]` retains each cell's `local_row,
   canonical_cell, group, query_local_interval, nominal_received_cell,
   source_frames_under_h[4], source_support_under_h`. The latter is explicitly
   nominal `FULL_UNDER_H`, not verified source truth or a VAE receptive field.
@@ -146,10 +149,28 @@ python -m pytest -q tests/test_b_m3_time_path_v1.py
 ```
 
 That environment is a convenience, not a version requirement or execution gate.
-On2026-10-24 the targeted file completed with **44 passed** using that CPU
+On2026-10-24 the initial targeted file completed with **44 passed** using that CPU
 interpreter; no other suite or physical scientific execution was run.
 Tests establish engineering behavior only. New DCT2-chain state distributions,
 threshold value, middle-window retention, quality, real latency/memory, physical
 minimum deletion size, general edits and scientific performance remain untested.
 The integrated c0 experiment still requires user execution; this component has
 not changed the method into a general deletion or source-authentication claim.
+
+## Cross-component mapping encoding repair
+
+The root integration check found that the initial ten-cell dictionary list in
+`local_received_to_source_map` did not match B3's45-frame integer-list contract.
+The producer now emits `[O_h+j for j in range(45)]` there, and keeps the original
+ten detailed cell records in `nominal_cell_mappings`. Candidate sets, formulas,
+thresholds,961/8401 path counts and the scientific budget are unchanged.
+
+The added tests check all137 candidates at all three w coordinates and directly
+pass synthetic B2 output to the actual B3 `plan_local` for L/M/R, without a bit
+cache. They first reproduced the old failure (four failed checks). The consumer
+is read from the integrated tree when present, otherwise the existing sibling
+B3 tree; no B3 source is copied or changed. If neither is available, only those
+three consumer checks skip, while the standalone45-frame contract check runs.
+After the repair, the four new checks plus affected path and invalid-family
+checks completed with **19 passed,29 deselected**; all three actual B3 consumer
+checks ran (no skips). No full suite or scientific execution was added.

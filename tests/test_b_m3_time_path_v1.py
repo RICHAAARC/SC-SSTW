@@ -2,7 +2,9 @@
 import ast
 import copy
 import inspect
+import importlib.util
 import json
+from pathlib import Path
 from unittest.mock import patch
 
 import numpy as np
@@ -69,6 +71,46 @@ def test_local_coordinates_add_w_exactly_once_and_source_origin_does_not_move():
     for args in ((-1, 0, 1, 1), (0, 1, 1, 1), (53, 0, 36, 1), (0, 0, 1, 0)):
         with pytest.raises(ValueError):
             m.cell_mapping(*args)
+
+
+def test_source_map_has45_integers_and_preserves10_nominal_cell_records():
+    for window, w in m.WINDOWS.items():
+        prepared = local(window, [78])
+        for h in prepared["members"]:
+            mapping = h["local_received_to_source_map"]
+            assert mapping == list(range(h["O_h"], h["O_h"] + 45))
+            assert all(type(x) is int for x in mapping)
+            assert len(h["nominal_cell_mappings"]) == 10
+            for cell in h["nominal_cell_mappings"]:
+                lo, hi = cell["nominal_received_cell"]
+                assert [mapping[x-w] for x in range(lo, hi+1)] == cell["source_frames_under_h"]
+
+
+@pytest.mark.parametrize("window,origin", [("L", 1), ("M", 78), ("R", 136)])
+def test_prepared_output_passes_actual_B3_local_mapping_consumer(window, origin):
+    # Prefer the integrated tree; otherwise read the existing B3 sibling module.
+    # No B3 file is copied or modified, and only its pure planner is executed.
+    source = Path(m.__file__).with_name("b_cdc32_aggregation_v1.py")
+    if not source.is_file():
+        source = (Path(__file__).resolve().parents[2] / "B-Evidence-Aggregation-V1" /
+                  "main/tube_state/b_cdc32_aggregation_v1.py")
+    if not source.is_file():
+        pytest.skip("B3 consumer unavailable; standalone45-frame contract test still runs")
+    spec = importlib.util.spec_from_file_location("b3_mapping_consumer_under_test", source)
+    b3 = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(b3)
+    views = [dict(v, status="RETURNED") for v in obs.view_plan("opaque-input") if v["window"] == window]
+    family = raw(peaks=[origin])
+    family.update(input_id="opaque-input", key_id="key00")
+    prepared = m.prepare_local(family, dict(status="FROZEN", tau=0.5),
+                               views[0]["query_id"], m.WINDOWS[window])
+    plan = b3.plan_local(prepared, views)
+    assert plan["status"] == "READY" and plan["mapping_scope"] == "LOCAL_FULL_C"
+    assert all(g["status"] != "UNRESOLVED_MAPPING" for g in plan["groups"])
+    assert any(g["references"] for g in plan["groups"])
+    supports = plan["support_under_h"][0]["rows"]
+    assert len(supports) == 10 and all(r["status"] == "FULL_UNDER_H" for r in supports)
+    assert all(r["source_frames_under_h"] == list(range(4*r["canonical_cell"]-3, 4*r["canonical_cell"]+1)) for r in supports)
 
 
 def test_fixed961_domain_and_seam_mapping_at_safe_boundaries():

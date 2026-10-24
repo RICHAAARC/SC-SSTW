@@ -209,8 +209,9 @@ def prepare_local(family, threshold, query_id, received_query_start):
         row.update(candidate_id=f"{query_id}/h{p}:{s}", s=s, O_h=origin,
                    query_source_origin_hypothesis=origin,
                    received_query_start=int(received_query_start),
-                   local_received_to_source_map=[cell_mapping(received_query_start, p, s, r)
-                                                 for r in range(1, 11)],
+                   local_received_to_source_map=list(range(origin, origin + 45)),
+                   nominal_cell_mappings=[cell_mapping(received_query_start, p, s, r)
+                                          for r in range(1, 11)],
                    in_C=(row["S"] >= tau) if numeric and good_tau else None)
     C = [row for row in rows if row["in_C"]] if numeric and good_tau else None
     status = ("TECHNICAL_UNRESOLVED" if not numeric else "CALIBRATION_UNRESOLVED" if not good_tau
