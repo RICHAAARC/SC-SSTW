@@ -1,0 +1,11 @@
+{
+  "model_id": "Wan-AI/Wan2.1-T2V-1.3B-Diffusers",
+  "generation": {"height": 320, "width": 512, "frames": 181, "fps": 8, "steps": 50, "guidance_scale": 5.0, "max_sequence_length": 512},
+  "writer": {"key": "watermark", "gamma": 1, "bits": [1,0,1,0,0,1,1,0,1,1,0,1,0,0,1,1,1,0,0,1,1,1,0,0,0,1,0,1,1,1,1,0]},
+  "sources": [
+    {"id": "b2-m3-c01", "role": "cal", "seed": 2026102441, "a": 2, "prompt": "A fixed wide shot of a white cat walking slowly along a sunlit garden wall. Small green leaves move in a light breeze.", "negative_prompt": ""},
+    {"id": "b2-m3-c02", "role": "cal", "seed": 2026102442, "a": 11, "prompt": "A locked-off medium shot of a glassblower slowly turning a glowing glass vessel in a workshop. The hands and workbench remain visible.", "negative_prompt": ""},
+    {"id": "b2-m3-e01", "role": "eval", "seed": 2026102443, "a": 17, "prompt": "A fixed wide shot of blue fishing boats rocking gently beside a stone harbor wall under an overcast sky. Small ripples move across the water.", "negative_prompt": ""},
+    {"id": "b2-m3-e02", "role": "eval", "seed": 2026102444, "a": 6, "prompt": "A continuous medium-wide shot of a person arranging orange flowers in a vase on a wooden table beside a bright window. The camera remains fixed.", "negative_prompt": ""}
+  ]
+}
