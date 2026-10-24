@@ -34,6 +34,7 @@ def test_editable_no_git_source_cli_and_new_imports(tmp_path):
     with zipfile.ZipFile(archive) as z:
         assert set(z.namelist()) == set(builder.source_files()) | {f'notebooks/{builder.STEM}.ipynb'}
         assert not any('.git' in Path(n).parts for n in z.namelist())
+        assert all(z.read(name) == (ROOT/name).read_bytes() for name in z.namelist())
         z.extractall(tmp_path)
     entry = tmp_path/builder.ENTRY
     result = subprocess.run([sys.executable, '-I', str(entry), '--help'], cwd=tmp_path,
@@ -43,3 +44,21 @@ def test_editable_no_git_source_cli_and_new_imports(tmp_path):
     result = subprocess.run([sys.executable, '-I', '-c', code, str(tmp_path)], cwd=tmp_path,
                             capture_output=True, text=True, check=True)
     assert 'new modules import' in result.stdout
+
+
+def test_notebook_standalone_receipt_recovery_and_display(tmp_path, capsys):
+    from runtime.wan import b_terminal_three_group_v1 as runner
+    nb = json.loads((ROOT/'notebooks'/f'{builder.STEM}.ipynb').read_text())
+    code = [''.join(c['source']) for c in nb['cells'] if c['cell_type']=='code']
+    nodes = [n for n in ast.parse(code[1]).body if isinstance(n, ast.FunctionDef)]
+    namespace = {'OUTPUT': tmp_path, 'json': json}
+    exec(compile(ast.Module(body=nodes, type_ignores=[]), '<notebook helpers>', 'exec'), namespace)
+    slot = 'background'
+    runner.dump(tmp_path/'ledger.json', {slot: dict(slot=slot, kind='background_load', status='NOT_ENTERED', attempts=0)})
+    runner.dump(tmp_path/'receipts/background.json', dict(slot=slot, kind='background_load', status='STARTED', attempts=1))
+    before = {p: p.read_bytes() for p in tmp_path.rglob('*') if p.is_file()}
+    assert namespace['recover_ledger'](tmp_path) == runner.recover_ledger(tmp_path)
+    exec(code[3], namespace)
+    output = capsys.readouterr().out
+    assert "{'STARTED': 1}" in output and 'spent and incomplete' in output
+    assert before == {p: p.read_bytes() for p in tmp_path.rglob('*') if p.is_file()}

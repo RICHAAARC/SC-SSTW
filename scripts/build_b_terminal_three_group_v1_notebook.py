@@ -146,6 +146,12 @@ if not EXISTING_ARTIFACTS:
 '''
 
 DISPLAY = r'''
+recovery = recover_ledger(OUTPUT)
+print('Receipt-recovered execution counts', recovery['counts'])
+print('Receipt-recovered unit counts', recovery['unit_counts'])
+for name, error in recovery['read_errors'].items():
+    print('Recovery read failure:', name, error)
+print('STARTED is spent and incomplete; UNRESOLVED_RECEIPT retains uncertain accounting. No reentry.')
 for name in ('result.json', 'thresholds.json', 'evaluation.json', 'planned_outputs.json'):
     path = OUTPUT/name
     if not path.is_file():
@@ -153,7 +159,7 @@ for name in ('result.json', 'thresholds.json', 'evaluation.json', 'planned_outpu
     try: value = json.loads(path.read_text())
     except (OSError, ValueError) as error:
         print('Read failure:', name, str(error)); continue
-    if name == 'result.json': print('Execution', value.get('status'), value.get('counts'), value.get('denominators'))
+    if name == 'result.json': print('Saved result snapshot', value.get('status'), value.get('denominators'))
     elif name == 'thresholds.json': print('New DCT2-chain tau', value.get('status'), value.get('tau'), 'planned null families', value.get('planned_families'))
     elif name == 'evaluation.json':
         print('Reader totals', value.get('totals'))
@@ -189,8 +195,9 @@ def build(root=ROOT):
 ''')
     code("from google.colab import drive\ndrive.mount('/content/drive')\n")
     runner = (root/f'runtime/wan/{STEM}.py').read_text(encoding='utf-8')
-    node = next(n for n in ast.parse(runner).body if isinstance(n, ast.FunctionDef) and n.name == 'execution_artifacts')
-    code(BOOTSTRAP+'\n'+ast.get_source_segment(runner, node)+'\n'+DOWNLOAD)
+    helpers = [ast.get_source_segment(runner, n) for n in ast.parse(runner).body
+               if isinstance(n, ast.FunctionDef) and n.name in ('execution_artifacts', 'recover_ledger')]
+    code(BOOTSTRAP+'\n'+'\n\n'.join(helpers)+'\n'+DOWNLOAD)
     code(RUN)
     code(DISPLAY)
     notebook = dict(cells=cells, metadata=dict(kernelspec=dict(display_name='Python 3', language='python', name='python3')), nbformat=4, nbformat_minor=5)

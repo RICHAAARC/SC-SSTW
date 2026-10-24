@@ -57,17 +57,79 @@ def execution_artifacts(output):
     return sorted(found)
 
 
+def recover_ledger(output):
+    """Read-only receipt overlay; also embedded verbatim in the notebook.
+
+    STARTED remains spent and incomplete. Invalid or uncommitted receipts
+    remain unresolved, never an inferred successful or unentered call.
+    """
+    from collections import Counter
+    import json
+    from pathlib import Path
+    output = Path(output)
+    ledger, errors, receipt_slots = {}, {}, []
+    try:
+        ledger = json.loads((output/'ledger.json').read_text(encoding='utf-8'))
+        if not isinstance(ledger, dict) or any(not isinstance(row, dict) for row in ledger.values()):
+            raise ValueError('ledger must map slots to records')
+    except (OSError, ValueError) as error:
+        ledger = {}
+        errors['ledger.json'] = str(error)
+    directory = output/'receipts'
+    paths = sorted(directory.rglob('*.json')) + sorted(directory.rglob('*.json.tmp'))
+    for path in paths:
+        relative = path.relative_to(directory).as_posix()
+        pending = relative.endswith('.tmp')
+        slot = relative[:-9] if pending else relative[:-5]
+        previous = ledger.get(slot, {})
+        try:
+            receipt = json.loads(path.read_text(encoding='utf-8'))
+            if pending:
+                raise ValueError('uncommitted receipt; completion is unresolved')
+            if not isinstance(receipt, dict) or receipt.get('slot') != slot:
+                raise ValueError('receipt slot does not match its address')
+            status, attempts = receipt.get('status'), receipt.get('attempts')
+            if status not in ('NOT_ENTERED', 'STARTED', 'RETURNED', 'FAILED', 'INTERRUPTED'):
+                raise ValueError('invalid receipt status')
+            if type(attempts) is not int or attempts != (0 if status == 'NOT_ENTERED' else 1):
+                raise ValueError('invalid receipt attempt count')
+            if not isinstance(receipt.get('kind'), str) or not receipt['kind']:
+                raise ValueError('receipt kind required')
+            if previous.get('kind') is not None and previous['kind'] != receipt['kind']:
+                raise ValueError('receipt kind disagrees with saved slot')
+            if previous.get('attempts') == 1 and attempts == 0:
+                raise ValueError('receipt cannot erase a spent call')
+            ledger[slot] = receipt
+            receipt_slots.append(slot)
+        except (OSError, ValueError) as error:
+            name = 'receipts/'+relative
+            errors[name] = str(error)
+            ledger[slot] = dict(previous, slot=slot, status='UNRESOLVED_RECEIPT',
+                                attempts=1 if previous.get('attempts') == 1 else None,
+                                saved_status=previous.get('status'), recovery_error=name)
+    counts = dict(Counter(row.get('status', 'UNRESOLVED_LEDGER') for row in ledger.values()))
+    kinds = sorted({row.get('kind', 'UNKNOWN') for row in ledger.values()})
+    unit_counts = {kind: dict(Counter(row.get('status', 'UNRESOLVED_LEDGER') for row in ledger.values()
+                                     if row.get('kind', 'UNKNOWN') == kind)) for kind in kinds}
+    return dict(ledger=ledger, counts=counts, unit_counts=unit_counts,
+                receipt_slots=receipt_slots, read_errors=errors, physical_reentry=False)
+
+
 def existing(output):
     saved, errors = {}, {}
-    for name in ('result.json', 'thresholds.json', 'evaluation.json', 'ledger.json', 'planned_outputs.json'):
+    for name in ('result.json', 'thresholds.json', 'evaluation.json', 'planned_outputs.json'):
         path = Path(output)/name
         if path.exists():
             try:
                 saved[name] = read(path)
             except (OSError, ValueError) as error:
                 errors[name] = str(error)
+    recovery = recover_ledger(output)
+    saved['ledger.json'] = recovery.pop('ledger')
+    errors.update(recovery['read_errors'])
     return dict(status='READ_ONLY_EXISTING_ATTEMPT', physical_reentry=False,
-                saved=saved, read_errors=errors, artifacts=execution_artifacts(output))
+                saved=saved, ledger_recovery=recovery, read_errors=errors,
+                artifacts=execution_artifacts(output))
 
 
 def load_config(path=CONFIG):
@@ -381,6 +443,21 @@ def read_input(plan, cache):
     return dict(status='RETURNED', local=independent, aggregates=comparisons)
 
 
+def endpoint_cache(cache, views, key):
+    """Select production addresses only; do not read or compare bit values."""
+    restricted = {}
+    for view in views:
+        for row in range(1, 11):
+            for region in ('R0', 'R1'):
+                eid = f"{view['view_id']}/row{row}/{region}"
+                keyed = cache.get(eid, {})
+                if key in keyed:
+                    # Keep the lazy bit mapping untouched until the bundle plan
+                    # has been saved and read back. No parent mapping escapes.
+                    restricted[eid] = {key: keyed[key]}
+    return restricted
+
+
 def bundle_requests(cfg, contexts, threshold):
     """Only raw local families/views/caches enter each new bundle boundary."""
     from main.tube_state import b_m3_time_path_v1 as time_method
@@ -399,7 +476,8 @@ def bundle_requests(cfg, contexts, threshold):
                                 break
                             q = c['queries'][window]
                             local = time_method.prepare_local(c['families'][window, key], threshold, q['query_id'], WINDOWS[window])
-                            fragments.append(RawFragment(local, q['views'], c['cache']))
+                            cache = endpoint_cache(c['cache'], q['views'], key)
+                            fragments.append(RawFragment(local, q['views'], cache))
                         yield fragments, dict(sources=[a['id'], b['id']], arm=arm, fixture=fixture,
                                               key=key, same_source=a['id'] == b['id'])
 

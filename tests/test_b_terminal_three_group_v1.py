@@ -3,6 +3,8 @@ from collections import Counter
 from copy import deepcopy
 import json
 from pathlib import Path
+import subprocess
+import sys
 
 import pytest
 
@@ -165,6 +167,147 @@ def test_actual_B1_coefficients_B2_family_to_B3(tmp_path):
     assert [s['value'] for s in result['slots'][:8]] == [1]*8
     assert all(s['value'] is None for s in result['slots'][8:])
     assert result['used_evidence_ids'] == ['v0/row1/R0', 'v0/row1/R1']
+
+
+def test_bundle_endpoint_boundary_and_first_bit_after_readback(tmp_path, monkeypatch):
+    from runtime.wan import b_cdc32_bundle_v1 as bundle
+    readback, consumed = [], []
+    save_read = bundle._save_read
+
+    def observed_save_read(path, value):
+        returned = save_read(path, value)
+        if Path(path).name == 'plan.json':
+            readback.append(returned)
+        return returned
+
+    monkeypatch.setattr(bundle, '_save_read', observed_save_read)
+
+    class Bits:
+        def __getitem__(self, bit):
+            assert readback, 'first bit consumption preceded plan readback'
+            consumed.append(bit)
+            return dict(local_bit=int(bit), value=1, status='AVAILABLE', count=8)
+
+    class CurrentKeyOnly(dict):
+        def __getitem__(self, key):
+            assert key == 'key00', 'other-key poison crossed the boundary'
+            return super().__getitem__(key)
+
+    class ParentCache(dict):
+        def get(self, eid, default=None):
+            assert eid.startswith(('L-', 'R-')), 'M poison was addressed'
+            return super().get(eid, default)
+
+    queries, families, cache = {}, {}, ParentCache()
+    for window, w in run.WINDOWS.items():
+        views = [run.view_metadata('input', window, p, w, f'{window}-p{p}', 'RETURNED') for p in range(4)]
+        queries[window] = dict(query_id=window, views=views)
+        families[window, 'key00'] = dict(status='SCORES_COMPLETE', input_id='input', key_id='key00',
+            candidates=[dict(phase=p, source_start=s, score_status='RETURNED',
+                             S=0.9 if (p,s)==(0,1 if window=='L' else 28) else 0.1) for p,s in run.H])
+        for view in views:
+            for row in range(12):
+                for region in ('R0', 'R1', 'Rc'):
+                    eid = f"{view['view_id']}/row{row}/{region}"
+                    cache[eid] = CurrentKeyOnly(key00=Bits(), key01=object())
+    contexts = {'host': {('OFF', 'CROP'): dict(queries=queries, families=families, cache=cache)}}
+    request, _ = next(run.bundle_requests(dict(sources=[dict(id='host', role='eval')]), contexts,
+                                         dict(status='FROZEN', tau=0.5)))
+    assert not consumed and not readback
+    for window, fragment in zip(('L', 'R'), request):
+        expected = {f'{window}-p{p}/row{row}/{region}' for p in range(4)
+                    for row in range(1,11) for region in ('R0','R1')}
+        assert set(fragment.cache) == expected
+        assert all(set(keyed) == {'key00'} for keyed in fragment.cache.values())
+        for forbidden in ('M-p0/row1/R0', f"{'R' if window=='L' else 'L'}-p0/row1/R0",
+                          f'{window}-p0/row0/R0', f'{window}-p0/row1/Rc'):
+            with pytest.raises(KeyError):
+                fragment.cache[forbidden]
+        with pytest.raises(KeyError):
+            fragment.cache[f'{window}-p0/row1/R0']['key01']
+    value = bundle.run_bundle(request, tmp_path)
+    assert consumed and value['status'] == 'RETURNED'
+    assert value['outputs']['SEP_A']['recovered_slot_count'] == 8
+    assert value['outputs']['SEP_B']['recovered_slot_count'] == 16
+    assert value['outputs']['JOIN_CONDITIONAL']['recovered_slot_count'] == 24
+    assert value['physical_calls'] == 0
+
+
+@pytest.mark.parametrize('after_receipt', [False, True])
+def test_hard_exit_receipt_overlay_without_reentry_or_writes(tmp_path, after_receipt):
+    script = '''
+import os, sys
+from pathlib import Path
+sys.path.insert(0, sys.argv[1])
+from runtime.wan import b_terminal_three_group_v1 as run
+output = Path(sys.argv[2])
+run.dump(output/'attempt.json', {'synthetic': True})
+journal = run.Journal(output, run.load_config(), None)
+if sys.argv[3] == 'after':
+    journal.call('b2-m3-c01/generation_load', lambda: os._exit(77))
+os._exit(77)
+'''
+    result = subprocess.run([sys.executable, '-I', '-c', script, str(run.ROOT), str(tmp_path),
+                             'after' if after_receipt else 'before'], capture_output=True, text=True)
+    assert result.returncode == 77, result.stderr
+    slot = 'b2-m3-c01/generation_load'
+    assert run.read(tmp_path/'ledger.json')[slot]['attempts'] == 0
+    before = {p.relative_to(tmp_path): (p.read_bytes(), p.stat().st_mtime_ns)
+              for p in tmp_path.rglob('*') if p.is_file()}
+    # Invalid config and a backend with no methods prove recovery precedes setup.
+    value = run.run(tmp_path, config_path=tmp_path/'missing-config.json', backend=object())
+    row = value['saved']['ledger.json'][slot]
+    assert row['status'] == ('STARTED' if after_receipt else 'NOT_ENTERED')
+    assert row['attempts'] == (1 if after_receipt else 0)
+    assert value['physical_reentry'] is False and not value['read_errors']
+    assert sum(value['ledger_recovery']['counts'].values()) == len(run.planned_units(run.load_config()))
+    assert before == {p.relative_to(tmp_path): (p.read_bytes(), p.stat().st_mtime_ns)
+                      for p in tmp_path.rglob('*') if p.is_file()}
+
+
+@pytest.mark.parametrize('status', ['NOT_ENTERED', 'STARTED', 'RETURNED', 'FAILED', 'INTERRUPTED'])
+def test_valid_receipt_status_overlays_stale_ledger(tmp_path, status):
+    run.Journal(tmp_path, run.load_config(), None)
+    receipt = dict(slot='background', kind='background_load', status=status,
+                   attempts=0 if status=='NOT_ENTERED' else 1, error='original cause')
+    run.dump(tmp_path/'receipts/background.json', receipt)
+    value = run.existing(tmp_path)
+    assert value['saved']['ledger.json']['background'] == receipt
+    assert not value['read_errors']
+
+
+@pytest.mark.parametrize('bad', ['broken', 'slot', 'attempts', 'status', 'kind', 'pending'])
+def test_abnormal_receipt_stays_unresolved_and_reports_error(tmp_path, bad):
+    run.Journal(tmp_path, run.load_config(), None)
+    receipt = dict(slot='background', kind='background_load', status='RETURNED', attempts=1)
+    if bad in ('slot', 'status', 'kind'):
+        receipt[bad] = 'wrong'
+    if bad == 'attempts':
+        receipt['attempts'] = 0
+    path = tmp_path/('receipts/background.json.tmp' if bad=='pending' else 'receipts/background.json')
+    run.dump(path, receipt)
+    if bad == 'broken':
+        path.write_text('{')
+    value = run.existing(tmp_path)
+    row = value['saved']['ledger.json']['background']
+    assert row['status'] == 'UNRESOLVED_RECEIPT' and row['attempts'] is None
+    assert str(path.relative_to(tmp_path)) in value['read_errors']
+    assert value['physical_reentry'] is False
+
+
+def test_receipt_recovers_without_readable_ledger_and_keeps_pending_incomplete(tmp_path):
+    run.dump(tmp_path/'ledger.json', {})
+    (tmp_path/'ledger.json').write_text('{')
+    receipt = dict(slot='background', kind='background_load', status='STARTED', attempts=1)
+    run.dump(tmp_path/'receipts/background.json', receipt)
+    value = run.existing(tmp_path)
+    assert value['saved']['ledger.json']['background'] == receipt
+    assert 'ledger.json' in value['read_errors']
+    run.dump(tmp_path/'receipts/background.json.tmp', dict(receipt, status='RETURNED'))
+    value = run.existing(tmp_path)
+    row = value['saved']['ledger.json']['background']
+    assert row['status'] == 'UNRESOLVED_RECEIPT' and row['attempts'] == 1
+    assert row['saved_status'] == 'STARTED'
 
 
 def test_full_fake_dispatch_budget_and_readonly(tmp_path):
