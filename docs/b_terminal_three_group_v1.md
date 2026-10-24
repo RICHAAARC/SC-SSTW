@@ -18,6 +18,6 @@ Post-evaluation retains common-bit errors, added/lost coverage, full/exact suppo
 
 ## Delivery status
 
-The notebook and builder use a fresh dedicated source folder and the actual new runner/modules. The first code cell is only Drive mount. A prior attempt skips source loading, installation and execution and reads its saved records. The research branch currently needs the new implementation published before default GitHub Run all can work; local package preparation is not a publication claim. No main merge or release is requested. Publish only the reviewed integration changes to `dev/local-joint-state-payload-v1` after the user's final authorization.
+The notebook and builder use a fresh dedicated source folder and the actual new runner/modules. The first code cell is only Drive mount. A prior attempt skips source loading, installation and execution and reads its saved records. Default Run all downloads the available source from `dev/local-joint-state-payload-v1`; no source-directory setting is needed. An extracted ordinary ZIP can alternatively be selected with `SOURCE_DIRECTORY`. The user authorized publication of the reviewed 25-file integration scope to this existing B research branch on 2026-10-24. No main merge, release or automatic research execution is included.
 
 Component reviews and targeted integration checks are engineering evidence; actual user execution is separate. The final delivery report lists exact changed files, component review status, checks, source closure and remaining publication action.

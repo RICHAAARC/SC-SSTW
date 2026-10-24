@@ -78,7 +78,7 @@ else:
             source.extractall(destination)
         entries = list(destination.glob('*/experiments/wan_state_clock/b_terminal_three_group_v1_run.py'))
         if len(entries) != 1:
-            raise FileNotFoundError('New B runner unavailable in downloaded source. Publish the prepared B research-branch changes first.')
+            raise FileNotFoundError('New B runner unavailable in downloaded source: '+url)
         SOURCE_ROOT = entries[0].parents[2]
     else:
         SOURCE_ROOT = Path(SOURCE_DIRECTORY).expanduser().resolve()
@@ -183,7 +183,7 @@ def build(root=ROOT):
         cells.append(dict(cell_type='code', metadata={}, source=text.splitlines(keepends=True), execution_count=None, outputs=[]))
     markdown('''# B：DCT2 局部身份、M3-151 时间候选、CDC32 条件聚合
 
-本地交付使用已采用共同r1/c0与B1/B2/B3组件。GitHub研究分支的新入口尚待发布；发布后默认Run all取可用源码。也可在第二代码cell填写普通可编辑源码包目录。此notebook不会用旧runner替代缺失的新实现。
+本交付使用已采用共同r1/c0与B1/B2/B3组件。默认Run all从GitHub的dev/local-joint-state-payload-v1研究分支加载当前可用源码，无需填写源码目录。也可在第二代码cell填写普通可编辑源码包目录。此notebook不会用旧runner替代缺失的新实现。
 
 固定4新来源（2cal/2eval）、OFF/P0/PM三臂、三fixture。DCT2 k25..49，原176状态在解码前最终FP32 latent写入；完整native50、CFG5不变。12 D181、432 E41、codec各48；M3/E2共享全部观察；B3没有新增物理调用。先用新链90个完整null族一次冻结tau，再进入eval。校准缺失不缩分母或回退旧tau。
 
@@ -212,7 +212,7 @@ def build(root=ROOT):
             bundle.write(root/rel, rel)
         bundle.write(path, 'notebooks/'+path.name)
     return dict(notebook=str(path), source_zip=str(archive), source_files=files,
-                github_new_entry_status='PUBLICATION_PENDING', physical_execution=False)
+                github_new_entry_status='CONFIGURED_BRANCH_SOURCE', physical_execution=False)
 
 
 if __name__ == '__main__':
