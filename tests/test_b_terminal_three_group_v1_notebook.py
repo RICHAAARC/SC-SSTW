@@ -62,3 +62,76 @@ def test_notebook_standalone_receipt_recovery_and_display(tmp_path, capsys):
     output = capsys.readouterr().out
     assert "{'STARTED': 1}" in output and 'spent and incomplete' in output
     assert before == {p: p.read_bytes() for p in tmp_path.rglob('*') if p.is_file()}
+
+
+def _run_notebook_setup_only(output, existing=()):
+    """Run the delivered setup statements, stopping before source imports/worker."""
+    nb = json.loads((ROOT/'notebooks'/f'{builder.STEM}.ipynb').read_text())
+    code = [''.join(c['source']) for c in nb['cells'] if c['cell_type']=='code']
+    tree = ast.parse(code[2])
+    guard = tree.body[0]
+    stop = next(i for i, node in enumerate(guard.body)
+                if isinstance(node, ast.Assign)
+                and any(isinstance(t, ast.Name) and t.id == 'import_probe' for t in node.targets))
+    guard.body = guard.body[:stop]
+    namespace = dict(OUTPUT=output, EXISTING_ARTIFACTS=list(existing),
+                     subprocess=subprocess, sys=sys)
+    exec(compile(tree, '<delivered notebook setup only>', 'exec'), namespace)
+
+
+TORCHAO_FAILURE = ("RuntimeError: Failed to import diffusers.pipelines.wan.pipeline_wan\n"
+                   "ImportError: cannot import name 'FqnToConfig' from 'torchao.quantization'\n")
+
+
+def _stub_setup_commands(monkeypatch, failures):
+    from types import SimpleNamespace
+    import shutil
+    failures = iter(failures)
+    actions, probes = [], []
+    def run(args, **kwargs):
+        if args[:3] == [sys.executable, '-m', 'pip']:
+            actions.append(args[3:])
+            return SimpleNamespace(returncode=0)
+        assert args[:2] == [sys.executable, '-c']
+        probes.append(args[2])
+        failure = next(failures) if 'from diffusers import' in args[2] else ''
+        kwargs['stdout'].write(failure)
+        kwargs['stdout'].flush()
+        return SimpleNamespace(returncode=int(bool(failure)))
+    monkeypatch.setattr(subprocess, 'run', run)
+    monkeypatch.setattr(shutil, 'which', lambda name: '/usr/bin/'+name)
+    return actions, probes
+
+
+def test_setup_reuses_card102_repair_for_reported_import_chain(tmp_path, monkeypatch):
+    from runtime.wan.b_terminal_three_group_v1 import execution_artifacts
+    actions, probes = _stub_setup_commands(monkeypatch, [
+        "ModuleNotFoundError: No module named 'ftfy'\n", TORCHAO_FAILURE, ''])
+    _run_notebook_setup_only(tmp_path)
+    assert actions == [['install', 'ftfy'], ['uninstall', '-y', 'torchao']]
+    assert len(probes) == 4  # tensor probe, then three pipeline probes
+    assert TORCHAO_FAILURE in (tmp_path/'setup.log').read_text()
+    assert execution_artifacts(tmp_path) == []  # setup alone spends no research slot
+
+
+@pytest.mark.parametrize('failures,expected_actions', [
+    (["ImportError: unrelated dependency failure\n"], []),
+    ([TORCHAO_FAILURE, TORCHAO_FAILURE], [['uninstall', '-y', 'torchao']]),
+])
+def test_setup_retains_unknown_or_repeated_failure_without_extra_actions(
+        tmp_path, monkeypatch, failures, expected_actions):
+    # A stale known error must not turn a later unknown failure into an uninstall.
+    (tmp_path/'setup.log').write_text(TORCHAO_FAILURE)
+    actions, _ = _stub_setup_commands(monkeypatch, failures)
+    with pytest.raises(RuntimeError, match='actual import failure|still fails after'):
+        _run_notebook_setup_only(tmp_path)
+    assert actions == expected_actions
+    assert not (tmp_path/'runner.log').exists()
+
+
+def test_setup_does_nothing_when_research_attempt_exists(tmp_path, monkeypatch):
+    def forbidden(*args, **kwargs):
+        raise AssertionError('existing attempt must not run setup')
+    monkeypatch.setattr(subprocess, 'run', forbidden)
+    _run_notebook_setup_only(tmp_path, existing=['attempt.json'])
+    assert not (tmp_path/'setup.log').exists()

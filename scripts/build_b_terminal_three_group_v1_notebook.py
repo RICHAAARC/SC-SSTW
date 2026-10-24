@@ -93,34 +93,51 @@ else:
 
 RUN = r'''
 if not EXISTING_ARTIFACTS:
-    import importlib, re, shutil, time
-    log_path = OUTPUT/'setup.log'
-    def command(args, label):
+    import time
+    # Reuse the successfully run Card102 setup, including its torchao repair.
+    # Keep this self-contained; no legacy notebook/builder runtime dependency.
+    LOG = OUTPUT/'setup.log'
+    def command(args, label, check=True):
         print(label, flush=True)
-        with log_path.open('a') as stream:
-            stream.write(label+'\n'); stream.flush()
-            value = subprocess.run(args, stdout=stream, stderr=subprocess.STDOUT)
-        if value.returncode:
-            raise RuntimeError(label+' failed; see '+str(log_path))
-    mapping = {'numpy':'numpy', 'torch':'torch', 'diffusers':'diffusers', 'accelerate':'accelerate',
-               'transformers':'transformers', 'safetensors':'safetensors', 'huggingface_hub':'huggingface-hub',
-               'sentencepiece':'sentencepiece', 'ftfy':'ftfy'}
-    repaired = set()
-    while True:
-        probe = subprocess.run([sys.executable, '-c',
-            'import numpy,torch,accelerate,transformers,safetensors,huggingface_hub,sentencepiece,ftfy; from diffusers import WanPipeline,AutoencoderKLWan'],
-            capture_output=True, text=True)
-        if probe.returncode == 0:
-            break
-        missing = re.search("ModuleNotFoundError: No module named ['\"]([^'\"]+)['\"]", probe.stderr)
-        name = missing.group(1).split('.')[0] if missing else None
-        if name not in mapping or name in repaired:
-            raise RuntimeError('Actual dependency import failure:\n'+probe.stderr)
-        repaired.add(name)
-        command([sys.executable, '-m', 'pip', 'install', mapping[name]], 'Install missing '+name)
+        with LOG.open('a') as stream:
+            stream.write('COMMAND '+repr(args)+'\n'); stream.flush()
+            completed = subprocess.run(args, stdout=stream, stderr=subprocess.STDOUT)
+        if completed.returncode and check:
+            raise RuntimeError(label+' failed; see '+str(LOG))
+        return completed.returncode
+    def ensure_imports(probe, packages, label):
+        import re
+        mapping = {p.replace('-', '_'):p for p in packages}
+        repaired = set()
+        while True:
+            offset = LOG.stat().st_size if LOG.exists() else 0
+            if not command([sys.executable, '-c', probe], 'Probe '+label, check=False):
+                return
+            with LOG.open('rb') as stream:
+                stream.seek(offset); failure = stream.read().decode('utf-8', errors='replace')
+            missing = re.search("ModuleNotFoundError: No module named [\'\"]([^\'\"]+)[\'\"]", failure)
+            if "cannot import name 'FqnToConfig'" in failure and 'torchao.quantization' in failure:
+                action = 'remove incompatible optional torchao'
+                args = [sys.executable, '-m', 'pip', 'uninstall', '-y', 'torchao']
+            elif missing and missing.group(1).split('.')[0] in mapping:
+                package = mapping[missing.group(1).split('.')[0]]
+                action = 'install missing '+package
+                args = [sys.executable, '-m', 'pip', 'install', package]
+            else:
+                raise RuntimeError(label+' actual import failure; see '+str(LOG))
+            if action in repaired:
+                raise RuntimeError(label+' still fails after '+action+'; see '+str(LOG))
+            repaired.add(action)
+            command(args, action)
+    ensure_imports('import numpy,torch', ['numpy','torch'], 'tensor dependencies')
+    ensure_imports('import accelerate,safetensors,huggingface_hub,transformers,sentencepiece,ftfy; from diffusers import WanPipeline,AutoencoderKLWan',
+        ['diffusers','accelerate','safetensors','huggingface-hub','transformers','sentencepiece','ftfy'], 'Wan pipeline and VAE')
+    import shutil
     if not shutil.which('ffmpeg') or not shutil.which('ffprobe'):
-        command(['apt-get','-qq','update'], 'Prepare codec dependency')
+        command(['apt-get','-qq','update'], 'Prepare media dependency')
         command(['apt-get','-qq','install','-y','ffmpeg'], 'Install FFmpeg')
+    if not shutil.which('ffmpeg') or not shutil.which('ffprobe'):
+        raise RuntimeError('ffmpeg/ffprobe unavailable; see '+str(LOG))
     # Probe the actual new imports in a fresh process rooted at this source.
     import_probe = "from pathlib import Path; import importlib; root=Path.cwd().resolve(); names=['runtime.wan.b_terminal_three_group_v1','runtime.wan.b_terminal_three_group_backend_v1','main.tube_state.b_local_identity_dct_v1','main.tube_state.b_m3_time_path_v1','main.tube_state.b_cdc32_aggregation_v1','runtime.wan.b_cdc32_bundle_v1']; modules=[importlib.import_module(n) for n in names]; assert all(Path(m.__file__).resolve().is_relative_to(root) for m in modules); print(*[m.__file__ for m in modules],sep='\\n')"
     subprocess.run([sys.executable, '-c', import_probe], cwd=SOURCE_ROOT, check=True)
