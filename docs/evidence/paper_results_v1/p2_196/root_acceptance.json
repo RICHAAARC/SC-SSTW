@@ -1,0 +1,65 @@
+{
+  "status": "ACCEPT_WITH_CLAIM_CEILING",
+  "verified_utc": "2026-10-17T05:46:32.821965+00:00",
+  "source_folder_id": "1pQBcfof8-G_udLD1giUD9zCeefePLhuT",
+  "same_run_directory": "../a-line-p2-confirmation-result-20261017/same_run",
+  "fixed_denominator": {
+    "rows": 196,
+    "segments": 784,
+    "planned_bits": 6272,
+    "present_bits": 3968,
+    "structural_missing_bits": 2304,
+    "sources": 4,
+    "related_views_per_source": 8
+  },
+  "candidate": {
+    "read_rows": 32,
+    "planned_attack_rows": 32,
+    "present_bits_correct": 640,
+    "present_bits_total": 640,
+    "unread_bits": 0,
+    "wrong_bits": 0,
+    "false_attribution_bits": 0,
+    "exact_paths": 30,
+    "exact_intervals": 31
+  },
+  "retained_negative_rows": [
+    "distinct_confirm_20261017_02/DELETE_S1/DISTINCT_REF_U",
+    "distinct_confirm_20261017_02/SHORT17_HOLD_MEDIA/DISTINCT_REF_U"
+  ],
+  "centered_comparison": {
+    "new_coverage_bits": 64,
+    "common_bits": 576,
+    "both_common_wrong_bits": 0,
+    "exact_path_gains": 5,
+    "exact_path_losses": 1,
+    "loss_row": "distinct_confirm_20261017_02/SHORT17_HOLD_MEDIA/DISTINCT_REF_U"
+  },
+  "REF_comparison": {
+    "exact_path_gains": 3,
+    "payload_gain": false
+  },
+  "U_path_contribution_over_saved_rowmax": 10,
+  "U_extra_payload_gain_established": false,
+  "physical_reads": 98,
+  "logical_reads": 188,
+  "logical_aliases": 90,
+  "implementation_saved_vote_elements_checked": 1815360,
+  "principal_key_vote_elements_checked": 244800,
+  "independent_review": "ACCEPT_WITH_CLAIM_CEILING",
+  "quality_reference": "Already payload-watermarked NATIVE_PRE; clock/codec increments only; no OFF total writer control",
+  "limits": [
+    "Four sources, correlated views, shared key/payload; no overall generalization/FPR",
+    "Two nonexact paths and one relative-CENTERED regression retained",
+    "No fair isolated component payload comparison or external baseline",
+    "RGB/Y repeat diagnostics not recomputed from large pixel arrays",
+    "Default receiver unchanged; no automatic scientific PASS"
+  ],
+  "new_selector_receiver_FFT_codec_model_GPU_gradient_calls": 0,
+  "commit_push_main_merge": 0,
+  "reports": [
+    "REPORT.md",
+    "A5_RESULT_REVIEW.md"
+  ],
+  "B_card36_continues": true
+}

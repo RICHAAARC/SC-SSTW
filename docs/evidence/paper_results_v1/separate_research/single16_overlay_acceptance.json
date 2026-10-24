@@ -1,0 +1,27 @@
+{
+  "status": "ACCEPT_VERIFIED_SAVED_SINGLE_READ_WITH_CLAIM_CEILING",
+  "principal_report": "/home/richar/projects/Video-WM/diagnostics/a-single-read-result-principal-20261018/REPORT.md",
+  "implementation_review": "/home/richar/projects/Video-WM/diagnostics/a-line-single-read-result-20261018/REVIEW.md",
+  "new_present_bits": 16,
+  "new_wrong_bits": 0,
+  "retained_structural_missing_bits": 16,
+  "verified_new_actual_load_encode_read_each": 1,
+  "principal_new_physical_calls": 0,
+  "RAW_after_overlay": {
+    "planned_bits": 1024,
+    "present_read": 640,
+    "wrong_present_bits": 0,
+    "structural_missing": 384,
+    "exact_paths": "30/32",
+    "exact_intervals": "32/32",
+    "absolute_path_error_sum": 2
+  },
+  "new_two_arm_present_known": 1176,
+  "new_two_arm_present_unknown": 104,
+  "new_independent_confirmation": false,
+  "scientific_pass": false,
+  "no_rerun_required": true,
+  "verified_at": "2026-10-18T00:56:03.024809+08:00",
+  "implementation_new_physical_calls": 0,
+  "default_changed": false
+}

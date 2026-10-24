@@ -1,0 +1,25 @@
+{
+  "status": "SAME_RUN_RESULT_AUDIT_ACCEPTED_WITH_CLAIM_CEILING",
+  "scientific_pass": false,
+  "rows": 36,
+  "segments": 144,
+  "planned_bits": 1152,
+  "structural_missing_bits": 256,
+  "clean_sources_exact": "4/4",
+  "CENTERED_present": "192/192 read;0 errors;0 false attribution",
+  "RAW_present": "144/192 read;0 read errors;48 unread;fullBER null",
+  "UNALIGNED_present": "160/192 read;52 errors;32 unread;32 false attribution;fullBER null",
+  "raw_saved_votes_checked": 36,
+  "raw_saved_plan_and_read_pairs_checked": 36,
+  "blind_plans_before_oracle_or_message_read": 24,
+  "model_or_selector_or_FFT_reexecution": false,
+  "quality_scope": "additional clock and codec relative to payload-bearing NATIVE_PRE, not total writer vs unwatermarked baseline",
+  "fixed_sources_not_new_heldout": true,
+  "claim": "Fixed four-source proof of use for time-dependent fragment assignment, not universal synchronization necessity or publication guarantee",
+  "principal_report": "REPORT.md",
+  "checks": [
+    "root_saved_row_checks.json",
+    "root_saved_vote_plan_checks.json"
+  ],
+  "time": "2026-10-16T12:21:12.971541+00:00"
+}

@@ -1,0 +1,417 @@
+{
+  "schema": "segmented-saved-report-v1",
+  "plan_status": "ADOPTED",
+  "payload_layout": {
+    "segments": 4,
+    "bits_per_segment": 8,
+    "net_bits": 32
+  },
+  "method_reference": "../../../segmented_payload_v1.md",
+  "plan_basis": "Fixed original audited roster; materialized once from explicit four-source/view/arm product. Runtime never infers slots from surviving rows.",
+  "saved_execution_isolation_reference": "root_acceptance.json",
+  "result_bindings": [
+    {
+      "binding_id": "original36",
+      "rows_path": "row_results.json",
+      "summary_path": "summary.json"
+    }
+  ],
+  "slots": [
+    {
+      "slot_id": "independent_20261015_01/CLEAN/ORACLE",
+      "saved_slot_id": "independent_20261015_01/CLEAN/ORACLE",
+      "binding_id": "original36",
+      "source_id": "independent_20261015_01",
+      "arm": "ORACLE",
+      "view": "CLEAN",
+      "information_condition": "ORACLE",
+      "evidence_role": "HISTORICAL_USE_DEMONSTRATION",
+      "message_id": "historical_shared_A6D39C5E"
+    },
+    {
+      "slot_id": "independent_20261015_01/CROP_MID/CENTERED_U",
+      "saved_slot_id": "independent_20261015_01/CROP_MID/CENTERED_U",
+      "binding_id": "original36",
+      "source_id": "independent_20261015_01",
+      "arm": "CENTERED_U",
+      "view": "CROP_MID",
+      "information_condition": "BLIND",
+      "evidence_role": "HISTORICAL_USE_DEMONSTRATION",
+      "message_id": "historical_shared_A6D39C5E"
+    },
+    {
+      "slot_id": "independent_20261015_01/CROP_MID/RAW_U",
+      "saved_slot_id": "independent_20261015_01/CROP_MID/RAW_U",
+      "binding_id": "original36",
+      "source_id": "independent_20261015_01",
+      "arm": "RAW_U",
+      "view": "CROP_MID",
+      "information_condition": "BLIND",
+      "evidence_role": "HISTORICAL_USE_DEMONSTRATION",
+      "message_id": "historical_shared_A6D39C5E"
+    },
+    {
+      "slot_id": "independent_20261015_01/CROP_MID/UNALIGNED",
+      "saved_slot_id": "independent_20261015_01/CROP_MID/UNALIGNED",
+      "binding_id": "original36",
+      "source_id": "independent_20261015_01",
+      "arm": "UNALIGNED",
+      "view": "CROP_MID",
+      "information_condition": "BLIND",
+      "evidence_role": "HISTORICAL_USE_DEMONSTRATION",
+      "message_id": "historical_shared_A6D39C5E"
+    },
+    {
+      "slot_id": "independent_20261015_01/CROP_MID/ORACLE",
+      "saved_slot_id": "independent_20261015_01/CROP_MID/ORACLE",
+      "binding_id": "original36",
+      "source_id": "independent_20261015_01",
+      "arm": "ORACLE",
+      "view": "CROP_MID",
+      "information_condition": "ORACLE",
+      "evidence_role": "HISTORICAL_USE_DEMONSTRATION",
+      "message_id": "historical_shared_A6D39C5E"
+    },
+    {
+      "slot_id": "independent_20261015_01/DELETE_S1/CENTERED_U",
+      "saved_slot_id": "independent_20261015_01/DELETE_S1/CENTERED_U",
+      "binding_id": "original36",
+      "source_id": "independent_20261015_01",
+      "arm": "CENTERED_U",
+      "view": "DELETE_S1",
+      "information_condition": "BLIND",
+      "evidence_role": "HISTORICAL_USE_DEMONSTRATION",
+      "message_id": "historical_shared_A6D39C5E"
+    },
+    {
+      "slot_id": "independent_20261015_01/DELETE_S1/RAW_U",
+      "saved_slot_id": "independent_20261015_01/DELETE_S1/RAW_U",
+      "binding_id": "original36",
+      "source_id": "independent_20261015_01",
+      "arm": "RAW_U",
+      "view": "DELETE_S1",
+      "information_condition": "BLIND",
+      "evidence_role": "HISTORICAL_USE_DEMONSTRATION",
+      "message_id": "historical_shared_A6D39C5E"
+    },
+    {
+      "slot_id": "independent_20261015_01/DELETE_S1/UNALIGNED",
+      "saved_slot_id": "independent_20261015_01/DELETE_S1/UNALIGNED",
+      "binding_id": "original36",
+      "source_id": "independent_20261015_01",
+      "arm": "UNALIGNED",
+      "view": "DELETE_S1",
+      "information_condition": "BLIND",
+      "evidence_role": "HISTORICAL_USE_DEMONSTRATION",
+      "message_id": "historical_shared_A6D39C5E"
+    },
+    {
+      "slot_id": "independent_20261015_01/DELETE_S1/ORACLE",
+      "saved_slot_id": "independent_20261015_01/DELETE_S1/ORACLE",
+      "binding_id": "original36",
+      "source_id": "independent_20261015_01",
+      "arm": "ORACLE",
+      "view": "DELETE_S1",
+      "information_condition": "ORACLE",
+      "evidence_role": "HISTORICAL_USE_DEMONSTRATION",
+      "message_id": "historical_shared_A6D39C5E"
+    },
+    {
+      "slot_id": "independent_20261015_02/CLEAN/ORACLE",
+      "saved_slot_id": "independent_20261015_02/CLEAN/ORACLE",
+      "binding_id": "original36",
+      "source_id": "independent_20261015_02",
+      "arm": "ORACLE",
+      "view": "CLEAN",
+      "information_condition": "ORACLE",
+      "evidence_role": "HISTORICAL_USE_DEMONSTRATION",
+      "message_id": "historical_shared_A6D39C5E"
+    },
+    {
+      "slot_id": "independent_20261015_02/CROP_MID/CENTERED_U",
+      "saved_slot_id": "independent_20261015_02/CROP_MID/CENTERED_U",
+      "binding_id": "original36",
+      "source_id": "independent_20261015_02",
+      "arm": "CENTERED_U",
+      "view": "CROP_MID",
+      "information_condition": "BLIND",
+      "evidence_role": "HISTORICAL_USE_DEMONSTRATION",
+      "message_id": "historical_shared_A6D39C5E"
+    },
+    {
+      "slot_id": "independent_20261015_02/CROP_MID/RAW_U",
+      "saved_slot_id": "independent_20261015_02/CROP_MID/RAW_U",
+      "binding_id": "original36",
+      "source_id": "independent_20261015_02",
+      "arm": "RAW_U",
+      "view": "CROP_MID",
+      "information_condition": "BLIND",
+      "evidence_role": "HISTORICAL_USE_DEMONSTRATION",
+      "message_id": "historical_shared_A6D39C5E"
+    },
+    {
+      "slot_id": "independent_20261015_02/CROP_MID/UNALIGNED",
+      "saved_slot_id": "independent_20261015_02/CROP_MID/UNALIGNED",
+      "binding_id": "original36",
+      "source_id": "independent_20261015_02",
+      "arm": "UNALIGNED",
+      "view": "CROP_MID",
+      "information_condition": "BLIND",
+      "evidence_role": "HISTORICAL_USE_DEMONSTRATION",
+      "message_id": "historical_shared_A6D39C5E"
+    },
+    {
+      "slot_id": "independent_20261015_02/CROP_MID/ORACLE",
+      "saved_slot_id": "independent_20261015_02/CROP_MID/ORACLE",
+      "binding_id": "original36",
+      "source_id": "independent_20261015_02",
+      "arm": "ORACLE",
+      "view": "CROP_MID",
+      "information_condition": "ORACLE",
+      "evidence_role": "HISTORICAL_USE_DEMONSTRATION",
+      "message_id": "historical_shared_A6D39C5E"
+    },
+    {
+      "slot_id": "independent_20261015_02/DELETE_S1/CENTERED_U",
+      "saved_slot_id": "independent_20261015_02/DELETE_S1/CENTERED_U",
+      "binding_id": "original36",
+      "source_id": "independent_20261015_02",
+      "arm": "CENTERED_U",
+      "view": "DELETE_S1",
+      "information_condition": "BLIND",
+      "evidence_role": "HISTORICAL_USE_DEMONSTRATION",
+      "message_id": "historical_shared_A6D39C5E"
+    },
+    {
+      "slot_id": "independent_20261015_02/DELETE_S1/RAW_U",
+      "saved_slot_id": "independent_20261015_02/DELETE_S1/RAW_U",
+      "binding_id": "original36",
+      "source_id": "independent_20261015_02",
+      "arm": "RAW_U",
+      "view": "DELETE_S1",
+      "information_condition": "BLIND",
+      "evidence_role": "HISTORICAL_USE_DEMONSTRATION",
+      "message_id": "historical_shared_A6D39C5E"
+    },
+    {
+      "slot_id": "independent_20261015_02/DELETE_S1/UNALIGNED",
+      "saved_slot_id": "independent_20261015_02/DELETE_S1/UNALIGNED",
+      "binding_id": "original36",
+      "source_id": "independent_20261015_02",
+      "arm": "UNALIGNED",
+      "view": "DELETE_S1",
+      "information_condition": "BLIND",
+      "evidence_role": "HISTORICAL_USE_DEMONSTRATION",
+      "message_id": "historical_shared_A6D39C5E"
+    },
+    {
+      "slot_id": "independent_20261015_02/DELETE_S1/ORACLE",
+      "saved_slot_id": "independent_20261015_02/DELETE_S1/ORACLE",
+      "binding_id": "original36",
+      "source_id": "independent_20261015_02",
+      "arm": "ORACLE",
+      "view": "DELETE_S1",
+      "information_condition": "ORACLE",
+      "evidence_role": "HISTORICAL_USE_DEMONSTRATION",
+      "message_id": "historical_shared_A6D39C5E"
+    },
+    {
+      "slot_id": "independent_20261015_03/CLEAN/ORACLE",
+      "saved_slot_id": "independent_20261015_03/CLEAN/ORACLE",
+      "binding_id": "original36",
+      "source_id": "independent_20261015_03",
+      "arm": "ORACLE",
+      "view": "CLEAN",
+      "information_condition": "ORACLE",
+      "evidence_role": "HISTORICAL_USE_DEMONSTRATION",
+      "message_id": "historical_shared_A6D39C5E"
+    },
+    {
+      "slot_id": "independent_20261015_03/CROP_MID/CENTERED_U",
+      "saved_slot_id": "independent_20261015_03/CROP_MID/CENTERED_U",
+      "binding_id": "original36",
+      "source_id": "independent_20261015_03",
+      "arm": "CENTERED_U",
+      "view": "CROP_MID",
+      "information_condition": "BLIND",
+      "evidence_role": "HISTORICAL_USE_DEMONSTRATION",
+      "message_id": "historical_shared_A6D39C5E"
+    },
+    {
+      "slot_id": "independent_20261015_03/CROP_MID/RAW_U",
+      "saved_slot_id": "independent_20261015_03/CROP_MID/RAW_U",
+      "binding_id": "original36",
+      "source_id": "independent_20261015_03",
+      "arm": "RAW_U",
+      "view": "CROP_MID",
+      "information_condition": "BLIND",
+      "evidence_role": "HISTORICAL_USE_DEMONSTRATION",
+      "message_id": "historical_shared_A6D39C5E"
+    },
+    {
+      "slot_id": "independent_20261015_03/CROP_MID/UNALIGNED",
+      "saved_slot_id": "independent_20261015_03/CROP_MID/UNALIGNED",
+      "binding_id": "original36",
+      "source_id": "independent_20261015_03",
+      "arm": "UNALIGNED",
+      "view": "CROP_MID",
+      "information_condition": "BLIND",
+      "evidence_role": "HISTORICAL_USE_DEMONSTRATION",
+      "message_id": "historical_shared_A6D39C5E"
+    },
+    {
+      "slot_id": "independent_20261015_03/CROP_MID/ORACLE",
+      "saved_slot_id": "independent_20261015_03/CROP_MID/ORACLE",
+      "binding_id": "original36",
+      "source_id": "independent_20261015_03",
+      "arm": "ORACLE",
+      "view": "CROP_MID",
+      "information_condition": "ORACLE",
+      "evidence_role": "HISTORICAL_USE_DEMONSTRATION",
+      "message_id": "historical_shared_A6D39C5E"
+    },
+    {
+      "slot_id": "independent_20261015_03/DELETE_S1/CENTERED_U",
+      "saved_slot_id": "independent_20261015_03/DELETE_S1/CENTERED_U",
+      "binding_id": "original36",
+      "source_id": "independent_20261015_03",
+      "arm": "CENTERED_U",
+      "view": "DELETE_S1",
+      "information_condition": "BLIND",
+      "evidence_role": "HISTORICAL_USE_DEMONSTRATION",
+      "message_id": "historical_shared_A6D39C5E"
+    },
+    {
+      "slot_id": "independent_20261015_03/DELETE_S1/RAW_U",
+      "saved_slot_id": "independent_20261015_03/DELETE_S1/RAW_U",
+      "binding_id": "original36",
+      "source_id": "independent_20261015_03",
+      "arm": "RAW_U",
+      "view": "DELETE_S1",
+      "information_condition": "BLIND",
+      "evidence_role": "HISTORICAL_USE_DEMONSTRATION",
+      "message_id": "historical_shared_A6D39C5E"
+    },
+    {
+      "slot_id": "independent_20261015_03/DELETE_S1/UNALIGNED",
+      "saved_slot_id": "independent_20261015_03/DELETE_S1/UNALIGNED",
+      "binding_id": "original36",
+      "source_id": "independent_20261015_03",
+      "arm": "UNALIGNED",
+      "view": "DELETE_S1",
+      "information_condition": "BLIND",
+      "evidence_role": "HISTORICAL_USE_DEMONSTRATION",
+      "message_id": "historical_shared_A6D39C5E"
+    },
+    {
+      "slot_id": "independent_20261015_03/DELETE_S1/ORACLE",
+      "saved_slot_id": "independent_20261015_03/DELETE_S1/ORACLE",
+      "binding_id": "original36",
+      "source_id": "independent_20261015_03",
+      "arm": "ORACLE",
+      "view": "DELETE_S1",
+      "information_condition": "ORACLE",
+      "evidence_role": "HISTORICAL_USE_DEMONSTRATION",
+      "message_id": "historical_shared_A6D39C5E"
+    },
+    {
+      "slot_id": "independent_20261015_04/CLEAN/ORACLE",
+      "saved_slot_id": "independent_20261015_04/CLEAN/ORACLE",
+      "binding_id": "original36",
+      "source_id": "independent_20261015_04",
+      "arm": "ORACLE",
+      "view": "CLEAN",
+      "information_condition": "ORACLE",
+      "evidence_role": "HISTORICAL_USE_DEMONSTRATION",
+      "message_id": "historical_shared_A6D39C5E"
+    },
+    {
+      "slot_id": "independent_20261015_04/CROP_MID/CENTERED_U",
+      "saved_slot_id": "independent_20261015_04/CROP_MID/CENTERED_U",
+      "binding_id": "original36",
+      "source_id": "independent_20261015_04",
+      "arm": "CENTERED_U",
+      "view": "CROP_MID",
+      "information_condition": "BLIND",
+      "evidence_role": "HISTORICAL_USE_DEMONSTRATION",
+      "message_id": "historical_shared_A6D39C5E"
+    },
+    {
+      "slot_id": "independent_20261015_04/CROP_MID/RAW_U",
+      "saved_slot_id": "independent_20261015_04/CROP_MID/RAW_U",
+      "binding_id": "original36",
+      "source_id": "independent_20261015_04",
+      "arm": "RAW_U",
+      "view": "CROP_MID",
+      "information_condition": "BLIND",
+      "evidence_role": "HISTORICAL_USE_DEMONSTRATION",
+      "message_id": "historical_shared_A6D39C5E"
+    },
+    {
+      "slot_id": "independent_20261015_04/CROP_MID/UNALIGNED",
+      "saved_slot_id": "independent_20261015_04/CROP_MID/UNALIGNED",
+      "binding_id": "original36",
+      "source_id": "independent_20261015_04",
+      "arm": "UNALIGNED",
+      "view": "CROP_MID",
+      "information_condition": "BLIND",
+      "evidence_role": "HISTORICAL_USE_DEMONSTRATION",
+      "message_id": "historical_shared_A6D39C5E"
+    },
+    {
+      "slot_id": "independent_20261015_04/CROP_MID/ORACLE",
+      "saved_slot_id": "independent_20261015_04/CROP_MID/ORACLE",
+      "binding_id": "original36",
+      "source_id": "independent_20261015_04",
+      "arm": "ORACLE",
+      "view": "CROP_MID",
+      "information_condition": "ORACLE",
+      "evidence_role": "HISTORICAL_USE_DEMONSTRATION",
+      "message_id": "historical_shared_A6D39C5E"
+    },
+    {
+      "slot_id": "independent_20261015_04/DELETE_S1/CENTERED_U",
+      "saved_slot_id": "independent_20261015_04/DELETE_S1/CENTERED_U",
+      "binding_id": "original36",
+      "source_id": "independent_20261015_04",
+      "arm": "CENTERED_U",
+      "view": "DELETE_S1",
+      "information_condition": "BLIND",
+      "evidence_role": "HISTORICAL_USE_DEMONSTRATION",
+      "message_id": "historical_shared_A6D39C5E"
+    },
+    {
+      "slot_id": "independent_20261015_04/DELETE_S1/RAW_U",
+      "saved_slot_id": "independent_20261015_04/DELETE_S1/RAW_U",
+      "binding_id": "original36",
+      "source_id": "independent_20261015_04",
+      "arm": "RAW_U",
+      "view": "DELETE_S1",
+      "information_condition": "BLIND",
+      "evidence_role": "HISTORICAL_USE_DEMONSTRATION",
+      "message_id": "historical_shared_A6D39C5E"
+    },
+    {
+      "slot_id": "independent_20261015_04/DELETE_S1/UNALIGNED",
+      "saved_slot_id": "independent_20261015_04/DELETE_S1/UNALIGNED",
+      "binding_id": "original36",
+      "source_id": "independent_20261015_04",
+      "arm": "UNALIGNED",
+      "view": "DELETE_S1",
+      "information_condition": "BLIND",
+      "evidence_role": "HISTORICAL_USE_DEMONSTRATION",
+      "message_id": "historical_shared_A6D39C5E"
+    },
+    {
+      "slot_id": "independent_20261015_04/DELETE_S1/ORACLE",
+      "saved_slot_id": "independent_20261015_04/DELETE_S1/ORACLE",
+      "binding_id": "original36",
+      "source_id": "independent_20261015_04",
+      "arm": "ORACLE",
+      "view": "DELETE_S1",
+      "information_condition": "ORACLE",
+      "evidence_role": "HISTORICAL_USE_DEMONSTRATION",
+      "message_id": "historical_shared_A6D39C5E"
+    }
+  ]
+}

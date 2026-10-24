@@ -1,0 +1,48 @@
+{
+  "status": "ACCEPT_COMPLETE_FIXED_COMPONENT_RESULT_WITH_CLAIM_CEILING",
+  "independent_A3": "ACCEPT_NO_BLOCKER_NO_RERUN",
+  "new_rows": 64,
+  "new_bits": 2048,
+  "present": 1280,
+  "structural_missing": 768,
+  "transforms": 64,
+  "U_calls": 64,
+  "path_positions": 4064,
+  "logical_aliases": 57,
+  "unresolved": 4,
+  "no_saved_read_match": 3,
+  "read_present": 1160,
+  "unread_present": 120,
+  "wrong_read_present": 0,
+  "complete_present_BER": null,
+  "RAW_distinct": {
+    "exact_paths": 30,
+    "exact_intervals": 32,
+    "path_error": 2,
+    "read_present": 624,
+    "unread": 16
+  },
+  "CENTERED_REF": {
+    "exact_paths": 24,
+    "exact_intervals": 27,
+    "resolved_path_error": 31,
+    "unresolved": 4,
+    "read_present": 536,
+    "unread": 104
+  },
+  "full_REF_versus_RAW_distinct": {
+    "identical_complete_paths": 30,
+    "path_gains": 1,
+    "path_regressions": 1,
+    "common_bits": 624,
+    "common_wrong_each": 0,
+    "physical_BER_advantage_established": false
+  },
+  "original196_unchanged": true,
+  "default_changed": false,
+  "new_physical_model_GPU_gradient_calls": 0,
+  "retries": 0,
+  "scientific_pass": false,
+  "recommendation": "Retain DISTINCT_RAW for future validation; discontinue CENTERED_REF. Future fixed unmatched read/independent confirmation require concrete scope, not run now.",
+  "commit_push_merge": false
+}

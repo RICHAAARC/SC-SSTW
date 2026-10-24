@@ -1,5 +1,7 @@
 # SC-SSTW trajectory-sampling video watermark mechanisms
 
+保存证据的独立只读入口见[报告协议](docs/paper_results_v1/evaluation_protocol.md)、[完整结果索引](docs/paper_results_v1/results_index.md)和[被动 native 接口状态](docs/paper_results_v1/baseline_status.md)。`python -m experiments.paper_results_v1.cli --help` 仅依赖 Python 标准库；原36/P2196账及失败完整保留，不新增模型执行或公平 baseline 结论。
+
 > 2026-10-24：已精选整合[公共多步分段载荷](docs/segmented_payload_v1.md)：50步中25..49控制，四段各8位，净32位；只提供给定时间映射及完整支撑下的读取，不包含A/B盲同步研究。已有真实结果沿用原实验分母，本次整合未重跑模型。分支用途见[入口索引](docs/branch_guide.md)。
 >
 > 当前用户规则：源码、配置及环境身份仅供定位，B64/哈希/manifest/Git状态/固定版本不作为运行或交付门禁。下方旧入口中的发布绑定与摘要说明属于历史发布流程；新公共载荷入口直接使用可用源码，不依赖该流程。

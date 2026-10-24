@@ -1,5 +1,10 @@
 # Original-version mechanism evidence
 
+The detachable [saved-table reporter](paper_results_v1/evaluation_protocol.md) and
+[complete segmented evidence index](paper_results_v1/results_index.md) retain the
+original 36-row and P2 196-row ledgers, including failures and unknowns. Their
+integration is saved-evidence collation, not a new run or a new scientific PASS.
+
 These records retain their original source and run scope. The local audit paths identify retained evidence; the compact index includes SHA256. No new main real-model run is claimed.
 
 | Mechanism | Immutable source | Retained local audit |

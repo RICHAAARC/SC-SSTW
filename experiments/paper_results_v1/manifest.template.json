@@ -1,0 +1,9 @@
+{
+  "schema": "segmented-saved-report-v1",
+  "plan_status": "EMPTY_TEMPLATE_NOT_AN_ADOPTED_QUEUE",
+  "payload_layout": {"segments": 4, "bits_per_segment": 8, "net_bits": 32},
+  "method_reference": "docs/segmented_payload_v1.md",
+  "note": "Ordinary evaluation plan, not an integrity manifest. Add only an explicitly adopted denominator. Source/version/hash/expected_top_level metadata are record-only.",
+  "result_bindings": [],
+  "slots": []
+}

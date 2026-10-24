@@ -1,0 +1,308 @@
+{
+  "status": "P2_INDEPENDENT_CONFIRMATION_USER_RUN_RECORD",
+  "planned_rows": 196,
+  "planned_segments": 784,
+  "planned_bits": 6272,
+  "blind_rows": 160,
+  "attack_oracle_rows": 32,
+  "clean_oracle_rows": 4,
+  "independent_sources": 4,
+  "blind_structural_missing_bits": 1920,
+  "attack_oracle_structural_missing_bits": 384,
+  "structural_present_bits": 3968,
+  "structural_missing_bits": 2304,
+  "status_counts": {
+    "READ": 188,
+    "UNRESOLVED": 4,
+    "UNSUPPORTED": 4
+  },
+  "clean_readability": {
+    "distinct_confirm_20261017_01": {
+      "status": "EXACT",
+      "fully_decoded": true,
+      "truth_used_only_for_execution_prerequisite": true
+    },
+    "distinct_confirm_20261017_02": {
+      "status": "EXACT",
+      "fully_decoded": true,
+      "truth_used_only_for_execution_prerequisite": true
+    },
+    "distinct_confirm_20261017_03": {
+      "status": "EXACT",
+      "fully_decoded": true,
+      "truth_used_only_for_execution_prerequisite": true
+    },
+    "distinct_confirm_20261017_04": {
+      "status": "EXACT",
+      "fully_decoded": true,
+      "truth_used_only_for_execution_prerequisite": true
+    }
+  },
+  "by_receiver": {
+    "CLEAN": {
+      "planned_rows": 4,
+      "planned_segments": 16,
+      "planned_bits": 128,
+      "read_rows": 4,
+      "unread_rows": 0,
+      "status_counts": {
+        "READ": 4
+      },
+      "structural_missing_bits": 0,
+      "eligible_planned_bits": 128,
+      "scored_present_bits": 128,
+      "unread_present_bits": 0,
+      "wrong_present_bits": 0,
+      "observed_bit_error_rate": 0.0,
+      "complete_present_denominator_bit_error_rate": 0.0,
+      "false_attribution_bits": 0,
+      "planned_path_rows": 4,
+      "resolved_path_rows": 4,
+      "exact_paths": 4,
+      "exact_intervals": 4,
+      "resolved_absolute_path_error": 0,
+      "fixed_denominator_absolute_path_error": 0
+    },
+    "ATTACK_ORACLE": {
+      "planned_rows": 32,
+      "planned_segments": 128,
+      "planned_bits": 1024,
+      "read_rows": 32,
+      "unread_rows": 0,
+      "status_counts": {
+        "READ": 32
+      },
+      "structural_missing_bits": 384,
+      "eligible_planned_bits": 640,
+      "scored_present_bits": 640,
+      "unread_present_bits": 0,
+      "wrong_present_bits": 0,
+      "observed_bit_error_rate": 0.0,
+      "complete_present_denominator_bit_error_rate": 0.0,
+      "false_attribution_bits": 0,
+      "planned_path_rows": 32,
+      "resolved_path_rows": 32,
+      "exact_paths": 32,
+      "exact_intervals": 32,
+      "resolved_absolute_path_error": 0,
+      "fixed_denominator_absolute_path_error": 0
+    },
+    "RAW_U": {
+      "planned_rows": 32,
+      "planned_segments": 128,
+      "planned_bits": 1024,
+      "read_rows": 28,
+      "unread_rows": 4,
+      "status_counts": {
+        "READ": 28,
+        "UNSUPPORTED": 4
+      },
+      "structural_missing_bits": 384,
+      "eligible_planned_bits": 640,
+      "scored_present_bits": 392,
+      "unread_present_bits": 248,
+      "wrong_present_bits": 0,
+      "observed_bit_error_rate": 0.0,
+      "complete_present_denominator_bit_error_rate": null,
+      "false_attribution_bits": 0,
+      "planned_path_rows": 32,
+      "resolved_path_rows": 32,
+      "exact_paths": 6,
+      "exact_intervals": 16,
+      "resolved_absolute_path_error": 18408,
+      "fixed_denominator_absolute_path_error": 18408
+    },
+    "CENTERED_U": {
+      "planned_rows": 32,
+      "planned_segments": 128,
+      "planned_bits": 1024,
+      "read_rows": 28,
+      "unread_rows": 4,
+      "status_counts": {
+        "READ": 28,
+        "UNRESOLVED": 4
+      },
+      "structural_missing_bits": 384,
+      "eligible_planned_bits": 640,
+      "scored_present_bits": 576,
+      "unread_present_bits": 64,
+      "wrong_present_bits": 0,
+      "observed_bit_error_rate": 0.0,
+      "complete_present_denominator_bit_error_rate": null,
+      "false_attribution_bits": 0,
+      "planned_path_rows": 32,
+      "resolved_path_rows": 28,
+      "exact_paths": 26,
+      "exact_intervals": 28,
+      "resolved_absolute_path_error": 16,
+      "fixed_denominator_absolute_path_error": null
+    },
+    "REF_U": {
+      "planned_rows": 32,
+      "planned_segments": 128,
+      "planned_bits": 1024,
+      "read_rows": 32,
+      "unread_rows": 0,
+      "status_counts": {
+        "READ": 32
+      },
+      "structural_missing_bits": 384,
+      "eligible_planned_bits": 640,
+      "scored_present_bits": 640,
+      "unread_present_bits": 0,
+      "wrong_present_bits": 0,
+      "observed_bit_error_rate": 0.0,
+      "complete_present_denominator_bit_error_rate": 0.0,
+      "false_attribution_bits": 0,
+      "planned_path_rows": 32,
+      "resolved_path_rows": 32,
+      "exact_paths": 27,
+      "exact_intervals": 29,
+      "resolved_absolute_path_error": 53,
+      "fixed_denominator_absolute_path_error": 53
+    },
+    "DISTINCT_REF_U": {
+      "planned_rows": 32,
+      "planned_segments": 128,
+      "planned_bits": 1024,
+      "read_rows": 32,
+      "unread_rows": 0,
+      "status_counts": {
+        "READ": 32
+      },
+      "structural_missing_bits": 384,
+      "eligible_planned_bits": 640,
+      "scored_present_bits": 640,
+      "unread_present_bits": 0,
+      "wrong_present_bits": 0,
+      "observed_bit_error_rate": 0.0,
+      "complete_present_denominator_bit_error_rate": 0.0,
+      "false_attribution_bits": 0,
+      "planned_path_rows": 32,
+      "resolved_path_rows": 32,
+      "exact_paths": 30,
+      "exact_intervals": 31,
+      "resolved_absolute_path_error": 22,
+      "fixed_denominator_absolute_path_error": 22
+    },
+    "UNALIGNED": {
+      "planned_rows": 32,
+      "planned_segments": 128,
+      "planned_bits": 1024,
+      "read_rows": 32,
+      "unread_rows": 0,
+      "status_counts": {
+        "READ": 32
+      },
+      "structural_missing_bits": 384,
+      "eligible_planned_bits": 640,
+      "scored_present_bits": 448,
+      "unread_present_bits": 192,
+      "wrong_present_bits": 169,
+      "observed_bit_error_rate": 0.37723214285714285,
+      "complete_present_denominator_bit_error_rate": null,
+      "false_attribution_bits": 32,
+      "planned_path_rows": 32,
+      "resolved_path_rows": 32,
+      "exact_paths": 0,
+      "exact_intervals": 0,
+      "resolved_absolute_path_error": 68324,
+      "fixed_denominator_absolute_path_error": 68324
+    }
+  },
+  "physical_attempts": {
+    "generation_load": 4,
+    "trajectory": 4,
+    "native_decode": 4,
+    "framewise_encode": 16,
+    "clock_write": 4,
+    "residual": 4,
+    "framewise_decode": 8,
+    "codec": 12,
+    "selector": 128,
+    "wan_encode": 98,
+    "segment_read": 98,
+    "wan_decode_load": 1,
+    "framewise_load": 1,
+    "wan_reader_load": 1
+  },
+  "physical_limits": {
+    "generation_load": 4,
+    "trajectory": 4,
+    "native_decode": 4,
+    "framewise_encode": 16,
+    "clock_write": 4,
+    "residual": 4,
+    "framewise_decode": 8,
+    "codec": 12,
+    "selector": 128,
+    "wan_encode": 196,
+    "segment_read": 196,
+    "wan_decode_load": 1,
+    "framewise_load": 1,
+    "wan_reader_load": 1
+  },
+  "physical_calls": {
+    "transformer_conditional": {
+      "started": 200,
+      "returned": 200
+    },
+    "transformer_unconditional": {
+      "started": 200,
+      "returned": 200
+    },
+    "native_step": {
+      "started": 200,
+      "returned": 200
+    },
+    "payload_gradient": {
+      "started": 100,
+      "returned": 100
+    },
+    "framewise_encode_batch": {
+      "started": 216,
+      "returned": 216
+    },
+    "framewise_decode_batch": {
+      "started": 184,
+      "returned": 184
+    },
+    "mp4_save": {
+      "started": 12,
+      "returned": 12
+    },
+    "mp4_probe": {
+      "started": 12,
+      "returned": 12
+    },
+    "mp4_readback": {
+      "started": 12,
+      "returned": 12
+    }
+  },
+  "physical_call_limits": {
+    "transformer_conditional": 200,
+    "transformer_unconditional": 200,
+    "native_step": 200,
+    "payload_gradient": 100,
+    "framewise_encode_batch": 216,
+    "framewise_decode_batch": 184,
+    "mp4_save": 12,
+    "mp4_probe": 12,
+    "mp4_readback": 12
+  },
+  "exact_input_aliases": 90,
+  "setup_requirements": {
+    "wan_full": false,
+    "wan_vae": false,
+    "framewise": false,
+    "ffmpeg": false,
+    "torch": false
+  },
+  "claim_ceiling": "Fixed four prelisted new sources, no replacement or tuning. Retain missing/blocked rows, related views, logical aliases and structure; no automatic scientific PASS or DP payload claim.",
+  "selector_rows": 128,
+  "path_positions": 8128,
+  "path_positions_per_arm": 2032,
+  "default_receiver": "CENTERED_U",
+  "read_alias_rows": 90
+}

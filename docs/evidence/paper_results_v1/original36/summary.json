@@ -1,0 +1,217 @@
+{
+  "status": "SEGMENTED_PAYLOAD_USER_RUN_RECORD",
+  "planned_rows": 36,
+  "planned_segments": 144,
+  "planned_bits": 1152,
+  "blind_rows": 24,
+  "attack_oracle_rows": 8,
+  "clean_oracle_rows": 4,
+  "independent_sources": 4,
+  "blind_structural_missing_bits": 192,
+  "attack_oracle_structural_missing_bits": 64,
+  "status_counts": {
+    "READ": 36
+  },
+  "clean_readability": {
+    "independent_20261015_01": {
+      "status": "EXACT",
+      "fully_decoded": true,
+      "truth_used_only_for_execution_prerequisite": true
+    },
+    "independent_20261015_02": {
+      "status": "EXACT",
+      "fully_decoded": true,
+      "truth_used_only_for_execution_prerequisite": true
+    },
+    "independent_20261015_03": {
+      "status": "EXACT",
+      "fully_decoded": true,
+      "truth_used_only_for_execution_prerequisite": true
+    },
+    "independent_20261015_04": {
+      "status": "EXACT",
+      "fully_decoded": true,
+      "truth_used_only_for_execution_prerequisite": true
+    }
+  },
+  "by_receiver": {
+    "CLEAN": {
+      "planned_rows": 4,
+      "planned_segments": 16,
+      "planned_bits": 128,
+      "read_rows": 4,
+      "unread_rows": 0,
+      "status_counts": {
+        "READ": 4
+      },
+      "structural_missing_bits": 0,
+      "eligible_planned_bits": 128,
+      "scored_present_bits": 128,
+      "unread_present_bits": 0,
+      "wrong_present_bits": 0,
+      "observed_bit_error_rate": 0.0,
+      "complete_present_denominator_bit_error_rate": 0.0,
+      "false_attribution_bits": 0
+    },
+    "ATTACK_ORACLE": {
+      "planned_rows": 8,
+      "planned_segments": 32,
+      "planned_bits": 256,
+      "read_rows": 8,
+      "unread_rows": 0,
+      "status_counts": {
+        "READ": 8
+      },
+      "structural_missing_bits": 64,
+      "eligible_planned_bits": 192,
+      "scored_present_bits": 192,
+      "unread_present_bits": 0,
+      "wrong_present_bits": 0,
+      "observed_bit_error_rate": 0.0,
+      "complete_present_denominator_bit_error_rate": 0.0,
+      "false_attribution_bits": 0
+    },
+    "CENTERED_U": {
+      "planned_rows": 8,
+      "planned_segments": 32,
+      "planned_bits": 256,
+      "read_rows": 8,
+      "unread_rows": 0,
+      "status_counts": {
+        "READ": 8
+      },
+      "structural_missing_bits": 64,
+      "eligible_planned_bits": 192,
+      "scored_present_bits": 192,
+      "unread_present_bits": 0,
+      "wrong_present_bits": 0,
+      "observed_bit_error_rate": 0.0,
+      "complete_present_denominator_bit_error_rate": 0.0,
+      "false_attribution_bits": 0
+    },
+    "RAW_U": {
+      "planned_rows": 8,
+      "planned_segments": 32,
+      "planned_bits": 256,
+      "read_rows": 8,
+      "unread_rows": 0,
+      "status_counts": {
+        "READ": 8
+      },
+      "structural_missing_bits": 64,
+      "eligible_planned_bits": 192,
+      "scored_present_bits": 144,
+      "unread_present_bits": 48,
+      "wrong_present_bits": 0,
+      "observed_bit_error_rate": 0.0,
+      "complete_present_denominator_bit_error_rate": null,
+      "false_attribution_bits": 0
+    },
+    "UNALIGNED": {
+      "planned_rows": 8,
+      "planned_segments": 32,
+      "planned_bits": 256,
+      "read_rows": 8,
+      "unread_rows": 0,
+      "status_counts": {
+        "READ": 8
+      },
+      "structural_missing_bits": 64,
+      "eligible_planned_bits": 192,
+      "scored_present_bits": 160,
+      "unread_present_bits": 32,
+      "wrong_present_bits": 52,
+      "observed_bit_error_rate": 0.325,
+      "complete_present_denominator_bit_error_rate": null,
+      "false_attribution_bits": 32
+    }
+  },
+  "physical_attempts": {
+    "generation_load": 4,
+    "trajectory": 4,
+    "native_decode": 4,
+    "framewise_encode": 8,
+    "clock_write": 4,
+    "framewise_decode": 8,
+    "codec": 4,
+    "selector": 16,
+    "wan_encode": 28,
+    "segment_read": 36,
+    "wan_decode_load": 1,
+    "framewise_load": 1,
+    "wan_reader_load": 1
+  },
+  "physical_limits": {
+    "generation_load": 4,
+    "trajectory": 4,
+    "native_decode": 4,
+    "framewise_encode": 8,
+    "clock_write": 4,
+    "framewise_decode": 8,
+    "codec": 4,
+    "selector": 16,
+    "wan_encode": 36,
+    "segment_read": 36,
+    "wan_decode_load": 2,
+    "framewise_load": 2,
+    "wan_reader_load": 2
+  },
+  "physical_calls": {
+    "transformer_conditional": {
+      "started": 200,
+      "returned": 200
+    },
+    "transformer_unconditional": {
+      "started": 200,
+      "returned": 200
+    },
+    "native_step": {
+      "started": 200,
+      "returned": 200
+    },
+    "payload_gradient": {
+      "started": 100,
+      "returned": 100
+    },
+    "framewise_encode_batch": {
+      "started": 184,
+      "returned": 184
+    },
+    "framewise_decode_batch": {
+      "started": 184,
+      "returned": 184
+    },
+    "mp4_save": {
+      "started": 4,
+      "returned": 4
+    },
+    "mp4_probe": {
+      "started": 4,
+      "returned": 4
+    },
+    "mp4_readback": {
+      "started": 4,
+      "returned": 4
+    }
+  },
+  "physical_call_limits": {
+    "transformer_conditional": 200,
+    "transformer_unconditional": 200,
+    "native_step": 200,
+    "payload_gradient": 100,
+    "framewise_encode_batch": 184,
+    "framewise_decode_batch": 184,
+    "mp4_save": 4,
+    "mp4_probe": 4,
+    "mp4_readback": 4
+  },
+  "exact_input_aliases": 8,
+  "setup_requirements": {
+    "wan_full": false,
+    "wan_vae": false,
+    "framewise": false,
+    "ffmpeg": false,
+    "torch": false
+  },
+  "claim_ceiling": "Fixed four-source use demonstration. Missing true segments cannot be recovered; false blind claims are attribution errors. Nominal Wan-time grouping is not a proof of VAE temporal locality. No tuning or scientific PASS."
+}

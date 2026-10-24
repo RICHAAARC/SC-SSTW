@@ -1,0 +1,63 @@
+{
+  "selection": "Complete already-audited saved JSON; no source/algorithm execution. Paths and versions are optional locators.",
+  "runs": [
+    {
+      "id": "original36",
+      "rows": 36,
+      "source_directory": "/home/richar/projects/Video-WM/diagnostics/a-segmented-payload-result-principal-audit-20261016",
+      "plan": "./original36/protocol.json",
+      "original_rows": "./original36/row_results.json",
+      "original_summary": "./original36/summary.json",
+      "acceptance": "./original36/root_acceptance.json",
+      "expected_rows": 36,
+      "evidence_role": "HISTORICAL_USE_DEMONSTRATION",
+      "independent_source_claim": "4 from historical saved audit; labels/aliases/views not independent messages",
+      "net_message_count": 1,
+      "current_public_main_real_run": false
+    },
+    {
+      "id": "p2_196",
+      "rows": 196,
+      "source_directory": "/home/richar/projects/Video-WM/diagnostics/a-line-p2-confirmation-result-20261017/same_run",
+      "plan": "./p2_196/protocol.json",
+      "original_rows": "./p2_196/row_results.json",
+      "original_summary": "./p2_196/summary.json",
+      "acceptance": "./p2_196/root_acceptance.json",
+      "expected_rows": 196,
+      "evidence_role": "ORIGINAL_PROTOCOL_CONFIRMATION_SEEN_FOR_LATER_DEVELOPMENT",
+      "independent_source_claim": "4 from historical saved audit; labels/aliases/views not independent messages",
+      "net_message_count": 1,
+      "current_public_main_real_run": false
+    }
+  ],
+  "separate_research_records": [
+    {
+      "id": "posthoc64",
+      "acceptance": "separate_research/posthoc64_acceptance.json",
+      "original_acceptance": "/home/richar/projects/Video-WM/diagnostics/a-p2-component-cpu-principal-review-20261017/root_acceptance.json",
+      "role": "POSTHOC_DEVELOPMENT_NOT_NEW_INDEPENDENT_CONFIRMATION",
+      "included_in_original196_denominator": false
+    },
+    {
+      "id": "single16_overlay",
+      "acceptance": "separate_research/single16_overlay_acceptance.json",
+      "original_acceptance": "/home/richar/projects/Video-WM/diagnostics/a-single-read-result-principal-20261018/root_acceptance.json",
+      "role": "POSTHOC_DEVELOPMENT_NOT_NEW_INDEPENDENT_CONFIRMATION",
+      "included_in_original196_denominator": false,
+      "original_single_row_artifacts": [
+        "/home/richar/projects/Video-WM/diagnostics/a-line-single-read-result-20261018/same_run/summary.json",
+        "/home/richar/projects/Video-WM/diagnostics/a-line-single-read-result-20261018/same_run/row_result.json",
+        "/home/richar/projects/Video-WM/diagnostics/a-line-single-read-result-20261018/same_run/overlay.json"
+      ]
+    }
+  ],
+  "quality": {
+    "total_segmented_writer_vs_same_source_OFF": "UNKNOWN_NOT_MEASURED",
+    "reference": "NATIVE_PRE already contains payload",
+    "additional_clock": "PRE relative to payload-bearing NATIVE_PRE",
+    "clock_and_codec": "POST relative to payload-bearing NATIVE_PRE",
+    "codec_only": "requires matched same-content PRE/POST; do not subtract dB to claim causal decomposition",
+    "old_repeated_payload_quality": "different task/sources; not P2 segmented total quality"
+  },
+  "current_same_source_P2_external_baseline": "UNKNOWN_NO_VALID_COMPARISON"
+}
