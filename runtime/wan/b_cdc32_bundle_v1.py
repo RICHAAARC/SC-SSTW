@@ -65,8 +65,8 @@ def prepare_bundle(fragments):
     if len(fragments) != 2 or any(not isinstance(f, RawFragment) for f in fragments):
         raise ValueError("exactly two RawFragment envelopes required")
     namespace = uuid.uuid4().hex
-    view_names, evidence_names, access = {}, {}, {}
-    locals_ = []
+    view_names, evidence_names, access, owners = {}, {}, {}, {}
+    staged = []
     for index, fragment in enumerate(fragments):
         prepared = fragment.prepared_local
         old_w = prepared.get("received_query_start", 0)
@@ -79,10 +79,19 @@ def prepare_bundle(fragments):
         for field in ("score_complete", "completeness", "threshold_status", "upstream_status"):
             if field in prepared:
                 local[field] = deepcopy(prepared[field])
+        failures = method.local_failure_metadata(prepared)
+        for field in ("cause_set", "upstream_status", "score_status", "threshold_status", "missing_members",
+                      "unexpected_members", "submitted_member_count"):
+            if field in failures:
+                local[field] = failures[field]
         # Only local state rows cross the boundary; C/D are validated by planner.
         for raw in prepared.get("members", prepared.get("candidates", [])):
             row = {k: deepcopy(raw[k]) for k in ("phase", "source_start", "S", "score_status", "in_C",
                                                  "query_source_origin_hypothesis") if k in raw}
+            row_failures = method.local_failure_metadata(raw)
+            for field in ("cause_set", "upstream_score_status"):
+                if field in row_failures:
+                    row[field] = row_failures[field]
             if "local_received_to_source_map" in raw:
                 original = raw["local_received_to_source_map"]
                 if isinstance(original, dict):
@@ -112,7 +121,8 @@ def prepare_bundle(fragments):
                 context = None
             view = dict(view_id=view_names[old_view], input_id=local["input_id"], query_id=local["query_id"],
                         phase=p, received_query_start=0, encoder_input_support=[x-old_w for x in support],
-                        encoder_context=context, status=original.get("status", "RETURNED"), units={})
+                        encoder_context=context, status=original.get("status"),
+                        cause_set=method.local_failure_metadata(original)["cause_set"], units={})
             for r in range(1, 11):
                 view["units"][str(r)] = {}
                 for region in method.REGIONS:
@@ -122,13 +132,28 @@ def prepare_bundle(fragments):
                         new_eid = f"{namespace}/e{len(evidence_names)}"
                         evidence_names[old_eid] = new_eid
                         access[new_eid] = (fragment.cache, old_eid)
+                    new_eid = evidence_names[old_eid]
+                    owner = (view_names[old_view], r, unit.get("observed_region_id", region))
+                    owners.setdefault(new_eid, set()).add(owner)
                     view["units"][str(r)][region] = dict(
-                        evidence_id=evidence_names[old_eid], observed_region_id=unit.get("observed_region_id", region),
+                        evidence_id=new_eid, observed_region_id=unit.get("observed_region_id", region),
                         carrier_region_id=unit.get("carrier_region_id", region),
                         diagnostic_only=bool(unit.get("diagnostic_only", False)),
-                        status=unit.get("status", original.get("status", "RETURNED")))
+                        cause_set=method.local_failure_metadata(unit)["cause_set"],
+                        status=unit.get("status", original.get("status")) if original.get("status") == "RETURNED" else original.get("status"))
             views.append(view)
-        locals_.append(method.plan_local(local, views))
+        staged.append((local, views))
+    conflicting = {eid for eid, locations in owners.items() if len(locations) > 1}
+    for eid in conflicting:
+        access.pop(eid, None)  # Never bind an ambiguous physical unit to the first cache.
+    for _, views in staged:
+        for view in views:
+            for units in view["units"].values():
+                for unit in units.values():
+                    if unit["evidence_id"] in conflicting:
+                        unit["status"] = "UNRESOLVED_EVIDENCE_OWNERSHIP"
+                        unit["cause_set"] = sorted(set(unit["cause_set"] + ["UNRESOLVED_EVIDENCE_OWNERSHIP"]))
+    locals_ = method.reconcile_plans([method.plan_local(local, views) for local, views in staged], ownership_only=True)
     plan = dict(source_relations=["SEPARATE", "JOIN_CONDITIONAL"],
                 required_assumptions=["same source for conditional JOIN only", "common key/carrier/clock/group semantics"],
                 path_context="NOT_APPLICABLE_FRAGMENT_PAIR", source_authenticated=False,

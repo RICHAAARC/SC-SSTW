@@ -29,6 +29,11 @@ encoder_context. Missing/failed views keep their planned references. Optional
 carrier_region_id, status and diagnostic_only. Without an explicit unit ID,
 use the exported `evidence_id(view_id,row,region)` when wrapping B1 bits.
 Rc/renamed regions are never admissible production references.
+An explicit failed view cannot be overridden by a RETURNED unit. An explicit
+failed family remains unresolved even if stale numeric scores remain present.
+Local B2 member causes/upstream statuses and family missing/unexpected-member
+records retain their phase/source_start or anonymous index in saved plans and
+slot failure_details. Arbitrary parent metadata/error text is not copied.
 
 The planner returns fixed four `groups`, 137 members, complete C, all under-h
 nominal row/source-cell support, and no payload values. `references` retain
@@ -36,6 +41,11 @@ all candidate/replica relations; duplicate physical addresses are consumed
 only once. Call `reconcile_plans(plans)` for a source hypothesis before saving
 the plans to mark cross-query contradictory evidence-to-cell assignments.
 Within-query contradictions are checked by plan_local itself.
+The same evidence ID must refer to the same actual view, local row and observed
+region. Contradictory ownership marks every affected reference/group unresolved
+before bit access. Bundle adaptation performs this check before assigning a
+lazy cache reader, including for SEP outputs; genuine aliases retain one ID
+even when their cache wrapper objects differ.
 
 `read_local(plan, cache, memo=None)` reads a saved/read-back plan. Cache is
 `cache[evidence_id][key_id][str(bit)] -> {value, status, count=8, ...}` or a
@@ -43,6 +53,8 @@ callable `(evidence_id,key_id,bit) -> same record`. AVAILABLE/RETURNED/READ are
 accepted cache statuses; 0/1 must be integer, not bool. Cache access exceptions
 become technical failures at their original slots. A shared memo deduplicates
 addresses across logical reads; it never reruns B1 Counter.
+The record must explicitly supply status and integer count=8. Missing/invalid
+fields or diagnostic_only caches are technical failures, never implicit success.
 
 `aggregate(local_decisions, source_relation, path_context=...)` implements
 CDC conflict veto and partial-evidence behavior. `union_reference` uses the
@@ -52,6 +64,11 @@ source_authenticated is always false. Counts use planned=returned+failed+
 not_entered; returned means a decision was formed, not a bit was recovered.
 Use recovered_slot_count for message coverage. Per-query records, cause sets,
 source-position buckets and overlap dependencies remain inspectable.
+canonical_cells_under_h counts only valid local parts supporting a recovered
+output value. planned_canonical_cells_under_h separately retains all planned
+cells, including failed ones. Position buckets retain each query's own local
+status, missing refs and candidate IDs, alongside the aggregate status; a
+PARTIAL_EVIDENCE_READ does not relabel another query's failed cell as recovered.
 
 `plan_comparisons({'L':planL,'M':planM,'R':planR})` constructs CDC_E, CDC_M,
 UNION_M, ALIAS_M_X10 and REVERSE_ORDER without bits. The common runtime saves
@@ -103,7 +120,8 @@ Targeted command (environment is a location record, not a version gate):
 PYTHONPATH=.:tests /home/richar/projects/Video-WM/diagnostics/trajectory-main-integration-20261007/validation-venv/bin/python -m pytest -q tests/test_b_cdc32_aggregation_v1.py tests/test_b_cdc32_bundle_v1.py
 ```
 
-The targeted suite passed 20 tests. Checks cover full-C earliest support, strict equality rejection, incomplete
+The initial implementation suite passed 20 tests before implementation review.
+Those checks cover full-C earliest support, strict equality rejection, incomplete
 families, two-region conflict plus missingness, partial recovery, mapping
 conflicts, mixed/partial/absent/unobserved distinctions, alias/reverse
 invariance, cache-access deduplication, per-bundle privacy/order and all72
@@ -113,6 +131,23 @@ plan_local check also passed after B2 adopted the45-integer map representation
 votes/path/media was replayed. One fixture expectation was corrected: origin3
 still contains three frames of cell12, so structural absence starts at cell13.
 This was a test-case geometry correction, not a change to the method.
+
+The R1–R4 repair was checked with only the added affected cases and the existing
+alias/reverse and normal bundle-order checks:
+
+```text
+PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=.:tests /home/richar/projects/Video-WM/diagnostics/trajectory-main-integration-20261007/validation-venv/bin/python -m pytest -q -p no:cacheprovider tests/test_b_cdc32_aggregation_v1.py tests/test_b_cdc32_bundle_v1.py -k "review_r or alias_x10_and_reverse or bundle_plan_before_first_cache"
+```
+
+Result: 20 passed, 18 deselected. These artificial CPU records cover explicit
+cache fields/AVAILABLE, failed parent precedence, diagnostic cache rejection,
+partial recovery without failed-cell inflation, conflicting physical ownership,
+true alias reuse across distinct cache objects, and persisted B2 local failure
+causes/positions without private parent data. No model or saved science was run.
+A separate artificial interface probe used B2's actual prepare_local: the
+normal p3/s6 family still selected [6,12,None,None], while a missing member plus
+an out-of-domain extra retained B2's member causes and anonymous extra position
+through bundle planning and JSON roundtrip. This probe consumed no bit cache.
 
 Only the listed B3 files are authored here. Shared __init__, original B tree,
 other group modules, public design files and common delivery entrypoints are

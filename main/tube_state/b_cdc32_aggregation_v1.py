@@ -11,7 +11,9 @@ H = tuple((p, s) for p in range(4) for s in range(1 if p == 0 else 2, 36))
 REGIONS = ("R0", "R1")
 REGION_SLICES = {"R0": [8, 24, 8, 24], "R1": [8, 24, 40, 56]}
 TECHNICAL = {"TECHNICAL_UNRESOLVED", "UNRESOLVED_MAPPING", "UNRESOLVED_MAPPING_CONFLICT",
-             "TECHNICAL_CACHE", "NOT_ENTERED", "UNSUPPORTED", "MISSING_VIEW", "CALIBRATION_UNRESOLVED"}
+             "UNRESOLVED_EVIDENCE_OWNERSHIP", "TECHNICAL_CACHE", "NOT_ENTERED", "UNSUPPORTED",
+             "MISSING_VIEW", "CALIBRATION_UNRESOLVED"}
+FAMILY_AVAILABLE = {None, "READY", "DETECTED_PROVISIONAL", "LOCAL_GATE_REJECT", "REJECT_SYNC", "SCORES_COMPLETE"}
 
 
 def _finite(value):
@@ -32,20 +34,64 @@ def _candidate_id(row):
     return f"p{row['phase']}:s{row['source_start']}"
 
 
+def _code(value):
+    """Only structured local status/reason codes, never arbitrary error text."""
+    if value is None:
+        return None
+    if isinstance(value, str) and value and all(c in "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_:" for c in value):
+        return value
+    return "UNSTRUCTURED_LOCAL_STATUS"
+
+
+def _causes(value):
+    if not isinstance(value, (list, tuple)):
+        return [] if value is None else ["INVALID_CAUSE_SET"]
+    return sorted({_code(x) for x in value if x is not None})
+
+
+def local_failure_metadata(prepared):
+    """Narrow B2 failure allowlist, usable before/after opaque bundle rebasing."""
+    result = {k: _code(prepared[k]) for k in ("upstream_status", "upstream_score_status", "score_status", "threshold_status") if k in prepared}
+    result["family_status"] = _code(prepared.get("status"))
+    result["cause_set"] = _causes(prepared.get("cause_set"))
+    for name in ("missing_members", "unexpected_members"):
+        records = prepared.get(name, [])
+        output = []
+        for item in records if isinstance(records, (list, tuple)) else []:
+            if not isinstance(item, dict):
+                output.append(dict(reason="INVALID_LOCAL_FAILURE_RECORD"))
+                continue
+            row = {k: item[k] for k in ("phase", "source_start", "index") if type(item.get(k)) is int}
+            if "cause_set" in item:
+                row["cause_set"] = _causes(item["cause_set"])
+            for k in ("reason", "score_status", "upstream_score_status"):
+                if k in item:
+                    row[k] = _code(item[k])
+            output.append(row)
+        result[name] = output
+    if type(prepared.get("submitted_member_count")) is int:
+        result["submitted_member_count"] = prepared["submitted_member_count"]
+    return result
+
+
 def _family(prepared):
     members = prepared.get("members", prepared.get("candidates", []))
     valid = (isinstance(members, list) and
              all(isinstance(r, dict) for r in members) and
              [(r.get("phase"), r.get("source_start")) for r in members] == list(H) and
              all(r.get("score_status") == "RETURNED" and _finite(r.get("S")) and
-                 0 <= r["S"] <= 1 for r in members))
+                 0 <= r["S"] <= 1 and not _causes(r.get("cause_set")) and
+                 r.get("upstream_score_status", "RETURNED") == "RETURNED" for r in members))
     tau = prepared.get("tau")
     threshold = prepared.get("threshold", {})
     if tau is None and isinstance(threshold, dict):
         tau = threshold.get("tau")
     valid = (valid and _finite(tau) and 0 <= tau <= 1 and prepared.get("score_complete") is not False and
              prepared.get("completeness", "COMPLETE") == "COMPLETE" and
-             prepared.get("threshold_status", "FROZEN") == "FROZEN")
+             prepared.get("threshold_status", "FROZEN") == "FROZEN" and
+             prepared.get("status") in FAMILY_AVAILABLE and not _causes(prepared.get("cause_set")) and
+             prepared.get("score_status") in (None, "SCORES_COMPLETE") and
+             prepared.get("upstream_status") in (None, "SCORES_COMPLETE"))
     c = [r for r in members if r["S"] >= tau] if valid else []
     maximum = max(r["S"] for r in members) if valid else None
     detected = bool(valid and maximum > tau)
@@ -140,7 +186,9 @@ def _reference(view, p, row, region, h, t, w):
     view_id = view.get("view_id")
     unit = view.get("units", {}).get(str(row), {}).get(region, {})
     eid = unit.get("evidence_id", evidence_id(view_id, row, region))
-    status = unit.get("status", view.get("status", "RETURNED"))
+    view_status = view.get("status")
+    status = unit.get("status", view_status) if view_status == "RETURNED" else view_status
+    status = status if isinstance(status, str) else "TECHNICAL_UNRESOLVED"
     observed = unit.get("observed_region_id", region)
     carrier = unit.get("carrier_region_id", region)
     support = view.get("encoder_input_support", list(range(w+p, w+p+41)))
@@ -153,6 +201,8 @@ def _reference(view, p, row, region, h, t, w):
     return dict(candidate_id=_candidate_id(h), phase=p, local_row=row,
                 observed_region_id=observed, carrier_region_id=carrier, canonical_cell=t,
                 evidence_id=eid, view_id=view_id, status=status,
+                view_status=_code(view_status), unit_status=_code(unit.get("status")),
+                cause_set=_causes(view.get("cause_set")) + _causes(unit.get("cause_set")),
                 nominal_received_cell=received, encoder_input_support=deepcopy(support),
                 encoder_context=deepcopy(view.get("encoder_context")),
                 region_slice=deepcopy(REGION_SLICES[region]))
@@ -173,6 +223,17 @@ def plan_local(prepared_local, views, required_regions=REGIONS):
     if type(w) is not int or w < 0:
         raise ValueError("nonnegative received query start required")
     members, c, maximum, tau, detected, status = _family(prepared_local)
+    failures = local_failure_metadata(prepared_local)
+    failures["member_failures"] = []
+    for member in members if isinstance(members, list) else []:
+        if isinstance(member, dict) and (member.get("score_status") != "RETURNED" or
+                                        _causes(member.get("cause_set")) or
+                                        member.get("upstream_score_status", "RETURNED") != "RETURNED"):
+            failures["member_failures"].append(dict(
+                **{k: member[k] for k in ("phase", "source_start") if type(member.get(k)) is int},
+                score_status=_code(member.get("score_status")),
+                upstream_score_status=_code(member.get("upstream_score_status")),
+                cause_set=_causes(member.get("cause_set"))))
     table = _view_table(views)
     geometries = [_geometry(h, w) for h in c]
     presence = [_presence(h, w, geometry[0]) for h, geometry in zip(c, geometries)]
@@ -193,7 +254,26 @@ def plan_local(prepared_local, views, required_regions=REGIONS):
                     ref = _reference(table.get(h["phase"]), h["phase"], row, region, h, selected, w)
                     ref["input_id"] = prepared_local.get("input_id")
                     refs.append(ref)
+        if any(ref["status"] == "UNRESOLVED_EVIDENCE_OWNERSHIP" for ref in refs):
+            reason = "UNRESOLVED_EVIDENCE_OWNERSHIP"
         causes = [] if reason == "READY" else [reason]
+        if status != "READY":
+            causes.extend(failures["cause_set"])
+            for name in ("missing_members", "unexpected_members"):
+                for record in failures[name]:
+                    causes.extend(record.get("cause_set", []))
+                    if record.get("reason") is not None:
+                        causes.append(record["reason"])
+            for member in failures["member_failures"]:
+                causes.extend(member["cause_set"])
+                if member["upstream_score_status"] is not None:
+                    causes.append("UPSTREAM:" + member["upstream_score_status"])
+            if failures.get("family_status") not in FAMILY_AVAILABLE:
+                causes.append("FAMILY:" + failures["family_status"])
+            for field, available in (("score_status", "SCORES_COMPLETE"), ("upstream_status", "SCORES_COMPLETE"),
+                                     ("threshold_status", "FROZEN")):
+                if failures.get(field) not in (None, available):
+                    causes.append(field.upper() + ":" + failures[field])
         if reason == "NO_COMMON_FULL_CELL":
             for entries in presence:
                 states = {entry["status"] for entry in entries[11*g:11*g+11]}
@@ -208,17 +288,21 @@ def plan_local(prepared_local, views, required_regions=REGIONS):
         groups.append(dict(query_id=prepared_local.get("query_id"), group=g,
                            selected_canonical_cell=selected, common_cells=common,
                            required_replica_ids=list(regions), references=_unique(refs), status=reason,
-                           cause_set=sorted(set(causes))))
+                           cause_set=sorted(set(causes)), failure_details=deepcopy(failures)))
     # Copy only semantic fields. Arbitrary metadata/truth/payload never enters a plan.
     safe_rows = members if isinstance(members, list) and len(members) == 137 and all(isinstance(r, dict) for r in members) else [{}]*137
     safe_members = [dict(phase=p, source_start=s,
                          S=safe_rows[i].get("S") if _finite(safe_rows[i].get("S")) else None,
                          score_status=safe_rows[i].get("score_status", "MISSING"),
+                         upstream_score_status=_code(safe_rows[i].get("upstream_score_status")),
+                         cause_set=_causes(safe_rows[i].get("cause_set")),
                          in_C=any(h["phase"] == p and h["source_start"] == s for h in c) if status != "TECHNICAL_UNRESOLVED" else None)
                     for i, (p, s) in enumerate(H)]
     result = dict(query_id=prepared_local.get("query_id"), input_id=prepared_local.get("input_id"),
                 key_id=prepared_local.get("key_id"), received_query_start=w, status=status, D=detected,
                 maximum=maximum, tau=tau, domain_count=137, members=safe_members,
+                failure_details=failures, missing_members=deepcopy(failures["missing_members"]),
+                unexpected_members=deepcopy(failures["unexpected_members"]),
                 full_local_C=[dict(candidate_id=_candidate_id(h), phase=h["phase"], source_start=h["source_start"],
                                    query_source_origin_hypothesis=4*(h["source_start"]-1)-h["phase"])
                               for h in c], groups=groups,
@@ -228,7 +312,7 @@ def plan_local(prepared_local, views, required_regions=REGIONS):
     return reconcile_plans([result])[0]
 
 
-def reconcile_plans(plans):
+def reconcile_plans(plans, *, ownership_only=False):
     """Mark conflicting assignments before reading; do not prune any candidate.
 
     Within one query only the same h is simultaneous. Across queries local C
@@ -241,21 +325,30 @@ def reconcile_plans(plans):
             for ref in group["references"]:
                 if ref["evidence_id"] is not None:
                     by_evidence.setdefault(ref["evidence_id"], []).append((pi, gi, ref))
-    bad = set()
+    bad = {}
     for entries in by_evidence.values():
         for i, (pi, gi, a) in enumerate(entries):
             for pj, gj, b in entries[i+1:]:
                 same_query = result[pi]["query_id"] == result[pj]["query_id"]
                 simultaneous = not same_query or a["candidate_id"] == b["candidate_id"]
+                owner_conflict = any(a.get(k) != b.get(k) for k in ("view_id", "local_row", "observed_region_id"))
                 conflict = (a["canonical_cell"] != b["canonical_cell"] or
                             a["observed_region_id"] != b["observed_region_id"] or
                             a["carrier_region_id"] != b["carrier_region_id"])
-                if simultaneous and conflict:
-                    bad.update(((pi, gi), (pj, gj)))
-    for pi, gi in bad:
+                reasons = (["UNRESOLVED_EVIDENCE_OWNERSHIP"] if owner_conflict else [])
+                if not ownership_only and simultaneous and conflict:
+                    reasons.append("UNRESOLVED_MAPPING_CONFLICT")
+                if owner_conflict:
+                    for ref in (a, b):
+                        ref["status"] = "UNRESOLVED_EVIDENCE_OWNERSHIP"
+                        ref["cause_set"] = sorted(set(ref.get("cause_set", [])) | {"UNRESOLVED_EVIDENCE_OWNERSHIP"})
+                for key in ((pi, gi), (pj, gj)):
+                    if reasons:
+                        bad.setdefault(key, set()).update(reasons)
+    for (pi, gi), reasons in bad.items():
         group = result[pi]["groups"][gi]
-        group["status"] = "UNRESOLVED_MAPPING_CONFLICT"
-        group["cause_set"] = sorted(set(group["cause_set"] + ["UNRESOLVED_MAPPING_CONFLICT"]))
+        group["status"] = "UNRESOLVED_EVIDENCE_OWNERSHIP" if "UNRESOLVED_EVIDENCE_OWNERSHIP" in reasons else "UNRESOLVED_MAPPING_CONFLICT"
+        group["cause_set"] = sorted(set(group["cause_set"]) | reasons)
     return result
 
 
@@ -267,9 +360,11 @@ def _cache_value(cache, address):
         return None, f"TECHNICAL_CACHE:{type(error).__name__}"
     if not isinstance(value, dict):
         return None, "TECHNICAL_CACHE:FORMAT"
+    if value.get("diagnostic_only", False):
+        return None, "TECHNICAL_CACHE:DIAGNOSTIC_ONLY"
     v = value.get("value")
-    if (type(v) is not int or v not in (0, 1) or value.get("count", 8) != 8 or
-            value.get("status", "RETURNED") not in ("RETURNED", "READ", "AVAILABLE", "CONDITIONAL_READ")):
+    if (type(v) is not int or v not in (0, 1) or type(value.get("count")) is not int or value["count"] != 8 or
+            value.get("status") not in ("RETURNED", "READ", "AVAILABLE", "CONDITIONAL_READ")):
         return None, "TECHNICAL_CACHE"
     return v, None
 
@@ -291,6 +386,8 @@ def read_local(plan, cache, *, memo=None):
                     if ref["status"] != "RETURNED" or ref["evidence_id"] is None:
                         missing.append(ref)
                         causes.add("TECHNICAL_CACHE")
+                        causes.update(ref.get("cause_set", []))
+                        causes.add("OBSERVATION:" + str(_code(ref["status"])))
                         continue
                     address = (ref["evidence_id"], plan["key_id"], bit)
                     used.add(ref["evidence_id"])
@@ -317,6 +414,7 @@ def read_local(plan, cache, *, memo=None):
                 value, status = None, group["status"]
             slots.append(dict(slot=8*group["group"]+bit, group=group["group"], bit=bit, value=value, status=status,
                               cause_set=sorted(causes), selected_refs=refs,
+                              failure_details=deepcopy(group.get("failure_details", {})),
                               conflict_refs=_unique([r for r, _ in values]) if conflict else [], missing_refs=_unique(missing),
                               technical_failure=technical,
                               conditional_candidate_ids=sorted({r["candidate_id"] for r in refs}),
@@ -359,10 +457,10 @@ def aggregate(local_decisions, source_relation="SINGLE_INPUT_CONDITIONAL", *, pa
         for g in range(4)]) for d in decisions]
     for decision, checked in zip(decisions, reconcile_plans(geometry_plans)):
         for g, group in enumerate(checked["groups"]):
-            if group["status"] == "UNRESOLVED_MAPPING_CONFLICT":
+            if group["status"] in ("UNRESOLVED_MAPPING_CONFLICT", "UNRESOLVED_EVIDENCE_OWNERSHIP"):
                 for slot in decision["slots"][8*g:8*g+8]:
                     slot.update(value=None, status="LOCAL_TECHNICAL_UNREAD", technical_failure=True,
-                                cause_set=sorted(set(slot["cause_set"] + ["UNRESOLVED_MAPPING_CONFLICT"])))
+                                cause_set=sorted(set(slot["cause_set"] + group["cause_set"])))
     inputs = {d["input_id"] for d in decisions}
     keys = {d["key_id"] for d in decisions}
     unsupported = (len(keys) > 1 or source_relation not in ("SINGLE_INPUT_CONDITIONAL", "SEPARATE", "JOIN_CONDITIONAL") or
@@ -389,25 +487,43 @@ def aggregate(local_decisions, source_relation="SINGLE_INPUT_CONDITIONAL", *, pa
             value, status = None, "TECHNICAL_UNREAD" if technical else "ERASURE_OR_REJECT"
         rows.append(dict(slot=slot, value=value, status=status, cause_set=causes,
                          selected_refs=_unique([r for p in parts for r in p["selected_refs"]]),
+                         supporting_refs=_unique([r for p in parts if value is not None and p["value"] == value and
+                                                  p["status"] == "LOCAL_CONDITIONAL_READ" and not p["technical_failure"]
+                                                  for r in p["selected_refs"]]),
+                         failure_details=_unique([dict(query_id=d["query_id"], input_id=d["input_id"],
+                                                       details=d["slots"][slot].get("failure_details", {})) for d in decisions]),
                          conflict_refs=_unique([r for p in parts for r in p["conflict_refs"]]),
                          missing_refs=_unique([r for p in parts for r in p["missing_refs"]]),
                          conditional_candidate_ids=sorted({r for p in parts for r in p["conditional_candidate_ids"]})))
     refs = _unique([r for row in rows for r in row["selected_refs"]])
     unique_decisions = {(d["input_id"], d["query_id"]): d for d in decisions}
-    canonical = sorted({r["canonical_cell"] for row in rows if row["value"] is not None
-                        for r in row["selected_refs"] if r["canonical_cell"] is not None})
+    canonical = sorted({r["canonical_cell"] for row in rows for r in row["supporting_refs"] if r["canonical_cell"] is not None})
+    planned_canonical = sorted({r["canonical_cell"] for r in refs if r["canonical_cell"] is not None})
     not_entered = 32 if decisions and all(d["status"] == "NOT_ENTERED" for d in decisions) else 0
     failed = 0 if not_entered else sum(r["status"] == "TECHNICAL_UNREAD" for r in rows)
-    buckets = [dict(canonical_cell=t, slot=row["slot"],
-                    evidence_ids=sorted({r["evidence_id"] for r in row["selected_refs"] if r["canonical_cell"] == t and r["evidence_id"] is not None}),
-                    conditional=True, vote_weight=None, status=row["status"])
-               for row in rows for t in sorted({r["canonical_cell"] for r in row["selected_refs"] if r["canonical_cell"] is not None})]
+    buckets = []
+    for decision in decisions:
+        for part in decision["slots"]:
+            row = rows[part["slot"]]
+            supports_value = (row["value"] is not None and part["value"] == row["value"] and
+                              part["status"] == "LOCAL_CONDITIONAL_READ" and not part["technical_failure"])
+            for t in sorted({r["canonical_cell"] for r in part["selected_refs"] if r["canonical_cell"] is not None}):
+                local_refs = [r for r in part["selected_refs"] if r["canonical_cell"] == t]
+                buckets.append(dict(canonical_cell=t, slot=part["slot"], query_id=decision["query_id"],
+                    input_id=decision["input_id"], conditional=True, vote_weight=None,
+                    status=part["status"], value=part["value"], aggregate_status=row["status"],
+                    supports_aggregate_value=supports_value, cause_set=part["cause_set"],
+                    evidence_ids=sorted({r["evidence_id"] for r in local_refs if r["evidence_id"] is not None}),
+                    conditional_candidate_ids=sorted({r["candidate_id"] for r in local_refs}),
+                    missing_refs=_unique([r for r in part["missing_refs"] if r["canonical_cell"] == t])))
+    buckets = _unique(buckets)
     return dict(slots=rows, status="UNSUPPORTED" if unsupported else "RETURNED", source_relation=source_relation,
                 required_assumptions=["single source under declared input model", "common key/carrier/clock/group semantics"],
                 source_authenticated=False, path_context=deepcopy(path_context), mapping_scope="LOCAL_FULL_C",
                 used_evidence_ids=sorted({e for d in decisions for e in d["used_evidence_ids"]}),
                 dependency_refs=_dependencies(refs), per_query_slots=[deepcopy(unique_decisions[k]) for k in sorted(unique_decisions)],
                 canonical_cells_under_h=canonical, canonical_coverage_certified=False,
+                planned_canonical_cells_under_h=planned_canonical,
                 source_position_buckets=buckets,
                 recovered_slot_count=sum(r["value"] is not None for r in rows), planned_slots=32,
                 unique_query_count=len(unique_decisions), logical_query_references=len(decisions),
@@ -441,7 +557,7 @@ def plan_comparisons(plans_by_window):
 
 def comparison_signature(result):
     """Exclude raw alias/access counts; include semantic values/reasons/support."""
-    return {k: result[k] for k in ("slots", "used_evidence_ids", "canonical_cells_under_h",
+    return {k: result[k] for k in ("slots", "used_evidence_ids", "canonical_cells_under_h", "planned_canonical_cells_under_h",
                                    "recovered_slot_count", "unique_query_count", "source_position_buckets",
                                    "dependency_refs", "counts")}
 

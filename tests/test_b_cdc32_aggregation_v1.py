@@ -200,3 +200,94 @@ def test_unexpected_member_flag_cannot_be_erased_by_complete_looking_rows():
     p, views, _ = fixture(candidates=[])
     p["C"] = None  # Unresolved is not an empty, completely decided C.
     assert m.plan_local(p, views)["status"] == "TECHNICAL_UNRESOLVED"
+
+
+@pytest.mark.parametrize("record", [
+    {"value": 1}, {"value": 1, "status": "AVAILABLE"}, {"value": 1, "count": 8},
+    {"value": True, "count": 8, "status": "RETURNED"},
+    {"value": 1, "count": True, "status": "RETURNED"},
+    {"value": 1, "count": 7, "status": "RETURNED"},
+    {"value": 1, "count": 8, "status": "FAILED"},
+    {"value": 1, "count": 8, "status": "RETURNED", "diagnostic_only": True},
+])
+def test_review_r1_invalid_or_diagnostic_cache_retains_failed_slot(record):
+    plan, cache = read_fixture()
+    for ref in plan["groups"][0]["references"]:
+        cache[ref["evidence_id"]]["key00"]["0"] = record
+    result = m.read_local(plan, cache)
+    slot = result["slots"][0]
+    assert slot["value"] is None and slot["status"] == "LOCAL_TECHNICAL_UNREAD"
+    assert "TECHNICAL_CACHE" in slot["cause_set"] and len(slot["missing_refs"]) == 2
+    assert len(result["slots"]) == 32 and result["counts"]["failed"] == 1
+    assert result["slots"][1]["value"] == 1
+    if record.get("diagnostic_only"):
+        assert "TECHNICAL_CACHE:DIAGNOSTIC_ONLY" in slot["cause_set"]
+
+
+def test_review_r1_available_cache_and_implicit_units_remain_supported():
+    plan, cache = read_fixture()
+    for ref in plan["groups"][0]["references"]:
+        for record in cache[ref["evidence_id"]]["key00"].values():
+            record["status"] = "AVAILABLE"
+    assert all(s["value"] == 1 for s in m.read_local(plan, cache)["slots"][:8])
+
+
+def test_review_r1_failed_view_cannot_be_overridden_by_returned_units():
+    p, views, _ = fixture()
+    views[0].update(status="FAILED", cause_set=["ENCODER_FAILED"],
+                    units={"1": {r: dict(status="RETURNED") for r in m.REGIONS}})
+    plan = m.plan_local(p, views)
+    result = m.read_local(plan, lambda *args: pytest.fail("failed view must not consume bits"))
+    assert all(s["value"] is None for s in result["slots"])
+    assert result["slots"][0]["status"] == "LOCAL_TECHNICAL_UNREAD"
+    assert {"OBSERVATION:FAILED", "ENCODER_FAILED"} <= set(result["slots"][0]["cause_set"])
+    assert all(r["view_status"] == "FAILED" and r["unit_status"] == "RETURNED"
+               for r in result["slots"][0]["missing_refs"])
+
+
+@pytest.mark.parametrize("failure", [
+    {"status": "TECHNICAL_UNRESOLVED"}, {"score_status": "SCORE_UNRESOLVED"},
+])
+def test_review_r1_explicit_family_failure_cannot_be_recomputed_as_ready(failure):
+    p, views, _ = fixture()
+    p.update(failure)
+    plan = m.plan_local(p, views)
+    assert plan["status"] == "TECHNICAL_UNRESOLVED" and plan["full_local_C"] == []
+    result = m.read_local(plan, lambda *args: pytest.fail("failed family must not consume bits"))
+    assert all(s["status"] == "LOCAL_TECHNICAL_UNREAD" for s in result["slots"])
+    assert result["counts"] == dict(planned=32, returned=0, failed=32, not_entered=0)
+
+
+def test_review_r2_partial_read_keeps_failed_cell_out_of_recovered_coverage():
+    left, left_cache = read_fixture(query="L", start=1)
+    right, right_cache = read_fixture(query="R", start=2)
+    for ref in left["groups"][0]["references"]:
+        del left_cache[ref["evidence_id"]]
+    result = m.aggregate([m.read_local(left, left_cache), m.read_local(right, right_cache)])
+    assert result["canonical_cells_under_h"] == [2]
+    assert result["planned_canonical_cells_under_h"] == [1, 2]
+    assert result["slots"][0]["value"] == 1 and result["slots"][0]["status"] == "PARTIAL_EVIDENCE_READ"
+    assert {r["canonical_cell"] for r in result["slots"][0]["supporting_refs"]} == {2}
+    buckets = {row["canonical_cell"]: row for row in result["source_position_buckets"] if row["slot"] == 0}
+    assert buckets[1]["query_id"] == "L" and buckets[1]["status"] == "LOCAL_TECHNICAL_UNREAD"
+    assert buckets[1]["value"] is None and not buckets[1]["supports_aggregate_value"]
+    assert len(buckets[1]["missing_refs"]) == 2 and "TECHNICAL_CACHE" in buckets[1]["cause_set"]
+    assert buckets[1]["conditional_candidate_ids"] == ["p0:s1"]
+    assert buckets[2]["query_id"] == "R" and buckets[2]["status"] == "LOCAL_CONDITIONAL_READ"
+    assert buckets[2]["supports_aggregate_value"] and buckets[2]["conditional_candidate_ids"] == ["p0:s2"]
+
+
+def test_review_r3_actual_owner_conflict_marks_all_core_refs_before_read():
+    plans = []
+    for query in ("A", "B"):
+        p, views, _ = fixture(query=query)
+        views[0]["units"] = {"1": {r: dict(evidence_id=f"shared/{r}") for r in m.REGIONS}}
+        plans.append(m.plan_local(p, views))
+    checked = m.reconcile_plans(plans)
+    for plan in checked:
+        group = plan["groups"][0]
+        assert group["status"] == "UNRESOLVED_EVIDENCE_OWNERSHIP"
+        assert all(r["status"] == "UNRESOLVED_EVIDENCE_OWNERSHIP" for r in group["references"])
+        result = m.read_local(plan, lambda *args: pytest.fail("ambiguous owner must not read"))
+        assert result["slots"][0]["value"] is None
+        assert "UNRESOLVED_EVIDENCE_OWNERSHIP" in result["slots"][0]["cause_set"]

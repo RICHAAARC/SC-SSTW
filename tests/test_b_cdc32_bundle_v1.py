@@ -1,5 +1,6 @@
 """Bundle isolation/order/fixed-denominator engineering tests only."""
 import json
+import copy
 import pytest
 from runtime.wan import b_cdc32_bundle_v1 as b
 from test_b_cdc32_aggregation_v1 import fixture
@@ -87,3 +88,92 @@ def test_one_incomplete_fragment_keeps_other_fragment_and_conditional_partial(tm
     assert join["recovered_slot_count"] == 16
     assert all(s["status"] == "PARTIAL_EVIDENCE_READ" for s in join["slots"][:16])
     assert join["source_authenticated"] is False
+
+
+def test_review_r1_bundle_preserves_failed_view_over_returned_units(tmp_path):
+    items = []
+    for query in ("A", "B"):
+        p, views, _ = fixture(query=query)
+        views[0].update(status="FAILED", cause_set=["ENCODER_FAILED"],
+                        units={"1": {r: dict(status="RETURNED") for r in ("R0", "R1")}})
+        items.append(b.RawFragment(p, views, lambda *args: pytest.fail("failed view must not consume bits")))
+    result = b.run_bundle(items, tmp_path)
+    assert result["status"] == "RETURNED" and result["unique_cache_accesses"] == 0
+    for output in result["outputs"].values():
+        assert output["slots"][0]["value"] is None
+        assert {"OBSERVATION:FAILED", "ENCODER_FAILED"} <= set(output["slots"][0]["cause_set"])
+
+
+def test_review_r3_bundle_rejects_duplicate_id_with_different_actual_owners(tmp_path):
+    items = []
+    for index, query in enumerate(("A", "B")):
+        p, views, _ = fixture(query=query)
+        views[0]["units"] = {"1": {r: dict(evidence_id=f"shared/{r}") for r in ("R0", "R1")}}
+        def reader(*args, value=index):
+            pytest.fail(f"ambiguous owner must not consume either cache ({value})")
+        items.append(b.RawFragment(p, views, reader))
+    result = b.run_bundle(items, tmp_path)
+    assert result["status"] == "RETURNED" and result["unique_cache_accesses"] == 0
+    plan = json.loads((tmp_path / "plan.json").read_text())
+    for name, output in result["outputs"].items():
+        assert len(output["slots"]) == 32 and output["recovered_slot_count"] == 0
+        assert "UNRESOLVED_EVIDENCE_OWNERSHIP" in output["slots"][0]["cause_set"]
+        for local in plan[name]:
+            group = local["groups"][0]
+            assert group["status"] == "UNRESOLVED_EVIDENCE_OWNERSHIP"
+            assert all(r["status"] == "UNRESOLVED_EVIDENCE_OWNERSHIP" for r in group["references"])
+
+
+def test_review_r3_bundle_true_alias_shares_evidence_across_distinct_cache_objects(tmp_path):
+    p, views, cache = fixture()
+    calls = []
+    items = []
+    for index in range(2):
+        def reader(eid, key, bit, local_cache=copy.deepcopy(cache), index=index):
+            assert (tmp_path / "plan.json").is_file()
+            calls.append((index, eid, key, bit))
+            return local_cache[eid][key][str(bit)]
+        items.append(b.RawFragment(copy.deepcopy(p), copy.deepcopy(views), reader))
+    result = b.run_bundle(items, tmp_path)
+    assert result["status"] == "RETURNED" and result["unique_cache_accesses"] == len(calls) == 16
+    assert len({(eid, key, bit) for _, eid, key, bit in calls}) == 16
+    plan = json.loads((tmp_path / "plan.json").read_text())
+    a = plan["SEP_A"][0]["groups"][0]["references"]
+    c = plan["SEP_B"][0]["groups"][0]["references"]
+    assert {r["evidence_id"] for r in a} == {r["evidence_id"] for r in c}
+    for output in result["outputs"].values():
+        assert output["recovered_slot_count"] == 8
+        assert all(row["value"] == 1 for row in output["slots"][:8])
+
+
+def test_review_r4_bundle_saved_plan_and_slots_preserve_local_failure_details(tmp_path):
+    p, views, _ = fixture()
+    missing = [dict(phase=0, source_start=1, cause_set=["MISSING_MEMBER", "INVALID_SCORE"], private="DO_NOT_COPY")]
+    extra = [dict(index=137, reason="OUT_OF_DOMAIN_MEMBER", parent_path="DO_NOT_COPY")]
+    p.update(status="TECHNICAL_UNRESOLVED", score_status="SCORE_UNRESOLVED", score_complete=False,
+             upstream_status="SCORE_FAILED", cause_set=["INCOMPLETE_H137", "UNEXPECTED_MEMBERS"],
+             missing_members=missing, unexpected_members=extra, upstream_error="DO_NOT_COPY", C=None)
+    p["members"][0].update(S=None, score_status="TECHNICAL_UNRESOLVED", upstream_score_status="ENCODER_FAILED",
+                           cause_set=["MISSING_MEMBER", "INVALID_SCORE"], parent_path="DO_NOT_COPY")
+    items = [b.RawFragment(copy.deepcopy(p), copy.deepcopy(views), lambda *args: pytest.fail("failed family must not read"))
+             for _ in range(2)]
+    result = b.run_bundle(items, tmp_path)
+    assert result["status"] == "RETURNED" and result["unique_cache_accesses"] == 0
+    plan = json.loads((tmp_path / "plan.json").read_text())
+    assert "DO_NOT_COPY" not in json.dumps(plan) and "DO_NOT_COPY" not in json.dumps(result)
+    for name, output in result["outputs"].items():
+        for local in plan[name]:
+            assert len(local["members"]) == 137
+            member = local["members"][0]
+            assert member["phase"] == 0 and member["source_start"] == 1
+            assert member["cause_set"] == ["INVALID_SCORE", "MISSING_MEMBER"]
+            assert member["upstream_score_status"] == "ENCODER_FAILED"
+            assert local["missing_members"] == [dict(phase=0, source_start=1, cause_set=["INVALID_SCORE", "MISSING_MEMBER"])]
+            assert local["unexpected_members"] == [dict(index=137, reason="OUT_OF_DOMAIN_MEMBER")]
+        assert len(output["slots"]) == 32 and output["counts"]["failed"] == 32
+        for slot in output["slots"]:
+            assert {"INVALID_SCORE", "MISSING_MEMBER", "UPSTREAM:ENCODER_FAILED", "OUT_OF_DOMAIN_MEMBER"} <= set(slot["cause_set"])
+            for failure in slot["failure_details"]:
+                assert failure["details"]["missing_members"][0]["source_start"] == 1
+                assert failure["details"]["unexpected_members"][0]["index"] == 137
+                assert failure["details"]["member_failures"][0]["upstream_score_status"] == "ENCODER_FAILED"
