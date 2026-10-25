@@ -1,0 +1,98 @@
+{
+  "model_id": "Wan-AI/Wan2.1-T2V-1.3B-Diffusers",
+  "generation": {
+    "height": 320,
+    "width": 512,
+    "frames": 181,
+    "fps": 8,
+    "steps": 50,
+    "guidance_scale": 5.0,
+    "max_sequence_length": 512
+  },
+  "writer": {
+    "key": "watermark",
+    "gamma": 1,
+    "bits": [
+      1,
+      0,
+      1,
+      0,
+      0,
+      1,
+      1,
+      0,
+      1,
+      1,
+      0,
+      1,
+      0,
+      0,
+      1,
+      1,
+      1,
+      0,
+      0,
+      1,
+      1,
+      1,
+      0,
+      0,
+      0,
+      1,
+      0,
+      1,
+      1,
+      1,
+      1,
+      0
+    ]
+  },
+  "sources": [
+    {
+      "id": "b-rank3-n01",
+      "role": "eval",
+      "seed": 2026102501,
+      "a": 2,
+      "prompt": "A fixed wide shot of a red tram moving slowly along a tree-lined avenue. Pedestrians wait beside the track and leaves move gently in the breeze.",
+      "negative_prompt": ""
+    },
+    {
+      "id": "b-rank3-n02",
+      "role": "eval",
+      "seed": 2026102502,
+      "a": 11,
+      "prompt": "A locked-off medium-wide shot of a person folding a blue cotton cloth on a workbench. Both hands and the entire cloth remain visible throughout the shot.",
+      "negative_prompt": ""
+    },
+    {
+      "id": "b-rank3-n03",
+      "role": "eval",
+      "seed": 2026102503,
+      "a": 17,
+      "prompt": "A fixed wide shot of a small waterfall flowing over mossy rocks into a shallow forest stream. Water ripples and nearby fern leaves move naturally.",
+      "negative_prompt": ""
+    },
+    {
+      "id": "b-rank3-n04",
+      "role": "eval",
+      "seed": 2026102504,
+      "a": 6,
+      "prompt": "A fixed wide shot of a white wind turbine rotating slowly above a grassy meadow under moving clouds. The whole turbine and foreground grass remain in frame.",
+      "negative_prompt": ""
+    }
+  ],
+  "method_criteria": {
+    "supported_correct_min": 288,
+    "supported_correct_min_per_source": 48,
+    "positive_detect_min": 9,
+    "positive_detect_min_per_source": 2,
+    "CDC_M_actual_supported_correct_losses": 0,
+    "errors": 0,
+    "null_detect": 0
+  },
+  "incremental_claim": {
+    "net_actual_supported_correct_gain_over_CDC_M_min": 32,
+    "condition": "only after all method criteria met; otherwise do not claim demonstrated contribution"
+  },
+  "claim_ceiling": "Finite new-source confirmation under 151-frame crop or declared single deletion; not arbitrary short clips, exact seam, source authentication, population FPR, multiple-key safety or DiT multistep state propagation"
+}
