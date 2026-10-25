@@ -6,7 +6,7 @@ from runtime.wan.vae import reencode_rgb24_readback
 from main.tube_state import b_legacy_position_margin_v1 as state
 
 DEFAULT_MODEL_ID='Wan-AI/Wan2.1-T2V-1.3B-Diffusers'
-DEFAULT_VAE_CACHE=Path('/content/drive/MyDrive/Video-WM/Paper-Results-V1-Cache/models/Wan2.1-T2V-1.3B-Diffusers')
+DEFAULT_VAE_CACHE=Path('/content/video-wm-cache/models/Wan2.1-T2V-1.3B-Diffusers')
 
 
 def select_vae_source(model_id,cache_base=DEFAULT_VAE_CACHE):
@@ -20,7 +20,7 @@ def select_vae_source(model_id,cache_base=DEFAULT_VAE_CACHE):
         for path in candidates:
             vae=path/'vae'
             if (vae/'config.json').is_file() and (any(vae.glob('*.safetensors')) or any(vae.glob('*.bin'))):
-                return dict(location=str(path),subfolder='vae',origin='shared_drive_cache')
+                return dict(location=str(path),subfolder='vae',origin='session_cache')
     return dict(location=model_id,subfolder='vae',origin='model_id')
 
 
@@ -72,7 +72,7 @@ class BoundaryBackend:
     def load(self):
         from diffusers import AutoencoderKLWan
         selected=select_vae_source(self.model_id)
-        kwargs=dict(torch_dtype=torch.float32)
+        kwargs=dict(torch_dtype=torch.float32, cache_dir="/content/video-wm-cache/huggingface/hub")
         if selected['subfolder']:kwargs['subfolder']=selected['subfolder']
         self.vae=AutoencoderKLWan.from_pretrained(selected['location'],**kwargs)
         self.vae=self.vae.to(self.device).eval().requires_grad_(False)

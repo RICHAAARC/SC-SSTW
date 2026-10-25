@@ -14,7 +14,7 @@ from main.tube_state import local_joint_staged_native_state_v1 as method
 from main.tube_state.grow_video_reference import read_latent_bits, message_bits
 
 DEFAULT_MODEL_ID = "Wan-AI/Wan2.1-T2V-1.3B-Diffusers"
-DEFAULT_VAE_CACHE = Path("/content/drive/MyDrive/Video-WM/Paper-Results-V1-Cache/models/Wan2.1-T2V-1.3B-Diffusers")
+DEFAULT_VAE_CACHE = Path("/content/video-wm-cache/models/Wan2.1-T2V-1.3B-Diffusers")
 
 
 def execution_artifacts(output):
@@ -66,7 +66,7 @@ def select_vae_source(model_id, cache_base=DEFAULT_VAE_CACHE):
         for path in candidates:
             vae = path/"vae"
             if (vae/"config.json").is_file() and (any(vae.glob("*.safetensors")) or any(vae.glob("*.bin"))):
-                return dict(location=str(path), subfolder="vae", origin="shared_drive_cache", weights_may_download=False)
+                return dict(location=str(path), subfolder="vae", origin="session_cache", weights_may_download=False)
     return dict(location=model_id, subfolder="vae", origin="model_id", weights_may_download=True)
 
 
@@ -171,7 +171,7 @@ class WanBackend:
         from diffusers import AutoencoderKLWan
         # Use available model/source. There is no expected revision/version test.
         selected = select_vae_source(self.model_id)
-        kwargs = dict(torch_dtype=torch.float32)
+        kwargs = dict(torch_dtype=torch.float32, cache_dir="/content/video-wm-cache/huggingface/hub")
         if selected["subfolder"]:
             kwargs["subfolder"] = selected["subfolder"]
         try:

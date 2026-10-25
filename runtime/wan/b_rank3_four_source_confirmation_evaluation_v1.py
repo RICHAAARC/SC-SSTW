@@ -76,8 +76,9 @@ def pair_summary(rows):
         meaning='true-phase nominal local bit pairs; not full-group recovery or blind receiver success',rows=rows)
 
 
-def evaluate(out,backend,journal):
-    out=Path(out);marker=run.read(out/'blind_complete.json')
+def evaluate(out,backend,journal,*,tensor_root=None):
+    out=Path(out);tensor_root=Path(tensor_root) if tensor_root is not None else out
+    marker=run.read(out/'blind_complete.json')
     if marker.get('status')!='READ_BACK' or marker.get('reader_decisions')!=360:raise ValueError('all 360 blind decisions required before truth')
     run.dump(out/'post_truth_access.json',dict(opened_unix=time.time(),receiver_truth_access='after_all_blind_decisions_read_back',writer_private_payload_separate=True))
     cfg=run.read(out/'protocol.json')['config'];truth=cfg['writer']['bits']
@@ -113,8 +114,8 @@ def evaluate(out,backend,journal):
         for arm in ('P0','PM'):
             slot=f'{h}/native/{arm}';dependency=h+'/construct' if arm=='PM' else h+'/generate/P0'
             def project(arm=arm,slot=slot):
-                value=backend.payload_project(backend.load_tensor(out/'private'/h/(arm+'_terminal.pt')),list(range(1,45)),('R0','R1'))
-                backend.save_tensor(out/'private'/h/'native'/arm/'DCT.pt',value);return value
+                value=backend.payload_project(backend.load_tensor(tensor_root/'private'/h/(arm+'_terminal.pt')),list(range(1,45)),('R0','R1'))
+                backend.save_tensor(tensor_root/'private'/h/'native'/arm/'DCT.pt',value);return value
             projected=journal.call(slot+'/DCT',project,[dependency])
             for key,secret in run.KEYS.items():
                 native[arm,key]=journal.record(slot+'/'+key+'/bits',lambda key=key,secret=secret:backend.payload_decode(projected,secret,f'native-{h}-{arm}',key),out/'private'/h/'native'/arm/(key+'_bits.json'),[slot+'/DCT'])
@@ -134,8 +135,8 @@ def evaluate(out,backend,journal):
         left,right=pair.split('_to_')
         try:
             result['quality'][slot]=journal.record(slot,lambda:backend.quality(
-                backend.load_tensor(out/'media'/h/left/scope/(layer+'.pt')),
-                backend.load_tensor(out/'media'/h/right/scope/(layer+'.pt')),mapping,pair),out/'quality'/(slot+'.json'))
+                backend.load_tensor(tensor_root/'media'/h/left/scope/(layer+'.pt')),
+                backend.load_tensor(tensor_root/'media'/h/right/scope/(layer+'.pt')),mapping,pair),out/'quality'/(slot+'.json'))
         except BaseException:
             row=result['quality'][slot];row.update(status=journal.data[slot]['status'],cause=dict(journal.data[slot]))
             for item in row['frames']+row['adjacent']:item['status']=row['status']

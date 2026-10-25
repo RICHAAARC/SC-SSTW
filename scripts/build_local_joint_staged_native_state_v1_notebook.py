@@ -83,7 +83,7 @@ else:
     markdown("""### 准备依赖并执行一次
 
 模型采用可用 Wan2.1 VAE，普通FP32解码与posterior-mode编码。先做实际import probe，仅修复明确缺包或已观察到的可选torchao/FqnToConfig冲突。
-优先使用同Drive `Paper-Results-V1-Cache/models/Wan2.1-T2V-1.3B-Diffusers` 中available、根或已有子目录的VAE。没有可定位缓存时，唯一load可经HF模型ID下载权重，耗时计入load；选择后不换位置重试。
+优先使用本次 Colab 会话 `/content/video-wm-cache/models/Wan2.1-T2V-1.3B-Diffusers` 中available、根或已有子目录的VAE。没有可定位缓存时，唯一load可经HF模型ID下载权重，耗时计入load；选择后不换位置重试。
 只在ffmpeg/ffprobe实际缺失时准备媒体依赖。GPU为环境建议，没有型号或版本门禁。
 输入、模型或媒体调用失败会留在固定分母中。已有记录时直接显示，不重复执行。
 """)

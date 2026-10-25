@@ -5,6 +5,7 @@ import json
 import math
 import os
 from pathlib import Path
+import tempfile
 import time
 import uuid
 
@@ -155,13 +156,13 @@ def recover_ledger(output):
     return dict(ledger=ledger, counts=counts, unit_counts=unit_counts,
                 receipt_slots=receipt_slots, read_errors=errors, physical_reentry=False,denominators=denominators())
 
-def collect_host(host, cfg, out, backend, journal, background):
+def collect_host(host, cfg, out, backend, journal, background, tensor_root):
     h = host['id']
     evaluation = host['role'] == 'eval'
     base = out/'private'/h
     books, terminals, contexts = {}, {}, {}
     def tensor(path, value):
-        backend.save_tensor(path, value)
+        backend.save_tensor(tensor_root/path.relative_to(out), value)
         return value
     for key, secret in KEYS.items():
         books[key] = journal.call(f'{h}/book/{key}', lambda secret=secret: backend.book(secret), ['background'])
@@ -474,8 +475,14 @@ def run(input_directory=DEFAULT_INPUT,output=DEFAULT_OUTPUT,*,config_path=CONFIG
         json.dump(dict(status='STARTED',attempts=1,started_unix=time.time(),fixed_budget=BUDGET),stream);stream.flush()
     dump(out/'plan.json',dict(units=plan_units(),denominators=denominators(),sources=SOURCES,readers=READERS,physical_budget=BUDGET))
     outputs=planned_outputs();dump(out/'planned_outputs.json',outputs)
-    journal=Journal(out,backend);stop=None;contexts={};cache=SavedBitCache()
+    journal=Journal(out,backend);stop=None;contexts={};cache=SavedBitCache();scratch=None
     try:
+        # This one-shot runner never resumes physical work. Raw tensors serve
+        # only this attempt's post-read evaluation; durable JSON holds results.
+        scratch=tempfile.TemporaryDirectory(prefix='video-wm-rank3-',dir='/content' if Path('/content').is_dir() else None)
+        tensor_root=Path(scratch.name)
+        dump(out/'storage.json',dict(tensors=str(tensor_root),tensor_lifetime='current_attempt_only',
+            durable='JSON records and final MP4s',existing_attempt='read saved JSON only; never regenerate missing tensors'))
         cfg=journal.call('inputs',lambda:load_config(config_path))
         # Writer consumes its configured payload. Receiver APIs never receive cfg or private source origins.
         dump(out/'protocol.json',dict(config=cfg,receiver_truth_access=False))
@@ -490,7 +497,7 @@ def run(input_directory=DEFAULT_INPUT,output=DEFAULT_OUTPUT,*,config_path=CONFIG
             backend=WanBackend(model_id=cfg['model_id'])
         journal.backend=backend
         for host in SOURCES:
-            packs=collect_host(host,cfg,out,backend,journal,background)
+            packs=collect_host(host,cfg,out,backend,journal,background,tensor_root)
             for (arm,fixture),context in packs.items():
                 contexts[host['id'],arm,fixture]=context
                 for (view,key),path in context['bit_paths'].items():cache.register(path,key,view)
@@ -512,7 +519,7 @@ def run(input_directory=DEFAULT_INPUT,output=DEFAULT_OUTPUT,*,config_path=CONFIG
             return dict(status='READ_BACK',task_decisions=72,reader_decisions=360,truth_accessed=False,payload_files_loaded=len(cache.loaded),cache_accesses=cache.accesses)
         journal.record('blind_complete',decisions_back,out/'blind_complete.json')
         from runtime.wan.b_rank3_four_source_confirmation_evaluation_v1 import evaluate
-        journal.record('post',lambda:evaluate(out,backend,journal),out/'evaluation.json')
+        journal.record('post',lambda:evaluate(out,backend,journal,tensor_root=tensor_root),out/'evaluation.json')
     except BaseException as error:
         stop=dict(type=type(error).__name__,message=str(error),status='TECHNICAL_UNRESOLVED',retry=False)
         if not isinstance(error,Exception):stop['interrupted']=True
@@ -522,6 +529,8 @@ def run(input_directory=DEFAULT_INPUT,output=DEFAULT_OUTPUT,*,config_path=CONFIG
     result=dict(status='COMPLETED_FIXED_ATTEMPT' if complete else 'TECHNICAL_UNRESOLVED',denominators=denominators(),
         physical_counts=journal.physical,ledger_counts=dict(Counter(r['status'] for r in journal.data.values())),stop=stop,output=str(out),physical_reentry=False)
     dump(out/'result.json',result)
+    if scratch is not None:
+        scratch.cleanup()
     return result
 
 

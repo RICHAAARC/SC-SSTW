@@ -38,3 +38,7 @@ RANK3 每窗必须有唯一 H137 argmax，三个选中 origin 必须落在原声
 质量保留原72项并新增四个同源完整视频 readback 的 OFF→PM **直接数组比较**；不能相加 OFF→P0 与 P0→PM 的距离。新增项的 nominal support 是全时域 payload ROI 与源帧1..176 state ROI的并集；ROI外指标不是VAE因果support证明。RMS、PSNR、相邻帧残差和 clipping 只报告数值，没有新增质量PASS门槛。真实相位 local bit配对不等于盲恢复的完整组正确。
 
 证据上限为固定四新源、151帧crop或声明的单次删帧。不支持任意短片、精确seam、来源认证、总体FPR、多key安全或DiT多步状态传播。当前交付的 CPU/fake/static 检查只验证接线与记录语义，不执行模型、VAE或媒体实验。
+
+## 会话存储
+
+模型权重与 Hugging Face 下载缓存默认留在 `/content/video-wm-cache`。本次计算的 terminal、RGB、E41、DCT `.pt` 仅用于同次原定读出及质量评价，写入 `/content` 临时目录，记录完成或失败后移除。Drive 保存全部 JSON（含分母、原始分数/位、盲计划与决定、引用、逐帧质量、失败及账本）和最终 MP4。后续 Run all 只读已保存 JSON，不因临时张量消失重算或补预算；未完成项保持原状态。旧结果目录不自动清理。

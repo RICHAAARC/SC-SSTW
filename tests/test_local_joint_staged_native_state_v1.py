@@ -325,7 +325,7 @@ def test_review_vae_cache_priority_and_single_selected_load(tmp_path, monkeypatc
             cached(base/"another-child")
         selected = runtime.select_vae_source(runtime.DEFAULT_MODEL_ID, base)
         assert Path(selected["location"]) == base/candidate
-        assert selected["origin"] == "shared_drive_cache"
+        assert selected["origin"] == "session_cache"
     selected = runtime.select_vae_source(runtime.DEFAULT_MODEL_ID, tmp_path/"absent")
     assert selected["location"] == runtime.DEFAULT_MODEL_ID and selected["weights_may_download"]
     selected = runtime.select_vae_source(str(tmp_path/"root"))

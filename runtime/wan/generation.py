@@ -1,10 +1,13 @@
 """Frozen Wan model loaders for the successful native GROW reference chain."""
 from __future__ import annotations
 import gc
+from pathlib import Path
 from typing import Any
 
 def _load_args(model: dict[str, Any], *, torch_dtype: Any, subfolder: str | None = None) -> dict[str, Any]:
     args: dict[str, Any] = {"torch_dtype": torch_dtype}
+    if Path('/content').is_dir():
+        args['cache_dir'] = '/content/video-wm-cache/huggingface/hub'
     if subfolder is not None:
         args["subfolder"] = subfolder
     if model.get("revision"):

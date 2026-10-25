@@ -198,6 +198,8 @@ def test_full_fake_budget_isolation_and_direct_quality(tmp_path,monkeypatch):
     assert ev['media_P0_PM_pair']['planned']==5760 and ev['native_P0_PM_pair']['planned']==2816
     direct=[v for k,v in ev['quality'].items() if '/OFF_to_PM/' in k]
     assert len(direct)==4 and all(v['compared_arms']==['OFF','PM'] for v in direct)
+    assert not list(out.rglob('*.pt'))
+    assert not Path(real_read(out/'storage.json')['tensors']).exists()
     before=backend.calls.copy();assert run.run(source,out,backend=object())['status']=='READ_ONLY_EXISTING_ATTEMPT'
     assert backend.calls==before
 
@@ -208,6 +210,8 @@ def test_first_failure_and_hard_exit_recovery(tmp_path):
     assert result['status']=='TECHNICAL_UNRESOLVED' and backend.calls['E41']==1 and backend.calls['generate']==2
     assert not (out/'post_truth_access.json').exists()
     assert len(run.read(out/'planned_outputs.json')['quality'])==76
+    assert not list(out.rglob('*.pt'))
+    assert not Path(run.read(out/'storage.json')['tensors']).exists()
     assert run.run(source,out,backend=object())['status']=='READ_ONLY_EXISTING_ATTEMPT'
     interrupted=tmp_path/'hard'
     script="import os,sys;sys.path.insert(0,sys.argv[1]);from runtime.wan import b_rank3_four_source_confirmation_v1 as r;r.dump(sys.argv[2]+'/attempt.json',{});j=r.Journal(sys.argv[2]);j.call('inputs',lambda:os._exit(77))"
