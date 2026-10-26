@@ -18,4 +18,6 @@ B32 与 VideoSeal256 容量、写入载体及读出链不同，完整分母分�
 
 末尾 Drive API 完整读取核心 JSON 与 24 个 WM MP4，保存状态与计算/参考状态分开；本地 ZIP 保留全部可读结果 JSON 和 24 媒体，缺失明确列出。发起 files.download 不代表浏览器已保存完成，保存检查不触发任何模型/codec 补跑。CLI 可在普通无 .git 源码目录导入与 `--help`；真实运行仍需要上述实际模型及媒体环境。
 
+2026-10-27 启动修复：首轮在源码导入探针的嵌套 Python 字符串处发生 SyntaxError，尚未到启动收据及 worker；云端目录为空，下载 ZIP 仅有缺失报告。本版修复该转义错误并直接回显探针错误；结果单元显示准备失败，空结果 ZIP 标明仅含缺失报告且不自动下载。修复由实际执行嵌套探针的无 .git CPU 检查覆盖，不改变方法、预算或已有尝试只读规则。先前已打开的 Colab 标签页需重新从发布链接加载新版 Notebook，不能只重跑旧单元。
+
 审查修复后的内容级边界：恢复同时识别数字 receipt 的 `.json` 与 `.json.tmp`，pending/不可读记录保守计一次已消费，状态与 attempts 不匹配不算未进入。配置与加载对象核固定实际方法参数（FP32、.2/1、32/4、repeat/clamp/JND存在），失败观测保存在 model.json；不核源码或依赖版本。B 引用核已保存后评四源/三读法/120任务×32槽及4条SCORED full质量，缺失标 B_REFERENCE_UNRESOLVED；原 method/contribution 字段原样保留，不要求匹配预期负结论字符串，prompt/seed等来源文字不作门禁。

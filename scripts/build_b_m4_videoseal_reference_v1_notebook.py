@@ -72,8 +72,11 @@ environment=os.environ.copy()
 environment['PYTHONPATH']=os.pathsep.join([str(SOURCE_ROOT),str(VENDOR)])
 """
     worker=r"""
-probe="from pathlib import Path; import importlib; root=Path(__import__('sys').argv[1]).resolve(); names=['runtime.wan.b_m4_videoseal_reference_v1','runtime.wan.b_m4_videoseal_reference_storage_v1','experiments.wan_state_clock.b_m4_videoseal_reference_v1_run']; modules=[importlib.import_module(n) for n in names]; assert all(Path(m.__file__).resolve().is_relative_to(root) for m in modules); print(*[m.__file__ for m in modules],sep='\n')"
-subprocess.run([sys.executable,'-c',probe,str(SOURCE_ROOT)],cwd=VENDOR,env=environment,check=True)
+probe="from pathlib import Path; import importlib; root=Path(__import__('sys').argv[1]).resolve(); names=['runtime.wan.b_m4_videoseal_reference_v1','runtime.wan.b_m4_videoseal_reference_storage_v1','experiments.wan_state_clock.b_m4_videoseal_reference_v1_run']; modules=[importlib.import_module(n) for n in names]; assert all(Path(m.__file__).resolve().is_relative_to(root) for m in modules); print(*[m.__file__ for m in modules],sep=chr(10))"
+probe_result=subprocess.run([sys.executable,'-c',probe,str(SOURCE_ROOT)],cwd=VENDOR,env=environment,capture_output=True,text=True)
+print(probe_result.stdout,end='')
+if probe_result.stderr:print(probe_result.stderr,end='')
+probe_result.check_returncode()
 START_RECEIPT=reserve_start(CLOUD_CLIENT,OUTPUT)
 print('启动收据:',START_RECEIPT)
 if START_RECEIPT['status']=='START_RECEIPT_CLOUD_READ_BACK':
@@ -97,6 +100,7 @@ else:print('启动收据未读回，未运行worker。')
 """
     run="if CAN_START:\n    try:\n"+textwrap.indent(textwrap.dedent(vendor)+setup+textwrap.dedent(worker),'        ')+"\n    except BaseException as error:\n        PREPARATION_ERROR=f'{type(error).__name__}: {error}'\n        print('准备或worker未完成，保留原记录:',PREPARATION_ERROR)\n    CAN_START=False\nelse:\n    print('只读或云端未知：跳过setup/vendor/model/worker。')\n"
     display=r"""
+if PREPARATION_ERROR:print('准备阶段错误（本次未取得完整结果）:',PREPARATION_ERROR)
 if local_artifacts(OUTPUT):
     recovery=recover_ledger(OUTPUT)
     print('一次尝试记录:',recovery['counts'],'读取问题:',len(recovery['read_errors']))
@@ -106,19 +110,22 @@ if local_artifacts(OUTPUT):
             print(name,'尚不可读:',type(error).__name__);continue
         if name=='result.json':print('计算状态:',value.get('status'),'固定分母:',value.get('denominators'),'调用:',value.get('physical_counts'),'内部:',value.get('observed_internal'),'停止:',value.get('stop'))
         else:print('外部参考状态:',value.get('reference_status'),'原生256位摘要:',value.get('summary'))
-print('完整原始logits、固定未决、质量和B历史负结果:',OUTPUT)
+print('预定结果目录（路径存在不表示结果已生成）:',OUTPUT)
 """
     saving=r"""
 STORAGE_REPORT=confirm_and_backup(CLOUD_CLIENT,OUTPUT,backup_directory='/content',progress=lambda text:print(text,flush=True))
 print(json.dumps(storage_summary(STORAGE_REPORT),ensure_ascii=False,indent=2))
 backup_path=STORAGE_REPORT.get('backup_zip')
 if backup_path and Path(backup_path).is_file() and zipfile.is_zipfile(backup_path):
-    print('本地备份已生成:',backup_path)
-    try:
-        from google.colab import files
-        files.download(backup_path)
-        print('已发起下载，请确认浏览器下载完成。')
-    except Exception as error:print('可在Colab文件面板下载:',backup_path,type(error).__name__,str(error))
+    if not STORAGE_REPORT.get('backup',{}).get('files'):
+        print('没有结果可备份；ZIP仅含缺失报告，不自动下载:',backup_path)
+    else:
+        print('本地备份已生成:',backup_path)
+        try:
+            from google.colab import files
+            files.download(backup_path)
+            print('已发起下载，请确认浏览器下载完成。')
+        except Exception as error:print('可在Colab文件面板下载:',backup_path,type(error).__name__,str(error))
 """
     notes=[
         '# M4：VideoSeal固定外部参考\n\n随B分支发布的直接Run all入口。官方videoseal_1.0，原生256位共同owner消息、默认强度0.2/JND、chunk32/step4、FP32。当前仅完成实现与CPU检查，尚无真实M4结果。原B M3负结论保留。',

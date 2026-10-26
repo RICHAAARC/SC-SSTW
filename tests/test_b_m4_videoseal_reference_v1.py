@@ -1,5 +1,5 @@
 """CPU/synthetic contract checks only: never call a real model or media tool."""
-import ast,json,math,shutil,types,zipfile
+import ast,json,math,os,shutil,subprocess,sys,types,zipfile
 from pathlib import Path
 from collections import Counter
 import pytest
@@ -187,6 +187,24 @@ def test_notebook_builder_sync_and_readonly_skip(tmp_path,monkeypatch):
     run.dump(out/'receipts/000.json',dict(slot=slot,kind=units[slot],status='RETURNED',attempts=1))
     recovered=scope['recover_ledger'](out)
     assert recovered['physical_reentry'] is False and recovered['ledger'][slot]['status']=='RETURNED'
+
+
+def test_notebook_nested_import_probe_runs_from_no_git_source(tmp_path):
+    nb=run.read(builder.build()['notebook'])
+    code=next(''.join(c['source']) for c in nb['cells'] if c.get('id')=='m4-code-4')
+    tree=ast.parse(code)
+    probe=next(ast.literal_eval(n.value) for n in ast.walk(tree) if isinstance(n,ast.Assign) and any(isinstance(t,ast.Name) and t.id=='probe' for t in n.targets))
+    # Execute the actual nested -c argument; parsing only the cell missed this failure.
+    root=tmp_path/'source';vendor=tmp_path/'vendor';vendor.mkdir()
+    for relative in builder.SOURCE_FILES:
+        destination=root/relative;destination.parent.mkdir(parents=True,exist_ok=True)
+        shutil.copy2(builder.ROOT/relative,destination)
+    environment=os.environ.copy();environment['PYTHONPATH']=str(root)
+    result=subprocess.run([sys.executable,'-c',probe,str(root)],cwd=vendor,env=environment,capture_output=True,text=True)
+    assert result.returncode==0,result.stderr
+    paths=[Path(line).resolve() for line in result.stdout.splitlines()]
+    assert len(paths)==3 and all(p.is_file() and p.is_relative_to(root) for p in paths)
+    assert not (root/'.git').exists() and list(vendor.iterdir())==[]
 
 
 def test_cloud_start_and_failed_local_media_are_not_complete(tmp_path,monkeypatch):
