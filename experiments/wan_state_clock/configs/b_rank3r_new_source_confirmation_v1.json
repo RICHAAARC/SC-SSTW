@@ -1,0 +1,338 @@
+{
+  "model_id": "Wan-AI/Wan2.1-T2V-1.3B-Diffusers",
+  "generation": {
+    "height": 320,
+    "width": 512,
+    "frames": 181,
+    "fps": 8,
+    "steps": 50,
+    "guidance_scale": 5.0,
+    "max_sequence_length": 512
+  },
+  "writer": {
+    "key": "watermark",
+    "gamma": 1,
+    "bits": [
+      1,
+      0,
+      1,
+      0,
+      0,
+      1,
+      1,
+      0,
+      1,
+      1,
+      0,
+      1,
+      0,
+      0,
+      1,
+      1,
+      1,
+      0,
+      0,
+      1,
+      1,
+      1,
+      0,
+      0,
+      0,
+      1,
+      0,
+      1,
+      1,
+      1,
+      1,
+      0
+    ]
+  },
+  "sources": [
+    {
+      "id": "b-rank3r-m01",
+      "seed": 2026102601,
+      "a": 2,
+      "category": "室内倒茶、人与物、液体",
+      "prompt": "A fixed medium shot of a person slowly pouring tea from a white teapot into a glass cup on a wooden kitchen table. Steam rises and the whole table remains visible.",
+      "negative_prompt": "",
+      "role": "eval"
+    },
+    {
+      "id": "b-rank3r-m02",
+      "seed": 2026102602,
+      "a": 11,
+      "category": "夜景、低照度、高对比",
+      "prompt": "A fixed wide shot of a quiet city intersection at night with traffic lights changing and a few cars passing slowly. Street lamps and wet pavement reflections stay in frame.",
+      "negative_prompt": "",
+      "role": "eval"
+    },
+    {
+      "id": "b-rank3r-m03",
+      "seed": 2026102603,
+      "a": 17,
+      "category": "动物、自然纹理",
+      "prompt": "A fixed wide shot of a brown dog walking slowly along a sandy beach while small waves roll onto the shore. The dog and the waterline remain fully visible.",
+      "negative_prompt": "",
+      "role": "eval"
+    },
+    {
+      "id": "b-rank3r-m04",
+      "seed": 2026102604,
+      "a": 6,
+      "category": "室内书架、缓慢水平摄像机平移",
+      "prompt": "A slow steady horizontal pan across a bookshelf filled with colorful books and a small potted plant in a sunlit room. Lighting stays constant throughout the shot.",
+      "negative_prompt": "",
+      "role": "eval"
+    }
+  ],
+  "fixtures": {
+    "CROP": {
+      "d": 0,
+      "b": null
+    },
+    "DELETE_LEFT_GAP": {
+      "d": 8,
+      "b": 49
+    },
+    "DELETE_RIGHT_GAP": {
+      "d": 8,
+      "b": 102
+    },
+    "REPEAT_LEFT_GAP": {
+      "d": -8,
+      "b": 49
+    },
+    "REPEAT_RIGHT_GAP": {
+      "d": -8,
+      "b": 102
+    }
+  },
+  "windows": {
+    "L": 0,
+    "M": 53,
+    "R": 106
+  },
+  "arms": [
+    "OFF",
+    "P0",
+    "PM"
+  ],
+  "keys": {
+    "key00": "watermark",
+    "key01": "watermark-wrong"
+  },
+  "readers": [
+    "RANK3R",
+    "RANK3",
+    "CDC_M"
+  ],
+  "tau": {
+    "CDC_M": 0.49221603782894896,
+    "RANK3": null,
+    "RANK3R": null,
+    "new_calibration": false
+  },
+  "media_chain": [
+    "D181",
+    "quantize RGB8",
+    "full H264 encode/probe/decode",
+    "edit five fixtures from full readback",
+    "fixture H264 encode/probe/decode",
+    "shared E41 observations"
+  ],
+  "h264_generations_per_fixture": 2,
+  "domain": {
+    "RANK3R": {
+      "classes": 4247,
+      "seam_aliases": 35743,
+      "class_task_product_record_only": 509640,
+      "alias_task_product_record_only": 4289160
+    },
+    "RANK3": {
+      "classes": 961,
+      "seam_aliases": 8401,
+      "class_task_product_record_only": 115320,
+      "alias_task_product_record_only": 1008120
+    },
+    "rank_triple_membership_checks_full_observations": 240,
+    "meaning": "Domain size products are bookkeeping, never physical calls or independent samples. CDC_M retains original full-C and old compatibility diagnostics."
+  },
+  "budget": {
+    "sources": 4,
+    "eval_sources": 4,
+    "trajectories": 8,
+    "native_steps": 400,
+    "DiT_forward": 800,
+    "local_gradient": 100,
+    "state_construct": 4,
+    "D181": 12,
+    "full_MP4": 12,
+    "fixture_MP4": 60,
+    "codec_encode": 72,
+    "codec_probe": 72,
+    "codec_decode": 72,
+    "CPU_edit": 60,
+    "E41": 720,
+    "Q": 1440,
+    "H_families": 360,
+    "H_score_slots": 49320,
+    "E41_DCT": 720,
+    "E41_key_bits": 1440,
+    "native_key00_Q": 8,
+    "native_DCT": 8,
+    "native_key_bits": 16,
+    "native_P0_PM_bit_pairs": 2816,
+    "media_P0_PM_bit_pairs": 9600,
+    "codebooks": 8,
+    "readers": 3,
+    "tasks_per_reader": 120,
+    "reader_plans": 360,
+    "reader_decisions": 360,
+    "slots_per_reader": 3840,
+    "all_reader_slots": 11520,
+    "positive_tasks": 20,
+    "positive_slots": 640,
+    "null_tasks": 100,
+    "null_slots": 3200,
+    "wrong_key_PM_tasks": 20,
+    "wrong_key_PM_slots": 640,
+    "local_CDC_slots": 11520,
+    "quality_records": 108,
+    "quality_frames": 17148,
+    "quality_adjacent": 17040,
+    "OFF_RGB24_files": 4,
+    "OFF_RGB24_bytes_each": 88965120,
+    "OFF_RGB24_bytes_total": 355860480,
+    "bundles": 0
+  },
+  "method_criteria": {
+    "overall": {
+      "positive_detect_min_per_source": 4,
+      "positive_tasks_per_source": 5,
+      "implied_total_detect_min": 16,
+      "supported_correct_min": 480,
+      "positive_slots": 640,
+      "supported_correct_min_per_source": 80,
+      "slots_per_source": 160
+    },
+    "repeat": {
+      "positive_detect_min": 6,
+      "positive_tasks": 8,
+      "positive_detect_min_per_source": 1,
+      "tasks_per_source": 2,
+      "supported_correct_min": 192,
+      "positive_slots": 256,
+      "supported_correct_min_per_source": 32,
+      "slots_per_source": 64
+    },
+    "crop_delete": {
+      "positive_detect_min": 9,
+      "positive_tasks": 12,
+      "positive_detect_min_per_source": 2,
+      "tasks_per_source": 3,
+      "supported_correct_min": 288,
+      "positive_slots": 384,
+      "supported_correct_min_per_source": 48,
+      "slots_per_source": 96
+    },
+    "main_reader_null_detect": 0,
+    "main_reader_null_outputs": 0,
+    "main_reader_literal_errors": 0,
+    "main_reader_false_attribution": 0,
+    "main_reader_unsupported_outputs": 0,
+    "actual_supported_correct_losses_vs_CDC_M": 0,
+    "actual_supported_correct_losses_vs_RANK3": 0,
+    "required_observations_complete": true
+  },
+  "contribution_criteria": {
+    "prerequisite": "all method criteria met",
+    "net_actual_supported_correct_gain_over_CDC_M_min": 32,
+    "repeat_paired_gain_over_RANK3": "report separately; no extra numeric threshold beyond adopted method criteria",
+    "common_BER": "report common emitted-slot numerator and denominator; zero denominator means undefined, not zero BER"
+  },
+  "failure_policy": {
+    "one_attempt": true,
+    "technical_failure_stops_later_physical_work": true,
+    "preserve_failed_interrupted_not_entered": true,
+    "repeat_run_all": "saved read only",
+    "null_detect_does_not_require_bit_output_to_fail": true,
+    "technical_missing_is_not_zero_false_positive": true,
+    "observed_violations_retained_even_when_technical_unresolved": true,
+    "no_retry_or_source_replacement": true
+  },
+  "storage": {
+    "default_output": "/content/drive/MyDrive/Video-WM/B-Rank3R-New-Source-Confirmation-V1/fixed-four-five-v1",
+    "durable": [
+      "necessary JSON evidence",
+      "12 full and 60 fixture final MP4",
+      "4 OFF precodec RGB24 and sidecars"
+    ],
+    "temporary": "/content (models, HF/TORCH caches, tensors)",
+    "OFF_RGB24": {
+      "point": "after quantization, before first H264 encode",
+      "shape": [
+        181,
+        320,
+        512,
+        3
+      ],
+      "dtype": "uint8",
+      "order": "THWC C-contiguous RGB",
+      "fps": 8,
+      "file_pattern": "m4_inputs/{source_id}/OFF/precodec.rgb24",
+      "sidecar_pattern": "m4_inputs/{source_id}/OFF/precodec.json",
+      "archive_failure": "record future M4 resource missing; does not fail M3 method or trigger generation retry",
+      "extra_codec_calls": 0
+    }
+  },
+  "claim_ceiling": "Newly registered fixed four-source confirmation of frozen gamma1 RANK3R for 151-frame crop, one between-window delete8 or complete replay8. n and m groups remain separate; not IID, population FPR, all r1..53 tested, arbitrary repeat/speed, exact seam, source authentication, multiple-key security or perceptual quality PASS.",
+  "domain_definition": {
+    "reference": "../b-rank3-m1-paper-and-repeat-spec-20261026/DOMAIN_SPEC.json",
+    "a_range": [
+      0,
+      30
+    ],
+    "source_frame_bounds": [
+      0,
+      180
+    ],
+    "received_frame_bounds": [
+      0,
+      150
+    ],
+    "origin_bounds": [
+      0,
+      136
+    ],
+    "declared_window_frames": 45,
+    "E_view_frames": 41,
+    "phases": [
+      0,
+      1,
+      2,
+      3
+    ],
+    "legal_seam_intervals": {
+      "LEFT_GAP": [
+        45,
+        53
+      ],
+      "RIGHT_GAP": [
+        98,
+        106
+      ]
+    },
+    "old_domain": "d=0 or 1<=d<=30-a",
+    "complete_replay_domain": "d=-r, 1<=r<=min(b,151-b), all received mapped frames valid, full replay and continuous45-frame windows",
+    "negative_r_range": [
+      1,
+      53
+    ],
+    "actually_tested_r": [
+      8
+    ]
+  },
+  "status": "ADOPTED_M3_LOCAL_IMPLEMENTATION",
+  "source_protocol_role": "historical provenance only; not current method/config",
+  "physical_execution": false
+}
