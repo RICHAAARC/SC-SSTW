@@ -1,0 +1,26 @@
+{
+  "status": "ADOPTED_LOCAL_IMPLEMENTATION_NOT_PHYSICALLY_EXECUTED",
+  "readers": [
+    "RANK3",
+    "RANK3R"
+  ],
+  "fixtures": {
+    "REPEAT_LEFT_GAP": [
+      -8,
+      49
+    ],
+    "REPEAT_RIGHT_GAP": [
+      -8,
+      102
+    ]
+  },
+  "physical_budget": {
+    "codec_encode": 24,
+    "codec_probe": 36,
+    "codec_decode": 36,
+    "E41": 288
+  },
+  "gamma": 1,
+  "background": "saved original",
+  "new_calibration": false
+}
