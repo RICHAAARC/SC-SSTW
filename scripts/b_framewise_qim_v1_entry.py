@@ -26,7 +26,7 @@ CACHE_FILES = (ENTRY, 'experiments/wan_state_clock/b_framewise_qim_v1_records.py
 
 def existing_output(output):
     output = Path(output)
-    return output.exists() and any(output.iterdir())
+    return output.exists() and (not output.is_dir() or any(output.iterdir()))
 
 
 def raw_status(output):
@@ -47,31 +47,35 @@ def load_file(path, name):
     return module
 
 
-def load_report(root):
+def load_report(root, record_module='b_framewise_qim_v1_records', report_module='b_framewise_qim_v1_report'):
     # The ordinary package tree can be either editable source or the small cache.
     root = Path(root)
-    for relative in CACHE_FILES[1:]:
+    for relative in (f'experiments/wan_state_clock/{record_module}.py', f'experiments/wan_state_clock/{report_module}.py'):
         if not (root/relative).is_file():
             raise FileNotFoundError('report code unavailable: '+str(root/relative))
-    # Isolate just these two ordinary files so an earlier session's sys.modules
+    return load_saved_module(root, report_module)
+
+
+def load_saved_module(root, module):
+    # Isolate ordinary files so an earlier session's sys.modules
     # cannot silently supply a report or records module from another directory.
     name = '_qim_saved_report_'+uuid.uuid4().hex
     package = types.ModuleType(name)
-    package.__path__ = [str(root/'experiments/wan_state_clock')]
+    package.__path__ = [str(Path(root)/'experiments/wan_state_clock')]
     sys.modules[name] = package
     previous = sys.dont_write_bytecode
     sys.dont_write_bytecode = True
     try:
-        return importlib.import_module(name+'.b_framewise_qim_v1_report')
+        return importlib.import_module(name+'.'+module)
     finally:
         sys.dont_write_bytecode = previous
         for key in list(sys.modules):
             if key == name or key.startswith(name+'.'): sys.modules.pop(key, None)
 
 
-def cache_entry(source_root, cache):
+def cache_entry(source_root, cache, files=CACHE_FILES):
     """Copy ordinary readable modules outside OUTPUT; no version/digest admission."""
-    for relative in CACHE_FILES:
+    for relative in files:
         destination = cache/relative
         destination.parent.mkdir(parents=True, exist_ok=True)
         if (source_root/relative).resolve() != destination.resolve():
@@ -156,11 +160,14 @@ class Session:
             return
         self._worker(root)
 
+    def _command(self, root):
+        return [sys.executable, '-u', '-m',
+                'experiments.wan_state_clock.b_framewise_qim_v1_run', '--source', str(self.source),
+                '--output', str(self.output), '--config', str(root/CONFIG)]
+
     def _worker(self, root):
         with (self.logs/'runner.log').open('a') as stream:
-            worker = subprocess.Popen([sys.executable, '-u', '-m',
-                'experiments.wan_state_clock.b_framewise_qim_v1_run', '--source', str(self.source),
-                '--output', str(self.output), '--config', str(root/CONFIG)],
+            worker = subprocess.Popen(self._command(root),
                 cwd=root, stdout=stream, stderr=subprocess.STDOUT)
         try:
             while worker.poll() is None:
