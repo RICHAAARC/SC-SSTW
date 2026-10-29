@@ -85,7 +85,9 @@ def cache_entry(source_root, cache, files=CACHE_FILES):
         if not path.exists(): path.write_text('')
 
 
-def prepare_source(source_directory, source_ref, scratch):
+def prepare_source(source_directory, source_ref, scratch, required_files=None):
+    required_files = required_files or (CONFIG, 'experiments/wan_state_clock/b_framewise_qim_v1_run.py',
+                                       'runtime/wan/b_framewise_qim_v1_backend.py', 'scripts/b_framewise_qim_v1_setup.py')
     if source_directory is not None:
         root = Path(source_directory).expanduser().resolve()
     else:
@@ -104,11 +106,11 @@ def prepare_source(source_directory, source_ref, scratch):
                         or stat.S_ISLNK(member.external_attr >> 16)):
                     raise ValueError('unsafe source archive path: '+member.filename)
             source.extractall(destination)
-        entries = list(destination.glob('*/experiments/wan_state_clock/b_framewise_qim_v1_run.py'))
+        entries = list(destination.glob('*/'+required_files[0]))
         if len(entries) != 1: raise FileNotFoundError('available source lacks the QIM runner: '+url)
-        root = entries[0].parents[2]
-    for relative in (CONFIG, 'experiments/wan_state_clock/b_framewise_qim_v1_run.py',
-                     'runtime/wan/b_framewise_qim_v1_backend.py', 'scripts/b_framewise_qim_v1_setup.py'):
+        root = entries[0]
+        for _ in Path(required_files[0]).parts: root = root.parent
+    for relative in required_files:
         if not (root/relative).is_file(): raise FileNotFoundError('usable QIM source missing: '+str(root/relative))
     return root
 
