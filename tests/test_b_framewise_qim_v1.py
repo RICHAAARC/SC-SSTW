@@ -10,7 +10,7 @@ from torch.nn import functional as F
 from main.tube_state import b_framewise_qim_v1 as p
 from main.tube_state.b_framewise_qim_v1_solver import solve, Limits, project_budget
 from runtime.wan.b_framewise_qim_v1_operator import HeadOperator, feature_delta, replay_head
-from runtime.wan import b_framewise_qim_v1 as runner
+from experiments.wan_state_clock import b_framewise_qim_v1_experiment as runner
 
 pytestmark = pytest.mark.unit
 torch.set_num_threads(2)

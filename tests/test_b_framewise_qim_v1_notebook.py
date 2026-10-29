@@ -1,4 +1,4 @@
-"""Notebook delivery tests: stdlib recovery and fake process only, no experiment cells."""
+"""Affected layering/entry checks only: JSON, fake workers and inert CPU imports."""
 import ast
 import json
 from pathlib import Path
@@ -6,183 +6,314 @@ import shutil
 import subprocess
 import sys
 import types
+import zipfile
 import nbformat
 import pytest
 from scripts import build_b_framewise_qim_v1_notebook as builder
-from runtime.wan import b_framewise_qim_v1 as runner
+from scripts import b_framewise_qim_v1_entry as entry
+from scripts import b_framewise_qim_v1_setup as setup
+from experiments.wan_state_clock import b_framewise_qim_v1_experiment as runner
+from experiments.wan_state_clock import b_framewise_qim_v1_records as records
+from experiments.wan_state_clock import b_framewise_qim_v1_report as report
 
 pytestmark = pytest.mark.unit
 ROOT = Path(__file__).resolve().parents[1]
 
 
 def notebook_codes():
-    nb = nbformat.read(ROOT/'notebooks/b_framewise_qim_v1.ipynb',as_version=4)
-    return [c.source for c in nb.cells if c.cell_type=='code']
+    nb = nbformat.read(ROOT/'notebooks/b_framewise_qim_v1.ipynb', as_version=4)
+    return [cell.source for cell in nb.cells if cell.cell_type == 'code']
 
 
-def execute_settings(tmp_path, monkeypatch, *, inputs=True):
-    source=tmp_path/'input';output=tmp_path/'output';scratch=tmp_path/'scratch'
+def source_files():
+    """Static test/publication inventory, never a runtime admission check."""
+    pending = ['experiments/wan_state_clock/b_framewise_qim_v1_run.py', entry.CONFIG,
+               'scripts/build_b_framewise_qim_v1_notebook.py', 'scripts/b_framewise_qim_v1_setup.py',
+               'docs/b_framewise_qim_v1.md', *entry.CACHE_FILES]
+    found = set()
+    while pending:
+        rel = pending.pop()
+        if rel in found: continue
+        path = ROOT/rel
+        assert path.is_file(), path
+        found.add(rel)
+        for parent in path.relative_to(ROOT).parents:
+            init = (parent/'__init__.py').as_posix()
+            if (ROOT/init).is_file() and init not in found: pending.append(init)
+        if path.suffix != '.py': continue
+        package = list(path.relative_to(ROOT).parts[:-1])
+        for node in ast.walk(ast.parse(path.read_text())):
+            names = []
+            if isinstance(node, ast.Import): names = [n.name.split('.') for n in node.names]
+            elif isinstance(node, ast.ImportFrom):
+                prefix = (package[:len(package)-node.level+1] if node.level else [])+(node.module.split('.') if node.module else [])
+                names = [prefix]+[prefix+n.name.split('.') for n in node.names if n.name != '*']
+            for parts in names:
+                if not parts or parts[0] not in ('main','runtime','experiments','scripts'): continue
+                for candidate in (Path(*parts).with_suffix('.py'), Path(*parts)/'__init__.py'):
+                    if (ROOT/candidate).is_file() and candidate.as_posix() not in found: pending.append(candidate.as_posix())
+    return sorted(found)
+
+
+def copy_source(destination):
+    for rel in source_files():
+        path = destination/rel; path.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copyfile(ROOT/rel, path)
+    return destination
+
+
+def settings(tmp_path, inputs=True, source_directory=ROOT):
+    source, output = tmp_path/'input', tmp_path/'output'
     if inputs:
-        terminal=source/'private/b2-m3-e01/P0_terminal.pt';terminal.parent.mkdir(parents=True,exist_ok=True)
-        terminal.write_text('fake input; not deserialized')
-        runner.dump(source/'protocol.json',dict(config=dict(writer=dict(bits=[0]*32))))
-    # Only paths are substituted in the actual generated settings cell.
-    tree=ast.parse(notebook_codes()[1])
-    replacements={'SOURCE':str(source),'OUTPUT':str(output),'SCRATCH':str(scratch),'SOURCE_DIRECTORY':str(ROOT)}
-    for node in tree.body:
-        if isinstance(node,ast.Assign) and len(node.targets)==1 and isinstance(node.targets[0],ast.Name):
-            name=node.targets[0].id
-            if name in replacements:
-                node.value=ast.Constant(replacements[name]) if name=='SOURCE_DIRECTORY' else ast.Call(ast.Name('Path',ast.Load()),[ast.Constant(replacements[name])],[])
-    env={};exec(compile(ast.fix_missing_locations(tree),'generated-settings','exec'),env)
-    monkeypatch.setattr(env['urllib'].request,'urlretrieve',lambda *a:pytest.fail('network forbidden in fixture'))
+        terminal = source/'private/b2-m3-e01/P0_terminal.pt'
+        terminal.parent.mkdir(parents=True, exist_ok=True); terminal.write_text('fake, never deserialized')
+        records.dump(source/'protocol.json', dict(config=dict(writer=dict(bits=[0]*32))))
+    env = {}; exec(notebook_codes()[1], env)
+    env.update(SOURCE=source, OUTPUT=output, SOURCE_DIRECTORY=source_directory)
     return env
 
 
-def no_subprocess(*args,**kwargs):pytest.fail('existing/missing input path must not enter subprocess')
+def forbidden(*args, **kwargs): pytest.fail('forbidden network/setup/worker call')
 
 
-def test_structure_and_shared_recovery_exact(tmp_path):
-    nb=nbformat.read(ROOT/'notebooks/b_framewise_qim_v1.ipynb',as_version=4);nbformat.validate(nb)
-    codes=notebook_codes()
-    assert codes[0]=="from google.colab import drive\ndrive.mount('/content/drive')\n"
-    assert len(codes)==5
-    for c in nb.cells:
-        if c.cell_type=='code':
-            ast.parse(c.source);assert c.execution_count is None and c.outputs==[]
-    assert codes[1].startswith(builder.recovery_source(ROOT))
-    assert 'import torch' not in builder.recovery_source(ROOT) and 'import numpy' not in builder.recovery_source(ROOT)
-    assert "B-Terminal-Three-Group-V1/fixed-four-new-v1" in codes[1]
-    assert "B-Framewise-QIM-V1/fixed-e01-181-v1" in codes[1]
-    assert "SOURCE_REF = 'dev/local-joint-state-payload-v1'" in codes[1]
-    # Deterministic builder output, no notebook execution.
-    stage=tmp_path/'stage'
-    for rel in builder.source_files(ROOT):
-        dest=stage/rel;dest.parent.mkdir(parents=True,exist_ok=True);shutil.copyfile(ROOT/rel,dest)
-    built=builder.build(stage)
-    assert Path(built['notebook']).read_bytes()==(ROOT/'notebooks/b_framewise_qim_v1.ipynb').read_bytes()
-    assert built['source_zip_created'] is False
+def fake_setup(monkeypatch):
+    monkeypatch.setattr(shutil, 'which', lambda name:'/fake/'+name)
+    monkeypatch.setattr(subprocess, 'run', lambda *a, **kw:types.SimpleNamespace(returncode=0))
 
 
-def test_first_launch_reaches_real_runner_once_then_reopen_is_read_only(tmp_path,monkeypatch):
-    env=execute_settings(tmp_path,monkeypatch)
-    assert env['CAN_START'] and not env['OUTPUT'].exists()
-    exec(notebook_codes()[2],env)
-    assert env['LOG_DIRECTORY'].parent==env['OUTPUT'].parent
-    assert not env['OUTPUT'].exists()
-    monkeypatch.setattr(shutil,'which',lambda name:'/fake/'+name)
-    monkeypatch.setattr(subprocess,'run',lambda *a,**kw:types.SimpleNamespace(returncode=0))
-    launches=[]
-    class FakeBackend:
-        def __init__(self,cfg,output,event):self.event=event
-        def capture(self,path):
-            self.event('D181',False)
-            raise RuntimeError('artificial failure; no model/latent read')
-        def close(self):pass
-    class FakeWorker:
-        def __init__(self,args,**kwargs):
-            assert args[args.index('-m')+1]=='experiments.wan_state_clock.b_framewise_qim_v1_run'
-            assert Path(args[args.index('--source')+1])==env['SOURCE']
-            assert not runner.has_existing_output(env['OUTPUT'])
+class FakeBackend:
+    def __init__(self, cfg, output, event): self.event = event
+    def capture(self, path):
+        self.event('D181', False)
+        raise RuntimeError('artificial failure; no latent/model read')
+    def close(self): pass
+
+
+def fake_worker(monkeypatch, env, launches):
+    class Worker:
+        def __init__(self, args, **kwargs):
+            assert args[args.index('-m')+1] == 'experiments.wan_state_clock.b_framewise_qim_v1_run'
+            assert Path(args[args.index('--source')+1]) == env['SOURCE']
+            assert not records.has_existing_output(env['OUTPUT'])
             launches.append(args)
-            result=runner.run(runner.load(env['CONFIG']),env['SOURCE'],env['OUTPUT'],FakeBackend)
-            assert result['status']=='STOPPED_FIXED_ATTEMPT'
-            self.returncode=0
-        def poll(self):return self.returncode
-    monkeypatch.setattr(subprocess,'Popen',FakeWorker)
-    exec(notebook_codes()[3],env);exec(notebook_codes()[4],env)
-    assert len(launches)==1
-    assert (env['LOG_DIRECTORY']/'setup.log').exists() and not (env['OUTPUT']/'setup.log').exists()
-    assert (env['LOG_DIRECTORY']/'runner.log').exists() and not (env['OUTPUT']/'runner.log').exists()
-    monkeypatch.setattr(subprocess,'Popen',no_subprocess);monkeypatch.setattr(subprocess,'run',no_subprocess)
-    env=execute_settings(tmp_path,monkeypatch)
-    assert not env['CAN_START'] and env['EXISTING']
-    for code in notebook_codes()[2:]:exec(code,env)
-    assert env['summary']['physical_calls_this_invocation']==0
-    assert env['summary']['calls']['D181']['started']==1 and env['summary']['calls']['D181']['returned']==0
+            result = runner.run(records.load(args[args.index('--config')+1]), env['SOURCE'], env['OUTPUT'], FakeBackend)
+            assert result['status'] == 'STOPPED_FIXED_ATTEMPT'
+            self.returncode = 0
+        def poll(self): return self.returncode
+    monkeypatch.setattr(subprocess, 'Popen', Worker)
 
 
-@pytest.mark.parametrize('must_kill',[False,True])
-def test_notebook_interrupt_stops_worker_and_reopen_preserves_unknown(tmp_path,monkeypatch,must_kill):
-    env=execute_settings(tmp_path,monkeypatch);exec(notebook_codes()[2],env)
-    monkeypatch.setattr(shutil,'which',lambda name:'/fake/'+name)
-    monkeypatch.setattr(subprocess,'run',lambda *a,**kw:types.SimpleNamespace(returncode=0))
-    events=[]
-    class InterruptedWorker:
-        returncode=None
-        def __init__(self,args,**kwargs):
-            assert not runner.has_existing_output(env['OUTPUT'])
-            runner.dump(env['OUTPUT']/'attempt.json',dict(status='STARTED'))
-            journal=runner.Journal(env['OUTPUT']);journal.event('D181',False)
-            journal.rows['BASE/preclip']['status']='STARTED';runner.dump(env['OUTPUT']/'state.json',journal.rows)
-        def poll(self):return None
-        def terminate(self):events.append('terminate')
-        def wait(self,timeout=None):
-            if must_kill and timeout is not None:raise subprocess.TimeoutExpired('fake',timeout)
-            events.append('wait');return -15
-        def kill(self):events.append('kill')
-    monkeypatch.setattr(subprocess,'Popen',InterruptedWorker)
-    monkeypatch.setattr(env['time'],'sleep',lambda n:(_ for _ in ()).throw(KeyboardInterrupt()))
-    with pytest.raises(KeyboardInterrupt):exec(notebook_codes()[3],env)
-    assert events==(['terminate','kill','wait'] if must_kill else ['terminate','wait'])
-    monkeypatch.setattr(subprocess,'Popen',no_subprocess);monkeypatch.setattr(subprocess,'run',no_subprocess)
-    env=execute_settings(tmp_path,monkeypatch)
-    for code in notebook_codes()[2:]:exec(code,env)
-    assert env['summary']['status']=='UNRESOLVED_RECORDS'
-    assert env['summary']['state_counts']['UNRESOLVED_INTERRUPTED']==1
-    assert env['summary']['denominators']['time_read_slots']==912240
+def test_thin_structure_builder_sync_and_dependency_direction(tmp_path):
+    notebook = nbformat.read(ROOT/'notebooks/b_framewise_qim_v1.ipynb', as_version=4)
+    nbformat.validate(notebook)
+    codes = notebook_codes()
+    assert len(codes) == 5
+    assert codes[0] == "from google.colab import drive\ndrive.mount('/content/drive')\n"
+    for cell in notebook.cells:
+        if cell.cell_type == 'code':
+            ast.parse(cell.source)
+            assert cell.execution_count is None and cell.outputs == []
+            assert not any(isinstance(n, (ast.FunctionDef, ast.ClassDef)) for n in ast.walk(ast.parse(cell.source)))
+    assert not hasattr(builder, 'recovery_source') and not hasattr(builder, 'setup_source')
+    assert not (ROOT/'runtime/wan/b_framewise_qim_v1.py').exists()
+    for folder in ('main/tube_state','runtime/wan'):
+        for path in (ROOT/folder).glob('b_framewise_qim_v1*.py'):
+            for node in ast.walk(ast.parse(path.read_text())):
+                names = [n.name for n in node.names] if isinstance(node, ast.Import) else [node.module or ''] if isinstance(node, ast.ImportFrom) else []
+                assert not any(name.startswith(('experiments','scripts','notebooks')) for name in names)
+    for name in ('experiment','records','run'):
+        text = (ROOT/f'experiments/wan_state_clock/b_framewise_qim_v1_{name}.py').read_text()
+        assert 'b_framewise_qim_v1_report' not in text and 'b_framewise_qim_v1_entry' not in text
+    result = builder.build(tmp_path)
+    assert Path(result['notebook']).read_bytes() == (ROOT/'notebooks/b_framewise_qim_v1.ipynb').read_bytes()
 
 
-def test_missing_input_does_not_start_setup_or_consume_attempt(tmp_path,monkeypatch,capsys):
-    env=execute_settings(tmp_path,monkeypatch,inputs=False)
-    monkeypatch.setattr(subprocess,'Popen',no_subprocess);monkeypatch.setattr(subprocess,'run',no_subprocess)
-    for code in notebook_codes()[2:]:exec(code,env)
-    assert not env['CAN_START'] and not env['OUTPUT'].exists()
-    text=capsys.readouterr().out
-    assert 'INPUT_MISSING' in text and 'private/b2-m3-e01/P0_terminal.pt' in text and 'protocol.json' in text
+@pytest.mark.parametrize('download', [False, True])
+def test_first_launch_then_cached_reopen(tmp_path, monkeypatch, download):
+    env = settings(tmp_path, source_directory=None if download else ROOT)
+    downloads = []
+    archive = tmp_path/'source.zip'
+    if download:
+        with zipfile.ZipFile(archive, 'w') as bundle:
+            for rel in source_files(): bundle.write(ROOT/rel, 'source/'+rel)
+    def retrieve(url, destination):
+        downloads.append(url)
+        shutil.copyfile(archive if 'codeload' in url else ROOT/entry.ENTRY, destination)
+    monkeypatch.setattr(entry.urllib.request, 'urlretrieve', retrieve if download else forbidden)
+    # Keep the helper's scratch outside actual /content in this local fixture.
+    original_prepare = entry.prepare_source
+    fake_setup(monkeypatch)
+    launches = []; fake_worker(monkeypatch, env, launches)
+    exec(notebook_codes()[2], env)
+    env['entry'].prepare_source = lambda directory, ref, scratch:original_prepare(directory, ref, tmp_path/'scratch')
+    exec(notebook_codes()[3], env); exec(notebook_codes()[4], env)
+    assert len(launches) == 1 and len(downloads) == (2 if download else 0)
+    session = env['session']
+    assert (session.logs/'setup.log').exists() and (session.logs/'runner.log').exists()
+    assert not (session.output/'setup.log').exists() and not (session.output/'runner.log').exists()
+    assert all((session.cache/rel).is_file() for rel in entry.CACHE_FILES)
+    monkeypatch.setattr(subprocess, 'run', forbidden); monkeypatch.setattr(subprocess, 'Popen', forbidden)
+    monkeypatch.setattr(entry.urllib.request, 'urlretrieve', forbidden)
+    env = settings(tmp_path, source_directory=None)
+    for code in notebook_codes()[2:]: exec(code, env)
+    summary = env['session'].display()
+    assert summary['physical_calls_this_invocation'] == 0
+    assert summary['calls']['D181']['started'] == 1 and summary['calls']['D181']['returned'] == 0
 
 
-def test_corrupt_and_missing_saved_records_are_unknown_and_fixed(tmp_path):
-    runner.dump(tmp_path/'state.json',{'BASE/preclip':dict(status='RETURNED',slots=0,kind='fake')})
-    runner.dump(tmp_path/'result.json',[])
-    snapshot=runner.recover(tmp_path);summary=runner.recovery_summary(snapshot)
-    assert snapshot['rows']['BASE/preclip']['slots']==114030
-    assert snapshot['rows']['BASE/preclip']['kind']=='time_read'
-    assert 'result' in snapshot['read_errors']
-    assert summary['status']=='UNRESOLVED_RECORDS'
-    assert all(v['started'] is None and v['returned'] is None for v in summary['calls'].values())
-    assert all(r['bit_errors'] is None for r in summary['time_layers'])
-    assert all(r['observed_bits'] is None for r in summary['identity'])
-    assert summary['identity_comparison'] is None
-    states=runner.plan()
-    for row in states.values():row['status']='RETURNED'
-    runner.dump(tmp_path/'state.json',states)
-    runner.dump(tmp_path/'counts.json',{k:dict(started=0,returned=0) for k in runner.BUDGETS})
-    runner.dump(tmp_path/'result.json',dict(status='COMPLETED_FIXED_RECORDS',evaluation_status='POST_RECORDED'))
-    runner.dump(tmp_path/'evaluation.json',dict(status='POST_UNRESOLVED',error='fake corruption'))
-    assert runner.recovery_summary(runner.recover(tmp_path))['status']=='UNRESOLVED_POST_RECORD'
+@pytest.mark.parametrize('must_kill', [False, True])
+def test_interrupt_and_reopen(tmp_path, monkeypatch, must_kill):
+    env = settings(tmp_path); fake_setup(monkeypatch)
+    monkeypatch.setattr(entry.urllib.request, 'urlretrieve', forbidden)
+    events = []
+    class Worker:
+        returncode = None
+        def __init__(self, args, **kwargs):
+            assert not records.has_existing_output(env['OUTPUT'])
+            records.dump(env['OUTPUT']/'attempt.json', dict(status='STARTED'))
+            journal = runner.Journal(env['OUTPUT']); journal.event('D181', False)
+            journal.rows['BASE/preclip']['status'] = 'STARTED'; records.dump(env['OUTPUT']/'state.json', journal.rows)
+        def poll(self): return None
+        def terminate(self): events.append('terminate')
+        def wait(self, timeout=None):
+            if must_kill and timeout is not None: raise subprocess.TimeoutExpired('fake', timeout)
+            events.append('wait')
+        def kill(self): events.append('kill')
+    monkeypatch.setattr(subprocess, 'Popen', Worker)
+    monkeypatch.setattr(entry.time, 'sleep', lambda n:(_ for _ in ()).throw(KeyboardInterrupt()))
+    exec(notebook_codes()[2], env)
+    with pytest.raises(KeyboardInterrupt): exec(notebook_codes()[3], env)
+    assert events == (['terminate','kill','wait'] if must_kill else ['terminate','wait'])
+    monkeypatch.setattr(subprocess, 'run', forbidden); monkeypatch.setattr(subprocess, 'Popen', forbidden)
+    env = settings(tmp_path)
+    for code in notebook_codes()[2:]: exec(code, env)
+    assert env['session'].display()['state_counts']['UNRESOLVED_INTERRUPTED'] == 1
 
 
-def test_embedded_recovery_equals_runner_and_has_no_scientific_imports(tmp_path):
-    runner.dump(tmp_path/'attempt.json',dict(status='STARTED'))
-    env={};exec(builder.recovery_source(ROOT),env)
-    assert env['recover'](tmp_path)==runner.recover(tmp_path)
-    assert env['recovery_summary'](env['recover'](tmp_path))==runner.recovery_summary(runner.recover(tmp_path))
-    imported=[]
-    for node in ast.walk(ast.parse(builder.recovery_source(ROOT))):
-        if isinstance(node,ast.Import):imported.extend(n.name for n in node.names)
-        elif isinstance(node,ast.ImportFrom):imported.append(node.module)
-    assert set(imported)=={'pathlib','json'}
+def test_missing_input_no_download_setup_or_attempt(tmp_path, monkeypatch, capsys):
+    env = settings(tmp_path, inputs=False, source_directory=None)
+    monkeypatch.setattr(entry.urllib.request, 'urlretrieve', forbidden)
+    monkeypatch.setattr(subprocess, 'run', forbidden); monkeypatch.setattr(subprocess, 'Popen', forbidden)
+    for code in notebook_codes()[2:]: exec(code, env)
+    # Direct helper callers have the same missing-input behavior.
+    session = entry.Session(env['SOURCE'], env['OUTPUT'], 'unused')
+    session.execute()
+    assert not env['OUTPUT'].exists() and not session.cache.exists() and not session.logs.exists()
+    output = capsys.readouterr().out
+    assert 'INPUT_MISSING' in output and 'P0_terminal.pt' in output and 'protocol.json' in output
 
+
+@pytest.mark.parametrize('cache_mode', ['complete','missing','report_missing'])
+def test_existing_output_under_scientific_import_and_network_block(tmp_path, cache_mode):
+    output = tmp_path/'out'; records.dump(output/'attempt.json', dict(status='STARTED'))
+    records.dump(output/'state.json', {'BASE/preclip':dict(status='STARTED')})
+    cache = output.with_name(output.name+'-entry-cache')
+    if cache_mode != 'missing':
+        entry.cache_entry(ROOT, cache)
+        if cache_mode == 'report_missing': (cache/'experiments/wan_state_clock/b_framewise_qim_v1_report.py').unlink()
+    before = {str(p.relative_to(tmp_path)):p.read_bytes() for p in tmp_path.rglob('*') if p.is_file()}
+    probe = r'''
+import ast,builtins,json,pathlib,sys,urllib.request,socket,subprocess
+class BlockScience:
+    def find_spec(self, fullname, *args):
+        if fullname.split('.')[0] in ('torch','numpy','diffusers','transformers'):
+            raise AssertionError('scientific import forbidden: '+fullname)
+sys.meta_path.insert(0,BlockScience())
+def forbidden(*args,**kwargs): raise AssertionError('network/process forbidden')
+urllib.request.urlretrieve=forbidden;urllib.request.urlopen=forbidden
+socket.socket=forbidden;subprocess.run=forbidden;subprocess.Popen=forbidden
+notebook=json.loads(pathlib.Path(sys.argv[1]).read_text())
+codes=[c['source'] for c in notebook['cells'] if c['cell_type']=='code']
+codes=[''.join(c) if isinstance(c,list) else c for c in codes]
+env=dict(Path=pathlib.Path,SOURCE=pathlib.Path('/missing-input'),OUTPUT=pathlib.Path(sys.argv[2]),SOURCE_REF='unused',SOURCE_DIRECTORY=None)
+for code in codes[2:]: exec(compile(code,'thin-cell','exec'),env)
+assert not any(name in sys.modules for name in ('torch','numpy','diffusers'))
+print('READ_ONLY_WITHOUT_SCIENCE_OR_NETWORK_OK')
+'''
+    result = subprocess.run([sys.executable, '-I', '-c', probe, str(ROOT/'notebooks/b_framewise_qim_v1.ipynb'), str(output)], capture_output=True, text=True)
+    assert result.returncode == 0, result.stderr
+    assert 'READ_ONLY_WITHOUT_SCIENCE_OR_NETWORK_OK' in result.stdout
+    assert ('详细报告代码不可用' in result.stdout) == (cache_mode != 'complete')
+    assert before == {str(p.relative_to(tmp_path)):p.read_bytes() for p in tmp_path.rglob('*') if p.is_file()}
+
+
+@pytest.mark.parametrize('damage', ['missing','syntax'])
+def test_optional_report_does_not_block_new_worker(tmp_path, monkeypatch, damage):
+    source_root = copy_source(tmp_path/'editable')
+    path = source_root/'experiments/wan_state_clock/b_framewise_qim_v1_report.py'
+    if damage == 'missing': path.unlink()
+    else: path.write_text('invalid python !')
+    env = settings(tmp_path, source_directory=source_root)
+    fake_setup(monkeypatch); launches = []; fake_worker(monkeypatch, env, launches)
+    session = entry.Session(env['SOURCE'], env['OUTPUT'], 'unused', source_root)
+    session.execute(); session.display()
+    assert len(launches) == 1 and session.report is None
+    assert (env['OUTPUT']/'result.json').is_file()
+
+
+def test_report_loader_uses_requested_files_not_prior_imports(tmp_path):
+    a = tmp_path/'a'; b = tmp_path/'b'
+    entry.cache_entry(ROOT, a); entry.cache_entry(ROOT, b)
+    path = b/'experiments/wan_state_clock/b_framewise_qim_v1_records.py'
+    path.write_text(path.read_text().replace('sources=1, arms=2', 'sources=7, arms=2'))
+    first, second = entry.load_report(a), entry.load_report(b)
+    assert first.denominators()['sources'] == 1 and second.denominators()['sources'] == 7
+    assert first.denominators()['sources'] == 1
+
+
+def test_no_git_cli_and_core_work_without_outer_report_entry(tmp_path):
+    copy_source(tmp_path)
+    for relative in (*entry.CACHE_FILES[0:1], 'scripts/b_framewise_qim_v1_setup.py',
+                     'scripts/build_b_framewise_qim_v1_notebook.py',
+                     'experiments/wan_state_clock/b_framewise_qim_v1_report.py'):
+        (tmp_path/relative).unlink()
+    probe = "import sys;sys.path.insert(0,sys.argv[1]);from main.tube_state import b_framewise_qim_v1,b_framewise_qim_v1_solver;from runtime.wan import b_framewise_qim_v1_operator;from runtime.wan.b_framewise_qim_v1_backend import Backend;from experiments.wan_state_clock.b_framewise_qim_v1_records import load;from experiments.wan_state_clock.b_framewise_qim_v1_experiment import run;b=Backend(load(sys.argv[1]+'/experiments/wan_state_clock/configs/b_framewise_qim_v1.json'),sys.argv[1],lambda *a:None);assert b.loaded is False and b.base.vae is None;assert not any('b_framewise_qim_v1_report' in n or 'b_framewise_qim_v1_entry' in n for n in sys.modules);print('CORE_RUNTIME_CLI_WITHOUT_OUTER_LAYER_OK')"
+    result = subprocess.run([sys.executable, '-I', '-B', '-c', probe, str(tmp_path)], capture_output=True, text=True)
+    assert result.returncode == 0, result.stderr
+    assert 'CORE_RUNTIME_CLI_WITHOUT_OUTER_LAYER_OK' in result.stdout
+    result = subprocess.run([sys.executable, '-B', '-m', 'experiments.wan_state_clock.b_framewise_qim_v1_run', '--help'], cwd=tmp_path, capture_output=True, text=True)
+    assert result.returncode == 0 and '--source' in result.stdout and '--output' in result.stdout
+    records.dump(tmp_path/'saved/attempt.json', dict(status='STARTED'))
+    result = subprocess.run([sys.executable, '-B', '-m', 'experiments.wan_state_clock.b_framewise_qim_v1_run', '--source', str(tmp_path/'missing'), '--output', str(tmp_path/'saved')], cwd=tmp_path, capture_output=True, text=True)
+    assert result.returncode == 0, result.stderr
+    assert json.loads(result.stdout)['physical_calls_this_invocation'] == 0
+
+
+@pytest.mark.parametrize('failure,expected', [
+    ("ModuleNotFoundError: No module named 'numpy'", ['install','numpy']),
+    ("cannot import name 'FqnToConfig' from torchao.quantization", ['uninstall','-y','torchao'])])
+def test_moved_setup_actual_failure_repairs(tmp_path, monkeypatch, failure, expected):
+    calls = []
+    def fake_run(args, **kwargs):
+        calls.append(args)
+        if len(calls) == 1:
+            kwargs['stdout'].write(failure+'\n')
+            return types.SimpleNamespace(returncode=1)
+        return types.SimpleNamespace(returncode=0)
+    monkeypatch.setattr(subprocess, 'run', fake_run)
+    setup.ensure_imports('import numpy', ['numpy'], 'fake probe', ROOT, tmp_path/'setup.log')
+    assert calls[1][3:] == expected and len(calls) == 3
+
+
+def test_corrupt_records_keep_unknown_and_fixed(tmp_path):
+    records.dump(tmp_path/'state.json', {'BASE/preclip':dict(status='RETURNED',slots=0,kind='fake')})
+    records.dump(tmp_path/'result.json', [])
+    snapshot = records.recover(tmp_path); summary = report.recovery_summary(snapshot)
+    assert snapshot['rows']['BASE/preclip']['slots'] == 114030
+    assert snapshot['rows']['BASE/preclip']['kind'] == 'time_read'
+    assert summary['status'] == 'UNRESOLVED_RECORDS' and 'result' in snapshot['read_errors']
+    assert all(row['started'] is None for row in summary['calls'].values())
+    assert all(row['bit_errors'] is None for row in summary['time_layers'])
+    assert all(row['observed_bits'] is None for row in summary['identity'])
 
 def completed_saved_snapshot():
-    states=runner.plan()
+    states=records.plan()
     for row in states.values():row['status']='RETURNED'
     time_rows=[dict(key=f'{arm}/{layer}',status='RETURNED',fixed_slots=114030,active_slots=112770,
         observed_active_slots=112770,bit_errors=0,erased_active_slots=0,wrong_origin_candidate_count=0)
-        for arm in runner.ARMS for layer in runner.LAYERS]
+        for arm in records.ARMS for layer in records.LAYERS]
     identity=[]
-    for arm in runner.ARMS:
+    for arm in records.ARMS:
         for start in (0,40):
             for phase in range(4):
                 for region in ('R0','R1'):
@@ -192,7 +323,7 @@ def completed_saved_snapshot():
                                 status='AVAILABLE',value=0,common_complete_cell_eligible=phase==0,
                                 group=0 if phase==0 else None,correct=True if phase==0 else None))
     return dict(rows=states,saved=dict(result=dict(status='COMPLETED_FIXED_RECORDS',evaluation_status='POST_RECORDED'),
-        counts={k:dict(started=n,returned=n) for k,n in runner.BUDGETS.items()},
+        counts={k:dict(started=n,returned=n) for k,n in records.BUDGETS.items()},
         evaluation=dict(time=time_rows,identity=identity,identity_comparison=dict(fixed_paired_slots=1280,
             common_complete_observed_slots=320,base_common_errors=0,qim_common_errors=0,
             base_common_ber=0.,qim_common_ber=0.,added_support=0,lost_support=0))))
@@ -201,16 +332,15 @@ def completed_saved_snapshot():
 @pytest.mark.parametrize('damage',['identity_missing_fields','identity_duplicate','negative_time_errors','malformed_time_status','comparison_missing'])
 def test_nested_corrupt_post_records_do_not_fabricate_completion_or_zero_errors(damage):
     snapshot=completed_saved_snapshot()
-    assert runner.recovery_summary(snapshot)['status']=='COMPLETED_FIXED_RECORDS'
+    assert report.recovery_summary(snapshot)['status']=='COMPLETED_FIXED_RECORDS'
     evaluation=snapshot['saved']['evaluation']
-    if damage=='identity_missing_fields':evaluation['identity']=[dict(arm=a) for a in runner.ARMS for _ in range(1280)]
+    if damage=='identity_missing_fields':evaluation['identity']=[dict(arm=a) for a in records.ARMS for _ in range(1280)]
     elif damage=='identity_duplicate':evaluation['identity'][1]=dict(evaluation['identity'][0])
     elif damage=='negative_time_errors':evaluation['time'][0]['bit_errors']=-7
     elif damage=='malformed_time_status':evaluation['time'][0]['status']=[]
     else:evaluation['identity_comparison']={}
-    env={};exec(builder.recovery_source(ROOT),env)
-    summary=env['recovery_summary'](snapshot)
-    assert summary==runner.recovery_summary(snapshot)
+    summary=report.recovery_summary(snapshot)
+    assert summary==report.recovery_summary(snapshot)
     assert summary['status']=='UNRESOLVED_POST_RECORD'
     if damage.startswith('identity'):
         assert summary['identity'][0]['full_cell_errors'] is None
@@ -218,15 +348,3 @@ def test_nested_corrupt_post_records_do_not_fabricate_completion_or_zero_errors(
     elif damage.startswith('comparison'):assert summary['identity_comparison'] is None
     else:assert summary['time_layers'][0]['bit_errors'] is None
     assert summary['denominators']['identity_local_bit_slots']==2560
-
-
-def test_source_closure_imports_from_editable_no_git_copy(tmp_path):
-    files=builder.source_files(ROOT)
-    for rel in files:
-        dest=tmp_path/rel;dest.parent.mkdir(parents=True,exist_ok=True);shutil.copyfile(ROOT/rel,dest)
-    probe="import sys,json;sys.path.insert(0,sys.argv[1]);from runtime.wan.b_framewise_qim_v1_backend import Backend;from runtime.wan.b_framewise_qim_v1 import load;b=Backend(load(sys.argv[1]+'/experiments/wan_state_clock/configs/b_framewise_qim_v1.json'),sys.argv[1],lambda *a:None);assert b.loaded is False and b.base.vae is None;print('inert closure import')"
-    result=subprocess.run([sys.executable,'-I','-c',probe,str(tmp_path)],capture_output=True,text=True)
-    assert result.returncode==0,result.stderr
-    assert 'inert closure import' in result.stdout
-    help_result=subprocess.run([sys.executable,'-m','experiments.wan_state_clock.b_framewise_qim_v1_run','--help'],cwd=tmp_path,capture_output=True,text=True)
-    assert help_result.returncode==0 and '--source' in help_result.stdout

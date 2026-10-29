@@ -10,7 +10,8 @@ def main():
     parser.add_argument('--output',required=True,help='New output folder; existing attempt is read-only')
     parser.add_argument('--config',default=str(Path(__file__).parent/'configs/b_framewise_qim_v1.json'))
     args = parser.parse_args()
-    from runtime.wan.b_framewise_qim_v1 import load,run
+    from experiments.wan_state_clock.b_framewise_qim_v1_records import load
+    from experiments.wan_state_clock.b_framewise_qim_v1_experiment import run
     print(json.dumps(run(load(args.config),args.source,args.output),ensure_ascii=False,allow_nan=False))
 
 
