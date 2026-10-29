@@ -1,0 +1,9 @@
+{
+  "model_id": "Wan-AI/Wan2.1-T2V-1.3B-Diffusers",
+  "source_id": "b2-m3-e01",
+  "terminal_relative": "private/b2-m3-e01/P0_terminal.pt",
+  "frames": 181,
+  "global_start": 0,
+  "identity_starts": [0, 40],
+  "identity_phases": [0, 1, 2, 3]
+}
