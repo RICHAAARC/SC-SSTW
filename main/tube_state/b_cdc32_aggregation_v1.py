@@ -369,7 +369,7 @@ def _cache_value(cache, address):
     return v, None
 
 
-def read_local(plan, cache, *, memo=None):
+def _read_local_refs(plan, cache, *, memo=None, time_qualified=False):
     """Consume a previously persisted plan; memo shares actual cache addresses."""
     memo = {} if memo is None else memo
     slots = []
@@ -421,12 +421,26 @@ def read_local(plan, cache, *, memo=None):
                               selected_canonical_cell=group["selected_canonical_cell"]))
     not_entered = 32 if plan["status"] == "NOT_ENTERED" else 0
     failed = 0 if not_entered else sum(s["status"] == "LOCAL_TECHNICAL_UNREAD" for s in slots)
-    return dict(query_id=plan["query_id"], input_id=plan["input_id"], key_id=plan["key_id"],
-                D=plan["D"], status=plan["status"], slots=slots, used_evidence_ids=sorted(used),
+    result = dict(query_id=plan["query_id"], input_id=plan["input_id"], key_id=plan["key_id"],
+                status=plan["status"], slots=slots, used_evidence_ids=sorted(used),
                 cache_accesses=attempts, planned_slots=32,
-                counts=dict(planned=32, returned=32-failed-not_entered, failed=failed, not_entered=not_entered),
-                support_under_h=deepcopy(plan["support_under_h"]),
-                mapping_scope="LOCAL_FULL_C")
+                counts=dict(planned=32, returned=32-failed-not_entered, failed=failed, not_entered=not_entered))
+    if time_qualified:
+        result.update(mapping_scope=plan['mapping_scope'], existence_test='NOT_EVALUATED', source_authenticated=False)
+    else:
+        result.update(D=plan['D'], support_under_h=deepcopy(plan['support_under_h']), mapping_scope='LOCAL_FULL_C')
+    return result
+
+
+def read_local(plan, cache, *, memo=None):
+    return _read_local_refs(plan, cache, memo=memo)
+
+
+def read_time_local(plan, cache, *, memo=None):
+    """Explicit frozen time-qualified refs; no H137 detection assertion."""
+    if plan.get('mapping_scope') not in ('TIME_CONDITIONAL', 'GROUP_PERMUTATION_CONTROL', 'RECEIVED_CLOCK_BASELINE'):
+        raise ValueError('explicit time qualification required')
+    return _read_local_refs(plan, cache, memo=memo, time_qualified=True)
 
 
 def _dependencies(refs):
@@ -445,8 +459,8 @@ def _dependencies(refs):
     return result
 
 
-def aggregate(local_decisions, source_relation="SINGLE_INPUT_CONDITIONAL", *, path_context=None,
-              propagate_conflicts=True):
+def _aggregate_refs(local_decisions, source_relation="SINGLE_INPUT_CONDITIONAL", *, path_context=None,
+                    propagate_conflicts=True, time_qualified=False):
     """Conditional union, never source authentication. One value per unique slot."""
     decisions = deepcopy(list(local_decisions))
     # Normal orchestration reconciles the plans before persisting/reading them.
@@ -517,7 +531,7 @@ def aggregate(local_decisions, source_relation="SINGLE_INPUT_CONDITIONAL", *, pa
                     conditional_candidate_ids=sorted({r["candidate_id"] for r in local_refs}),
                     missing_refs=_unique([r for r in part["missing_refs"] if r["canonical_cell"] == t])))
     buckets = _unique(buckets)
-    return dict(slots=rows, status="UNSUPPORTED" if unsupported else "RETURNED", source_relation=source_relation,
+    result = dict(slots=rows, status="UNSUPPORTED" if unsupported else "RETURNED", source_relation=source_relation,
                 required_assumptions=["single source under declared input model", "common key/carrier/clock/group semantics"],
                 source_authenticated=False, path_context=deepcopy(path_context), mapping_scope="LOCAL_FULL_C",
                 used_evidence_ids=sorted({e for d in decisions for e in d["used_evidence_ids"]}),
@@ -527,12 +541,30 @@ def aggregate(local_decisions, source_relation="SINGLE_INPUT_CONDITIONAL", *, pa
                 source_position_buckets=buckets,
                 recovered_slot_count=sum(r["value"] is not None for r in rows), planned_slots=32,
                 unique_query_count=len(unique_decisions), logical_query_references=len(decisions),
-                detection_status="ANY_LOCAL_DETECTED" if any(d["D"] for d in decisions) else
-                "TECHNICAL_UNRESOLVED" if any(d["status"] in TECHNICAL for d in decisions) else "REJECT_ALL",
                 counts=dict(planned=32, returned=32-failed-not_entered, failed=failed,
                             technical_unread=sum(r["status"] == "TECHNICAL_UNREAD" for r in rows),
                             conflict=sum(r["status"] == "CONFLICT_ERASURE" for r in rows),
                             not_entered=not_entered))
+    if time_qualified:
+        scopes = {d['mapping_scope'] for d in decisions}
+        if len(scopes) != 1:
+            raise ValueError('one time arm per aggregate required')
+        result.update(mapping_scope=next(iter(scopes)), existence_test='NOT_EVALUATED',
+                      canonical_cells=result.pop('canonical_cells_under_h'),
+                      planned_canonical_cells=result.pop('planned_canonical_cells_under_h'))
+    else:
+        result['detection_status'] = ('ANY_LOCAL_DETECTED' if any(d['D'] for d in decisions) else
+            'TECHNICAL_UNRESOLVED' if any(d['status'] in TECHNICAL for d in decisions) else 'REJECT_ALL')
+    return result
+
+
+def aggregate(local_decisions, source_relation="SINGLE_INPUT_CONDITIONAL", *, path_context=None, propagate_conflicts=True):
+    return _aggregate_refs(local_decisions, source_relation, path_context=path_context, propagate_conflicts=propagate_conflicts)
+
+
+def aggregate_time(local_decisions):
+    """Same CDC32 conflict/technical/union kernel, without detection fields."""
+    return _aggregate_refs(local_decisions, path_context='SAVED_TIME_OR_FIXED_CONTROL', time_qualified=True)
 
 
 def union_reference(local_decisions, source_relation="SINGLE_INPUT_CONDITIONAL", *, path_context=None):

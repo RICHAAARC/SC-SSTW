@@ -1,0 +1,7 @@
+{
+  "source": "/content/drive/MyDrive/Video-WM/B-Conditional-Time-Validation-V1/fixed-c01-v1",
+  "output": "/content/drive/MyDrive/Video-WM/B-Time-Payload-CDC32-V1/fixed-c01-v1",
+  "model_id": "Wan-AI/Wan2.1-T2V-1.3B-Diffusers",
+  "source_scope": "same-chain development; five existing second-generation c01 received media",
+  "post_message_fixture": "original b_terminal_three_group_v1 A6D39C5E; post-only"
+}
