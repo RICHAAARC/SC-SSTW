@@ -1,0 +1,14 @@
+{
+  "name": "b_conditional_time_validation_v1",
+  "source": "/content/drive/MyDrive/Video-WM/B-Terminal-Three-Group-V1/fixed-four-new-v1",
+  "source_id": "b2-m3-c01",
+  "terminal_relative": "private/b2-m3-c01/P0_terminal.pt",
+  "model_id": "Wan-AI/Wan2.1-T2V-1.3B-Diffusers",
+  "output": "/content/drive/MyDrive/Video-WM/B-Conditional-Time-Validation-V1/fixed-c01-v1",
+  "source_selection": "First source in the original c01,c02 roster with existing P0 and no use in scoped current fused-L/conditional-interface design records; historical identity calibration use retained.",
+  "receiver_entry": "media",
+  "receiver_core_calls": 43,
+  "materialization_codec_calls": 6,
+  "receiver_codec_calls": 17,
+  "chain_codec_calls": 23
+}

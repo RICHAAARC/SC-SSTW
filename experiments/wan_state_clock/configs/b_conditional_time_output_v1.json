@@ -1,0 +1,12 @@
+{
+  "name": "b_conditional_time_output_v1",
+  "entry": null,
+  "output": null,
+  "media": null,
+  "views": {"FULL": null, "CROP": null, "DELETE1": null, "REPEAT1": null, "DELETE3": null},
+  "truth": null,
+  "source_note": "UNCONFIGURED: unused same-writer positive not confirmed; no e01/e02 substitute",
+  "entry_budgets": {"semantic": 5, "raw": 26, "media": 43},
+  "geometry": {"source_frames": 181, "width": 512, "height": 320, "fps": 8},
+  "denominators": {"received_frames": 822, "relations": 817, "time_bit_slots": 517860, "lane_slots": 4110}
+}

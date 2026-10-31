@@ -188,13 +188,17 @@ def test_codec_timeout_is_actual_bounded_command_and_gpu_routes_to_it(tmp_path,m
         def __init__(self,*a,**k): pass
         def terminate(self): actions.append('terminate')
         def communicate(self,**kw):
-            actions.append(kw.get('timeout'))
-            if kw.get('timeout')==30: raise subprocess.TimeoutExpired('fake',30)
+            actions.append('communicate')
+            assert 'timeout' not in kw
             return b'',b''
+        def wait(self,timeout=None):
+            actions.append(timeout)
+            if timeout==30: raise subprocess.TimeoutExpired('fake',30)
         def kill(self): actions.append('kill')
     monkeypatch.setattr(media.subprocess,'Popen',Proc)
     with pytest.raises(media.ResourceExceeded,match='300'): media.command(['fake'],runtime.CodecGuard())
-    assert actions==['terminate',30,'kill',None]
+    assert actions.count('communicate')==1
+    assert [a for a in actions if a!='communicate']==['terminate',30,'kill',None]
     monkeypatch.undo()
     calls=[]
     monkeypatch.setattr(media.Backend,'encode',lambda self,*a:calls.append('encode'))

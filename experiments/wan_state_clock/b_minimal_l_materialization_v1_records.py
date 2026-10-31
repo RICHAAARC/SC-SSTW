@@ -15,9 +15,11 @@ B_BUDGETS=dict(model_load=1,D181=0,baseline_head=0,solver=0,targets=0,K=1,KT=0,
                head_replay=46,BASE_constraint_P=1,Aa_constraint_P=1,E41=0,DiT=0,training=0)
 
 
-def denominators():
-    return dict(source_id='b2-m3-e02',frames=181,arms=2,time_layers=4,time_read_slots=912240,
-                identity_reads=0,new_identity_claim=False,codec_calls=6,receiver_codec_calls=34,chain_codec_calls=40)
+def denominators(config=None,receiver_codec_calls=34):
+    config=CONFIG if config is None else config
+    return dict(source_id=config['source_id'],frames=181,arms=2,time_layers=4,time_read_slots=912240,
+                identity_reads=0,new_identity_claim=False,codec_calls=6,receiver_codec_calls=receiver_codec_calls,
+                chain_codec_calls=6+receiver_codec_calls)
 
 
 def plan(stage):
@@ -57,17 +59,20 @@ def ready_B(output):
     return errors
 
 
-def preflight(source,output,stage):
+def preflight(source,output,stage,config=None,receiver_codec_calls=34):
+    config=CONFIG if config is None else config
     source,output=validate_paths(source,output)
     errors={}
     if output.exists() and not output.is_dir(): errors['output']='output is not a directory'
     if stage=='A':
-        if not (source/CONFIG['terminal_relative']).is_file(): errors['terminal']='fixed e02 P0 missing; tensor format/finite check occurs after reservation'
+        terminal=(source/config['terminal_relative']).resolve()
+        if not terminal.is_relative_to(source): errors['terminal']='terminal path must remain inside the read-only source'
+        elif not terminal.is_file(): errors['terminal']='P0 missing for '+config['source_id']+'; tensor format/finite check occurs after reservation'
     elif stage=='B': errors.update(ready_B(output))
     else: raise ValueError('stage A or B required')
     if output_state(output/stage)!='NEW': errors['stage']='stage output is '+output_state(output/stage)
     result=dict(status='PREFLIGHT_READY' if not errors else 'PREFLIGHT_UNRESOLVED',stage=stage,errors=errors,
-                physical_attempt_reserved=False,denominators=denominators())
+                physical_attempt_reserved=False,denominators=denominators(config,receiver_codec_calls))
     dump(output.with_name(output.name+'-preflight-v1')/(stage+'.json'),result)
     return result
 

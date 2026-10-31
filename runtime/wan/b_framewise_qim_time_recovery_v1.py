@@ -55,22 +55,36 @@ def command(argv,resources,input_bytes=None):
     resources.check(); start=time.monotonic()
     proc=subprocess.Popen(argv,stdin=subprocess.PIPE if input_bytes is not None else subprocess.DEVNULL,
                           stdout=subprocess.PIPE,stderr=subprocess.PIPE)
+    done=threading.Event(); result={}
+    def exchange():
+        # A single communicate owns all pipes through stdin EOF. Re-entering it
+        # with input=None after a timeout can stop pending writes on Python 3.12.
+        try: result['streams']=proc.communicate(input=input_bytes)
+        except BaseException as error: result['error']=error
+        finally: done.set()
+    worker=threading.Thread(target=exchange,name='video-wm-codec-io',daemon=True)
+    worker_started=False
     try:
-        pending=input_bytes
+        worker.start();worker_started=True
         while True:
             resources.check()
             if time.monotonic()-start>=300: raise ResourceExceeded('codec 300 second deadline exceeded')
-            try:
-                out,err=proc.communicate(input=pending,timeout=.1);break
-            except subprocess.TimeoutExpired: pending=None
+            if done.wait(.1): break
+        worker.join()
         resources.check()
+        if 'error' in result: raise result['error']
+        out,err=result['streams']
         if proc.returncode: raise RuntimeError(f'codec exit {proc.returncode}: '+err.decode(errors='replace')[-4000:])
         return out
     except BaseException:
         proc.terminate()
-        try: proc.communicate(timeout=30)
-        except subprocess.TimeoutExpired: proc.kill();proc.communicate()
+        try: proc.wait(timeout=30)
+        except subprocess.TimeoutExpired: proc.kill();proc.wait()
+        if worker_started: worker.join()
         raise
+    finally:
+        for stream in (getattr(proc,'stdin',None),getattr(proc,'stdout',None),getattr(proc,'stderr',None)):
+            if stream is not None: stream.close()
 
 
 class Backend:
@@ -93,6 +107,9 @@ class Backend:
 
     def encode(self,rgb,path):
         if rgb.dtype!=np.uint8 or rgb.ndim!=4 or rgb.shape[1:]!=(320,512,3): raise ValueError('uint8 RGB required')
+        # This FFmpeg can return zero after -n refuses an existing file. Keep
+        # that refusal visible rather than treating old media as a new encode.
+        if Path(path).exists(): raise FileExistsError('refusing existing media output: '+str(path))
         command(['ffmpeg','-v','error','-threads','1','-f','rawvideo','-pix_fmt','rgb24','-s','512x320','-r','8',
                  '-i','pipe:0','-an','-c:v','libx264','-crf','18','-pix_fmt','yuv420p','-n',str(path)],self.resources,rgb.tobytes())
 

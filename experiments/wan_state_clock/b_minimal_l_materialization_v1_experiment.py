@@ -5,23 +5,25 @@ import time
 from . import b_minimal_l_materialization_v1_records as records
 
 
-def run_stage(source,output,stage,model_id=None,backend_factory=None):
+def run_stage(source,output,stage,model_id=None,backend_factory=None,protocol=None,receiver_codec_calls=34):
     output=Path(output).expanduser().resolve();folder=output/stage
     state=records.output_state(folder)
     if state=='CONSUMED': return records.recover_stage(output,stage)
     if state=='CONFLICT': return dict(status='OUTPUT_CONFLICT',stage=stage,physical_calls_this_invocation=0)
     source,output=records.validate_paths(source,output)
-    preflight=records.preflight(source,output,stage)
+    cfg=dict(records.CONFIG if protocol is None else protocol)
+    if model_id is not None: cfg['model_id']=str(model_id)
+    preflight=records.preflight(source,output,stage,cfg,receiver_codec_calls)
     if preflight['status']!='PREFLIGHT_READY': return preflight
     folder.mkdir(parents=True,exist_ok=True)
     try:
         with (folder/'attempt.json').open('x') as stream:
             json.dump(dict(status='RESERVED_CONSUMED',stage=stage,unix=time.time(),retry=False,
                            budgets=records.A_BUDGETS if stage=='A' else records.B_BUDGETS,
-                           denominators=records.denominators()),stream,indent=2)
+                            denominators=records.denominators(cfg,receiver_codec_calls)),stream,indent=2)
     except FileExistsError: return records.recover_stage(output,stage)
     journal=records.Journal(folder,stage);backend=None;errors={};answer={};native={};complete=False
-    started=time.monotonic();cfg=dict(records.CONFIG)
+    started=time.monotonic()
     if stage=='B':
         # Consume the saved A model location. This is metadata, not an equality gate.
         try: cfg.update(records.load(output/'A/protocol.json'))
@@ -95,7 +97,7 @@ def run_stage(source,output,stage,model_id=None,backend_factory=None):
     result=dict(status='COMPLETED_FIXED_RECORDS' if not errors else 'STOPPED_FIXED_ATTEMPT',stage=stage,
                 stage_complete=complete,finite_candidate_saved=bool(answer.get('finite_candidate_saved')) if stage=='A' else None,
                 solver_status=answer.get('status'),native_status=native.get('status'),errors=errors,counts=journal.counts,
-                denominators=records.denominators(),optimality='UNPROVEN',new_identity_claim=False,scientific_pass=None)
+                denominators=records.denominators(cfg,receiver_codec_calls),optimality='UNPROVEN',new_identity_claim=False,scientific_pass=None)
     records.dump(folder/'result.json',result)
     return result
 

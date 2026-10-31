@@ -1,0 +1,80 @@
+"""Build the thin CPU interface notebook; no scientific cells executed here."""
+from pathlib import Path
+import ast
+import json
+import nbformat
+
+ROOT = Path(__file__).resolve().parents[1]
+STEM = 'b_conditional_time_output_v1'
+SETTINGS = '''CONFIG_PATH = None  # Awaiting the actual unused-source input choice; do not substitute e01/e02.
+OUTPUT = '/content/drive/MyDrive/Video-WM/B-Conditional-Time-Output-V1/fixed-new-positive-v1'
+SOURCE_DIRECTORY = None  # Optional editable local source; None downloads ordinary available source.
+SOURCE_REF = 'dev/local-joint-state-payload-v1'
+'''
+RUN = '''from pathlib import Path
+import importlib.util, json, sys, tempfile, urllib.request
+if OUTPUT is not None and (Path(OUTPUT)/'attempt.json').exists():
+    result = {'status': 'READ_ONLY_EXISTING_ATTEMPT', 'physical_calls_this_invocation': 0, 'saved': {}, 'read_errors': {}}
+    for name in ('result', 'counts', 'resources', 'evaluation'):
+        try:
+            result['saved'][name] = json.loads((Path(OUTPUT)/(name+'.json')).read_text())
+        except (OSError, ValueError) as error:
+            result['read_errors'][name] = str(error)
+elif OUTPUT is not None and Path(OUTPUT).exists() and (not Path(OUTPUT).is_dir() or any(Path(OUTPUT).iterdir())):
+    result = {'status': 'OUTPUT_CONFLICT', 'physical_calls_this_invocation': 0}
+elif CONFIG_PATH is None:
+    result = {'status': 'UNCONFIGURED', 'physical_calls_this_invocation': 0}
+else:
+    try:
+        with tempfile.TemporaryDirectory(prefix='conditional-time-bootstrap-') as temporary:
+            root = Path(SOURCE_DIRECTORY) if SOURCE_DIRECTORY is not None else Path(temporary)
+            if SOURCE_DIRECTORY is None:
+                for relative in ('scripts/b_conditional_time_output_v1_entry.py', 'scripts/b_framewise_qim_v1_entry.py',
+                                 'experiments/wan_state_clock/b_conditional_time_output_v1_records.py',
+                                 'experiments/wan_state_clock/b_minimal_l_v1_records.py'):
+                    path = root/relative
+                    path.parent.mkdir(parents=True, exist_ok=True)
+                    urllib.request.urlretrieve('https://raw.githubusercontent.com/RICHAAARC/SC-SSTW/'+SOURCE_REF+'/'+relative, path)
+            spec = importlib.util.spec_from_file_location('conditional_time_entry', root/'scripts/b_conditional_time_output_v1_entry.py')
+            entry = importlib.util.module_from_spec(spec)
+            previous = sys.dont_write_bytecode
+            sys.dont_write_bytecode = True
+            try: spec.loader.exec_module(entry)
+            finally: sys.dont_write_bytecode = previous
+            result = entry.launch(SOURCE_DIRECTORY, CONFIG_PATH, OUTPUT, SOURCE_REF)
+    except Exception as error:
+        result = {'status': 'PREPARATION_FAILED', 'error': str(error), 'physical_calls_this_invocation': 0}
+print(result)
+'''
+
+
+def build(root=ROOT):
+    cells = [nbformat.v4.new_code_cell("from google.colab import drive\ndrive.mount('/content/drive')\n"),
+             nbformat.v4.new_markdown_cell('''# 条件时间输出验证（CPU；待实际输入与发布）
+沿用 DCT2＋CDC32 与原双副本融合 L，保留旧 H 和旧正式关系。单一新内容源五个固定 QIM 视图；822 节点、817 边、517860 位槽、4110 lane 槽。
+
+当前未确认未参与设计的同 writer 正例，三个入口均未配置，本 notebook 未运行真实数据。配置好一个入口后，Run all 调用源码中的固定 runner：完整 hard/L 语义 JSON 共5项；raw 共26项；原181帧512×320/8fps MP4 共43项（codec17）。不能换 e02 剪法冒充新源，失败/中断消耗唯一 attempt，后续同 OUTPUT 只读；不跨入口重试。
+
+RSS8GiB，码表300秒，每view接收/提交/保存600秒，五view累计接收3300秒；codec每次300秒另记。语义入口不重算 C/L，不使用 GPU。全部盲输出终结保存后才读取 truth；具体路径、语义格式见 docs/b_conditional_time_output_v1.md。
+
+SOURCE_DIRECTORY 留空即可从 SOURCE_REF 下载普通可用源码，安全解压后按真实导入失败准备 numpy／psutil；仅媒体入口检查 ffmpeg／ffprobe，不安装或调用 Wan 模型。也支持可编辑本地源码。没有摘要、manifest、Git状态或精确版本门。源码获取、安装、完整调用与子进程生命周期留在源码；已有同Drive attempt 时先只读展示，不重新下载、安装、接收或补评。
+
+当前真实输入方案与发布尚未完成，CONFIG_PATH 未配置，不把此草稿当作可执行完整验证链接。主方确认现成同链路未用正例或另行采用的物化方案后填入实际配置，再发布源码和notebook。不会选c01/c02、换e02或自行生成新源。结果、计数、失败和资源记录保存在固定 OUTPUT，后续 Run all 保持同目录。
+
+工程检查不等于真实验证；顺序一致不认证绝对定位。有限新增支持要求零错零未知、保留旧输出、同一个原N非单点的新增正确节点参与新增正确边；全拒/无增益不是PASS。'''),
+             nbformat.v4.new_code_cell(SETTINGS), nbformat.v4.new_code_cell(RUN)]
+    for i, cell in enumerate(cells):
+        cell['id'] = f'conditional-time-{i:02}'
+        if cell.cell_type == 'code':
+            ast.parse(cell.source)
+            cell.execution_count, cell.outputs = None, []
+    notebook = nbformat.v4.new_notebook(cells=cells, metadata=dict(kernelspec=dict(name='python3', language='python', display_name='Python 3')))
+    nbformat.validate(notebook)
+    path = Path(root)/'notebooks'/(STEM+'.ipynb')
+    path.parent.mkdir(parents=True, exist_ok=True)
+    nbformat.write(notebook, path)
+    return dict(notebook=str(path), scientific_cells_executed=False)
+
+
+if __name__ == '__main__':
+    print(json.dumps(build(), ensure_ascii=False))

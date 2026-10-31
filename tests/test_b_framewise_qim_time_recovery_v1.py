@@ -274,15 +274,18 @@ def test_codec_timeout_terminates_then_kills_fake_process(monkeypatch):
     class Process:
         def communicate(self,input=None,timeout=None):
             calls.append(('communicate',timeout))
-            if timeout is not None:raise subprocess.TimeoutExpired('fake',timeout)
             return b'',b''
+        def wait(self,timeout=None):
+            calls.append(('wait',timeout))
+            if timeout is not None:raise subprocess.TimeoutExpired('fake',timeout)
         def terminate(self):calls.append(('terminate',))
         def kill(self):calls.append(('kill',))
     ticks=iter((0,301))
     monkeypatch.setattr(rt.time,'monotonic',lambda:next(ticks))
     monkeypatch.setattr(rt.subprocess,'Popen',lambda *a,**k:Process())
     with pytest.raises(rt.ResourceExceeded):rt.command(['fake-codec'],Guard())
-    assert calls==[('terminate',),('communicate',30),('kill',),('communicate',None)]
+    assert calls.count(('communicate',None))==1
+    assert [c for c in calls if c[0]!='communicate']==[('terminate',),('wait',30),('kill',),('wait',None)]
 
 
 def test_deadline_at_view_exit_not_reported_as_completed(tmp_path):
