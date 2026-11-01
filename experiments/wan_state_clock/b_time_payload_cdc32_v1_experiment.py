@@ -27,7 +27,7 @@ def _flatten(decoded):
     return result
 
 
-def run(config,output=None,backend_factory=None,evaluator=None):
+def run(config,output=None,backend_factory=None,evaluator=None, *, defer_post=False):
     output=Path(output or config['output']).expanduser().resolve()
     state=records.output_state(output)
     if state=='CONSUMED':return records.recover(output)
@@ -173,17 +173,19 @@ def run(config,output=None,backend_factory=None,evaluator=None):
         completion_errors=dict(errors),measurement_end='AFTER_BLIND_TERMINAL_SAVE_AND_MONITOR_CLOSE',
         time_enforcement='codec/RSS polled during codec; model/E41/CPU elapsed checked after return; no hard interruption guarantee for model/E41')
     records.dump(output/'resources.json',resources)
-    evaluation_status='EVIDENCE_INCOMPLETE'
-    try:
-        if not blind_saved:raise ValueError('blind terminal was not saved; truth/evaluator not opened')
-        if evaluator is None:
-            from .b_time_payload_cdc32_v1_evaluation import evaluate
-            evaluator=evaluate
-        evaluation=evaluator(output,source/'receiver/private/attack_truth.json')
-        if errors and evaluation.get('status')!='COUNTEREXAMPLE':
-            evaluation.update(status='EVIDENCE_INCOMPLETE',completion_errors=dict(errors))
-        records.dump(output/'evaluation.json',evaluation);evaluation_status=evaluation['status']
-    except Exception as error:errors['evaluation']=str(error)
+    evaluation_status = 'DEFERRED_POST'
+    if not defer_post:
+        evaluation_status='EVIDENCE_INCOMPLETE'
+        try:
+            if not blind_saved:raise ValueError('blind terminal was not saved; truth/evaluator not opened')
+            if evaluator is None:
+                from .b_time_payload_cdc32_v1_evaluation import evaluate
+                evaluator=evaluate
+            evaluation=evaluator(output,source/'receiver/private/attack_truth.json')
+            if errors and evaluation.get('status')!='COUNTEREXAMPLE':
+                evaluation.update(status='EVIDENCE_INCOMPLETE',completion_errors=dict(errors))
+            records.dump(output/'evaluation.json',evaluation);evaluation_status=evaluation['status']
+        except Exception as error:errors['evaluation']=str(error)
     result=dict(status='INTERRUPTED' if interrupted else 'FIXED_ATTEMPT_TERMINATED',errors=errors,
         evaluation_status=evaluation_status,denominators=records.denominators(),budgets=records.budgets(),
         wall_seconds=time.monotonic()-start,scientific_pass=None,

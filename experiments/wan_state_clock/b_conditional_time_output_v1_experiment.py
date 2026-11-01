@@ -45,7 +45,7 @@ def _load_raw(path, frames):
     return raw
 
 
-def run(config, output=None, backend_factory=None, evaluator=None):
+def run(config, output=None, backend_factory=None, evaluator=None, *, defer_post=False):
     output = output or config.get('output')
     if output:
         output = Path(output).expanduser().resolve()
@@ -187,16 +187,18 @@ def run(config, output=None, backend_factory=None, evaluator=None):
     if entry == 'media' and not truth_path:
         truth_path = output/'private/attack_truth.json'
         records.dump(truth_path, dict(views=attack_mappings()))
-    evaluation_status = 'EVIDENCE_INCOMPLETE'
-    try:
-        if evaluator is None:
-            from .b_conditional_time_output_v1_evaluation import evaluate
-            evaluator = evaluate
-        evaluation = evaluator(output, journal.rows, truth_path)
-        records.dump(output/'evaluation.json', evaluation)
-        evaluation_status = evaluation.get('status', 'EVIDENCE_INCOMPLETE')
-    except Exception as error:
-        errors['evaluation'] = f'{type(error).__name__}: {error}'
+    evaluation_status = 'DEFERRED_POST'
+    if not defer_post:
+        evaluation_status = 'EVIDENCE_INCOMPLETE'
+        try:
+            if evaluator is None:
+                from .b_conditional_time_output_v1_evaluation import evaluate
+                evaluator = evaluate
+            evaluation = evaluator(output, journal.rows, truth_path)
+            records.dump(output/'evaluation.json', evaluation)
+            evaluation_status = evaluation.get('status', 'EVIDENCE_INCOMPLETE')
+        except Exception as error:
+            errors['evaluation'] = f'{type(error).__name__}: {error}'
     result = dict(status='INTERRUPTED' if interrupted else 'FIXED_ATTEMPT_TERMINATED', entry=entry,
                   errors=errors, denominators=records.denominators(), full_wall_seconds=time.monotonic()-wall_start,
                   failed_rows=[k for k, row in journal.rows.items() if row['status'] != 'RETURNED'],

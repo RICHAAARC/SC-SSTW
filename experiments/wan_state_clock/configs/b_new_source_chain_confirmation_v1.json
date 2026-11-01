@@ -1,0 +1,9 @@
+{
+  "name": "b_new_source_chain_confirmation_v1",
+  "source": "/content/drive/MyDrive/Video-WM/B-Terminal-Three-Group-V1/fixed-four-new-v1",
+  "source_id": "b2-m3-c02",
+  "terminal_relative": "private/b2-m3-c02/P0_terminal.pt",
+  "model_id": "Wan-AI/Wan2.1-T2V-1.3B-Diffusers",
+  "output": "/content/drive/MyDrive/Video-WM/B-New-Source-Chain-Confirmation-V1/fixed-c02-v1",
+  "source_selection": "Fixed c02 old CAL glass workshop; no fallback or result-based source selection. Current frozen chain next-content confirmation, not globally unseen."
+}

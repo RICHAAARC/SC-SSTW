@@ -37,7 +37,7 @@ def compare(b, control):
         coverage_is_not_common_BER=True,actual_evidence_shared=True)
 
 
-def evaluate(output,truth_path):
+def evaluate(output,truth_path, *, message_bits=None, message_source=None):
     from pathlib import Path
     terminal=load(Path(output)/'blind_terminal.json')
     if terminal.get('status')!='ALL_BLIND_SLOTS_TERMINAL':raise ValueError('all blind slots must be saved before truth')
@@ -45,7 +45,12 @@ def evaluate(output,truth_path):
     completion=load(resources_path) if resources_path.is_file() else {}
     truth=load(truth_path)['views']
     # Original same-source writer fixture. Created only after the blind terminal read.
-    message=[int(b) for byte in bytes.fromhex('A6D39C5E') for b in f'{byte:08b}']
+    if message_bits is None:
+        message=[int(b) for byte in bytes.fromhex('A6D39C5E') for b in f'{byte:08b}']
+    else:
+        if not isinstance(message_bits,list) or len(message_bits)!=32 or any(type(b) is not int or b not in (0,1) for b in message_bits):
+            raise ValueError('explicit post message must contain 32 binary integers')
+        message=list(message_bits)
     views={};bad=[];supported=0
     technical=bool(terminal.get('errors') or completion.get('completion_errors')) or any(r['status']!='RETURNED' for r in terminal['rows'].values())
     technical |= any(p['status']!='READY' for view in VIEWS for p in terminal['plans'][view]['B'])
@@ -82,7 +87,7 @@ def evaluate(output,truth_path):
     status='COUNTEREXAMPLE' if bad else 'EVIDENCE_INCOMPLETE' if technical else 'FINITE_CONDITIONAL_READBACK' if supported else 'NO_SUPPORTED_READBACK'
     return dict(status=status,evidence_complete=not technical,views=views,B_counterexamples=bad,B_correct_supported=supported,
         denominators=denominators(),post_evaluations=1,physical_observations_added=0,scientific_pass=None,
-        message_source='original same-source fixed writer A6D39C5E',
+        message_source=message_source or 'original same-source fixed writer A6D39C5E',
         limits=['same-chain development; source already seen','no matched pre-QIM identity baseline or no-loss claim',
                 'W support-zero alone is definitional, not synchronization benefit','same literal quality with different labels is not improved decoding',
                 'four groups repeat within 11 cells; no within-group position authentication',
