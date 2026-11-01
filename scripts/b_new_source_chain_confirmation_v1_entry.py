@@ -9,6 +9,7 @@ cpu=importlib.util.module_from_spec(spec);spec.loader.exec_module(cpu)
 STEM='b_new_source_chain_confirmation_v1'
 CACHE_FILES=cpu.CACHE_FILES+('scripts/'+STEM+'_entry.py',
     'experiments/wan_state_clock/'+STEM+'_records.py',
+    'experiments/wan_state_clock/'+STEM+'_diagnostics.py',
     'experiments/wan_state_clock/b_minimal_l_materialization_v1_records.py',
     'experiments/wan_state_clock/b_conditional_time_validation_v1_records.py',
     'experiments/wan_state_clock/b_time_payload_cdc32_v1_records.py',

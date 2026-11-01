@@ -1,8 +1,8 @@
 """Future user-run adapter, reusing the physically exercised DCT2 VAE/media path."""
 from pathlib import Path
-import shutil
 import numpy as np
 import torch
+from .b_framewise_qim_v1_cache import check_disk_cache_capacity
 from main.tube_state import b_framewise_qim_v1 as p
 from main.tube_state.b_framewise_qim_v1_solver import solve, budget_metrics
 from runtime.wan.b_framewise_qim_v1_operator import HeadOperator, replay_head, validate_head
@@ -29,8 +29,7 @@ class Backend:
         self.base.load_vae(); self.loaded = True
         vae = self.base.vae; vae.eval().requires_grad_(False); validate_head(vae.decoder.conv_out)
         channels = vae.decoder.conv_out.in_channels
-        required = max(32*1024**3, 4*181*channels*320*512+4*181*320*512*3*5)
-        if shutil.disk_usage(self.output).free < required: raise MemoryError('insufficient space for FP32 native feature cache')
+        check_disk_cache_capacity(self.output, channels)
         folder = self.output/'features'; folder.mkdir()
         pre = np.lib.format.open_memmap(self.output/'BASE_preclip.npy', mode='w+', dtype=np.float32, shape=(181,320,512,3))
         cursor = 0

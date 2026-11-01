@@ -34,7 +34,7 @@ def time_report(evaluation,rows):
     for view,n in zip(records.payload.VIEWS,records.payload.LENGTHS):
         value=(evaluation or {}).get('views',{}).get(view,{})
         operation=rows.get(view+'/submit',{})
-        unstarted=operation.get('started')==0 or operation.get('status')=='DEPENDENCY_UNRESOLVED'
+        unstarted=records.operation_not_executed(operation)
         view_counts={}
         for kind,total in (('nodes',n),('relations',n-1)):
             data=value.get(kind,[]);counter=Counter({s:0 for s in counts[kind]})

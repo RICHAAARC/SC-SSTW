@@ -5,6 +5,7 @@ import time
 from .b_minimal_l_v1_records import load, dump, output_state
 from . import b_conditional_time_validation_v1_records as chain
 from . import b_time_payload_cdc32_v1_records as payload
+from .b_new_source_chain_confirmation_v1_diagnostics import execution_diagnostics, display_summary, operation_not_executed
 
 PHASES=('A','B','time','payload','time_post','payload_post','summary')
 FOLDERS=dict(A='time_chain/materialization/A',B='time_chain/materialization/B',
@@ -52,7 +53,8 @@ def preflight(config,output):
 def read_receipts(output):
     """Only operation/result/resource metadata; never caches, truth, or private protocol."""
     saved={};errors={}
-    for name in ('attempt','state','counts','resources','evaluation','result'):
+    for name in ('attempt','state','counts','resources','evaluation','result','disk_cache_capacity'):
+        if name=='disk_cache_capacity' and not (Path(output)/(name+'.json')).exists():continue
         try:
             value=load(Path(output)/(name+'.json'))
             if not isinstance(value,dict):raise ValueError('receipt object required')
@@ -93,7 +95,8 @@ def recover(output):
         if row['status'] in ('NOT_STARTED','STARTED'):row.update(status='UNRESOLVED_RECEIPT')
     return dict(status='READ_ONLY_EXISTING_PACKAGE',physical_calls_this_invocation=0,post_calls_this_invocation=0,
                 saved=saved,stages=stages,phases=phases,recovered_artifacts=artifacts,
-                denominators=denominators(),read_errors=errors)
+                denominators=denominators(),read_errors=errors,
+                execution_diagnostics=execution_diagnostics(saved.get('result'),saved.get('counts'),stages,saved.get('state')))
 
 
 class Journal:

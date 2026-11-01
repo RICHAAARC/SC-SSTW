@@ -19,7 +19,7 @@ def main(argv=None):
         signal.signal(signal.SIGTERM,interrupted)
         from .b_new_source_chain_confirmation_v1_experiment import run
         result=run(cfg,args.output)
-    print(json.dumps(dict(status=result.get('status'),evaluation_status=result.get('evaluation_status'),output=args.output or result.get('output'),physical_calls_this_invocation=result.get('physical_calls_this_invocation')),ensure_ascii=False));return result
+    print(json.dumps(records.display_summary(result,args.output or result.get('output')),ensure_ascii=False));return result
 
 
 if __name__=='__main__':main()

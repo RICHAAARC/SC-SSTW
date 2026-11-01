@@ -201,10 +201,10 @@ def test_builder_sync_remote_bootstrap_and_no_source_recovery(tmp_path,monkeypat
         else:shutil.copyfile(ROOT/url.split('/fixture-ref/')[1],path)
     monkeypatch.setattr(urllib.request,'urlretrieve',retrieve)
     scope=dict(SOURCE='/artificial',OUTPUT=str(tmp_path/'out'),SOURCE_DIRECTORY=None,SOURCE_REF='fixture-ref',MODEL_ID=None)
-    exec(builder.RUN,scope);assert scope['result']['status']=='ARTIFICIAL_BOOTSTRAP' and len(urls)==12
+    exec(builder.RUN,scope);assert scope['result']['status']=='ARTIFICIAL_BOOTSTRAP' and len(urls)==13
     rec.dump(Path(scope['OUTPUT'])/'attempt.json',dict(recovery_layout=rec.recovery_layout()))
     monkeypatch.setattr(urllib.request,'urlretrieve',lambda *a:pytest.fail('recovery download'))
-    exec(builder.RUN,scope);assert_fixed(scope['result']);assert len(capsys.readouterr().out)<4000
+    exec(builder.RUN,scope);assert_fixed(scope['result']);assert len(capsys.readouterr().out)<8000
     code="""
 import sys
 class Deny:

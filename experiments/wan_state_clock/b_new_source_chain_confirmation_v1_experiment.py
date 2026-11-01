@@ -72,18 +72,24 @@ def run(config,output=None,*,backend_factories=None,receiver_backend_factory=Non
         results['time_chain']=chain_run(config,output/'time_chain',backend_factories=backend_factories,
             receiver_backend_factory=receiver_backend_factory,phase_runner=material,receiver_runner=receiver)
         if results['time_chain']['status']=='PACKAGE_INTERRUPTED':raise KeyboardInterrupt('time chain interrupted')
-        terminal=records.load(output/'time_chain/receiver/blind_terminal.json')
-        if terminal.get('status')!='ALL_BLIND_ROWS_TERMINAL':raise ValueError('time blind terminal unavailable')
-        results['payload']=measured('payload',lambda:payload_runner(dict(source=str(output/'time_chain'),
-            output=str(output/'payload'),model_id=config['model_id']),backend_factory=payload_backend_factory,defer_post=True))
-        if results['payload'].get('status')=='INTERRUPTED':interrupted=True
+        if records.operation_not_executed(journal.rows['time']):
+            errors['dependency']='time receiver was not entered; see earliest saved stage error'
+        else:
+            terminal=records.load(output/'time_chain/receiver/blind_terminal.json')
+            if terminal.get('status')!='ALL_BLIND_ROWS_TERMINAL':raise ValueError('time blind terminal unavailable')
+            results['payload']=measured('payload',lambda:payload_runner(dict(source=str(output/'time_chain'),
+                output=str(output/'payload'),model_id=config['model_id']),backend_factory=payload_backend_factory,defer_post=True))
+            if results['payload'].get('status')=='INTERRUPTED':interrupted=True
     except BaseException as error:
         interrupted |= not isinstance(error,Exception);errors['execution']=f'{type(error).__name__}: {error}'
     journal.terminalize(('A','B','time','payload'))
-    blind_saved=False;time_rows={};time_evaluation=payload_evaluation=None
+    blind_saved=False;time_rows={};time_evaluation=payload_evaluation=None;recovered={};counts={}
     try:
         recovered=records.recover(output)
-        time_rows=recovered['stages']['time'].get('state',records.chain.receiver.plan('media'))
+        # Only confirmed unentered time phases may supply a NOT_STARTED fallback.
+        # A called receiver with missing receipts stays UNKNOWN.
+        fallback=records.chain.receiver.plan('media') if records.operation_not_executed(journal.rows['time']) else {}
+        time_rows=recovered['stages']['time'].get('state',fallback)
         stage_budgets=dict(A=records.budgets()['materialization_A'],B=records.budgets()['materialization_B'],
                            time=records.budgets()['time'],payload=records.budgets()['payload'])
         counts={k:v.get('counts',dict(status='NOT_EXECUTED' if journal.rows[k]['started']==0 else 'UNRESOLVED_RECEIPT',
@@ -123,12 +129,17 @@ def run(config,output=None,*,backend_factories=None,receiver_backend_factory=Non
             value=evaluator(output/'payload',truth,message_bits=fixture['message_bits'],message_source=fixture['message_source'])
             payload_evaluation=value
             records.dump(output/'payload_evaluation.json',value);return value
-        try:time_evaluation=journal.call('time_post',time_post)
-        except BaseException as error:
-            errors['time_post']=f'{type(error).__name__}: {error}'
-            interrupted |= not isinstance(error,Exception)
+        if records.operation_not_executed(journal.rows['time']):
+            journal.terminalize(('time_post',))
+        else:
+            try:time_evaluation=journal.call('time_post',time_post)
+            except BaseException as error:
+                errors['time_post']=f'{type(error).__name__}: {error}'
+                interrupted |= not isinstance(error,Exception)
         # Physical interruption has already terminalized the blind package. Post itself never resumes.
-        if journal.rows['time_post']['status']!='INTERRUPTED':
+        if records.operation_not_executed(journal.rows['payload']):
+            journal.terminalize(('payload_post',))
+        elif journal.rows['time_post']['status']!='INTERRUPTED':
             try:payload_evaluation=journal.call('payload_post',payload_post)
             except BaseException as error:
                 errors['payload_post']=f'{type(error).__name__}: {error}';interrupted |= not isinstance(error,Exception)
@@ -151,4 +162,5 @@ def run(config,output=None,*,backend_factories=None,receiver_backend_factory=Non
         known_counterexamples=evaluation.get('counterexamples',[]),
         denominators=records.denominators(),budgets=records.budgets(),wall_seconds=time.monotonic()-start,
         scientific_pass=None,blind_terminal_saved=blind_saved)
+    result['execution_diagnostics']=records.execution_diagnostics(result,counts,recovered.get('stages'))
     records.dump(output/'result.json',result);return result
