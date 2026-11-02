@@ -1,7 +1,7 @@
 {
   "source": "/content/drive/MyDrive/Video-WM/B-Rank3-Four-Source-Confirmation-V1/fixed-four-new-v1",
-  "output": "/content/drive/MyDrive/Video-WM/B-Native-Y-Source-Confirmation-V1/fixed-n01-v1",
+  "output": "/content/drive/MyDrive/Video-WM/B-Native-Y-Source-Confirmation-V1/fixed-n01-v1-rerun01",
   "source_id": "b-rank3-n01",
   "terminal_relative": "private/b-rank3-n01/P0_terminal.pt",
-  "model_id": "Wan-AI/Wan2.1-T2V-1.3B"
+  "model_id": "Wan-AI/Wan2.1-T2V-1.3B-Diffusers"
 }

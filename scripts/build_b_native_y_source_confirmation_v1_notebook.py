@@ -6,10 +6,10 @@ import nbformat
 ROOT = Path(__file__).resolve().parents[1]
 STEM = 'b_native_y_source_confirmation_v1'
 SETTINGS = """SOURCE = '/content/drive/MyDrive/Video-WM/B-Rank3-Four-Source-Confirmation-V1/fixed-four-new-v1'
-OUTPUT = '/content/drive/MyDrive/Video-WM/B-Native-Y-Source-Confirmation-V1/fixed-n01-v1'
+OUTPUT = '/content/drive/MyDrive/Video-WM/B-Native-Y-Source-Confirmation-V1/fixed-n01-v1-rerun01'
 SOURCE_DIRECTORY = None
 SOURCE_REF = 'dev/local-joint-state-payload-v1'
-MODEL_ID = None
+MODEL_ID = 'Wan-AI/Wan2.1-T2V-1.3B-Diffusers'
 """
 RUN = """from pathlib import Path
 import importlib.util, json, tempfile, urllib.request
@@ -35,6 +35,8 @@ print('完整元数据保留在 result；输出目录：', OUTPUT)
 """
 DESCRIPTION = """# n01：原生 Y 时间链与 DCT2＋CDC32 一源确认
 固定 b-rank3-n01（林荫大道红色电车，seed2026102501）的既存 P0。SOURCE 与独立 OUTPUT 已填写，选择可用 GPU 运行时后运行全部。源码目录与分支均可编辑，直接加载可用源码。不会重新生成 P0；源实际不可用时保留失败，不换源。
+
+本次修订恢复旧成功入口的 Diffusers 模型目录格式，供原 AutoencoderKLWan 的 vae 子目录加载。MODEL_ID 可编辑。旧 fixed-n01-v1 在 A 加载阶段失败且已消费；新默认 fixed-n01-v1-rerun01 是另一次由用户手动启动的独立尝试，每次方法与预算不变，不覆盖旧目录，也不自动重试。
 
 一次执行原 A/B 时间物化、同源 BASE/QIM 各五 received 视图、十个 native-Y/H/原 C/L/submit，再仅对五 QIM 冻结全部 B/W/U refs 并共享60次 E41。全部盲终态后才读取原 protocol.writer.bits 与攻击映射进行后评，无默认消息。BASE 有身份水印、无时间写入，并非完全无水印控制；BASE 载荷读取0。
 

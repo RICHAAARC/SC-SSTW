@@ -4,6 +4,10 @@
 
 入口 `notebooks/b_native_y_source_confirmation_v1.ipynb`；builder 为 `scripts/build_b_native_y_source_confirmation_v1_notebook.py`。首cell仅Drive mount，设置已填源及独立输出，模型可配置，普通分支/源码目录可编辑。Notebook bootstrap仅普通下载/安全解压及调用已跑c02原entry/setup/worker路径，不作摘要、版本、Git状态验证。首次整包预约之后，A/B/time/payload的失败和未进入槽均消费；相同OUTPUT再Run all仅元数据读取。
 
+2026-11-02 加载接口修复：默认与 notebook 显式 `MODEL_ID` 恢复为旧 c02 成功配置的 `Wan-AI/Wan2.1-T2V-1.3B-Diffusers`。原加载器调用 `AutoencoderKLWan.from_pretrained(..., subfolder='vae')`；误用的原生格式仓根虽有 `config.json` 和 `Wan2.1_VAE.pth`，却不提供这个 VAE 子目录布局。此故障不是方法反例，也无证据归因为网络或磁盘问题。保留可编辑模型 ID/本地路径，不增白名单、预加载或自动替换模型。
+
+旧 `fixed-n01-v1` 已在 A 加载阶段失败并消费，B/time/payload 未启动；旧目录及失败记录保留。修订默认 OUTPUT 为 `fixed-n01-v1-rerun01`，表示另一次由用户手动启动的独立尝试，不是旧尝试续跑；方法、固定分母及每次预算保持。Agent 只做定向人工 CPU 接线检查，未下载权重或执行真实模型、GPU、codec/E41。
+
 链路：原A8457/B57（FP32特征仍在A/features，原CPU FP64 solver4000/7200s/16GiB，实际输出文件系统容量检查）→两首代BASE/QIM RGB媒体prep14→十view nativeY盲82→仅QIM五view原payload256。合计8866异质逻辑预算，不等于模型调用数；codec50=12encode/19probe/19decode。model_load3、D1811内baseline_head46、head_replay46、E4160，新DiT0。公共码表在唯一codebook项生成一次，保存五组并flatten供F/C共用，无旧c02 NPZ。
 
 五view FULL181/CROP101(38..138)/DELETE1删44/REPEAT1重复44/DELETE3删43..45，两个arm共1644nodes/1634edges/8220lane/1035720replica位槽；payload raw9600/vote76800/local1440/final480，每B/W/U160，BASEpayload0。time8GiB/6300s/view600s/codec300；payload原load900/E41600每次/7200总/CPU1800/RSS8GiB。

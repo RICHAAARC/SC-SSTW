@@ -68,7 +68,16 @@ def fixture(tmp_path):
 
 
 def test_actual_full_orchestration_blind_order_fixed_counts_and_metadata_recovery(tmp_path, monkeypatch):
-    cfg, M, T, P = fixture(tmp_path)
+    cfg, Material, T, Payload = fixture(tmp_path)
+    model_ids = []
+    class M(Material):
+        def __init__(self, config, folder, event):
+            model_ids.append((Path(folder).name, config['model_id']))
+            super().__init__(config, folder, event)
+    class P(Payload):
+        def __init__(self, model_id):
+            model_ids.append(('payload', model_id))
+            super().__init__(model_id)
     output = Path(cfg['output'])
     seen = []
     original = Path.read_text
@@ -80,6 +89,7 @@ def test_actual_full_orchestration_blind_order_fixed_counts_and_metadata_recover
     monkeypatch.setattr(Path,'read_text',guarded)
     result = run(cfg, backend_factories=(M,M), receiver_backend_factory=T, payload_backend_factory=P)
     assert not result['errors'], result
+    assert model_ids == [(stage, cfg['model_id']) for stage in ('A','B','payload')]
     assert result['stage_results']['B']['native_status'] == 'NUMERICALLY_UNRESOLVED'
     assert T.calls == ['one_codebook']
     counts = rec.load(output/'counts.json')
@@ -190,6 +200,11 @@ def test_notebook_builder_sync_and_consumed_without_source_or_numpy(tmp_path, mo
     notebook=nbformat.read(builder.build(tmp_path)['notebook'],as_version=4)
     assert notebook==nbformat.read(ROOT/'notebooks'/f'{STEM}.ipynb',as_version=4)
     assert notebook.cells[0].source=="from google.colab import drive\ndrive.mount('/content/drive')\n"
+    settings={}; exec(builder.SETTINGS,settings)
+    config=rec.load(ROOT/'experiments/wan_state_clock/configs'/f'{STEM}.json')
+    old_config=rec.load(ROOT/'experiments/wan_state_clock/configs/b_new_source_chain_confirmation_v1.json')
+    assert settings['MODEL_ID']==config['model_id']==old_config['model_id']=='Wan-AI/Wan2.1-T2V-1.3B-Diffusers'
+    assert settings['OUTPUT']==config['output'] and settings['OUTPUT'].endswith('/fixed-n01-v1-rerun01')
     output=tmp_path/'consumed';rec.dump(output/'attempt.json',{})
     monkeypatch.setattr(urllib.request,'urlretrieve',lambda *a:pytest.fail('consumed network call'))
     scope=dict(SOURCE='/missing',OUTPUT=str(output),SOURCE_DIRECTORY=None,SOURCE_REF='unused',MODEL_ID=None)
@@ -202,23 +217,58 @@ def test_notebook_builder_sync_and_consumed_without_source_or_numpy(tmp_path, mo
     assert json.loads(called.stdout)['physical_calls_this_invocation']==0
 
 
-def test_real_entry_setup_worker_wiring_with_fake_worker(tmp_path,monkeypatch):
+@pytest.mark.parametrize('model_choice', ['config_default','notebook_explicit','editable_local'])
+def test_real_entry_setup_worker_wiring_with_fake_worker(tmp_path,monkeypatch,model_choice):
     from types import SimpleNamespace
     cfg,_,_,_=fixture(tmp_path);entry=module('scripts/'+STEM+'_entry.py');common=entry.cpu._common();seen=[]
+    settings={};exec(module('scripts/build_'+STEM+'_notebook.py').SETTINGS,settings)
+    model_id={'config_default':None,'notebook_explicit':settings['MODEL_ID'],
+              'editable_local':str(tmp_path/'editable-model')}[model_choice]
+    expected_model=cfg['model_id'] if model_id is None else model_id
     monkeypatch.setattr(entry.cpu,'_common',lambda:common)
     monkeypatch.setattr(common,'load_file',lambda *a:SimpleNamespace(setup_dependencies=lambda *a:seen.append('setup')))
     def worker(session,root):
         actual=rec.load(session.config_path);seen.append(actual)
         assert actual['source_id']==rec.SOURCE_ID and actual['terminal_relative']==rec.TERMINAL
+        assert actual['model_id']==expected_model
         assert STEM+'_run' in session._command(root)[4]
         rec.dump(session.output/'attempt.json',{})
         rec.dump(session.output/'result.json',dict(status='ARTIFICIAL_N01_WORKER'))
     monkeypatch.setattr(common.Session,'_worker',worker)
-    result=entry.launch(cfg['source'],cfg['output'],source_directory=ROOT,scratch=tmp_path/'scratch')
+    result=entry.launch(cfg['source'],cfg['output'],source_directory=ROOT,scratch=tmp_path/'scratch',model_id=model_id)
     assert result['status']=='ARTIFICIAL_N01_WORKER',result
     assert seen[0]=='setup'
     monkeypatch.setattr(common,'prepare_source',lambda *a,**k:pytest.fail('consumed source preparation'))
     assert entry.launch('/missing',cfg['output'],source_directory='/missing')['physical_calls_this_invocation']==0
+
+
+def test_actual_runtime_adapters_use_single_diffusers_vae_stub_load(tmp_path,monkeypatch):
+    from types import SimpleNamespace
+    import torch
+    from runtime.wan import b_minimal_l_materialization_v1 as material
+    from runtime.wan import b_time_payload_cdc32_v1 as payload
+    from runtime.wan import local_joint_positive_projection_margin_v1 as loader
+    config=rec.load(ROOT/'experiments/wan_state_clock/configs'/f'{STEM}.json')
+    calls=[]
+    class FakeVAE:
+        def to(self,device): assert device=='cpu';return self
+        def eval(self):return self
+        def requires_grad_(self,value):assert value is False;return self
+    def load(location,**kwargs):
+        calls.append((location,kwargs));return FakeVAE()
+    monkeypatch.setitem(sys.modules,'diffusers',SimpleNamespace(AutoencoderKLWan=SimpleNamespace(from_pretrained=load)))
+    monkeypatch.setattr(torch.cuda,'is_available',lambda:False)
+    select=loader.select_vae_source
+    monkeypatch.setattr(loader,'select_vae_source',lambda model_id:select(model_id,cache_base=tmp_path/'empty-cache'))
+    monkeypatch.setattr(payload,'MediaBackend',lambda:SimpleNamespace())
+    for backend_class in (material.CaptureBackend,material.CandidateBackend):
+        backend=backend_class(config,tmp_path,lambda *a:None)
+        backend.base.load_vae()
+    payload.Backend(config['model_id']).load()
+    assert len(calls)==3
+    for location,kwargs in calls:
+        assert location==config['model_id']=='Wan-AI/Wan2.1-T2V-1.3B-Diffusers'
+        assert kwargs['subfolder']=='vae' and kwargs['torch_dtype']==torch.float32
 
 
 @pytest.mark.parametrize('close_result', [None, {'error':'artificial late watcher error'}, {'peak_resident_bytes':9*1024**3}])
