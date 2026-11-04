@@ -115,12 +115,15 @@ class Journal:
         row=self.rows[key]
         if row['started']:raise RuntimeError('operation already consumed: '+key)
         row.update(started=1,status='STARTED');self.save();began=time.monotonic()
+        print(f'[{self.output.name}] START {key}',flush=True)
         try:
             value=fn();row.update(returned=1,status='RETURNED');return value
         except BaseException as error:
             if getattr(error,'physical_returned',False):row['returned']=1;row['limit_observation']='AFTER_CALL_RETURN'
             row.update(status='FAILED' if isinstance(error,Exception) else 'INTERRUPTED',error=type(error).__name__+': '+str(error));raise
-        finally:row['wall_seconds']=time.monotonic()-began;self.save()
+        finally:
+            row['wall_seconds']=time.monotonic()-began;self.save()
+            print(f'[{self.output.name}] {row["status"]} {key} ({row["wall_seconds"]:.1f}s)',flush=True)
 
     def event(self,source,kind,done):
         key=source+'/'+kind;counter=self.events.setdefault(key,dict(started=0,returned=0))
@@ -135,6 +138,7 @@ class Journal:
             if row['started']:raise RuntimeError('physical call already consumed: '+uid)
             row.update(started=1,status='STARTED');counter['started']+=1
         self.save()
+        print(f'[{self.output.name}] {row["status"]} {uid}',flush=True)
 
     def finish(self,errors,**fields):
         for row in self.rows.values():
@@ -144,4 +148,5 @@ class Journal:
         result=dict(status='FIXED_STAGE_TERMINATED',stage_terminal=True,errors=errors,
                     wall_seconds=time.monotonic()-self.started,denominators=denominators(),scientific_pass=None,**fields)
         dump(self.output/'blind_terminal.json',result);dump(self.output/'result.json',result)
+        print(f'[{self.output.name}] TERMINAL saved; errors={len(errors)}; seconds={result["wall_seconds"]:.1f}',flush=True)
         return result

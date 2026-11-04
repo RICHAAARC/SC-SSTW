@@ -9,13 +9,12 @@ def load(path,name):
     spec=importlib.util.spec_from_file_location(name,path);value=importlib.util.module_from_spec(spec);spec.loader.exec_module(value);return value
 
 
-def launch(cpu_handoff,cpu_media,output,source_directory=None,source_ref='dev/local-joint-state-payload-v1',model_id=None):
-    pending=any(not (Path(output)/stage/'attempt.json').exists() and Path(source).exists()
-                for stage,source in (('gpu1',cpu_handoff),('gpu2',cpu_media)))
+def launch(cpu_handoff,input_packages,output,source_directory=None,source_ref='dev/local-joint-state-payload-v1',model_id=None):
+    pending=any(not (Path(output)/stage/'attempt.json').exists() for stage in ('gpu1','cpu_media','gpu2','post'))
     if not pending:
         import json
         stages={}
-        for stage in ('gpu1','gpu2'):
+        for stage in ('gpu1','cpu_media','gpu2','post'):
             folder=Path(output)/stage
             item=dict(status='READ_ONLY_CONSUMED_STAGE' if (folder/'attempt.json').exists() else 'WAITING_INPUT',
                       physical_calls_this_invocation=0,saved={},read_errors={})
@@ -24,7 +23,7 @@ def launch(cpu_handoff,cpu_media,output,source_directory=None,source_ref='dev/lo
                     try:item['saved'][name]=json.loads((folder/(name+'.json')).read_text())
                     except (OSError,ValueError) as error:item['read_errors'][name]=str(error)
             stages[stage]=item
-        return dict(status='STAGED_STATUS',stages=stages)
+        return dict(status='RUN_ALL_STATUS',stages=stages)
     with tempfile.TemporaryDirectory(prefix='joint-a-source-') as temporary:
         if source_directory is None:
             path=Path(temporary)/'common.py'
@@ -32,7 +31,8 @@ def launch(cpu_handoff,cpu_media,output,source_directory=None,source_ref='dev/lo
             common=load(path,'joint_a_source_common')
             root=common.prepare_source(None,source_ref,Path(temporary)/'checkout',required_files=(
                 'scripts/b_joint_time_packet_a_physical_v1_entry.py',
+                'scripts/b_joint_time_packet_a_physical_v1_report.py',
                 'experiments/wan_state_clock/b_joint_time_packet_a_physical_v1_run.py'))
         else:root=Path(source_directory).expanduser().resolve()
         entry=load(root/'scripts/b_joint_time_packet_a_physical_v1_entry.py','joint_a_entry')
-        return entry.launch(cpu_handoff,cpu_media,output,root,model_id)
+        return entry.launch(cpu_handoff,input_packages,output,root,model_id)

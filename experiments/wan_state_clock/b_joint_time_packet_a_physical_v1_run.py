@@ -22,7 +22,9 @@ def main():
         else:
             from .b_joint_time_packet_a_post_v1 import run
             result=run(config,output)
-    print(json.dumps(result,ensure_ascii=False,indent=2));return result
+    print(json.dumps(dict(stage=args.stage,status=result.get('status'),stage_terminal=result.get('stage_terminal'),
+        errors=result.get('errors',{}),result_file=str(output/'result.json')),ensure_ascii=False),flush=True)
+    return result
 
 
 if __name__=='__main__':main()

@@ -1,4 +1,4 @@
-"""Local CPU media, fixed RGB/Y projections and complete-domain blind saving."""
+"""CPU media, fixed RGB/Y projections and complete-domain blind saving."""
 from pathlib import Path
 import json
 import numpy as np
@@ -75,6 +75,8 @@ class Backend(Codec):
                 chunks.append(dict(start=lo,stop=hi,file='scores/'+name,shape=list(values.shape),dtype='float64'))
                 self.resources.check()
                 dump(output/'scores_progress.json',dict(chunks=chunks,complete=False))
+                if len(chunks)==1 or len(chunks)%8==0 or hi==92672:
+                    print(f'[cpu_media] {output}: saved score states [{lo}, {hi}); chunks={len(chunks)}',flush=True)
             result=dict(status='BLIND_SAVED',coding=coding,frames=frames,chunks=chunks,
                         state_chunk=receiver.STATE_CHUNK,mature_domain=[4,92671],epsilon=receiver.EPSILON,
                         no_soft_observation_frames=np.flatnonzero(~receiver.hinge_terms(raw['soft'],raw['mask'])['support'].any(axis=(1,2))).tolist(),
