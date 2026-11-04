@@ -72,6 +72,7 @@ def run_worker(command,root,log,receipt,stage_output,*,process_factory=None):
         try:
             worker=(process_factory or subprocess.Popen)(command,cwd=root,stdout=stream,stderr=subprocess.STDOUT)
             state.update(status='RUNNING',pid=worker.pid);save()
+            print(f'[{stage_output.name}] Worker started: PID={worker.pid}; console log={log}',flush=True)
             code=worker.wait()
             state.update(status='WORKER_EXITED',returncode=code,reaped=True);return code
         except BaseException as error:
@@ -91,7 +92,9 @@ def run_worker(command,root,log,receipt,stage_output,*,process_factory=None):
                 except BaseException as cleanup_error:
                     state['cleanup_error']=type(cleanup_error).__name__+': '+str(cleanup_error)
             raise
-        finally:save()
+        finally:
+            save()
+            print(f'[{stage_output.name}] Worker finished: status={state["status"]}; returncode={state.get("returncode")}; console log={log}',flush=True)
 
 
 def launch(cpu_handoff,cpu_media,output,source_root,model_id=None):
@@ -107,7 +110,9 @@ def launch(cpu_handoff,cpu_media,output,source_root,model_id=None):
     for stage,input_path,receipt in pending:
         try:
             with tempfile.TemporaryDirectory(prefix='joint-a-handoff-') as temporary:
+                print(f'[{stage}] Loading handoff input (unpacking ZIP when needed): {input_path}',flush=True)
                 folder=unpack(input_path,Path(temporary)/'input',receipt)
+                print(f'[{stage}] Handoff input ready: {folder}',flush=True)
                 cfg=default_gpu_config()
                 cfg['cpu_handoff' if stage=='gpu1' else 'cpu_media']=str(folder)
                 if model_id is not None:cfg['model_id']=model_id
