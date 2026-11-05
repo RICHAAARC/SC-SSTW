@@ -438,7 +438,8 @@ def read_local(plan, cache, *, memo=None):
 
 def read_time_local(plan, cache, *, memo=None):
     """Explicit frozen time-qualified refs; no H137 detection assertion."""
-    if plan.get('mapping_scope') not in ('TIME_CONDITIONAL', 'GROUP_PERMUTATION_CONTROL', 'RECEIVED_CLOCK_BASELINE'):
+    if plan.get('mapping_scope') not in ('TIME_CONDITIONAL', 'GROUP_PERMUTATION_CONTROL', 'RECEIVED_CLOCK_BASELINE',
+            'RELATIVE_TIME_CONDITIONAL', 'RECEIVED_CLOCK_FOUR_PHASE', 'FIXED_PLUS_ONE_TIME_SHIFT', 'PAIRED_GIVEN_TIME'):
         raise ValueError('explicit time qualification required')
     return _read_local_refs(plan, cache, memo=memo, time_qualified=True)
 
