@@ -1,0 +1,70 @@
+{
+  "model_id": "Wan-AI/Wan2.1-T2V-1.3B-Diffusers",
+  "generation": {
+    "height": 320,
+    "width": 512,
+    "frames": 181,
+    "fps": 8,
+    "steps": 50,
+    "guidance_scale": 5.0,
+    "max_sequence_length": 512
+  },
+  "writer": {
+    "key": "watermark",
+    "gamma": 1,
+    "bits": [
+      1,
+      0,
+      1,
+      0,
+      0,
+      1,
+      1,
+      0,
+      1,
+      1,
+      0,
+      1,
+      0,
+      0,
+      1,
+      1,
+      1,
+      0,
+      0,
+      1,
+      1,
+      1,
+      0,
+      0,
+      0,
+      1,
+      0,
+      1,
+      1,
+      1,
+      1,
+      0
+    ]
+  },
+  "experiment": "joint-time-relative-consistency-fresh-r01-v1",
+  "source": {
+    "id": "joint-relative-r01",
+    "seed": 2026110501,
+    "role": "prospective-single-content",
+    "prompt": "A locked-off medium-wide shot of a wooden kinetic mobile with amber glass pendulums moving slowly above a pale stone tabletop. Soft daylight enters from the left and the entire mobile remains visible throughout the shot.",
+    "negative_prompt": ""
+  },
+  "views": [
+    "FULL",
+    "CROP",
+    "DELETE1",
+    "REPEAT1",
+    "DELETE3"
+  ],
+  "arms": [
+    "NEW",
+    "BASE"
+  ],
+  "output": "/content/drive/MyDrive/Video-WM/B-Joint-Time-Relative-Consistency-V1/fresh-r01-v1/attempt01"
+}
