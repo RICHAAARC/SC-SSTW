@@ -1,0 +1,70 @@
+{
+  "model_id": "Wan-AI/Wan2.1-T2V-1.3B-Diffusers",
+  "generation": {
+    "height": 320,
+    "width": 512,
+    "frames": 181,
+    "fps": 8,
+    "steps": 50,
+    "guidance_scale": 5.0,
+    "max_sequence_length": 512
+  },
+  "writer": {
+    "key": "watermark",
+    "gamma": 1,
+    "bits": [
+      1,
+      0,
+      1,
+      0,
+      0,
+      1,
+      1,
+      0,
+      1,
+      1,
+      0,
+      1,
+      0,
+      0,
+      1,
+      1,
+      1,
+      0,
+      0,
+      1,
+      1,
+      1,
+      0,
+      0,
+      0,
+      1,
+      0,
+      1,
+      1,
+      1,
+      1,
+      0
+    ]
+  },
+  "experiment": "joint-time-payload-fresh-r02-v1",
+  "source": {
+    "id": "joint-relative-r02",
+    "seed": 2026110602,
+    "role": "prospective-single-content",
+    "prompt": "A locked-off wide shot of ocean waves washing over dark rocks under an overcast sky. Natural continuous water motion, documentary style, with the entire rocky shoreline visible throughout the shot.",
+    "negative_prompt": ""
+  },
+  "views": [
+    "FULL",
+    "CROP",
+    "DELETE1",
+    "REPEAT1",
+    "DELETE3"
+  ],
+  "arms": [
+    "NEW",
+    "BASE"
+  ],
+  "output": "/content/drive/MyDrive/Video-WM/B-Joint-Time-Payload-R02-V1/fresh-r02-v1/attempt01"
+}

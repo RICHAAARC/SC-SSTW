@@ -123,7 +123,7 @@ def paired_raw(output, bplans, pplans):
                 different_values=sum(r['equal'] is False for r in rows), independent_source_claim=False)
 
 
-def evaluate(output, source):
+def evaluate(output, source, *, retain_incomplete=False, source_scope='one seen content; five related views'):
     output, source = Path(output), Path(source)
     if rec.read(output/'blind_terminal.json')['status'] != 'ALL_BLIND_SLOTS_TERMINAL':
         raise ValueError('complete blind closure before truth')
@@ -134,7 +134,13 @@ def evaluate(output, source):
     message = rec.read(source/'protocol.json')['writer']['bits']
     if len(message) != 32 or any(type(b) is not int or b not in (0,1) for b in message):
         raise ValueError('actual post writer message must be 32 binary integers')
-    raw = rec.read(output/'raw_bank.json'); plans = rec.read(output/'plans.json')
+    raw = rec.read(output/'raw_bank.json')
+    if retain_incomplete and not (output/'plans.json').is_file():
+        # Saved partial plans only: never construct new geometry during post.
+        plans = {item['id']: rec.read(output/'plans'/f"{item['id']}.json")
+                 for item in rec.inputs() if (output/'plans'/f"{item['id']}.json").is_file()}
+    else:
+        plans = rec.read(output/'plans.json')
     totals, per_view, counterexamples = {}, {}, []
     for i, (view,n) in enumerate(zip(rec.VIEWS,rec.LENGTHS)):
         mapping = maps[view]
@@ -151,7 +157,10 @@ def evaluate(output, source):
                 counterexamples.extend(dict(view=view,slot=r['slot'],literal=r['literal_correct'],wrong_attribution=r['wrong_attribution'],
                     unsupported=r['unsupported_output']) for r in rows[strategy]
                     if r['literal_correct'] is False or r['wrong_attribution'] or r['unsupported_output'])
-        paired = paired_raw(output, plans[f'input{i}']['strategies']['B_NEW'], plans[f'input{i+5}']['strategies']['P_BASE'])
+        if f'input{i}' in plans and f'input{i+5}' in plans:
+            paired = paired_raw(output, plans[f'input{i}']['strategies']['B_NEW'], plans[f'input{i+5}']['strategies']['P_BASE'])
+        else:
+            paired = dict(status='DEPENDENCY_UNRESOLVED', rows=[], reason='saved paired plans unavailable')
         rec.write(output/'post'/view/'paired_raw.json', paired)
         per_view[view] = dict(comparisons={name: comparison(rows['B_NEW'],rows[name]) for name in ('U_NEW','W_NEW','P_BASE')},
                              paired_raw_counts={k:v for k,v in paired.items() if k!='rows'})
@@ -159,7 +168,7 @@ def evaluate(output, source):
             compared = ref_comparison(saved['B_NEW'],saved[name])
             rec.write(output/'post'/view/f'B_vs_{name}_refs.json', compared)
             per_view[view][f'B_vs_{name}_refs'] = {k:v for k,v in compared.items() if k!='rows'}
-    technical = any(value['time']['status'] != 'READY' for value in plans.values()) or any(
+    technical = len(plans) != 10 or any(value['time']['status'] != 'READY' for value in plans.values()) or any(
         any(name in ('TECHNICAL_UNREAD','PARTIAL_EVIDENCE_READ','NOT_ENTERED','UNRESOLVED_RECEIPT') and count
             for name,count in row['statuses'].items()) for row in totals.values())
     supported = sum(totals[view+'/B_NEW']['correct_supported'] for view in rec.VIEWS)
@@ -167,7 +176,7 @@ def evaluate(output, source):
               'FINITE_CONDITIONAL_READBACK' if supported else 'NO_SUPPORTED_READBACK')
     result = dict(status=status, evidence_complete=not technical, B_correct_supported=supported, scientific_pass=None,
         denominators=rec.DENOMINATORS, rows=totals, views=per_view, B_counterexamples=counterexamples,
-        limits=['one seen content; five related views', 'no identity existence test or FPR',
+        limits=[source_scope, 'no identity existence test or FPR',
                 'not pure phase/context causality', 'repeated payload does not authenticate within-group position',
                 'native exact-target failure and solver optimality unproved retained', 'no clean OFF total quality'],
         message_source='original saved protocol.writer.bits; post only', post_calls=1)

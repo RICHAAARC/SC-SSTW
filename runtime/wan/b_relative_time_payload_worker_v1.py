@@ -20,7 +20,7 @@ def quality_pair(new, base):
                 maxabs=maximum, quality_pass=None, scope='TIME_PACKET_INCREMENT_NEW_VS_BASE')
 
 
-def worker(output, backend_factory=None, evaluator=None):
+def worker(output, backend_factory=None, evaluator=None, *, source_id='joint-relative-r01', defer_post=False):
     output = Path(output)
     if not (output/'attempt.json').is_file(): raise ValueError('reserved attempt required')
     try:
@@ -43,7 +43,7 @@ def worker(output, backend_factory=None, evaluator=None):
         for item in rec.inputs():
             def freeze(item=item):
                 if item['arm'] == 'NEW':
-                    path = source/'blind/joint-relative-r01/NEW'/item['view']/'relative.json'
+                    path = source/'blind'/source_id/'NEW'/item['view']/'relative.json'
                     try: relative = rec.read(path)
                     except (OSError, ValueError) as error: relative = dict(input_error=str(error))
                     value = method.new_input(item['id'], item['length'], relative)
@@ -65,7 +65,7 @@ def worker(output, backend_factory=None, evaluator=None):
             paired_pixels = {}
             for item in [i for i in rec.inputs() if i['view'] == view]:
                 stem, length = item['id'], item['length']
-                path = source/'media/joint-relative-r01'/item['arm']/view/'received.mp4'
+                path = source/'media'/source_id/item['arm']/view/'received.mp4'
                 journal.call(stem+'/probe', lambda: save_return(output/'media'/stem/'probe.json', backend.probe(path, length)))
                 pixels = journal.call(stem+'/decode_RGB', lambda: backend.decode(path, length))
                 paired_pixels[item['arm']] = pixels
@@ -118,7 +118,7 @@ def worker(output, backend_factory=None, evaluator=None):
     try:
         rec.finalize_blind(output, failure); extras['blind_terminal_saves'] = 1
         rec.write(output/'extra_counts.json', extras)
-        if failure is None:
+        if failure is None and not defer_post:
             if evaluator is None:
                 from .b_relative_time_payload_evaluation_v1 import evaluate
                 evaluator = evaluate
@@ -139,7 +139,7 @@ def worker(output, backend_factory=None, evaluator=None):
     rec.write(output/'quality.json', quality)
     result = dict(status='STOPPED_FIXED_ATTEMPT' if failure else 'COMPLETED', failure=failure,
                   denominators=rec.DENOMINATORS, evaluation_status=evaluation.get('status') if evaluation else 'NOT_EVALUATED',
-                  worker_seconds=time.monotonic()-start, scientific_pass=None, consumed=True)
+                  worker_seconds=time.monotonic()-start, scientific_pass=None, consumed=True, post_deferred=defer_post)
     rec.write(output/'result.json', result)
     return result
 

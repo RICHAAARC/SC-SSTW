@@ -60,7 +60,7 @@ def edge_pair(row):
     return None
 
 
-def evaluate_saved(output):
+def evaluate_saved(output, *, require_returned=False):
     output = Path(output)
     if read_json(output / "blind_terminated.json")["status"] != "BLIND_TERMINATED":
         raise ValueError("Blind output closure required before evaluation truth access")
@@ -75,9 +75,12 @@ def evaluate_saved(output):
         if len(g) != unit["frames"]:
             raise ValueError("Fixed evaluation mapping length mismatch")
         path = output / "blind" / unit["id"] / "relative.json"
-        value = read_json(path) if path.is_file() else None
+        confirmed = operations.get(unit['id'] + '/relative_compare', {}).get('status') == 'RETURNED'
+        value = read_json(path) if path.is_file() and (confirmed or not require_returned) else None
         available = value is not None
         execution = unit_execution(unit, statuses[unit["id"]]["status"], available, operations, accounting_errors)
+        if require_returned and path.is_file() and not confirmed:
+            execution['unconfirmed_artifact'] = str(path)
         old_nodes = value["original_f42"]["nodes"] if value else [None]*unit["frames"]
         new_nodes = value["conditional_nodes"] if value else [None]*unit["frames"]
         old_edges = value["original_f42"]["edges"] if value else [None]*unit["edges"]

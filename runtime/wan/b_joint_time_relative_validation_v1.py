@@ -179,7 +179,7 @@ def subprocess_worker(stage, output, scratch):
         raise
 
 
-def execute_reserved(config, output, scratch, *, worker_runner=None):
+def execute_reserved(config, output, scratch, *, worker_runner=None, validator=validate, defer_post=False):
     output, scratch = Path(output), Path(scratch)
     attempt = read_json(output / "attempt.json")
     if attempt.get("status") != "RESERVED" or (output / "plan.json").exists():
@@ -192,7 +192,7 @@ def execute_reserved(config, output, scratch, *, worker_runner=None):
     write_json(output / "private/attack_truth.json", construction_maps())
     failure, stage_results = None, {}
     try:
-        validate(config)
+        validator(config)
         scratch.mkdir(parents=True, exist_ok=True)
         for stage in STAGES:
             receipt = (worker_runner or subprocess_worker)(stage, output, scratch)
@@ -216,11 +216,13 @@ def execute_reserved(config, output, scratch, *, worker_runner=None):
                   accounting_errors=accounting_errors, scientific_pass=None, E41=0, identity_new_reads=0)
     write_json(output / "result.json", result)
     try:
-        evaluate_saved(output)
+        if not defer_post:
+            evaluate_saved(output)
     except BaseException as error:
         result["evaluation_failure"] = dict(type=type(error).__name__, message=str(error))
         write_json(output / "evaluation_failure.json", result["evaluation_failure"])
     result["status"] = "STOPPED_FIXED_ATTEMPT" if failure or accounting_errors or result.get("evaluation_failure") else "COMPLETED"
+    result["post_deferred"] = defer_post
     write_json(output / "result.json", result)
     attempt.update(status=result["status"], consumed=True, finished_at=now())
     write_json(output / "attempt.json", attempt)
