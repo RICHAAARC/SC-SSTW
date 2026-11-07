@@ -1,6 +1,7 @@
 """Actual array checkpoints, bounded infrastructure recovery and single-runtime records."""
 from contextlib import contextmanager
-from collections import Counter
+from collections import Counter, OrderedDict
+from collections.abc import MutableMapping
 import io
 import json
 import math
@@ -46,10 +47,12 @@ def infrastructure(error):
 
 
 class Budget:
-    def __init__(self, output, runtime_id, limits=None):
+    def __init__(self, output, runtime_id, limits=None, progress=None):
         self.output=Path(output);self.runtime_id=runtime_id;self.limits=limits or physical_budget()
         self.path=self.output/'physical_calls.jsonl';self.base=Counter();self.extra=Counter();self.unknown_events=[]
-        for event in events(self.path):
+        self.progress=progress
+        for processed,event in enumerate(events(self.path),1):
+            if progress and processed%10000==0:progress('RESTORE_PHYSICAL_BUDGET',processed=processed)
             if event.get('status')=='STARTED':
                 (self.extra if event['recovery'] else self.base)[event['category']]+=event['count']
             elif event.get('status')=='UNREADABLE_EVENT':self.unknown_events.append(event)
@@ -102,6 +105,39 @@ class ArrayLog:
                     errors.append(dict(offset=offset,error=str(error)));break
         return records,errors
 
+    def index(self):
+        """Read only record headers, seeking over array payloads; retain torn tails."""
+        records=[];errors=[]
+        if not self.path.is_file():return records,errors
+        with self.path.open('rb') as stream:
+            size=os.fstat(stream.fileno()).st_size
+            while stream.tell()<size:
+                offset=stream.tell()
+                try:
+                    prefix=stream.read(12)
+                    if len(prefix)!=12:raise ValueError('interrupted prefix')
+                    h,n=struct.unpack('<IQ',prefix)
+                    if not 0<h<=16384 or not 0<n<=128_000_000:raise ValueError('invalid record lengths')
+                    header=json.loads(stream.read(h))
+                    if not isinstance(header.get('operation'),str):raise ValueError('invalid operation address')
+                    payload=stream.tell()
+                    if payload+n>size:raise ValueError('interrupted payload')
+                    records.append(dict(header=header,offset=offset,payload=payload,length=n,path=str(self.path)))
+                    stream.seek(n,1)
+                except (OSError,ValueError,KeyError,TypeError,AttributeError,struct.error) as error:
+                    errors.append(dict(offset=offset,error=str(error)));break
+        return records,errors
+
+    @staticmethod
+    def read_record(record):
+        import numpy as np
+        with Path(record['path']).open('rb') as stream:
+            stream.seek(record['payload']);data=stream.read(record['length'])
+        if len(data)!=record['length']:raise ValueError('interrupted payload')
+        with np.load(io.BytesIO(data),allow_pickle=False) as values:
+            arrays={k:values[k] for k in values.files}
+        return dict(header=record['header'],arrays=arrays,offset=record['offset'])
+
     def append(self,operation,arrays,**metadata):
         import numpy as np
         # A torn tail is preserved; subsequent records go to a new segment, never truncate evidence.
@@ -109,8 +145,47 @@ class ArrayLog:
         payload=data.getvalue();header=json.dumps(dict(operation=operation,at=time.time(),**metadata),allow_nan=False).encode()
         self.path.parent.mkdir(parents=True,exist_ok=True)
         with self.path.open('ab') as stream:
+            offset=stream.tell()
             stream.write(struct.pack('<IQ',len(header),len(payload)));stream.write(header);stream.write(payload)
             stream.flush();os.fsync(stream.fileno())
+        return dict(header=json.loads(header),offset=offset,payload=offset+12+len(header),length=len(payload),path=str(self.path))
+
+
+class LazyArrays(MutableMapping):
+    """Index on demand; decode only a requested checkpoint, with bounded RAM caching."""
+    def __init__(self,directory,errors):
+        self.directory=Path(directory);self.errors=errors;self.locations=None;self.cache=OrderedDict()
+
+    def ensure_index(self):
+        if self.locations is not None:return
+        self.locations={}
+        for path in sorted(self.directory.glob('arrays-*.bin')):
+            records,errors=ArrayLog(path).index()
+            self.errors.extend(dict(file=path.name,**row) for row in errors)
+            for row in records:self.locations.setdefault(row['header']['operation'],[]).append(row)
+
+    def __getitem__(self,key):
+        self.ensure_index()
+        if key in self.cache:
+            self.cache.move_to_end(key);return self.cache[key]
+        for row in self.locations.get(key,[]):
+            try:value=ArrayLog.read_record(row)
+            except (OSError,ValueError,EOFError,KeyError,zipfile.BadZipFile) as error:
+                self.errors.append(dict(file=Path(row['path']).name,offset=row['offset'],error=str(error)));continue
+            self.cache[key]=value
+            while len(self.cache)>8:self.cache.popitem(last=False)
+            return value
+        raise KeyError(key)
+
+    def __setitem__(self,key,value):
+        self.ensure_index()
+        self.locations.setdefault(key,[]).append(value.pop('location'))
+        self.cache[key]=value
+        while len(self.cache)>8:self.cache.popitem(last=False)
+
+    def __delitem__(self,key):raise TypeError('checkpoint evidence cannot be deleted')
+    def __iter__(self):self.ensure_index();return iter(self.locations)
+    def __len__(self):self.ensure_index();return len(self.locations)
 
 
 class UnitStore:
@@ -124,9 +199,7 @@ class UnitStore:
                 if event['status']=='STARTED':self.attempts[event.get('physical_key',event['operation'])]+=1
         self.array_directory=Path(array_directory) if array_directory is not None else self.folder
         self.array_directory.mkdir(parents=True,exist_ok=True)
-        for path in sorted(self.array_directory.glob('arrays-*.bin')):
-            records,errors=ArrayLog(path).scan();self.record_errors.extend(dict(file=path.name,**e) for e in errors)
-            for key,value in records.items():self.arrays.setdefault(key,value)
+        self.arrays=LazyArrays(self.array_directory,self.record_errors)
         self.segment=self.array_directory/f'arrays-{budget.runtime_id}.bin'
 
     def row(self,key):return self.rows.get(key,dict(status='NOT_STARTED',attempt=0))
@@ -176,12 +249,12 @@ class UnitStore:
             self.event(key,'INVALID_RETURN',error=f'{type(error).__name__}: {error}')
             raise InvalidReturn(str(error)) from error
         if arrays:
-            try:ArrayLog(self.segment).append(key,value,attempt=attempt,runtime_id=self.budget.runtime_id)
+            try:location=ArrayLog(self.segment).append(key,value,attempt=attempt,runtime_id=self.budget.runtime_id)
             except BaseException as error:
                 self.segment=self.array_directory/f'arrays-{self.budget.runtime_id}-{uuid.uuid4().hex}.bin'
                 if isinstance(error,OSError) and error.errno==errno.ENOSPC:raise SpaceUnavailable('actual checkpoint write failed: disk full') from error
                 raise
-            self.arrays[key]=dict(arrays=value,header=dict(operation=key,attempt=attempt))
+            self.arrays[key]=dict(arrays=value,header=dict(operation=key,attempt=attempt),location=location)
             self.event(key,'COMMITTED',array_file=self.segment.name)
         else:self.event(key,'COMMITTED',value=value)
         return value

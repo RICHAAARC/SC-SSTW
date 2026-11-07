@@ -61,3 +61,16 @@ Pixel OFF实际B32原始输出同时供Pixel与FrameIndex逻辑行；不得重�
 `python -m pytest -q -o addopts= tests/test_native_baselines_public_fpr001_v4.py` 使用人工数组和fake backend/codec。内部fixture可缩小像素画布，保留181帧、40视图及真实批次数；该入口不暴露于正式CLI/config。检查共享OFF、各物理类算术、完整四表、二次续接不加推理、部分见证、真值边界和恢复失败。模型接口检查只用人工stub，不载入权重。
 
 未执行真实媒体、codec、模型、GPU或Colab。发布可运行入口只表示工程交付；实际数据可用性、依赖组合、显存/速度、画质/鲁棒性及论文结论仍须由用户真实Run all和保存证据确认。
+
+
+## 2026-11-07 续跑入口整改
+
+唯一当前入口仍为 `notebooks/native_baselines_public_fpr001_v4.ipynb`，默认同一 `attempt01`。
+每次重新加载可用分支源码，旧 `/content/video-wm-public-v4/project` 不再成为默认入口。
+在旧 worker 已停且没有本机进程引用的前提下，只清理该工作目录内的旧 project/current-source 临时源码；正式结果、失败包、预算/query/plan、原始数组、供体、权重及续跑缓存保留。
+
+启动不再对全部已完成流解包原始数组。每流的轻量 scheduling 记录仅用于调度，旧包按需从40个视图完成记录建立，原始 payload 不读取。需要的数组以记录头/偏移定位，再按批次加载；完整记录后的中断尾段保留。编辑计划按实际源懒加载。已完成视图有后评文件时直接跳过，最终统计仍从原始数组后评；缺失或不可读会计为未知并更新调度提示，不能拿完成标记制造科学结果。
+
+当前 worker 在 query 恢复、固定预算账本读取、缺失定位、视图恢复及物理读取阶段报告当前位置和耗时。历史 progress 不冒充当前推进；心跳只是存活信号。尚未通过现场调用栈确认旧运行的实际阻塞点，本次修复针对已经定位的重复读取机制。
+
+切换：先停止并断开旧 Colab 运行时；在新运行时打开同一 notebook，设置 `PREVIOUS_RUNTIME_STOPPED=True`，选择GPU后 Run all。没有改四配置、40视图、固定分母或已有恢复上限，不需要换结果目录。真实 Colab 续跑由用户执行。

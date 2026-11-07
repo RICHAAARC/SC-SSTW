@@ -96,7 +96,8 @@ def csv_rows(path,rows):
 
 def refresh_post(output,sources,queries,plans,budget):
     """Finish interrupted post-processing from committed arrays without a physical call."""
-    for source in sources:
+    for index,source in enumerate(sources,1):
+        if getattr(budget,'progress',None) and (index==1 or index%8==0):budget.progress('FINAL_POST_NATIVE_READ',source=source['id'],processed=index,total=len(sources))
         for physical in ('wam','pixelseal','videoseal'):
             arms=['OFF']+([] if source['split']=='CAL' else ['pixelseal','frameindex'] if physical=='pixelseal' else [physical])
             for arm in arms:
@@ -104,9 +105,17 @@ def refresh_post(output,sources,queries,plans,budget):
                 if not (Path(output)/'units'/unit).is_dir():continue
                 store=UnitStore(output,unit,budget)
                 methods=('pixelseal','frameindex') if physical=='pixelseal' and arm=='OFF' else (physical if arm=='OFF' else arm,)
+                actual_complete=True
                 for view in views():
-                    raw,epoch=saved_raw(store,view['id'],view['frames'],physical)
+                    try:raw,epoch=saved_raw(store,view['id'],view['frames'],physical)
+                    except (OSError,ValueError,KeyError,TypeError) as error:
+                        raw,epoch=empty_raw(view['frames'],physical),None
+                        append_json(store.folder/'post_read_errors.jsonl',dict(view=view['id'],error=str(error),runtime_id=budget.runtime_id))
+                    write_json(store.folder/'views'/view['id']/'status.json',dict(epoch=epoch,planned=view['frames'],
+                        observed=int(raw['observed'].sum()),complete=bool(raw['observed'].all()),record_errors=store.record_errors))
+                    actual_complete=actual_complete and bool(raw['observed'].all())
                     for method in methods:write_post(output,source,method,arm,view,raw,epoch,queries,plans[source['id']],budget.runtime_id)
+                write_json(store.folder/'scheduling.json',dict(complete=actual_complete,views=40,basis='actual final post read'))
 
 
 def rate_record(decisions,complete):
