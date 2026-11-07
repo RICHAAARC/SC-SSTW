@@ -219,6 +219,7 @@ def extract_view(ops,source,backend,arm,view,adapter,pixels):
                 value=pixels();validate_rgb(value,n);save_array(epoch['input'],value)
             received=load_rgb(epoch['input'],n)
             for start,k in batches(n,size):
+                if store.reusable(prefix+f'/batch{start}'):continue
                 try:
                     store.perform(prefix+f'/batch{start}',category,
                         lambda s=start,count=k:adapter.detect(received[s:s+count]),arrays=True,

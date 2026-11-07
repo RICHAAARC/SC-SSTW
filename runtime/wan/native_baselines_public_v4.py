@@ -15,6 +15,7 @@ from .native_baseline_storage_v4 import (Budget, UnitStore, Unavailable, Recover
 from .native_baseline_io_v4 import (MediaOperations, SpaceUnavailable, check_space, extract_view,
     remove_cache, load_rgb, saved_raw)
 from .native_baseline_evaluation_v4 import write_post, build_tables
+from .native_baseline_checkpoint_v4 import ComputationCursor
 
 ROOT=Path(__file__).resolve().parents[2]
 DEFAULT_CONFIG=ROOT/'experiments/wan_state_clock/configs/public_native_fpr001_v4.json'
@@ -40,13 +41,21 @@ def initialize(output,config,sources):
         # A lost query record after physical work cannot be silently replaced with a new query.
         if (output/'physical_calls.jsonl').is_file():raise Unavailable('saved query file is actually missing after physical work; restore it before continuing')
         queries=allocate_queries(sources,os.urandom);write_json(path,queries)
-    for s in sources:
-        for method,bits in METHODS.items():
-            q=queries[method+'/'+s['id']];n=248 if method=='frameindex' else bits
-            if len(q['query'])!=n or any(x not in (0,1) for x in q['query']):raise ValueError('unreadable/invalid saved query')
-            if s['split']!='CAL' and (len(q['wrong_query'])!=n or any(x not in (0,1) for x in q['wrong_query'])):raise ValueError('invalid saved wrong-query')
-        if queries['frameindex/'+s['id']]['query']!=queries['pixelseal/'+s['id']]['query'][:248]:raise ValueError('FrameIndex owner must use the fixed Pixel query prefix')
-    return sources,queries,SourcePlans(output,sources)
+    return sources,SavedQueries(queries),SourcePlans(output,sources)
+
+
+class SavedQueries(dict):
+    """Check the query actually being used, without validating completed historical work."""
+    def __getitem__(self,key):
+        value=super().__getitem__(key);method,sid=key.split('/',1);n=248 if method=='frameindex' else METHODS[method]
+        for field in ('query','wrong_query'):
+            if field not in value:continue
+            q=value[field]
+            if field=='wrong_query' and q is None:continue
+            if len(q)!=n or any(bit not in (0,1) for bit in q):raise ValueError('invalid current query: '+key+'/'+field)
+        if method=='frameindex' and value['query']!=super().__getitem__('pixelseal/'+sid)['query'][:248]:
+            raise ValueError('current FrameIndex query must use Pixel query prefix')
+        return value
 
 
 class SourcePlans(dict):
@@ -61,33 +70,6 @@ class SourcePlans(dict):
         else:value=source_plan(self.sources[sid],self.donors);write_json(path,value)
         self[sid]=value;return value
 
-
-def scheduling_receipt(output,source,backend,arm,completion_cache=None,progress=None):
-    """Advisory scheduling only. Final statistics still read actual native arrays."""
-    key=(source['id'],backend,arm)
-    if completion_cache is not None and key in completion_cache:return completion_cache[key]
-    folder=Path(output)/'units/native'/source['id']/backend/arm
-    complete=False
-    try:
-        path=folder/'scheduling.json'
-        if path.is_file():complete=read_json(path).get('complete') is True
-        else:
-            complete=True
-            for i,view in enumerate(views(),1):
-                if progress and i in (1,40):progress(stage='RESTORE_VIEW_RECEIPTS',source=source['id'],backend=backend,arm=arm,processed=i,total=40)
-                path=folder/'views'/view['id']/'status.json'
-                row=read_json(path) if path.is_file() else {}
-                if not (row.get('complete') is True and row.get('observed')==view['frames'] and row.get('planned')==view['frames']):
-                    complete=False;break
-            if complete:save_schedule(output,source['id'],backend,arm,True)
-    except (OSError,ValueError,KeyError,TypeError,AttributeError):complete=False
-    if completion_cache is not None:completion_cache[key]=complete
-    return complete
-
-
-def save_schedule(output,sid,backend,arm,complete):
-    write_json(Path(output)/'units/native'/sid/backend/arm/'scheduling.json',
-        dict(complete=bool(complete),views=40,basis='scheduling hint; statistics require actual native arrays'))
 
 
 class Loaders:
@@ -132,6 +114,7 @@ class Loaders:
 
 
 def native_complete(output,source,backend,arm,completion_cache=None):
+    """Explicit historical diagnostic only; never called by the default resume scheduler."""
     key=(source['id'],backend,arm)
     if completion_cache is not None and key in completion_cache:return completion_cache[key]
     folder=Path(output)/'units/native'/source['id']/backend/arm/'views'
@@ -158,10 +141,10 @@ def quality_complete(output,source,method):
 
 
 class Runner:
-    def __init__(self,ops,sources,queries,plans,loaders,measure):
+    def __init__(self,ops,sources,queries,plans,loaders,measure,cursor=None):
         self.ops=ops;self.sources=sources;self.queries=queries;self.plans=plans;self.loaders=loaders;self.measure=measure
         self.by_id={s['id']:s for s in sources}
-        self._completion={};self.started=time.monotonic()
+        self._completion={};self.started=time.monotonic();self.cursor=cursor or ComputationCursor(ops.output,sources,ops.budget)
 
     def progress(self,**value):
         value.update(at=time.time(),runtime_id=self.ops.budget.runtime_id,elapsed_seconds=time.monotonic()-self.started)
@@ -175,13 +158,6 @@ class Runner:
             self.ops.failure(where,error);return None
 
     def donor(self,sid,arm):return self.ops.g1_saved(self.by_id[sid],arm)
-
-    def complete(self,source,backend,arm):return scheduling_receipt(self.ops.output,source,backend,arm,self._completion,self.progress)
-
-    def source_complete(self,source):
-        return all(self.complete(source,b,'OFF') for b in BACKENDS) and (
-            source['split']=='CAL' or all(self.complete(source,'pixelseal' if m=='frameindex' else m,m)
-                and quality_complete(self.ops.output,source,m) for m in METHODS))
 
     def prepare_off(self,source):
         canonical=self.ops.source(source)
@@ -199,28 +175,27 @@ class Runner:
     def ensure_media(self,source,arm,adapter=None):
         store=self.ops.store('media/'+source['id']+'/'+arm)
         row=store.row('G1/encode')
-        if row['status']=='COMMITTED' and Path((row.get('value') or {}).get('path','')).is_file():return
+        if row['status']=='COMMITTED':return
         self.progress(stage='PREPARE_MISSING_MEDIA',source=source['id'],arm=arm)
         return self.prepare_off(source) if arm=='OFF' else self.prepare_wm(source,arm,adapter)
 
-    def read_arm(self,source,backend,arm,adapter):
+    def read_arm(self,source,backend,arm,adapter,start_view=0):
         methods=('pixelseal','frameindex') if backend=='pixelseal' and arm=='OFF' else (backend if arm=='OFF' else arm,)
         g1=None
         def pixels(view):
             nonlocal g1
             if g1 is None:g1=self.ops.g1_saved(source,arm)
             return self.ops.received(source,arm,view,self.plans[source['id']],g1,self.donor,decode_tag=backend)
-        complete=True
-        for index,view in enumerate(views(),1):
-            self.progress(stage='READ_MISSING_VIEW',source=source['id'],backend=backend,arm=arm,view=view['id'],processed=index,total=40)
-            status=self.ops.output/'units/native'/source['id']/backend/arm/'views'/view['id']/'status.json'
-            try:
-                old=read_json(status) if status.is_file() else {}
-                posted=all((self.ops.output/'post'/source['id']/m/arm/(view['id']+'.json')).is_file() for m in methods)
-                if old.get('complete') is True and old.get('observed')==view['frames'] and old.get('planned')==view['frames'] and posted:continue
-            except (OSError,ValueError,TypeError,AttributeError):pass
+        available=views()
+        remaining=list(start_view) if isinstance(start_view,list) else list(range(start_view,len(available)))
+        failed=list(self.cursor.state.get('failed_views',[]))
+        while remaining:
+            index=remaining[0];view=available[index]
+            self.cursor.view(index,remaining,failed)
+            self.progress(stage='COMPUTE_VIEW',source=source['id'],backend=backend,arm=arm,view=view['id'],processed=index+1,total=40)
             raw,epoch=extract_view(self.ops,source,backend,arm,view,adapter,lambda v=view:pixels(v))
-            complete=complete and bool(raw['observed'].all())
+            if not raw['observed'].all() and index not in failed:failed.append(index)
+            elif raw['observed'].all() and index in failed:failed.remove(index)
             # All native arrays above are durable before query verification or truth accounting.
             for method in methods:
                 write_post(self.ops.output,source,method,arm,view,raw,epoch,self.queries,self.plans[source['id']],self.ops.budget.runtime_id)
@@ -229,9 +204,10 @@ class Runner:
             if view['generation']=='G2' and view['operation']!='T00':
                 scratch=self.ops.cache/'derived'/source['id']/arm/view['id']/(backend+'.npy')
                 if scratch.is_file():remove_cache(scratch,self.ops.cache)
+            remaining.pop(0)
+            self.cursor.view(remaining[0] if remaining else 40,remaining,failed)
         del g1
-        self._completion[(source['id'],backend,arm)]=complete
-        save_schedule(self.ops.output,source['id'],backend,arm,complete)
+        return failed
 
     def quality(self,source,method,adapter):
         if quality_complete(self.ops.output,source,method):return
@@ -255,70 +231,54 @@ class Runner:
                 return self.measure(store,stage,left,right,model)
             self.guard('quality/'+source['id']+'/'+method+'/'+stage,run_stage)
 
-    def backend_pack(self,pack,sources,backend,*,dev=False):
-        wm_methods=('pixelseal','frameindex') if backend=='pixelseal' else (backend,)
-        def needed(s):
-            return not self.complete(s,backend,'OFF') or s['split']!='CAL' and any(
-                not self.complete(s,backend,m) or not quality_complete(self.ops.output,s,m) for m in wm_methods)
-        if not any(needed(s) for s in sources):return
-        self.progress(stage='LOAD_MODEL',pack=pack,backend=backend)
-        adapter=self.loaders.watermark(pack,backend)
-        try:
-            # All DEV same-method WM clips exist before any T12 donor lookup.
-            if dev:
-                for begin in range(0,len(sources),16):
-                    self.progress(stage='PREPARE_DEV_DONORS',pack=pack,backend=backend,processed=begin,total=len(sources))
-                    for source in sources[begin:begin+16]:
-                        for method in wm_methods:
-                            self.guard('prepare/'+source['id']+'/'+method,lambda s=source,m=method:self.ensure_media(s,m,adapter))
-            for source in sources:
-                if not needed(source):continue
-                self.progress(pack=pack,source=source['id'],backend=backend)
-                if not self.complete(source,backend,'OFF'):
-                    self.guard('native/'+source['id']+'/'+backend+'/OFF',lambda:self.read_arm(source,backend,'OFF',adapter))
-                if source['split']!='CAL':
-                    for method in wm_methods:
-                        if self.complete(source,backend,method) and quality_complete(self.ops.output,source,method):continue
-                        if not self.complete(source,backend,method):
-                            if not dev:self.guard('prepare/'+source['id']+'/'+method,lambda m=method:self.prepare_wm(source,m,adapter))
-                            self.guard('native/'+source['id']+'/'+method,lambda m=method:self.read_arm(source,backend,m,adapter))
-                        self.guard('quality/'+source['id']+'/'+method,lambda m=method:self.quality(source,m,adapter))
-                        if self.complete(source,backend,method) and quality_complete(self.ops.output,source,method):
-                            for path in (self.ops.cache/'arrays/writer'/source['id']/method,self.ops.cache/'arrays/jpeg'/source['id']/method,self.ops.cache/'derived'/source['id']/method):
-                                if path.exists():remove_cache(path,self.ops.cache)
-            resources=adapter.resources() if hasattr(adapter,'resources') else {}
-            append_json(self.ops.output/'model_resources.jsonl',dict(pack=pack,backend=backend,runtime_id=self.ops.budget.runtime_id,
-                actual_forward_hooks=dict(getattr(adapter,'counts',{})),**resources))
-        finally:adapter.close();self.ops._stores.clear();gc.collect()
-
     def run(self):
-        if all(self.source_complete(s) for s in self.sources):
-            self.progress(stage='CPU_POST_FROM_ACTUAL_CHECKPOINTS')
-            self.loaders.close()
-            return build_tables(self.ops.output,self.sources,self.queries,self.plans,self.ops.budget)
-        dev=[s for s in self.sources if s['split']=='DEV']
-        for source in dev:self.guard('prepare/'+source['id']+'/OFF',lambda s=source:self.ensure_media(s,'OFF'))
-        for backend in BACKENDS:self.guard('DEV/'+backend,lambda b=backend:self.backend_pack('DEV-bank',dev,b,dev=True))
-        self.progress(stage='DEV_COST_SUMMARY')
-        write_json(self.ops.output/'dev_resource_projection.json',resource_projection(self.ops.output,self.ops.budget))
-        for split in ('CAL','TEST'):
-            selected=[s for s in self.sources if s['split']==split]
-            for start in range(0,len(selected),16):
-                pack=f'{split}-{start//16:02}';sources=selected[start:start+16]
-                if all(self.source_complete(s) for s in sources):continue
-                check_space(self.ops.output);check_space(self.ops.cache)
-                for source in sources:
-                    if not self.source_complete(source):self.guard('prepare/'+source['id']+'/OFF',lambda s=source:self.ensure_media(s,'OFF'))
-                for backend in BACKENDS:self.guard(pack+'/'+backend,lambda b=backend:self.backend_pack(pack,sources,b))
-                for source in sources:
-                    done=self.source_complete(source)
-                    if done:
-                        for path in (self.ops.cache/'derived'/source['id'],self.ops.cache/'g1'/source['id'],self.ops.cache/'sources'/source['id']):
-                            if path.exists():remove_cache(path,self.ops.cache)
-                self.ops.budget.snapshot()
-        self.progress(stage='CPU_POST_AND_TABLES')
-        self.loaders.close()
-        return build_tables(self.ops.output,self.sources,self.queries,self.plans,self.ops.budget)
+        cursor=self.cursor;adapter=None;loaded=None;result=None
+        def close_adapter():
+            nonlocal adapter,loaded
+            if adapter is not None:
+                resources=adapter.resources() if hasattr(adapter,'resources') else {}
+                append_json(self.ops.output/'model_resources.jsonl',dict(pack=loaded[0],backend=loaded[1],runtime_id=self.ops.budget.runtime_id,
+                    actual_forward_hooks=dict(getattr(adapter,'counts',{})),**resources))
+                adapter.close();adapter=None;loaded=None;self.ops._stores.clear();gc.collect()
+        try:
+            for index,selection in cursor.queue():
+                task=cursor.tasks[index];cursor.begin(index,selection)
+                self.progress(stage='COMPUTE_TASK',task_index=index,**task)
+                kind=task['kind'];source=self.by_id.get(task['source'])
+                wanted=(task['pack'],task['backend']) if task['backend'] else None
+                if wanted!=loaded:
+                    close_adapter()
+                    if wanted:
+                        self.progress(stage='LOAD_CURRENT_MODEL',pack=wanted[0],backend=wanted[1],source=task['source'])
+                        adapter=self.loaders.watermark(*wanted);loaded=wanted
+                failed=[]
+                try:
+                    if kind=='media':self.ensure_media(source,task['arm'],adapter)
+                    elif kind=='native':failed=self.read_arm(source,task['backend'],task['arm'],adapter,selection)
+                    elif kind=='quality':
+                        self.quality(source,task['arm'],adapter)
+                        if not quality_complete(self.ops.output,source,task['arm']):failed=[0]
+                        elif not any(cursor.tasks[int(k)]['source']==source['id'] and cursor.tasks[int(k)]['arm']==task['arm'] for k in cursor.state.get('pending',{})):
+                            for path in (self.ops.cache/'arrays/writer'/source['id']/task['arm'],self.ops.cache/'arrays/jpeg'/source['id']/task['arm'],self.ops.cache/'derived'/source['id']/task['arm']):
+                                if path.exists():remove_cache(path,self.ops.cache)
+                    elif kind=='cleanup':
+                        unfinished={cursor.tasks[int(k)]['source'] for k in cursor.state.get('pending',{})}
+                        for sid in task['source_ids']:
+                            if sid in unfinished:continue
+                            for path in (self.ops.cache/'derived'/sid,self.ops.cache/'g1'/sid,self.ops.cache/'sources'/sid):
+                                if path.exists():remove_cache(path,self.ops.cache)
+                    elif kind=='post':
+                        self.loaders.close()
+                        result=build_tables(self.ops.output,self.sources,self.queries,self.plans,self.ops.budget)
+                except SpaceUnavailable:raise
+                except Exception as error:
+                    self.ops.failure(task['id'],error)
+                    self.progress(stage='CURRENT_TASK_READ_OR_COMPUTE_FAILED',task=task,error=f'{type(error).__name__}: {error}')
+                    # Keep the current computation and its precise view cursor for the next runtime.
+                    raise
+                cursor.finish(index,failed)
+            return result if result is not None else read_json(self.ops.output/'result.json')
+        finally:close_adapter()
 
 
 def resource_projection(output,budget):
@@ -348,12 +308,14 @@ def run(output=OUTPUT,cache=CACHE,vendor=None,config=DEFAULT_CONFIG,previous_run
             def restoring(stage,**extra):
                 row=dict(stage=stage,runtime_id=runtime['id'],at=time.time(),elapsed_seconds=time.monotonic()-started,**extra)
                 write_json(output/'progress.json',row);print(row,flush=True)
-            restoring('RESTORE_QUERIES',processed=0,total=len(sources))
+            restoring('READ_SAVED_QUERY_RECORD',processed=0,total=len(sources))
             sources,queries,plans=initialize(output,config,sources)
-            restoring('RESTORE_PHYSICAL_BUDGET',processed=0,bytes=(output/'physical_calls.jsonl').stat().st_size if (output/'physical_calls.jsonl').is_file() else 0)
-            budget=Budget(output,runtime['id'],progress=restoring);ops=MediaOperations(output,cache,budget,MediaV4())
-            restoring('LOCATE_MISSING_WORK',processed=0,total=len(sources))
-            loaders=Loaders(ops,vendor,NativeAdapterV4,LPIPS);runner=Runner(ops,sources,queries,plans,loaders,measure)
+            cursor=ComputationCursor(output,sources)
+            restoring('RESTORE_COMPUTE_CHECKPOINT',position=cursor.state)
+            budget=Budget(output,runtime['id'],progress=restoring,saved=cursor.state.get('budget'))
+            cursor.budget=budget;cursor.save()
+            ops=MediaOperations(output,cache,budget,MediaV4())
+            loaders=Loaders(ops,vendor,NativeAdapterV4,LPIPS);runner=Runner(ops,sources,queries,plans,loaders,measure,cursor)
             try:return runner.run()
             except BaseException as error:
                 write_json(output/'interruption.json',dict(status='PAUSED_SPACE' if isinstance(error,SpaceUnavailable) else 'INTERRUPTED_RETAINED',

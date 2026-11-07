@@ -120,7 +120,8 @@ def test_actual_array_checkpoint_torn_tail_and_no_repeated_inference(tmp_path):
     with store.segment.open('ab') as f:f.write(b'bad')
     restored=UnitStore(tmp_path,'u',budget(tmp_path,'two',detect_wam=20))
     assert restored.perform('b','detect_wam',call,arrays=True)['x'].tolist()==[0,1,2]
-    assert len(calls)==1 and restored.record_errors
+    assert len(calls)==1 and not restored.record_errors  # no historical tail scan
+    assert store.segment.read_bytes().endswith(b'bad')
     restored.perform('c','detect_wam',call,arrays=True)
     assert len(UnitStore(tmp_path,'u',budget(tmp_path,'three',detect_wam=20)).arrays)==2
 
@@ -170,10 +171,11 @@ def test_partial_pixels_preserved_and_only_missing_batch_resumed(tmp_path,monkey
     assert read_json(output/'units/native/a/wam/OFF/views/G1/T00/status.json')['complete']
 
 
-def test_completed_receipt_without_array_is_not_checkpoint(tmp_path):
+def test_committed_receipt_is_trusted_until_array_is_used(tmp_path):
     store=UnitStore(tmp_path,'u',budget(tmp_path,detect_wam=20))
     store.event('batch0','COMMITTED',array_file='missing.bin')
-    assert not store.reusable('batch0')
+    assert store.reusable('batch0')  # committed history is trusted by scheduling
+    with pytest.raises(OSError):store.arrays['batch0']  # actual use reports the missing file
 
 
 def test_extra_loader_cap_per_runtime(tmp_path):
@@ -355,7 +357,7 @@ def test_artificial_full_scheduler_tables_shared_off_and_resume(tmp_path,monkeyp
     assert b.base['normalize']==4 and b.base['jpeg_encode']==(4+3*4)*181
     assert not b.extra
     before=FakeAdapter.calls.copy();b2=budget(output,'two',lpips_load=20)
-    # Completed results can repair a missing post table without re-decoding a cleaned cache.
+    # The new default trusts completed results and does not inspect/repair historical tables.
     shutil.rmtree(cache)
     (output/'tables/C_time.csv').unlink()
     from runtime.wan.native_baseline_colab_v4 import tables_ready
@@ -365,8 +367,8 @@ def test_artificial_full_scheduler_tables_shared_off_and_resume(tmp_path,monkeyp
     assert again['execution_incomplete_views']==0 and FakeAdapter.calls==before and not b2.extra
     table=read_json(output/'tables/B_ownership.json')
     assert all(r['planned']==1 for r in table if r['split']=='TEST')
-    assert (output/'tables/A_payload.csv').is_file() and (output/'tables/C_time.csv').is_file()
-    assert tables_ready(output)
+    assert (output/'tables/A_payload.csv').is_file() and not (output/'tables/C_time.csv').is_file()
+    assert not tables_ready(output)
     native_file=next((output/'units/native/a/wam/OFF').glob('arrays-*.bin'))
     held=native_file.with_suffix('.held');native_file.rename(held)
     assert runner.native_complete(output,sources[0],'wam','OFF') is False

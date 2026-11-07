@@ -137,8 +137,9 @@ def rate_record(decisions,complete):
 
 def build_tables(output,sources,queries,plans,budget):
     output=Path(output);directory=output/'tables';directory.mkdir(parents=True,exist_ok=True)
-    refresh_post(output,sources,queries,plans,budget)
-    cross=cross_source(output,sources,queries,plans,budget)
+    # Completed historical post records are trusted; current tasks save their own post before advancing.
+    cross_path=directory/'cross_source.json'
+    cross=read_json(cross_path)['rows'] if cross_path.is_file() else cross_source(output,sources,queries,plans,budget)
     cross_index={(r['method'],r['source_id'],r['view']):r for r in cross}
     table_b=[];table_a=[];table_c=[];incomplete=0;logical_views=0
     for method in METHODS:

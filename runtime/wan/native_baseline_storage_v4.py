@@ -30,12 +30,14 @@ def append_json(path, value):
     path=Path(path);path.parent.mkdir(parents=True,exist_ok=True)
     with path.open('a',encoding='utf-8') as stream:
         stream.write(json.dumps(value,ensure_ascii=False,allow_nan=False)+'\n');stream.flush();os.fsync(stream.fileno())
+        return stream.tell()
 
 
-def events(path):
+def events(path,offset=0):
     path=Path(path)
     if not path.is_file():return
     with path.open(encoding='utf-8') as stream:
+        stream.seek(offset)
         for number,line in enumerate(stream,1):
             try:yield json.loads(line)
             except (ValueError,TypeError):yield dict(status='UNREADABLE_EVENT',line=number)
@@ -47,15 +49,17 @@ def infrastructure(error):
 
 
 class Budget:
-    def __init__(self, output, runtime_id, limits=None, progress=None):
+    def __init__(self, output, runtime_id, limits=None, progress=None, saved=None):
         self.output=Path(output);self.runtime_id=runtime_id;self.limits=limits or physical_budget()
         self.path=self.output/'physical_calls.jsonl';self.base=Counter();self.extra=Counter();self.unknown_events=[]
-        self.progress=progress
-        for processed,event in enumerate(events(self.path),1):
+        self.progress=progress;saved=saved or {}
+        self.base.update(saved.get('base',{}));self.extra.update(saved.get('recovery',{}));self.offset=saved.get('ledger_offset',0)
+        for processed,event in enumerate(events(self.path,self.offset),1):
             if progress and processed%10000==0:progress('RESTORE_PHYSICAL_BUDGET',processed=processed)
             if event.get('status')=='STARTED':
                 (self.extra if event['recovery'] else self.base)[event['category']]+=event['count']
             elif event.get('status')=='UNREADABLE_EVENT':self.unknown_events.append(event)
+        self.offset=self.path.stat().st_size if self.path.is_file() else 0
         if self.unknown_events:
             raise Unavailable('physical cost ledger has unreadable records; preserve it and repair actual records before more calls')
 
@@ -69,11 +73,14 @@ class Budget:
             raise RecoveryExhausted(f'{category} '+('recovery' if recovery else 'base')+' budget exhausted')
         event=dict(status='STARTED',runtime_id=self.runtime_id,at=time.time(),category=category,
                    unit=unit,operation=operation,recovery=recovery,count=count)
-        append_json(self.path,event)
+        self.offset=append_json(self.path,event)
         (self.extra if recovery else self.base)[category]+=count
 
+    def resume_state(self):
+        return dict(base=dict(self.base),recovery=dict(self.extra),ledger_offset=self.offset)
+
     def snapshot(self):
-        result=dict(base=dict(self.base),recovery=dict(self.extra),limits=self.limits,
+        result=dict(**self.resume_state(),limits=self.limits,
                     semantics='started physical calls include unknown return/write outcomes; not only successful calls')
         write_json(self.output/'physical_counts.json',result);return result
 
@@ -152,40 +159,56 @@ class ArrayLog:
 
 
 class LazyArrays(MutableMapping):
-    """Index on demand; decode only a requested checkpoint, with bounded RAM caching."""
-    def __init__(self,directory,errors):
-        self.directory=Path(directory);self.errors=errors;self.locations=None;self.cache=OrderedDict()
+    """Trust saved operation addresses; read only the requested batch, no directory index."""
+    def __init__(self,directory,errors,rows):
+        self.directory=Path(directory);self.errors=errors;self.rows=rows;self.locations={};self.cache=OrderedDict()
 
-    def ensure_index(self):
-        if self.locations is not None:return
-        self.locations={}
-        for path in sorted(self.directory.glob('arrays-*.bin')):
-            records,errors=ArrayLog(path).index()
-            self.errors.extend(dict(file=path.name,**row) for row in errors)
-            for row in records:self.locations.setdefault(row['header']['operation'],[]).append(row)
-
-    def __getitem__(self,key):
-        self.ensure_index()
-        if key in self.cache:
-            self.cache.move_to_end(key);return self.cache[key]
-        for row in self.locations.get(key,[]):
-            try:value=ArrayLog.read_record(row)
-            except (OSError,ValueError,EOFError,KeyError,zipfile.BadZipFile) as error:
-                self.errors.append(dict(file=Path(row['path']).name,offset=row['offset'],error=str(error)));continue
-            self.cache[key]=value
-            while len(self.cache)>8:self.cache.popitem(last=False)
-            return value
+    def location(self,key):
+        if key in self.locations:return self.locations[key]
+        row=self.rows.get(key,{})
+        if row.get('array_record'):
+            location=dict(row['array_record']);location['path']=str(self.directory/row['array_file'])
+            self.locations[key]=location;return location
+        if row.get('status') not in ('COMMITTED','RETURNED_NOT_COMMITTED'):raise KeyError(key)
+        path=self.directory/row.get('array_file',f"arrays-{row.get('runtime_id')}.bin")
+        # Legacy records lack byte offsets. Search this one necessary file up to this batch only.
+        with path.open('rb') as stream:
+            while True:
+                offset=stream.tell();prefix=stream.read(12)
+                if not prefix:break
+                if len(prefix)!=12:raise OSError(f'interrupted checkpoint prefix: {path}:{offset}')
+                h,n=struct.unpack('<IQ',prefix)
+                if not 0<h<=16384 or not 0<n<=128_000_000:raise OSError(f'invalid checkpoint lengths: {path}:{offset}')
+                header=json.loads(stream.read(h));payload=stream.tell()
+                location=dict(path=str(path),header=header,offset=offset,payload=payload,length=n)
+                self.locations.setdefault(header['operation'],location)
+                if header['operation']==key:return location
+                stream.seek(n,1)
+        if row.get('status')=='COMMITTED':raise OSError(f'saved batch is unreadable: {path}:{key}')
         raise KeyError(key)
 
-    def __setitem__(self,key,value):
-        self.ensure_index()
-        self.locations.setdefault(key,[]).append(value.pop('location'))
+    def __getitem__(self,key):
+        if key in self.cache:self.cache.move_to_end(key);return self.cache[key]
+        location=self.location(key)
+        try:value=ArrayLog.read_record(location)
+        except (OSError,ValueError,EOFError,KeyError,zipfile.BadZipFile) as error:
+            raise OSError(f"cannot read saved checkpoint {location['path']}:{key}: {error}") from error
         self.cache[key]=value
         while len(self.cache)>8:self.cache.popitem(last=False)
+        return value
+
+    def __setitem__(self,key,value):
+        self.locations[key]=value.pop('location');self.cache[key]=value
+        while len(self.cache)>8:self.cache.popitem(last=False)
+
+    def __contains__(self,key):
+        if key in self.cache or self.rows.get(key,{}).get('status')=='COMMITTED':return True
+        try:self.location(key);return True
+        except (KeyError,FileNotFoundError):return False
 
     def __delitem__(self,key):raise TypeError('checkpoint evidence cannot be deleted')
-    def __iter__(self):self.ensure_index();return iter(self.locations)
-    def __len__(self):self.ensure_index();return len(self.locations)
+    def __iter__(self):return iter(k for k,v in self.rows.items() if v.get('status')=='COMMITTED' and v.get('array_file'))
+    def __len__(self):return sum(1 for _ in self)
 
 
 class UnitStore:
@@ -199,7 +222,7 @@ class UnitStore:
                 if event['status']=='STARTED':self.attempts[event.get('physical_key',event['operation'])]+=1
         self.array_directory=Path(array_directory) if array_directory is not None else self.folder
         self.array_directory.mkdir(parents=True,exist_ok=True)
-        self.arrays=LazyArrays(self.array_directory,self.record_errors)
+        self.arrays=LazyArrays(self.array_directory,self.record_errors,self.rows)
         self.segment=self.array_directory/f'arrays-{budget.runtime_id}.bin'
 
     def row(self,key):return self.rows.get(key,dict(status='NOT_STARTED',attempt=0))
@@ -255,12 +278,12 @@ class UnitStore:
                 if isinstance(error,OSError) and error.errno==errno.ENOSPC:raise SpaceUnavailable('actual checkpoint write failed: disk full') from error
                 raise
             self.arrays[key]=dict(arrays=value,header=dict(operation=key,attempt=attempt),location=location)
-            self.event(key,'COMMITTED',array_file=self.segment.name)
+            self.event(key,'COMMITTED',array_file=self.segment.name,array_record={k:v for k,v in location.items() if k!='path'})
         else:self.event(key,'COMMITTED',value=value)
         return value
 
     def reusable(self,key):
-        # All callers ask about actual batch checkpoints, never a progress-only receipt.
+        # Committed historical batches are trusted; payload is opened only when actually used.
         return key in self.arrays
 
 

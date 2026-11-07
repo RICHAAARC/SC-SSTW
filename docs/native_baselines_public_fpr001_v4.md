@@ -42,7 +42,7 @@ Pixel OFF实际B32原始输出同时供Pixel与FrameIndex逻辑行；不得重�
 
 `tables/C_time.{json,csv}`保留三原生方法N/A；FI报告target exact/±1/±4、合法错误index、foreign错误target归属、synthetic虚假精确时间、擦除与未执行。query通过且index精确，与全部ownerbits正确且index精确分列。完整节点/邻边数组附于post容器；不从真值生成foreign/synthetic预测，也不把擦除当正确识别编辑。只恢复对应，不恢复删除图像。
 
-`tables/D_quality.{json,csv}`和`D_resources.json`：仅precodec、G1、G2-identity，181帧RGB MSE/PSNR、Gaussian11/sigma1.5 SSIM、FP32 LPIPS Alex B16尾批5；180邻边水印残差差分RMS不是运动补偿tLPIPS。逐帧质量保留在`units/quality/`。实际forward hooks、峰值、调用秒数、下载/codec/存储日志分别保存；DEV执行后的剩余成本估计不额外试跑。
+`tables/D_quality.{json,csv}`和`D_resources.json`：仅precodec、G1、G2-identity，181帧RGB MSE/PSNR、Gaussian11/sigma1.5 SSIM、FP32 LPIPS Alex B16尾批5；180邻边水印残差差分RMS不是运动补偿tLPIPS。逐帧质量保留在`units/quality/`。实际forward hooks、峰值、调用秒数、下载/codec/存储日志分别保存；原成本记录保留；不为成本预测预扫历史调用目录。
 
 正式目录固定为`/content/drive/MyDrive/Video-WM_Result/baselines/public-native-and-frameindex-fpr001-v4/attempt01`，保留canonical、G1媒体、protocol/queries/editor、native批次、post/tables、resources与failures。正式目录及失败包不清理。临时源码、权重、writer块、JPEG和衍生媒体位于`/content/drive/MyDrive/Video-WM_Cache/baseline-v4`，仅对应读者和质量完成后清除。失败接收输入转存正式failures，并可从该实际输入继续。
 
@@ -54,7 +54,7 @@ Pixel OFF实际B32原始输出同时供Pixel与FrameIndex逻辑行；不得重�
 
 批次返回立即保存实际数组。native Pixel writer整181帧，VideoSeal128＋53，WAM/FI B8、reader B8/B32；不合并尾批、不pad。codec按完整clip恢复。相同输入缓存尚在则只补未提交批次；丢失可能改变RGB时保留旧partial，新epoch重建全view，全部批次计恢复预算，不混epochs或挑分数。首次完整有效返回采用。已存raw而post中断时只补CPU后评。
 
-同一结果包一次只能有一个活动runtime。本机flock、owner记录和≤20秒心跳不构成跨VM原子锁；旧不同主机仍显示ACTIVE时，先实际停止后通过notebook的`PREVIOUS_RUNTIME_STOPPED`确认，没有TTL自动抢写。初始化query等包内输入也在取得运行所有权后写入。正常关闭后直接Run all。完成判断读取实际批次数组覆盖，不只信进度标记；当次runner缓存已核读状态，避免同一来源反复扫描。全部原始读数与画质已完成时，缺后评表只补CPU，不因临时缓存消失而重建媒体。空间不足暂停新单元；任何清理函数只允许独立cache的子路径。
+同一结果包一次只能有一个活动runtime。本机flock、owner记录和≤20秒心跳不构成跨VM原子锁；旧不同主机仍显示ACTIVE时，先实际停止后通过notebook的`PREVIOUS_RUNTIME_STOPPED`确认，没有TTL自动抢写。初始化query等包内输入也在取得运行所有权后写入。正常关闭后直接Run all。按计算游标续接，默认历史结果完整，不遍历历史完成状态或原始数组；当前任务的原始读数和后评保存后才推进计算游标。已完成结果直接读取，不预检历史表格或自动重建历史结果。空间不足暂停新单元；任何清理函数只允许独立cache的子路径。
 
 ## 工程验证与证据上限
 
@@ -63,14 +63,20 @@ Pixel OFF实际B32原始输出同时供Pixel与FrameIndex逻辑行；不得重�
 未执行真实媒体、codec、模型、GPU或Colab。发布可运行入口只表示工程交付；实际数据可用性、依赖组合、显存/速度、画质/鲁棒性及论文结论仍须由用户真实Run all和保存证据确认。
 
 
-## 2026-11-07 续跑入口整改
+## 2026-11-08 直接计算断点续跑（当前默认路径）
 
-唯一当前入口仍为 `notebooks/native_baselines_public_fpr001_v4.ipynb`，默认同一 `attempt01`。
-每次重新加载可用分支源码，旧 `/content/video-wm-public-v4/project` 不再成为默认入口。
-在旧 worker 已停且没有本机进程引用的前提下，只清理该工作目录内的旧 project/current-source 临时源码；正式结果、失败包、预算/query/plan、原始数组、供体、权重及续跑缓存保留。
+用户最新指令：此前保存的结果默认完整，直接从checkpoint续跑。此规则替代上一轮逐历史视图读取完成回执的方案，不提供trust/strict/override模式。
 
-启动不再对全部已完成流解包原始数组。每流的轻量 scheduling 记录仅用于调度，旧包按需从40个视图完成记录建立，原始 payload 不读取。需要的数组以记录头/偏移定位，再按批次加载；完整记录后的中断尾段保留。编辑计划按实际源懒加载。已完成视图有后评文件时直接跳过，最终统计仍从原始数组后评；缺失或不可读会计为未知并更新调度提示，不能拿完成标记制造科学结果。
+唯一入口仍为 `notebooks/native_baselines_public_fpr001_v4.ipynb`，原 `attempt01` 不变。当前默认调度使用 `compute_checkpoint.json` 的任务、当前视图和明确未完成项。无此文件的旧包，仅从已有 `runner.log` 找最后真实计算位置，再从当前任务的物理调用记录定位具体臂/视图；`RESTORE_VIEW_RECEIPTS` 等恢复扫描行不作为计算断点。不会从源001重新遍历状态，也不扫描历史目录建立索引。
 
-当前 worker 在 query 恢复、固定预算账本读取、缺失定位、视图恢复及物理读取阶段报告当前位置和耗时。历史 progress 不冒充当前推进；心跳只是存活信号。尚未通过现场调用栈确认旧运行的实际阻塞点，本次修复针对已经定位的重复读取机制。
+当前包此前已明确停在 `DEV-bank / WAM / ucf-dev-056`。迁移采用保存记录，未在程序里硬编码跳过前55源，因此新包和其他真实断点也能使用同一入口。恢复的是此源内最后实际调用的臂/视图，不能把源056解释为已经全部完成。
 
-切换：先停止并断开旧 Colab 运行时；在新运行时打开同一 notebook，设置 `PREVIOUS_RUNTIME_STOPPED=True`，选择GPU后 Run all。没有改四配置、40视图、固定分母或已有恢复上限，不需要换结果目录。真实 Colab 续跑由用户执行。
+已提交批次按记录直接复用，不预读它们确认完成。新批次记录数组文件与字节位置；真正使用时只读对应数据。老格式无字节位置时仅在当前所需的记录文件中定位该批次，不遍历历史目录。需要的数据若实际读取失败，直接报告具体文件与操作，不通过隐式重算或全量核验掩盖。
+
+计算游标与显示进度分离；恢复/心跳不更新计算游标。游标附带固定预算的累计计数及账本偏移，之后只恢复更新的尾段；旧包首次仍需读取现有物理预算账本恢复已消费计数，这是同一预算记录，不扫描旧结果。当前任务完成后保存下一任务，明确缺失视图单列后续续接。历史query/plan按实际使用加载，原四配置、40视图、来源名单、固定分母与基础设施恢复上限保持。
+
+最终表格直接汇总已保存的后评记录；默认不重评历史原始数组。尚未产出的跨源比较仍读取对应供体数据完成原计划的计算。历史缺失不伪造为成功结果，实际使用遇到不可读数据明确报错。
+
+每次使用新下载的临时源码，避免旧project或父kernel模块覆盖修订。启动不清点历史临时目录；只在本次worker停止后释放本次源码。正式结果、失败、原始数组、预算/query/plan与续跑检查点保留。
+
+切换：先实际停止并断开旧Colab运行时；在新运行时打开此notebook，设置 `PREVIOUS_RUNTIME_STOPPED=True`，选择GPU后Run all。没有新结果目录、没有新实验预算。本轮只做必要人工CPU检查；真实Colab执行由用户完成。

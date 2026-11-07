@@ -155,11 +155,12 @@ def run_colab(source_directory=None,source_ref=SOURCE_REF,previous_runtime_stopp
         recorded_complete=(saved.get('status')=='ALL_NATIVE_OBSERVED' and
             saved.get('quality_planned_pairs',0)>0 and
             saved.get('quality_complete_stages',-1)*181==saved.get('quality_planned_pairs'))
-        if recorded_complete and tables_ready(OUTPUT):
+        checkpoint_path=OUTPUT/'compute_checkpoint.json'
+        checkpoint=json.loads(checkpoint_path.read_text()) if checkpoint_path.is_file() else {}
+        if checkpoint.get('status')=='DONE' or (not checkpoint and recorded_complete):
             show_results();return dict(status='READ_ONLY_COMPLETED',output=str(OUTPUT))
         pending=not recorded_complete
-        if not source_directory:print('临时源码清理:',clean_stopped_sources(),flush=True)
-        print('当前入口：准备新源码；复用同一 attempt01，从缺失部分继续',flush=True)
+        print('当前入口：准备新源码；复用同一 attempt01，从真实计算断点继续',flush=True)
         if source_directory:source=Path(source_directory)
         else:
             source_stage=Path(tempfile.mkdtemp(prefix='current-source-',dir=WORK))
@@ -188,7 +189,7 @@ def run_colab(source_directory=None,source_ref=SOURCE_REF,previous_runtime_stopp
         args=[sys.executable,'-u',str(source/'experiments/wan_state_clock/native_baselines_public_fpr001_v4_run.py'),
               '--output',str(OUTPUT),'--cache',str(CACHE),'--vendor',str(vendor)]
         if previous_runtime_stopped:args.append('--previous-runtime-stopped')
-        print('当前入口：启动续跑 worker；只根据轻量完成记录调度',flush=True)
+        print('当前入口：直接读取计算 checkpoint；历史结果默认完整，不扫描旧视图',flush=True)
         launched_at=time.time();last_progress=None
         with (OUTPUT/'runner.log').open('a') as log:
             worker=subprocess.Popen(args,cwd=source,env=environment,stdout=log,stderr=subprocess.STDOUT,start_new_session=True)

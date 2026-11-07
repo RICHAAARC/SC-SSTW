@@ -9,26 +9,16 @@ import pytest
 pytestmark=pytest.mark.unit
 from runtime.wan import native_baselines_public_v4 as runner
 from runtime.wan import native_baseline_colab_v4 as colab
-from runtime.wan.native_baseline_storage_v4 import ArrayLog, UnitStore
+from runtime.wan.native_baseline_storage_v4 import ArrayLog, UnitStore, Budget
 from runtime.wan.native_baseline_storage_v1 import write_json, read_json
 from main.baselines.public_fpr001_v4 import views
 
 
-def test_scheduling_never_opens_arrays_and_legacy_is_cached(tmp_path):
-    source={'id':'one'};folder=tmp_path/'units/native/one/wam/OFF'
-    for v in views():write_json(folder/'views'/v['id']/'status.json',dict(complete=True,observed=v['frames'],planned=v['frames']))
-    with patch.object(runner,'UnitStore',side_effect=AssertionError('no arrays in scheduling')):
-        assert runner.scheduling_receipt(tmp_path,source,'wam','OFF')
-    for f in (folder/'views').rglob('status.json'):f.unlink()
-    assert runner.scheduling_receipt(tmp_path,source,'wam','OFF')
-    assert not runner.native_complete(tmp_path,source,'wam','OFF')  # hint is not scientific evidence
-
-
 def test_arrays_lazy_header_seek_and_one_payload(tmp_path):
     folder=tmp_path/'units/u';folder.mkdir(parents=True)
-    log=ArrayLog(folder/'arrays-old.bin')
-    log.append('a',{'x':np.arange(2)})
-    log.append('b',{'x':np.arange(3)})
+    original=UnitStore(tmp_path,'u',Budget(tmp_path,'old'))
+    original.perform('a','detect_wam',lambda:{'x':np.arange(2)},arrays=True)
+    original.perform('b','detect_wam',lambda:{'x':np.arange(3)},arrays=True)
     with patch.object(ArrayLog,'read_record',wraps=ArrayLog.read_record) as load:
         store=UnitStore(tmp_path,'u',SimpleNamespace(runtime_id='new'))
         assert load.call_count==0
@@ -76,11 +66,11 @@ def test_completed_views_do_not_extract_or_post_again(tmp_path):
     for v in views():
         write_json(tmp_path/'units/native/one/wam/OFF/views'/v['id']/'status.json',dict(complete=True,observed=v['frames'],planned=v['frames']))
         write_json(tmp_path/'post/one/wam/OFF'/(v['id']+'.json'),{'saved':True})
-    ops=SimpleNamespace(output=tmp_path,cache=tmp_path/'cache',budget=SimpleNamespace(runtime_id='new'))
+    ops=SimpleNamespace(output=tmp_path,cache=tmp_path/'cache',budget=Budget(tmp_path,'new'))
     run=runner.Runner(ops,[source],{}, {}, None,None)
     with patch.object(runner,'extract_view',side_effect=AssertionError('must skip completed view')):
-        run.read_arm(source,'wam','OFF',None)
-    assert read_json(tmp_path/'units/native/one/wam/OFF/scheduling.json')['complete']
+        assert run.read_arm(source,'wam','OFF',None,start_view=40)==[]
+    assert not (tmp_path/'units/native/one/wam/OFF/scheduling.json').exists()
 
 
 def test_final_post_does_not_trust_completion_hint(tmp_path):
@@ -96,7 +86,7 @@ def test_final_post_does_not_trust_completion_hint(tmp_path):
     assert read_json(folder/'views/G1/T00/status.json')['observed']==0
 
 
-def test_bootstrap_refreshes_source_without_raw_prescan(tmp_path,monkeypatch):
+def test_completed_bootstrap_does_not_rescan_or_download(tmp_path,monkeypatch):
     output=tmp_path/'result';work=tmp_path/'work';cache=tmp_path/'cache'
     monkeypatch.setattr(colab,'OUTPUT',output);monkeypatch.setattr(colab,'WORK',work);monkeypatch.setattr(colab,'CACHE',cache)
     write_json(output/'result.json',dict(status='ALL_NATIVE_OBSERVED',quality_planned_pairs=181,quality_complete_stages=1))
@@ -113,10 +103,9 @@ def test_bootstrap_refreshes_source_without_raw_prescan(tmp_path,monkeypatch):
         launched.append(kwargs['cwd']);return SimpleNamespace(pid=42,returncode=0,poll=lambda:0)
     monkeypatch.setattr(colab.subprocess,'Popen',popen)
     with patch.object(runner,'native_complete',side_effect=AssertionError('no bootstrap raw scan')):
-        assert colab.run_colab()['status']=='RUN_FINISHED_WITH_TABLES'
-        assert colab.run_colab()['status']=='RUN_FINISHED_WITH_TABLES'
-    assert len(launched)==2 and launched[0]!=launched[1]
-    assert all(not path.exists() for path in downloaded)
+        assert colab.run_colab()['status']=='READ_ONLY_COMPLETED'
+        assert colab.run_colab()['status']=='READ_ONLY_COMPLETED'
+    assert launched==[] and downloaded==[]  # completed history is not rechecked or fetched
     assert (output/'result.json').is_file()
 
 
