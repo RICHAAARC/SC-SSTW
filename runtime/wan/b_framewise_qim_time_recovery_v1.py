@@ -14,8 +14,9 @@ class ResourceExceeded(RuntimeError): pass
 
 
 class Resources:
-    def __init__(self):
+    def __init__(self, receiving_total_seconds=6300):
         self.peak_rss=0;self.limit=8*1024**3;self.error=None;self.deadline=None
+        self.receiving_total_seconds=receiving_total_seconds
         self.receive_seconds=0.;self.stop=threading.Event();self.process=psutil.Process()
         self.thread=threading.Thread(target=self._watch,daemon=True);self.thread.start()
 
@@ -38,7 +39,7 @@ class Resources:
 
     @contextmanager
     def receiving(self,seconds):
-        start=time.monotonic(); self.deadline=start+min(seconds,6300-self.receive_seconds)
+        start=time.monotonic(); self.deadline=start+min(seconds,self.receiving_total_seconds-self.receive_seconds)
         try:
             self.check();yield;self.check()
         finally:
@@ -47,7 +48,7 @@ class Resources:
     def close(self):
         self.stop.set();self.thread.join(timeout=1)
         return dict(peak_resident_bytes=self.peak_rss,peak_limit_bytes=self.limit,
-                    receiver_seconds=self.receive_seconds,receiver_total_limit_seconds=6300,error=self.error)
+                    receiver_seconds=self.receive_seconds,receiver_total_limit_seconds=self.receiving_total_seconds,error=self.error)
 
 
 def command(argv,resources,input_bytes=None):
