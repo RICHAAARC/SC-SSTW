@@ -4,7 +4,18 @@
 
 ## 推荐：静态六片
 
-六个独立 Colab runtime 都打开 `paper_parallel_worker_v1.ipynb`，选择 GPU，分别填写：
+六个独立 Colab runtime 可分别打开下面六个已预填入口，选择 GPU、挂载同一个原 Google Drive 后直接 Run all，无需修改 ROLE/SHARD：
+
+| runtime | 已预填 notebook | 分工 |
+|---|---|---|
+| 1 | [主方法 0](https://colab.research.google.com/github/RICHAAARC/SC-SSTW/blob/main/notebooks/paper_parallel_main0_v1.ipynb) | main/0 |
+| 2 | [主方法 1](https://colab.research.google.com/github/RICHAAARC/SC-SSTW/blob/main/notebooks/paper_parallel_main1_v1.ipynb) | main/1 |
+| 3 | [公开 Baseline 0](https://colab.research.google.com/github/RICHAAARC/SC-SSTW/blob/main/notebooks/paper_parallel_public0_v1.ipynb) | public/0 |
+| 4 | [公开 Baseline 1](https://colab.research.google.com/github/RICHAAARC/SC-SSTW/blob/main/notebooks/paper_parallel_public1_v1.ipynb) | public/1 |
+| 5 | [公开 Baseline 2](https://colab.research.google.com/github/RICHAAARC/SC-SSTW/blob/main/notebooks/paper_parallel_public2_v1.ipynb) | public/2 |
+| 6 | [公开 Baseline 3](https://colab.research.google.com/github/RICHAAARC/SC-SSTW/blob/main/notebooks/paper_parallel_public3_v1.ipynb) | public/3 |
+
+六个入口复用同一个 runtime 和原结果/checkpoint 位置；它们不新增任务或预算。默认每次1源/pack、软4小时，安全暂停后继续同一个入口。每片只开一份，不同时运行通用入口的相同分片。原 `paper_parallel_worker_v1.ipynb` 仍可手动填写相同分工：
 
 | runtime | ROLE | SHARD | 唯一任务 | 默认本次边界 |
 |---|---|---:|---|---|
