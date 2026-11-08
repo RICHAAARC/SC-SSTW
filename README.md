@@ -1,5 +1,7 @@
 # SC-SSTW trajectory-sampling video watermark mechanisms
 
+> 完整论文实验入口：[paper_suite_v1.ipynb](notebooks/paper_suite_v1.ipynb)（GPU Run all）。接齐十二源C4、原公开Baseline续接、十二源同域五视图对照、QMatch正式统计与论文表格；[范围与固定预算](docs/paper_suite_v1.md)。已有TEST-A与旧失败保留，不用单个TEST-B入口冒充整套实验交付。
+
 > 2026-11-08：main 已选择性整合 [C4 正式时间与条件载荷入口](docs/b_paper_cohort_v1.md)。保留 DCT2＋CDC32、Joint-A/F42/relative、QMatch 和旧 H/L；默认 TEST-A 四源，已消费结果只读，TEST-B 不自动启动。核心、runtime、实验编排、薄 notebook 分层独立。
 
 保存证据的独立只读入口见[报告协议](docs/paper_results_v1/evaluation_protocol.md)、[完整结果索引](docs/paper_results_v1/results_index.md)和[被动 native 接口状态](docs/paper_results_v1/baseline_status.md)。`python -m experiments.paper_results_v1.cli --help` 仅依赖 Python 标准库；原36/P2196账及失败完整保留，不新增模型执行或公平 baseline 结论。

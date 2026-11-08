@@ -41,3 +41,12 @@ load available source; synchronize a changed notebook with its builder.
 Run only checks covering the actual change. No model/media/GPU/Colab execution
 or Git publication beyond current authorization. Old evidence retains its
 original source, denominator and claim ceiling; integration is not a new run.
+
+Adopted formal paper suite: full frozen twelve-source C4 measurement, unchanged
+public v4 baseline/checkpoint, bounded same-Wan-source five-view native comparison,
+and independent random-query family statistics. New budgets are separate. Native
+capacities and insertion stages remain explicit; no equal-capacity ranking,
+natural-population 0.1% certification or native time-localization superiority.
+Existing results are retained; real new execution belongs to user-run Colab.
+Default baseline protocol data is a passive main/baselines resource, and all
+worker entrypoints stay in runtime, independent of experiment/notebook layers.

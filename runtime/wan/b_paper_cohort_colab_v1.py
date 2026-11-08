@@ -88,9 +88,10 @@ def run_colab(batch='TEST-A',source_directory=None,source_ref=SOURCE_REF,output_
     except BaseException as error:
         reason=f'{type(error).__name__}: {error}'
         records.write(first/'preparation_failure.json',dict(failure=reason))
-        records.close_blind(first,reason);records.finish(first,reason)
+        interrupted=isinstance(error,(KeyboardInterrupt,InterruptedError))
+        records.close_blind(first,reason);records.finish(first,reason,interrupted=interrupted)
         show_results(batch,root)
-        return dict(status='PREPARATION_FAILED',output=str(root),batch=batch,failure=reason,remaining_not_started=pending[1:])
+        return dict(status='PREPARATION_FAILED',output=str(root),batch=batch,failure=reason,interrupted=interrupted,remaining_not_started=pending[1:])
     from runtime.wan.b_paper_cohort_runner_v1 import execute_reserved,run_source
     from runtime.wan.b_paper_cohort_evaluation_v1 import cohort_summary
     results=[execute_reserved(first,WORK/'work')]
