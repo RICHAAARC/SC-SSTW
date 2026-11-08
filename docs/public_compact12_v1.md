@@ -1,3 +1,5 @@
+> 2026-11-08 调度修订：运行顺序、真实checkpoint、分片参数和续跑边界以 [paper_execution_v1.md](paper_execution_v1.md) 为准。下文方法/统计协议保持，历史顺序执行说明不再作为当前运行指引。
+
 # 公开 Baseline 精简协议 V1
 
 完整入口 `notebooks/paper_suite_v1.ipynb` 默认调用本协议；单独入口 `notebooks/native_baselines_public_compact12_v1.ipynb`。原 `native_baselines_public_fpr001_v4.ipynb` 保留，仍只继续原40视图包。本次不执行真实媒体、GPU或保存数据回放。

@@ -1,3 +1,5 @@
+> 2026-11-08 调度修订：运行顺序、真实checkpoint、分片参数和续跑边界以 [paper_execution_v1.md](paper_execution_v1.md) 为准。下文方法/统计协议保持，历史顺序执行说明不再作为当前运行指引。
+
 # 完整论文实验入口 V1
 
 选择GPU后运行 `notebooks/paper_suite_v1.ipynb`。默认矩阵是完整十二源及四配置对照，不是单独TEST-B。所有模型、媒体、接收、CPU统计与后评都在Colab中接完；Notebook只负责挂载、输入、调用和展示，builder同步。真实成功与工程交付分开。
@@ -12,7 +14,7 @@
 |主QMatch统计|十二源×OFF/P0/NEW，各一个uniform32查询，五视图×两key|36随机抽取、360声明、最多11520位比较；额外计算36个接受词集合的精确概率/未知界；无新model/codec/读位|
 |贡献与表格|原B/U、P_PAIRED、OFF/P0/NEW及F42/relative保存输出|只读保存后评进行分栏汇总，不重跑旧后评、不新增身份分支、不重复已失败构造|
 
-49和350是adapter调用机会，不冒称真实网络forward次数；模型hook实际调用与帧数单独保存。Wan物理reader为每源5754帧（7×822），全批69048；逻辑OFF帧复用不增加物理调用。Pixel OFF raw同时供Pixel与FrameIndex，不能读两次GPU。三个模型按源顺序加载释放，最多36次load；每源一次attempt，失败不补跑。新预算独立于旧C4和公开v4，不能转借。
+49和350是adapter调用机会，不冒称真实网络forward次数；模型hook实际调用与帧数单独保存。Wan物理reader为每源5754帧（7×822），全批69048；逻辑OFF帧复用不增加物理调用。Pixel OFF raw同时供Pixel与FrameIndex，不能读两次GPU。三个模型按源顺序加载释放，原计划36次load；恢复进程的额外load单列实际成本，不隐入原预算。每源一次attempt，失败不补跑。新预算独立于旧C4和公开v4，不能转借。
 
 ## 同域比较的确切含义
 
@@ -37,11 +39,11 @@ QMatch四态算法不改：有合法矛盾MISMATCH，32有效位全等MATCH，�
 - 原公开Baseline（独立入口保留，不由完整suite续接）：`Video-WM_Result/baselines/public-native-and-frameindex-fpr001-v4/attempt01`，原checkpoint优先；已有独立runtime ACTIVE时不抢占，不改其包。
 - 新Wan：`Video-WM_Result/baselines/wan-cohort-five-view-v1/<source>/attempt01`。
 - 新查询：`Video-WM_Result/main_method/random-query-family-v1/attempt01`。
-- 统一表格与阶段日志：`Video-WM_Result/paper_suite_v1`，每阶段新快照，latest_report.json仅索引最新快照。
+- 统一表格与阶段日志：`Video-WM_Result/paper_suite_v1`，每次调用独立日志；最终CPU汇总独占latest_report.json。
 
-新的Wan/query开始或失败消耗，重入只读；尚无上游终态的Wan源保持DEPENDENCY_PENDING，不提前消耗。C4任一源尚未明确终态时，查询统计保持DEPENDENCY_PENDING且不消耗attempt。旧C4已消费但缺文件不会被重新生成/补post。显式中断停止后续阶段；普通失败保留固定分母，独立工作可继续。
+新的Wan/query开始或失败消耗；新Wan已完整落盘的调用可按checkpoint续接，未知已启动调用不重做，已消费query重入只读；尚无上游终态的Wan源保持DEPENDENCY_PENDING，不提前消耗。C4任一源尚未明确终态时，查询统计保持DEPENDENCY_PENDING且不消耗attempt。旧C4已消费但缺文件不会被重新生成/补post。显式中断停止后续阶段；普通失败保留固定分母，独立工作可继续。
 
-精简公开线使用独立计算游标、固定预算；原v4入口及全部记录保留，不由本流程接管。用户自行停止旧任务后切换；PREVIOUS_RUNTIME_STOPPED仅适用于精简包自身的跨runtime续接。每阶段子进程隔离依赖和GPU资源。源码/权重在`/content/video-wm-paper-suite-v1`及原缓存区，均在结果树之外；本入口不清理正式包。
+精简公开线使用独立计算游标、固定预算；原v4入口及全部记录保留，不由本流程接管。用户自行停止旧任务后切换；PREVIOUS_RUNTIME_STOPPED表示当前固定任务片的前一runtime已经实际停止。每阶段子进程隔离依赖和GPU资源。源码/权重在`/content/video-wm-paper-suite-v1`及原缓存区，均在结果树之外；本入口不清理正式包。
 
 ## 自动表格
 
@@ -53,4 +55,4 @@ QMatch四态算法不改：有合法矛盾MISMATCH，32有效位全等MATCH，�
 来源接受事件明确标为 `ANY5`，随机查询族为 `ANY10_VIEWS_KEYS`，不能误读为全部视图通过。正确消息碰撞保留 N/A，分列计划、eligible、技术未知，不重抽、不计错误接受。另分 ALL、TEST-A、TEST-B 来源汇总。查询失败或缺失时仍展开360声明和36族，已返回逐条声明直接读取，不重跑匹配。贡献表包含B/U/P_PAIRED绝对支撑、完整字面/归属消息、启动区和真实事件分层；成本连接已保存阶段资源、I/O、scratch记录。格式异常逐项列出并保持未知，其它来源仍可读。
 
 
-低FPR增量见 [概率空间与有限验证协议](paper_fpr_claims_v1.md)。新增48项确定性保存记录报表，零新增物理/query预算；原TEST-B八源承担有限未见验证，A仍为原正式证据。可单独运行 `notebooks/paper_fpr_validation_v1.ipynb` 复用同runtime的cohort→原queries→tables，不启动外部模型。原主方法、同Wan、查询预算保持；公开线采用独立精简协议，原v4预算与记录不变。
+低FPR增量见 [概率空间与有限验证协议](paper_fpr_claims_v1.md)。新增48项确定性保存记录报表，零新增物理/query预算；原TEST-B八源承担有限未见验证，A仍为原正式证据。可单独运行 `notebooks/paper_fpr_validation_v1.ipynb` 复用main0/main1的C4-only任务→唯一finalizer中的原queries/表格，不启动外部模型。原主方法、同Wan、查询预算保持；公开线采用独立精简协议，原v4预算与记录不变。

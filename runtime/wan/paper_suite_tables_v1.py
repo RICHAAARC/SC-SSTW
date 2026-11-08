@@ -2,6 +2,7 @@
 from collections import Counter
 from datetime import datetime,timezone
 from pathlib import Path
+import uuid
 from main.tube_state import paper_suite_v1 as p
 from main.baselines.public_compact12_v1 import OUTPUT as COMPACT_PUBLIC_ROOT
 from . import paper_suite_records_v1 as rec
@@ -11,11 +12,21 @@ from .paper_suite_reporting_v1 import SavedReader,unique,fixed_positions,counts_
 
 
 def build(cohort_root=p.COHORT_ROOT,wan_root=p.WAN_ROOT,query_root=p.QUERY_ROOT,
-          public_root=COMPACT_PUBLIC_ROOT,report_root=p.REPORT_ROOT):
+          public_root=COMPACT_PUBLIC_ROOT,report_root=p.REPORT_ROOT,write_latest=False):
     from .b_paper_cohort_evaluation_v1 import cohort_summary
-    folder=Path(report_root)/'reports'/datetime.now(timezone.utc).strftime('%Y%m%dT%H%M%S%fZ')
+    folder=Path(report_root)/'reports'/uuid.uuid4().hex
     folder.mkdir(parents=True,exist_ok=False)
     reader=SavedReader();read=reader.load
+    from .native_baseline_storage_v4 import events
+    def overhead(root):
+        rows=list(events(root/'restore_overhead.jsonl'))
+        return dict(records=rows,started=sum(v.get('status')=='STARTED' for v in rows),
+            returned=sum(v.get('status')=='RETURNED' for v in rows),
+            seconds=sum(v.get('seconds',0) for v in rows if v.get('status') in ('RETURNED','FAILED')),
+            scope='additional restoration loads; excluded from original method-call totals, included in actual cost')
+    def process_history(root):
+        files=sorted(root.glob('resource_history/**/*.json'))+sorted(root.glob('stages/*/resource_history/**/*.json'))
+        return [dict(path=str(path),value=read(path)) for path in files]
     times=[];strata=[];payload=[];controls=[];qualities=[];costs=[];wan=[];source_families=[];component=[]
     for sid in p.SOURCES:
         source=Path(cohort_root)/sid/'attempt01';evaluation=read(source/'evaluation_summary.json')
@@ -68,7 +79,7 @@ def build(cohort_root=p.COHORT_ROOT,wan_root=p.WAN_ROOT,query_root=p.QUERY_ROOT,
             for view in p.VIEWS:
                 qualities.append(dict(source=sid,method='main',pair=pair,view=view,
                     value=quality.get(pair+'/'+view) if isinstance(quality,dict) else None))
-        costs.append(dict(source=sid,method='main',value=read(source/'chain_resources.json'),
+        costs.append(dict(source=sid,method='main',process_resource_history=process_history(source),restore_overhead=overhead(source),value=read(source/'chain_resources.json'),
             generation=read(source/'generation_resources.json'),identity=read(source/'identity_backend_resources.json'),
             stages={stage:{name:read(source/'stages'/stage/(name+'.json')) for name in ('resources','backend_resources','io_counts','result')}
                 for stage in p.cohort.STAGES},scratch_release=read(source/'scratch_release.json'),
@@ -90,7 +101,7 @@ def build(cohort_root=p.COHORT_ROOT,wan_root=p.WAN_ROOT,query_root=p.QUERY_ROOT,
             for view in p.VIEWS:
                 matched=[row for row in qrows if row.get('method')==method and row.get('view')==view] if isinstance(qrows,list) else []
                 qualities.append(dict(source=sid,method=method,view=view,pair='WM_OFF',value=matched[0] if len(matched)==1 else None))
-        costs.append(dict(source=sid,method='wan_baselines',value=result,
+        costs.append(dict(source=sid,method='wan_baselines',restore_overhead=overhead(base),value=result,
             actual_network_hooks=read(base/'resources.json',list),operation_rows=read(base/'operations.json')))
     fixed_stats=[];fixed_panels=[]
     for panel,sids in [('ALL',p.SOURCES),('TEST-A',p.SOURCES[:4]),('TEST-B',p.SOURCES[4:])]:
@@ -146,7 +157,8 @@ def build(cohort_root=p.COHORT_ROOT,wan_root=p.WAN_ROOT,query_root=p.QUERY_ROOT,
         no_scientific_success_assumed=True,population_fpr_certified=False,
         fpr_increment=dict(derived_measurement_rows=48,added_scientific_calls=0,validation_sources=8,
             models_table=str(folder/'fpr_probability_models.csv'),measurements_table=str(folder/'fpr_measurements.csv')))
-    rec.write(folder/'index.json',state);rec.write(Path(report_root)/'latest_report.json',state)
+    rec.write(folder/'index.json',state)
+    if write_latest:rec.write(Path(report_root)/'latest_report.json',state)
     text='# Formal paper measurement package\n\n'+p.COMPARISON_SCOPE+'\n\n'
     text+='Twelve fixed Wan sources. Existing C4/TEST-A evidence is retained; TEST-B is formal measurement. All failures, unresolved and missing rows remain.\n\n'
     text+='QMatch accepts only all32 matching valid bits; analytic random-query family risk and fixed-panel empirical rates are separate. No natural-population 0.1% certification. OFF/P0 empty paths are unresolved, not contradiction rejection.\n\n'

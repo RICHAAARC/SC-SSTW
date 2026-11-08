@@ -13,17 +13,18 @@ from .native_baseline_checkpoint_v4 import ComputationCursor,tasks_for
 from .native_baseline_io_v4 import extract_view,saved_raw,empty_raw,load_rgb,validate_native,remove_cache,SpaceUnavailable
 from .native_baseline_evaluation_v4 import write_post
 from .native_baseline_compact_reuse_v1 import Reuse,CompactOperations,read_saved_view
+from .paper_checkpoint_v1 import BoundaryPause
 
 ROOT=Path(__file__).resolve().parents[2]
 DEFAULT_CONFIG=ROOT/'main/baselines/protocols/public_compact12_v1.json'
 
 
-def inputs(output,old,config=DEFAULT_CONFIG):
+def inputs(output,old,config=DEFAULT_CONFIG,query_sources=None):
     config_path=Path(config);config=p.validate_config(read_json(config_path));output=Path(output)
     roster_path=output/'roster.json'
     if roster_path.is_file():roster=read_json(roster_path)
     else:
-        old_roster=Path(old)/'sources.json'
+        old_roster=Path(old)/('roster.json' if (Path(old)/'roster.json').is_file() else 'sources.json')
         roster=read_json(old_roster) if old_roster.is_file() else read_json(config_path.parent/config['source_list'])
         if isinstance(roster,dict):roster=roster['sources']
         p.selected_sources(roster);write_json(roster_path,roster)
@@ -39,7 +40,10 @@ def inputs(output,old,config=DEFAULT_CONFIG):
     else:
         if (output/'physical_calls.jsonl').exists() or (Path(old)/'physical_calls.jsonl').exists():
             raise Unavailable('actual saved query registry missing after physical work; cannot replace it')
-        queries=allocate_queries(roster,os.urandom);write_json(query_path,queries)
+        marker=output/'query_draw_started.json'
+        if marker.exists():raise Unavailable('query draw was consumed without a saved registry; no redraw')
+        write_json(marker,dict(started=True))
+        queries=allocate_queries(roster if query_sources is None else query_sources,os.urandom);write_json(query_path,queries)
         write_json(output/'query_origin.json',dict(source='independent draws before this package work',new_registry=True))
     return sources,roster,SavedQueries(queries),SourcePlans(output,roster)
 
@@ -73,12 +77,27 @@ class CompactRunner(Runner):
             self.adapter=self.loaders.watermark(pack,b);self.loaded=(pack,b)
         return self.adapter
 
+    def dependency_retryable(self,source,arm,pack,b):
+        sid=source['id'];units=['source/'+sid,'media/'+sid+'/OFF','media/'+sid+'/'+arm]
+        if arm!='OFF':units+=['writer/'+sid+'/'+arm]
+        rows=[]
+        for unit in units:
+            store=self.ops.store(unit,cache_arrays=unit.startswith('writer/'))
+            if not store.record_errors:rows.extend(store.rows.values())
+        latest={}
+        for row in getattr(self.loaders,'rows',[]):
+            if row.get('key')==pack+'/'+b:latest[row['key']]=row
+        rows+=list(latest.values())
+        return any(row.get('status') in ('INFRA_FAILED','STARTED','RETURNED_NOT_COMMITTED')
+            and (not row.get('imported_from') or row.get('same_experiment')) and row.get('attempt',0)<3 for row in rows)
+
     def read_arm_compact(self,source,b,arm,pack,selection):
         available=p.views();remaining=list(selection) if isinstance(selection,list) else list(range(selection,len(available)))
         failed=list(self.cursor.state.get('failed_views',[]));g1=None
         methods=('pixelseal','frameindex') if b=='pixelseal' and arm=='OFF' else (b if arm=='OFF' else arm,)
         store=self.ops.store('native/'+source['id']+'/'+b+'/'+arm)
         for index in list(remaining):
+            if getattr(self,'boundary',None):self.boundary.before()
             view=available[index];self.cursor.view(index,remaining,failed)
             self.progress(stage='COMPUTE_VIEW',source=source['id'],backend=b,arm=arm,view=view['id'],processed=index+1,total=12)
             try:
@@ -89,7 +108,7 @@ class CompactRunner(Runner):
                         nonlocal g1
                         if g1 is None:g1=self.ops.g1_saved(source,arm)
                         return self.ops.received(source,arm,view,self.plans[source['id']],g1,self.donor,decode_tag=b)
-                    if imported['imported']:
+                    if imported['imported'] and not imported.get('same_experiment'):
                         # Only never-started batches may extend the one saved old epoch, on its exact saved input.
                         prefix=view['id']+'/'+epoch['id'];todo=[(s,n) for s,n in batches(view['frames'],read_batch(b))
                             if store.row(prefix+'/batch'+str(s))['status']=='NOT_STARTED']
@@ -101,20 +120,30 @@ class CompactRunner(Runner):
                                     validate=lambda value:validate_native(value,k,b),physical_key=view['id']+'/batch'+str(s)))
                             del received
                         raw,epoch,read_errors=read_saved_view(store,view,b)
-                    elif any(r.get('imported_from') and k.startswith(view['id']+'/') for k,r in store.rows.items()):
+                    elif any(r.get('imported_from') and not r.get('same_experiment') and k.startswith(view['id']+'/') for k,r in store.rows.items()):
                         self.ops.failure('native/'+source['id']+'/'+view['id'],Unavailable('old reader receipts exist but epoch unavailable'))
                     else:
                         prefix=view['id']+'/'+epoch['id'] if epoch else None
                         needs_reader=not prefix or any(store.row(prefix+'/batch'+str(start))['status']!='COMMITTED' for start,n in batches(view['frames'],read_batch(b)))
                         adapter=self.get_adapter(pack,b) if needs_reader else None
                         raw,epoch=extract_view(self.ops,source,b,arm,view,adapter,pixels)
-            except SpaceUnavailable:raise
+            except (SpaceUnavailable,BoundaryPause):raise
             except Exception as error:self.ops.failure('read/'+source['id']+'/'+view['id'],error)
             raw,epoch,read_errors=read_saved_view(store,view,b)
             if read_errors or store.record_errors:
                 write_json(store.folder/'views'/view['id']/'read_errors.json',dict(batch_errors=read_errors,receipt_errors=store.record_errors))
             if not raw['observed'].all() and index not in failed:failed.append(index)
             if raw['observed'].all() and index in failed:failed.remove(index)
+            if not raw['observed'].all() and getattr(self,'bounded_schedule',False):
+                prefix=view['id']+'/'+epoch['id'] if epoch else ''
+                rows=[store.row(prefix+'/batch'+str(start)) for start,n in batches(view['frames'],read_batch(b))]
+                retryable=not store.record_errors and any(row.get('status') in ('INFRA_FAILED','STARTED','RETURNED_NOT_COMMITTED')
+                    and (not row.get('imported_from') or row.get('same_experiment')) and row.get('attempt',0)<3 for row in rows)
+                retryable=retryable or self.dependency_retryable(source,arm,pack,b)
+                if not retryable:
+                    if index in failed:failed.remove(index)
+                    self.cursor.state.setdefault('retained_unknown_views',{}).setdefault(str(self.cursor.state['active_task']),{})[str(index)]=dict(
+                        view=view['id'],observed=int(raw['observed'].sum()),reason='no eligible unconsumed/recovery operation; saved unknown retained')
             for method in methods:write_post(self.ops.output,source,method,arm,view,raw,epoch,self.queries,self.plans[source['id']],self.ops.budget.runtime_id)
             write_json(store.folder/'views'/view['id']/'status.json',dict(complete=bool(raw['observed'].all()),observed=int(raw['observed'].sum()),planned=view['frames']))
             if view['generation']=='G2' and view['operation']!='T00':
@@ -128,9 +157,9 @@ class CompactRunner(Runner):
         if quality_complete(self.ops.output,source,method):return
         # A partial old quality unit stays a partial reference. No old completed LPIPS/writer rerun.
         store=self.ops.store('quality/'+source['id']+'/'+method)
-        if store.record_errors or any(r.get('imported_from') for r in store.rows.values()):return
+        if store.record_errors or any(r.get('imported_from') and not r.get('same_experiment') for r in store.rows.values()):return
         writer=self.ops.store('writer/'+source['id']+'/'+method,cache_arrays=True)
-        old_writer=any(r.get('imported_from') for r in writer.rows.values())
+        old_writer=any(r.get('imported_from') and not r.get('same_experiment') for r in writer.rows.values())
         adapter=None if old_writer else self.get_adapter(pack,backend(method))
         self.quality(source,method,adapter)
 
@@ -139,12 +168,14 @@ class CompactRunner(Runner):
         result=None
         try:
             for index,selection in self.cursor.queue():
-                task=self.cursor.tasks[index];self.cursor.begin(index,selection);self.progress(stage='COMPUTE_TASK',task_index=index,**task)
+                task=self.cursor.tasks[index]
+                if getattr(self,'boundary',None) and task['kind'] not in ('cleanup','post'):self.boundary.before()
+                self.cursor.begin(index,selection);self.progress(stage='COMPUTE_TASK',task_index=index,**task)
                 source=self.by_id.get(task['source']);kind=task['kind'];failed=[]
                 if kind=='media':
                     media_store=self.ops.store('media/'+source['id']+'/'+task['arm']);row=media_store.row('G1/encode')
                     if media_store.record_errors:failed=[0]
-                    elif row.get('imported_from') and row['status']!='COMMITTED':failed=[0]
+                    elif row.get('imported_from') and not row.get('same_experiment') and row['status']!='COMMITTED':failed=[0]
                     elif row['status']!='COMMITTED':
                         adapter=self.get_adapter(task['pack'],task['backend']) if task['backend'] else None
                         self.guard(task['id'],lambda:self.ensure_media(source,task['arm'],adapter))
@@ -165,8 +196,14 @@ class CompactRunner(Runner):
                             if path.exists():remove_cache(path,self.ops.cache)
                 elif kind=='post':
                     self.close_adapter();self.loaders.close()
-                    result=build_tables(self.ops.output,self.sources,self.roster,self.queries,self.ops.budget,self.ops.reuse.old)
+                    result=build_tables(self.ops.output,self.sources,self.roster,self.queries,self.ops.budget,self.ops.reuse.roots[-1][0])
+                if failed and getattr(self,'bounded_schedule',False) and kind in ('quality','media'):
+                    store=self.ops.store(('quality' if kind=='quality' else 'media')+'/'+source['id']+'/'+task['arm'])
+                    retryable=not store.record_errors and any(r.get('status') in ('INFRA_FAILED','STARTED','RETURNED_NOT_COMMITTED') and (not r.get('imported_from') or r.get('same_experiment')) and r.get('attempt',0)<3 for r in store.rows.values())
+                    retryable=retryable or self.dependency_retryable(source,task['arm'],task['pack'],task['backend'] or '')
+                    if not retryable:self.cursor.state.setdefault('retained_unknown_tasks',{})[str(index)]=task;failed=[]
                 self.cursor.finish(index,failed)
+                if kind=='cleanup' and getattr(self,'boundary',None):self.boundary.returned()
             return result if result is not None else read_json(self.ops.output/'result.json')
         finally:self.close_adapter()
 
@@ -177,6 +214,7 @@ def run(output=p.OUTPUT,cache=p.CACHE,old=p.OLD_OUTPUT,old_cache=p.OLD_CACHE,ven
     from .native_baseline_models_v4 import NativeAdapterV4
     from .native_baseline_quality_v4 import LPIPS,measure
     output=Path(output);cache=Path(cache);old=Path(old);old_cache=Path(old_cache)
+    if (output/'shards').is_dir():raise Unavailable('this package uses fixed shards; continue those workers rather than the old unsharded runner')
     paths=[x.resolve() for x in (output,cache,old,old_cache)]
     for i in range(len(paths)):
         for j in range(i+1,len(paths)):

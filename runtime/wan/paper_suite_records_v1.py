@@ -4,6 +4,7 @@ import json
 import os
 from pathlib import Path
 import time
+import uuid
 
 
 def read(path):
@@ -13,7 +14,7 @@ def read(path):
 
 def write(path,value):
     path=Path(path);path.parent.mkdir(parents=True,exist_ok=True)
-    temp=path.with_suffix(path.suffix+'.pending')
+    temp=path.with_name(path.name+'.pending-'+uuid.uuid4().hex)
     temp.write_text(json.dumps(value,ensure_ascii=False,allow_nan=False,indent=1)+'\n')
     os.replace(temp,path)
 

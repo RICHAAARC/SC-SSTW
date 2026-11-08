@@ -16,11 +16,14 @@ def saved(path,default):
     except (OSError,ValueError,TypeError) as error:return dict(default,read_error=str(error)) if isinstance(default,dict) else default
 
 
-def rows_for(root,source,method,arm):
+def rows_for(root,source,method,arm,source_roots=None):
     rows=[]
     for view in p.views():
         fallback=missing_post(source,method,arm,view)
-        row=saved(post_path(root,source['id'],method,arm,view['id']),fallback)
+        roots=(source_roots or {}).get(source['id'],[root])
+        paths=[post_path(r,source['id'],method,arm,view['id']) for r in roots]
+        path=next((f for f in paths if f.is_file()),paths[0])
+        row=saved(path,fallback)
         try:
             if any(not isinstance(row.get(k),dict) for k in ('payload','time','ownership')):raise ValueError('post record fields invalid')
             if any(row.get(k)!=fallback[k] for k in ('source_id','split','method','arm','view')):raise ValueError('post row does not describe requested slot')
@@ -30,13 +33,14 @@ def rows_for(root,source,method,arm):
     return rows
 
 
-def quality_rows(root,sources):
+def quality_rows(root,sources,source_roots=None):
     rows=[]
     for s in sources:
         if s['split']=='CAL':continue
         for m in p.METHODS:
             for stage in ('precodec','G1','G2-identity'):
-                path=Path(root)/'units/quality'/s['id']/m/'quality'/(stage+'.json');value=saved(path,{})
+                paths=[Path(r)/'units/quality'/s['id']/m/'quality'/(stage+'.json') for r in (source_roots or {}).get(s['id'],[root])]
+                path=next((f for f in paths if f.is_file()),paths[0]);value=saved(path,{})
                 frames=value.get('frames',[]);edges=value.get('edges',[])
                 try:
                     import math
@@ -64,14 +68,14 @@ def quality_rows(root,sources):
     return rows
 
 
-def build_tables(output,sources,roster,queries,budget,old):
+def build_tables(output,sources,roster,queries,budget,old,source_roots=None):
     output=Path(output);directory=output/'tables';directory.mkdir(parents=True,exist_ok=True)
     payload=[];ownership=[];time_rows=[];incomplete=0
     for method in p.METHODS:
         for split in ('CAL','TEST'):
             selected=[s for s in sources if s['split']==split]
             for arm in ('OFF',) if split=='CAL' else ('OFF',method):
-                groups=[rows_for(output,s,method,arm) for s in selected]
+                groups=[rows_for(output,s,method,arm,source_roots) for s in selected]
                 for rows in groups:
                     for row in rows:
                         meta={k:row[k] for k in ('source_id','split','method','arm','view')}
@@ -79,7 +83,10 @@ def build_tables(output,sources,roster,queries,budget,old):
                         incomplete+=not row['ownership']['complete']
                 for verification in ('query',) if arm=='OFF' else ('query','wrong_query'):
                     ordered=[[r.get('ownership' if verification=='query' else 'wrong_query') or dict(decision=None,complete=False) for r in rows] for rows in groups]
-                    collisions=[verification=='wrong_query' and queries[method+'/'+s['id']].get('wrong_query_collision') is True for s in selected]
+                    flags=[queries[method+'/'+s['id']].get('wrong_query_collision') for s in selected]
+                    collisions=[verification=='wrong_query' and flag is True for flag in flags]
+                    if verification=='wrong_query':
+                        ordered=[rows if type(flag) is bool else [dict(decision=None,complete=False) for _ in rows] for rows,flag in zip(ordered,flags)]
                     channels=[(v['id'],[i],False) for i,v in enumerate(p.views())]
                     channels += [('FAMILY12',list(range(12)),False),('ALL12_ROBUST',list(range(12)),True)]
                     for channel,indices,robust in channels:
@@ -97,7 +104,7 @@ def build_tables(output,sources,roster,queries,budget,old):
                             interval_assumption='source iid reference only; action bootstrap is sensitivity')
                         if split=='TEST':row['action_cluster_bootstrap']=action_sensitivity([decisions[i] for i in eligible],[selected[i]['action'] for i in eligible]) if eligible else None
                         ownership.append(row)
-    quality=quality_rows(output,sources)
+    quality=quality_rows(output,sources,source_roots)
     dev=[s for s in roster if s['split']=='DEV'];devrows=[]
     for source in dev:
         for method in p.METHODS:
@@ -118,7 +125,7 @@ def build_tables(output,sources,roster,queries,budget,old):
         nominal_random_query_bounds=bounds,four_method_per_source_random_query_union_upper=sum(v['upper'] for v in bounds.values()),
         union_scope='one OFF source, four random method queries, twelve views; not the 500-source package or fixed-message population',
         old_v4=str(old),old_v4_completion_assessed=False,old_v4_status_untouched=True,dev_reference_only=True,
-        roster=dict(CAL=32,TEST=500),view_ids=list(p.VIEW_IDS),scientific_success='NOT_ADJUDICATED')
+        roster={split:sum(s['split']==split for s in sources) for split in ('CAL','TEST')},global_roster=dict(CAL=32,TEST=500),view_ids=list(p.VIEW_IDS),scientific_success='NOT_ADJUDICATED')
     write_json(output/'result.json',result)
     (output/'REPORT.md').write_text('# Compact public baseline measurement\n\n'+
         'CAL32 independent null sanity; TEST500; four methods; twelve fixed views. No threshold fitting. '+

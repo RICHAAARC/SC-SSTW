@@ -317,7 +317,7 @@ class ViewEpochs:
 
 
 @contextmanager
-def runtime_session(output,*,previous_runtime_stopped=False):
+def runtime_session(output,*,previous_runtime_stopped=False,runtime_limit=65):
     """Local flock plus explicit cross-runtime handoff. Heartbeat is not a distributed lock."""
     import fcntl
     output=Path(output);output.mkdir(parents=True,exist_ok=True)
@@ -333,7 +333,7 @@ def runtime_session(output,*,previous_runtime_stopped=False):
                 raise Unavailable('prior runtime may still be active; stop it before confirming continuation; heartbeat age cannot authorize takeover')
         runtime_id=uuid.uuid4().hex
         history=list(events(output/'runtimes.jsonl'))
-        if len(history)>=65:raise RecoveryExhausted('64 additional runtime continuations exhausted')
+        if len(history)>=runtime_limit:raise RecoveryExhausted('fixed runtime allowance exhausted')
         record=dict(id=runtime_id,pid=os.getpid(),host=host,status='ACTIVE',started_at=time.time(),
                     ordinal=len(history),cross_vm_atomic_lock=False)
         append_json(output/'runtimes.jsonl',record);write_json(owner_path,record)

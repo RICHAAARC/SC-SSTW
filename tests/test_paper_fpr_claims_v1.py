@@ -59,15 +59,15 @@ def test_finite_colab_sequence_never_launches_external_models(tmp_path,monkeypat
         pid=123456789
         def __init__(self,args,**kw):
             stage=args[args.index('--stage')+1];launched.append(stage)
-            self.returncode=130 if cancel and stage=='cohort' else 0
+            self.returncode=130 if cancel and stage=='main0' else 0
             Path(args[args.index('--receipt')+1]).write_text(json.dumps(dict(status='INTERRUPTED' if self.returncode else 'FAKE_RETURNED')))
         def poll(self):return self.returncode
         def wait(self,**kw):return self.returncode
     monkeypatch.setattr(c.subprocess,'Popen',Worker)
     result=c.run_fpr_colab(source_directory=tmp_path)
-    assert launched==(['cohort'] if cancel else ['cohort','tables','queries','tables'])
+    assert launched==(['main0'] if cancel else ['main0','main1','finalize'])
     assert result['workflow']=='FINITE_FPR_VALIDATION'
-    assert result['status']==('INTERRUPTED_RETAINED' if cancel else 'FINITE_FPR_RETURNED')
+    assert result['status']==('INTERRUPTED_RETAINED' if cancel else 'INVOCATION_RETURNED')
 
 
 def test_report_integration_and_both_notebooks(tmp_path):

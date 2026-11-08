@@ -72,33 +72,39 @@ def prepare_source(source_directory,source_ref,output):
     return source
 
 
-def run_colab(batch='TEST-A',source_directory=None,source_ref=SOURCE_REF,output_root=OUTPUT_ROOT):
-    root=Path(output_root);pending=[sid for sid in ids(batch) if not ((root/sid/'attempt01').exists() and any((root/sid/'attempt01').iterdir()))]
+def run_colab(batch='TEST-A',source_directory=None,source_ref=SOURCE_REF,output_root=OUTPUT_ROOT,
+              max_sources=1,max_hours=4,previous_runtime_stopped=False):
+    root=Path(output_root);selected=ids(batch)
+    def needs(sid):
+        path=root/sid/'attempt01';result=json.loads((path/'result.json').read_text()) if (path/'result.json').is_file() else {}
+        if path.is_dir() and any(path.iterdir()) and not (path/'checkpoint_control.json').is_file():return False
+        return result.get('status') not in ('COMPLETED','STOPPED_FIXED_ATTEMPT')
+    pending=[sid for sid in selected if needs(sid)]
     if not pending:
         show_results(batch,root);return dict(status='READ_ONLY',output=str(root),batch=batch)
-    protocol=standalone('main/tube_state/b_paper_cohort_v1.py',source_directory,source_ref)
-    records=standalone('runtime/wan/b_paper_cohort_records_v1.py',source_directory,source_ref)
-    first=root/pending[0]/'attempt01'
-    if not records.reserve(first,protocol.source_config(pending[0]),protocol):
-        show_results(batch,root);return dict(status='READ_ONLY',output=str(root),batch=batch)
-    try:
-        source=prepare_source(source_directory,source_ref,first)
-        records.write(first/'preparation.json',dict(status='RETURNED',source_directory=str(source),source_ref=source_ref,
-                                                  informational_only=True))
+    import uuid,time
+    preparation=WORK/'preparations'/uuid.uuid4().hex
+    try:source=prepare_source(source_directory,source_ref,preparation)
     except BaseException as error:
-        reason=f'{type(error).__name__}: {error}'
-        records.write(first/'preparation_failure.json',dict(failure=reason))
         interrupted=isinstance(error,(KeyboardInterrupt,InterruptedError))
-        records.close_blind(first,reason);records.finish(first,reason,interrupted=interrupted)
-        show_results(batch,root)
-        return dict(status='PREPARATION_FAILED',output=str(root),batch=batch,failure=reason,interrupted=interrupted,remaining_not_started=pending[1:])
-    from runtime.wan.b_paper_cohort_runner_v1 import execute_reserved,run_source
-    from runtime.wan.b_paper_cohort_evaluation_v1 import cohort_summary
-    results=[execute_reserved(first,WORK/'work')]
-    for sid in pending[1:]:
-        if results[-1].get('interrupted'): break
-        results.append(run_source(protocol.source_config(sid),root/sid/'attempt01',WORK/'work'))
-    for selected in (batch,'ALL'): records.write(root/(selected+'_summary.json'),cohort_summary(root,selected))
+        return dict(status='BATCH_INTERRUPTED' if interrupted else 'PREPARATION_FAILED',interrupted=interrupted,
+            error=str(error),output=str(root),source_attempt_consumed=False)
+    from runtime.wan.b_paper_cohort_resume_v1 import run_source
+    from runtime.wan.paper_checkpoint_v1 import Boundary,BoundaryPause
+    from runtime.wan.paper_execution_v1 import check_full_owner
+    check_full_owner(previous_runtime_stopped)
+    boundary=Boundary(max_sources,max_hours*3600);results=[];status='BATCH_RETURNED'
+    try:
+        for sid in pending:
+            boundary.before()
+            result=run_source(sid,output_root=root,seconds=max(.001,boundary.deadline-time.monotonic()),
+                previous_runtime_stopped=previous_runtime_stopped)
+            results.append(dict(source=sid,result=result))
+            if result.get('interrupted'):
+                status='BATCH_INTERRUPTED';break
+            if result['status']=='PAUSED_BOUNDARY':raise BoundaryPause('saved source boundary')
+            boundary.returned()
+    except BoundaryPause:status='PAUSED_BOUNDARY'
     show_results(batch,root)
-    return dict(status='BATCH_INTERRUPTED' if results[-1].get('interrupted') else 'BATCH_RETURNED',
-                batch=batch,output=str(root),source_results=results)
+    return dict(status=status,interrupted=status=='BATCH_INTERRUPTED',batch=batch,output=str(root),source_results=results,
+        checkpoint='actual completed values plus persistent separate Drive inputs; in-flight unknown calls are not repeated')

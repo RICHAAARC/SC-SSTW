@@ -85,6 +85,7 @@ class FakeAdapter:
 
 def test_full_fake_wan_shared_off_blind_order_and_consumed_reentry(tmp_path,monkeypatch):
     from runtime.wan import paper_wan_comparison_v1 as runner
+    monkeypatch.setattr(runner,'received_shape',lambda n:(n,1,1,3))
     sid=p.SOURCES[0];cohort=tmp_path/'c';output=tmp_path/'w';source=cohort/sid/'attempt01'
     rec.write(source/'result.json',dict(status='COMPLETED'));media=FakeMedia();models=[]
     def factory(name):model=FakeAdapter(name);models.append(model);return model

@@ -118,8 +118,8 @@ def test_report_missing_collision_and_dev_reference(tmp_path,monkeypatch):
 def test_notebooks_and_distinct_default_entry(tmp_path):
     import importlib.util
     from runtime.wan.paper_suite_colab_v1 import FULL_STAGES,FPR_STAGES
-    assert 'public_compact' in FULL_STAGES and 'public' not in FULL_STAGES
-    assert 'public_compact' not in FPR_STAGES and 'wan' not in FPR_STAGES
+    assert all('public'+str(i) in FULL_STAGES for i in range(4)) and 'public' not in FULL_STAGES
+    assert FPR_STAGES==('main0','main1','finalize')
     for stem in ('paper_suite_v1','native_baselines_public_compact12_v1'):
         spec=importlib.util.spec_from_file_location(stem,ROOT/'scripts'/('build_'+stem+'_notebook.py'))
         mod=importlib.util.module_from_spec(spec);spec.loader.exec_module(mod)

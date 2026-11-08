@@ -83,7 +83,7 @@ class Loaders:
         last=[r for r in self.rows if r.get('key')==key]
         if last and last[-1]['status']=='FAILED_PERMANENT':raise Unavailable('model load method/config failure retained: '+key)
         if any(r.get('runtime_id')==self.ops.budget.runtime_id for r in previous):raise Unavailable('no same-runtime model-load retry: '+key)
-        recovery=bool(previous) or category=='lpips_load' and bool([r for r in self.rows if r.get('category')=='lpips_load'])
+        recovery=bool(previous) or category=='lpips_load' and (getattr(self,'initial_lpips_recovery',False) or bool([r for r in self.rows if r.get('category')=='lpips_load']))
         if recovery and category=='model_load' and self.extra_watermark>=3:raise RecoveryExhausted('three additional watermark loads used in this runtime')
         self.ops.budget.charge(category,'loaders',key,recovery=recovery)
         if recovery and category=='model_load':self.extra_watermark+=1

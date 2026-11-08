@@ -8,7 +8,7 @@ from . import b_paper_cohort_records_v1 as rec
 class Events:
     def __init__(self,output,stage):
         self.path=Path(output)/'stages'/stage/'internal_calls.json';self.phase=None
-        self.rows={k:dict(limit=v,started=0,returned=0) for k,v in p.INNER.items()}
+        self.rows=rec.read(self.path) if (Path(output)/'checkpoint_control.json').is_file() and self.path.is_file() else {k:dict(limit=v,started=0,returned=0) for k,v in p.INNER.items()}
         rec.write(self.path,self.rows)
     def __call__(self,kind,returned):
         row=self.rows[kind]
@@ -103,7 +103,11 @@ def identity(output,journal,backend_factory):
     technical={};evidence_files={}
     try:
         backend=backend_factory(config['model_id'])
-        journal.call('identity/model_load',lambda:save_return(output/'identity_model.json',backend.load()))
+        load=lambda:save_return(output/'identity_model.json',backend.load())
+        if hasattr(journal,'load_context'):
+            needed=any(row['kind']=='E41' and not journal.reusable(key) for key,row in journal.rows.items())
+            journal.load_context('identity/model_load',load,needed)
+        else:journal.call('identity/model_load',load)
         quality=rec.read(output/'quality.json')
         for view in p.VIEWS:
             pixels_by_arm={}
@@ -121,13 +125,14 @@ def identity(output,journal,backend_factory):
                     for key in p.KEYS:
                         def bits(key=key):
                             decoded=backend.bits(projection,uid,key);rec.write(folder/(key+'.json'),decoded)
-                            entry=dict(key_id=key);header=header_only(decoded,entry)
-                            if header['view_id']!=uid: raise ValueError('actual decoded view address mismatch')
-                            flat,errors=cache_from_payload(decoded,entry,header);tech.extend(errors)
-                            rec.write(folder/(key+'_cache.json'),flat)
-                            for eid,keyed in flat.items(): cache.setdefault(eid,{}).update(keyed)
-                            return decoded['status']
-                        journal.call(uid+'/'+key,bits);raw[uid]['keys'][key]='RETURNED'
+                            return decoded
+                        decoded=journal.call(uid+'/'+key,bits)
+                        entry=dict(key_id=key);header=header_only(decoded,entry)
+                        if header['view_id']!=uid:raise ValueError('actual decoded view address mismatch')
+                        flat,errors=cache_from_payload(decoded,entry,header);tech.extend(errors)
+                        rec.write(folder/(key+'_cache.json'),flat)
+                        for eid,keyed in flat.items():cache.setdefault(eid,{}).update(keyed)
+                        raw[uid]['keys'][key]='RETURNED'
                     raw[uid]['status']='RETURNED';rec.write(output/'raw_bank.json',raw);del projection
                 technical[stem]=tech
                 for strategy,group in plans[stem]['strategies'].items():
@@ -141,8 +146,13 @@ def identity(output,journal,backend_factory):
                                 ref.update(source_package=config['source'],original_operations=ops,
                                     original_operation_statuses={op:journal.rows[op]['status'] for op in ops},
                                     original_bits_file=str(Path('bank')/ref['view_id']/(key+'.json')))
-                        local.append(journal.call(f'{stem}/{strategy}/q{q}/local',lambda:save_return(
-                            output/'local'/stem/strategy/f'q{q}.json',cdc.read_time_local(attached,cache,memo=memo))))
+                        def local_call():
+                            value=save_return(output/'local'/stem/strategy/f'q{q}.json',cdc.read_time_local(attached,cache,memo=memo))
+                            return dict(result=value,memo=dict(memo)) if hasattr(journal,'load_context') else value
+                        value=journal.call(f'{stem}/{strategy}/q{q}/local',local_call)
+                        if hasattr(journal,'load_context'):
+                            memo.clear();memo.update(value['memo']);value=value['result']
+                        local.append(value)
                     final=journal.call(f'{stem}/{strategy}/aggregate',lambda:save_return(
                         output/'final'/stem/(strategy+'.json'),cdc.aggregate_time(local)))
                     if strategy.startswith(('B_','K_')):
@@ -169,19 +179,26 @@ def identity(output,journal,backend_factory):
                               verdict=value['verdict'],comparisons=value['comparisons'])
             rec.write(output/'decisions.json',decisions)
     finally:
-        if backend is not None: rec.write(output/'identity_backend_resources.json',backend.close())
+        if backend is not None:
+            from .paper_checkpoint_v1 import resource_record
+            resource_record(output,'identity_backend_resources',backend.close())
 
 
-def worker(stage,output,scratch,*,generation_factory=None,time_factory=None,identity_factory=None,evaluator=None):
+def worker(stage,output,scratch,*,generation_factory=None,time_factory=None,identity_factory=None,evaluator=None,boundary_seconds=None):
     output,scratch=Path(output),Path(scratch)
     if stage not in p.STAGES: raise ValueError('unknown stage')
     if rec.read(output/'attempt.json')['status']!='RUNNING': return rec.recover(output)
     folder=output/'stages'/stage;folder.mkdir(parents=True,exist_ok=True)
+    checkpoint=(output/'checkpoint_control.json').is_file()
+    if checkpoint and (folder/'result.json').is_file() and rec.read(folder/'result.json')['status']=='COMPLETED':return rec.read(folder/'result.json')
     try:
-        with (folder/'started.json').open('x') as f: f.write('{"consumed":true}')
-    except FileExistsError: return rec.recover(output)
+        with (folder/'started.json').open('x') as f:f.write('{"consumed":true}')
+    except FileExistsError:
+        if not checkpoint:return rec.recover(output)
     rec.begin_io()
-    journal=rec.Journal(output);events=Events(output,stage);backend=None;failure=None;interrupted=False;tick=time.monotonic()
+    from .paper_checkpoint_v1 import DurableJournal,Boundary,BoundaryPause
+    journal=DurableJournal(output,output/'state.json',scratch/'operation_returns',Boundary(seconds=boundary_seconds)) if checkpoint else rec.Journal(output)
+    events=Events(output,stage);backend=None;failure=None;interrupted=False;paused=False;tick=time.monotonic()
     try:
         if stage=='identity':
             if (output/'dependency_failure.json').is_file(): failure=rec.read(output/'dependency_failure.json')['failure']
@@ -199,24 +216,33 @@ def worker(stage,output,scratch,*,generation_factory=None,time_factory=None,iden
             backend=(time_factory if stage=='receive' else generation_factory)(config,output,scratch,events,rec.write)
             def call(key,fn): events.phase=key;return journal.call(key,fn)
             if stage=='prepare':
-                call('generation_load',backend.generation_load)
+                if checkpoint:journal.load_context('generation_load',backend.generation_load,any(not journal.reusable(key) for key in ('generate_OFF','generate_P0')))
+                else:call('generation_load',backend.generation_load)
                 call('generate_OFF',lambda:backend.generate_arm('OFF'));call('generate_P0',lambda:backend.generate_arm('P0'))
-                call('capture_vae_load',backend.vae_load);call('decode_OFF',backend.decode_off)
+                if checkpoint:journal.load_context('capture_vae_load',backend.vae_load,any(not journal.reusable(key) for key in ('decode_OFF','capture','head_prepare')))
+                else:call('capture_vae_load',backend.vae_load)
+                call('decode_OFF',backend.decode_off)
                 call('capture',backend.capture);call('head_prepare',backend.head)
             elif stage=='solve':
+                if checkpoint and journal.reusable('q0'):backend.restore_solver()
                 for key,fn in [('q0',backend.q0),('target',backend.target),('solver',backend.solve),('prediction',backend.predict),('handoff',backend.handoff)]:call(key,fn)
             elif stage=='replay':
-                call('replay_vae_load',backend.vae_load);call('native_replay',backend.replay)
+                if checkpoint:journal.load_context('replay_vae_load',backend.vae_load,not journal.reusable('native_replay'))
+                else:call('replay_vae_load',backend.vae_load)
+                call('native_replay',backend.replay)
             else: receive(output,scratch,journal,backend)
+    except BoundaryPause as error:paused=True
     except BaseException as error:
         failure=f'{type(error).__name__}: {error}';interrupted=isinstance(error,(KeyboardInterrupt,InterruptedError))
     finally:
         if backend is not None:
-            try: rec.write(folder/'backend_resources.json',backend.close())
+            try:
+                from .paper_checkpoint_v1 import resource_record
+                resource_record(folder,'backend_resources',backend.close())
             except BaseException as error:
                 failure=failure or f'close: {type(error).__name__}: {error}'
                 interrupted=interrupted or isinstance(error,(KeyboardInterrupt,InterruptedError))
-    if stage=='identity':
+    if stage=='identity' and not paused:
         try:
             finalize_raw(output,journal.rows);rec.close_blind(output,failure)
             if not interrupted:
@@ -227,8 +253,11 @@ def worker(stage,output,scratch,*,generation_factory=None,time_factory=None,iden
         except BaseException as error:
             failure=failure or f'post/closure: {type(error).__name__}: {error}'
             interrupted=interrupted or isinstance(error,(KeyboardInterrupt,InterruptedError))
-    result=dict(stage=stage,status='COMPLETED' if failure is None else 'STOPPED_FIXED_ATTEMPT',failure=failure,
+    result=dict(stage=stage,status='PAUSED_BOUNDARY' if paused else 'COMPLETED' if failure is None else 'STOPPED_FIXED_ATTEMPT',failure=failure,
                 interrupted=interrupted,wall_seconds=time.monotonic()-tick)
+    if checkpoint and (folder/'result.json').is_file():
+        import uuid
+        rec.write(folder/'history'/(uuid.uuid4().hex+'.json'),rec.read(folder/'result.json'))
     rec.write(folder/'result.json',result);rec.save_io(folder/'io_counts.json');return result
 
 
@@ -240,8 +269,11 @@ def main(argv=None):
     parser.add_argument('--worker-stage', required=True, choices=p.STAGES)
     parser.add_argument('--output', required=True, type=Path)
     parser.add_argument('--scratch', required=True, type=Path)
+    parser.add_argument('--boundary-seconds',type=float)
+    parser.add_argument('--stage-receipt',type=Path)
     args = parser.parse_args(argv)
-    result = worker(args.worker_stage, args.output, args.scratch)
+    result = worker(args.worker_stage, args.output, args.scratch,boundary_seconds=args.boundary_seconds)
+    if args.stage_receipt:rec.write(args.stage_receipt,result)
     print(json.dumps(result, ensure_ascii=False, allow_nan=False, indent=1))
     return 1 if result['status'] == 'STOPPED_FIXED_ATTEMPT' else 0
 

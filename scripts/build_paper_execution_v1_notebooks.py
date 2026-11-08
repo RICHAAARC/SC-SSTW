@@ -1,0 +1,50 @@
+"""Thin entry builders. Execution, checkpointing and aggregation stay in runtime."""
+import ast
+import json
+from pathlib import Path
+ROOT=Path(__file__).resolve().parents[1]
+
+ENTRIES={
+ 'paper_suite_v1':('完整论文分批入口','run_colab','GPU'),
+ 'paper_fpr_validation_v1':('有限 FPR 分批入口','run_fpr_colab','GPU'),
+ 'native_baselines_public_compact12_v1':('公开 Baseline 十二视图分批入口','run_public_compact_colab','GPU'),
+ 'paper_parallel_worker_v1':('论文实验独立分片','run_parallel_colab','GPU'),
+ 'paper_finalize_v1':('唯一 CPU 汇总入口','run_finalize_colab',None),
+}
+
+
+def build(stem,root=ROOT):
+    title,function,accelerator=ENTRIES[stem];cells=[]
+    def add(kind,text):
+        cell=dict(cell_type=kind,id=stem.replace('_','-')+'-'+str(len(cells)),metadata={},source=text.splitlines(keepends=True))
+        if kind=='code':ast.parse(text);cell.update(execution_count=None,outputs=[])
+        cells.append(cell)
+    add('code',"from google.colab import drive\ndrive.mount('/content/drive')\n")
+    descriptions={
+      'paper_suite_v1':'单运行时顺序处理固定六片，主方法与同 Wan 对照、公开 Baseline 和最终 CPU 汇总都在 Colab。与任何子入口互斥。再次 Run all 轮转到下一固定片，复用真实 checkpoint；不是一次会话跑完全部。',
+      'paper_fpr_validation_v1':'包含主方法 GPU 工作：两片 C4 后执行原定随机查询和有限 FPR 汇总。与 main 分片和完整入口互斥；不跑同 Wan 对照。可与 public 分片同时跑计算，最终统计需等所有 worker 停止。',
+      'native_baselines_public_compact12_v1':'一个 GPU 运行时顺序处理四片公开 Baseline；CAL32/TEST500、四配置、十二视图。不能与 public 分片或完整入口同时运行；可与两个 main 分片并行。最终用 CPU 汇总入口收集全表。',
+      'paper_parallel_worker_v1':'最多六个独立 GPU runtime：main/0、main/1、public/0、public/1、public/2、public/3。每个组合只启动一次。main 每源先 C4 再同 Wan 对照；public 按完整 pack 分片，PixelSeal/FrameIndex 共享物理计算不拆开。',
+      'paper_finalize_v1':'选择 CPU，无需 GPU。所有计算 worker 停止或安全暂停后，仅启动这一份：执行依赖已齐的原36次随机查询，并从保存记录生成全十二源/公开532源固定分母报告。缺失、失败和未决保留；依赖不齐时只给部分报告，不重抽查询。',
+    }
+    add('markdown','# '+title+'\n\n'+descriptions[stem]+'\n\n[运行顺序、分片、恢复和时长说明](https://github.com/RICHAAARC/SC-SSTW/blob/main/docs/paper_execution_v1.md)\n')
+    params="SOURCE_REF = 'main'\nSOURCE_DIRECTORY = None  # 可选可读源码，不要求版本摘要一致\nPREVIOUS_RUNTIME_STOPPED = False  # 前一个占用本片的 runtime 已实际停止且换机时才填 True\n"
+    if accelerator:params+="MAX_ITEMS = 1  # main:完整源；public:完整 pack；完整入口:每片限额\nMAX_HOURS = 4.0  # 软时间边界；当前已启动调用不强杀，可能超过该时长\n"
+    if stem=='paper_parallel_worker_v1':params+="ROLE = 'main'  # main 或 public\nSHARD = 0  # main 为 0/1；public 为 0/1/2/3\n"
+    add('code',params)
+    add('markdown','安全暂停后保持 ROLE/SHARD、目录与方法不变，再次 Run all；换 runtime 前先实际停止旧 worker。已完成调用读取保存输出；调用已启动但完整返回不可读时保留不确定/失败，不从头补跑。旧失败不被新入口重置。\n\n模型恢复加载及保存开销单列；不算成原方法预算内的免费调用。完整入口与其子入口互斥，最终汇总只有一个写入者。旧40视图 v4 本轮不必跑。\n')
+    call="source_directory=SOURCE_DIRECTORY, source_ref=SOURCE_REF, previous_runtime_stopped=PREVIOUS_RUNTIME_STOPPED"
+    if accelerator:call+=", max_items=MAX_ITEMS, max_hours=MAX_HOURS"
+    if stem=='paper_parallel_worker_v1':call+=", role=ROLE, shard=SHARD"
+    add('code',"from pathlib import Path\nimport urllib.request\nbootstrap_path = 'runtime/wan/paper_suite_colab_v1.py'\nif SOURCE_DIRECTORY:\n    bootstrap = (Path(SOURCE_DIRECTORY) / bootstrap_path).read_text()\nelse:\n    bootstrap = urllib.request.urlopen(f'https://raw.githubusercontent.com/RICHAAARC/SC-SSTW/{SOURCE_REF}/{bootstrap_path}', timeout=120).read().decode('utf-8')\nentry = {'__name__': 'paper_suite_colab_entry'}\nexec(compile(bootstrap, bootstrap_path, 'exec'), entry)\nRUN = entry['"+function+"']("+call+")\n")
+    add('markdown','正式结果与失败包均保留在 `MyDrive/Video-WM_Result`；可恢复大数组放独立 `MyDrive/Video-WM_Cache`，暂停时不删除。只有完整结束的自有临时缓存可以释放。分片仅改变调度，不改变 DCT2＋CDC32、旧 H/L、固定源/视图/分母、阈值或科学调用预算。\n\n入口返回、测量完成与科学结论分开；随机查询条件界不等于固定身份的总体 FPR 认证。公开自然视频与同 Wan 对照分表报告。\n')
+    add('code',"print('入口状态:', RUN['status'])\nprint('本次记录:', RUN['invocation'])\nprint('各片返回:', [(row['stage'], row['result'].get('status')) for row in RUN['stages']])\nentry['show_results']()\n")
+    metadata=dict(kernelspec=dict(name='python3',display_name='Python 3',language='python'))
+    if accelerator:metadata['accelerator']=accelerator
+    path=Path(root)/'notebooks'/(stem+'.ipynb');path.parent.mkdir(parents=True,exist_ok=True)
+    path.write_text(json.dumps(dict(nbformat=4,nbformat_minor=5,metadata=metadata,cells=cells),ensure_ascii=False,indent=1)+'\n')
+    return path
+
+
+if __name__=='__main__':
+    for stem in ENTRIES:print(build(stem))

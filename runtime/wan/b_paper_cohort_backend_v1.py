@@ -14,7 +14,8 @@ class GenerationBackend(Original):
         row=dict(phase=phase,peak_cuda_allocated_bytes=int(torch.cuda.max_memory_allocated()) if self.generation_uses_cuda else None,
                  cuda_measured=self.generation_uses_cuda)
         self.generation_peaks.append(row)
-        self.dump(self.output/'generation_resources.json',dict(scope='generation load plus both OFF/P0 trajectories; before capture reset',
+        from .paper_checkpoint_v1 import resource_record
+        resource_record(self.output,'generation_resources',dict(scope='generation load plus both OFF/P0 trajectories; before capture reset',
             measurements=self.generation_peaks,generation_complete=any(r['phase']=='P0_RETURNED' for r in self.generation_peaks)))
 
     def generation_load(self):
@@ -22,7 +23,16 @@ class GenerationBackend(Original):
         self.generation_uses_cuda=bool(torch.cuda.is_available())
         if self.generation_uses_cuda: torch.cuda.reset_peak_memory_stats()
         self.generation_peak_active=True
-        try: return super().generation_load()
+        try:
+            result=super().generation_load()
+            path=self.scratch/'generation_context.pt'
+            self.scratch.mkdir(parents=True,exist_ok=True)
+            pipe,initial,prompt,negative,dtype=self.native.wan.context
+            if path.is_file():
+                saved=torch.load(path,map_location='cpu',weights_only=True)
+                self.native.wan.context=(pipe,saved['initial'].to(initial.device),saved['prompt'].to(prompt.device),saved['negative'].to(negative.device),dtype)
+            else:torch.save(dict(initial=initial.detach().cpu(),prompt=prompt.detach().cpu(),negative=negative.detach().cpu()),path)
+            return result
         finally: self.generation_peak('LOAD_FINISHED_OR_FAILED')
 
     def vae_load(self):
@@ -73,6 +83,24 @@ class GenerationBackend(Original):
             return result
         with replace(packet,'encode_raw24',encode): return super().target()
 
+    def restore_solver(self):
+        import numpy as np
+        import torch
+        from .b_joint_time_packet_a_write_cpu_v1 import Backend as Solver,load_head
+        from .b_framewise_qim_v1_operator import HeadOperator
+        from .b_paper_cohort_records_v1 import read
+        folder=self.output/'cpu'
+        self.cpu=Solver(load_head(self.output/'private/head.pt'),folder,self.event,self.dump)
+        if (folder/'q0.npy').is_file():self.cpu.q0=torch.from_numpy(np.load(folder/'q0.npy',allow_pickle=False))
+        if (folder/'schedule.npz').is_file():
+            with np.load(folder/'schedule.npz',allow_pickle=False) as rows:self.cpu.fields={k:torch.from_numpy(rows[k].copy()) for k in rows.files}
+            self.cpu.targets=torch.from_numpy(np.load(folder/'fixed_targets.npy',allow_pickle=False))
+            self.cpu.operator=HeadOperator(self.cpu.head['weight'],self.cpu.fields['active'],self.event)
+            self.cpu.operator.calls={key:self.event.rows[key]['started'] for key in ('K','KT')}
+        if (folder/'solver.json').is_file():
+            self.cpu.answer=read(folder/'solver.json');self.cpu.eligible=self.cpu.answer.get('native_handoff_eligible') is True
+            if self.cpu.eligible:self.cpu.coefficients=torch.load(folder/'coefficients.pt',map_location='cpu',weights_only=True)
+
     def preclip(self,arm):
         import numpy as np
         relative={'OFF':'OFF_RGB.npy','P0':'host/BASE_preclip.npy','NEW':'new/NEW_preclip.npy'}[arm]
@@ -87,7 +115,18 @@ class GenerationBackend(Original):
 class TimeBackend(Blind):
     """One receiver resource object for hard AND relative; no old whole-attempt gates."""
     def __init__(self,config,output,scratch,event,dump):
-        self.output=Path(output);self.dump=dump;self.internal={};self.bch_limit=36990
+        self.output=Path(output);self.dump=dump;self.bch_limit=36990
+        from .b_paper_cohort_records_v1 import read
+        path=self.output/'internal_calls.json'
+        self.internal=read(path) if path.is_file() else {}
+        state=read(self.output/'state.json') if (self.output/'state.json').is_file() else {}
+        if not isinstance(self.internal,dict):raise ValueError('invalid saved internal receiver counts')
+        for key,row in state.items():
+            if not key.startswith('time/'):continue
+            fields=('bch_started','bch_returned','role_packets_started','role_packets_returned') if key.endswith('/hard_receive') else ('f42','relative') if key.endswith('/relative_compare') else ()
+            complete=row['status']=='RETURNED' or (self.output/'checkpoints/returns'/(key+'.json')).is_file()
+            if fields and complete and not all(field in self.internal.get(key.split('/')[1],{}) for field in fields):
+                raise ValueError('saved receiver internal consumption unavailable; cannot reset to zero')
         self.original=GenerationBackend(config,output,scratch,event,dump)
         medium=self.original.media_backend()
         medium.resources.receiving_total_seconds=9450
