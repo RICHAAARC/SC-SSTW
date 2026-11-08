@@ -73,7 +73,7 @@ def prepare_source(source_directory,source_ref,output):
 
 
 def run_colab(batch='TEST-A',source_directory=None,source_ref=SOURCE_REF,output_root=OUTPUT_ROOT,
-              max_sources=1,max_hours=4,previous_runtime_stopped=False):
+              max_sources=None,max_hours=None,previous_runtime_stopped=False):
     root=Path(output_root);selected=ids(batch)
     def needs(sid):
         path=root/sid/'attempt01';result=json.loads((path/'result.json').read_text()) if (path/'result.json').is_file() else {}
@@ -93,11 +93,11 @@ def run_colab(batch='TEST-A',source_directory=None,source_ref=SOURCE_REF,output_
     from runtime.wan.paper_checkpoint_v1 import Boundary,BoundaryPause
     from runtime.wan.paper_execution_v1 import check_full_owner
     check_full_owner(previous_runtime_stopped)
-    boundary=Boundary(max_sources,max_hours*3600);results=[];status='BATCH_RETURNED'
+    boundary=Boundary(max_sources,None if max_hours is None else max_hours*3600);results=[];status='BATCH_RETURNED'
     try:
         for sid in pending:
             boundary.before()
-            result=run_source(sid,output_root=root,seconds=max(.001,boundary.deadline-time.monotonic()),
+            result=run_source(sid,output_root=root,seconds=None if boundary.deadline is None else max(.001,boundary.deadline-time.monotonic()),
                 previous_runtime_stopped=previous_runtime_stopped)
             results.append(dict(source=sid,result=result))
             if result.get('interrupted'):
@@ -107,4 +107,4 @@ def run_colab(batch='TEST-A',source_directory=None,source_ref=SOURCE_REF,output_
     except BoundaryPause:status='PAUSED_BOUNDARY'
     show_results(batch,root)
     return dict(status=status,interrupted=status=='BATCH_INTERRUPTED',batch=batch,output=str(root),source_results=results,
-        checkpoint='actual completed values plus persistent separate Drive inputs; in-flight unknown calls are not repeated')
+        checkpoint='actual stage outputs plus separate bounded infrastructure recovery; original unknown calls retained')

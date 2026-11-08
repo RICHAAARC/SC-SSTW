@@ -29,7 +29,7 @@ def terminal(root,sid):
     return value.get('status') in ('COMPLETED','STOPPED_FIXED_ATTEMPT')
 
 
-def main_worker(shard,max_sources=1,seconds=4*3600,previous_runtime_stopped=False,cohort_only=False,
+def main_worker(shard,max_sources=None,seconds=None,previous_runtime_stopped=False,cohort_only=False,
                 output=OUTPUT,cohort_root=p.COHORT_ROOT,wan_root=p.WAN_ROOT,vendor_factory=None,
                 cohort_call=None,wan_call=None,cohort_prepare=None):
     from .b_paper_cohort_resume_v1 import run_source as cohort_run

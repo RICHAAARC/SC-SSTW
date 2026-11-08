@@ -41,7 +41,7 @@ def inherited(output,parent,sources,shard):
     write_json(path,value);return value
 
 
-def run_shard(shard,vendor=None,max_packs=1,seconds=4*3600,previous_runtime_stopped=False,
+def run_shard(shard,vendor=None,max_packs=None,seconds=None,previous_runtime_stopped=False,
               parent=p.OUTPUT,cache_root=p.CACHE,old=p.OLD_OUTPUT,old_cache=p.OLD_CACHE,vendor_factory=None):
     from .native_baseline_media_v4 import MediaV4
     from .native_baseline_models_v4 import NativeAdapterV4

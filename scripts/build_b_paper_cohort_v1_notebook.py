@@ -14,8 +14,8 @@ def build(root=ROOT):
     def note(text): cells.append(dict(cell_type='markdown',id=f'note-{len(cells)}',metadata={},source=text.splitlines(keepends=True)))
     code("from google.colab import drive\ndrive.mount('/content/drive')\n")
     note('# 正式 TEST：12 内容、三臂时间与条件载荷\n\n选择 GPU 后 Run all。默认首4源 TEST-A，后8源是固定 TEST-B；普通低覆盖/未决不会要求换源或调参。真 OFF 与 DCT2 P0 两条配对轨迹，NEW 复用同一P0 capture；三臂五视图、双key双q、U与借映射P_PAIRED辅助、质量及后评由同一入口完成。入口自动从 main 加载可用源码并准备依赖。C4 TEST-A 四源已有真实结果；本次 main 集成不重跑、不重置该证据。已消费 TEST-A 只读已有结果；TEST-B 仍须由用户另行选择启动。\n')
-    code("BATCH = 'TEST-A'  # 固定另批为 TEST-B，无自由挑源列表\nSOURCE_REF = 'main'\nMAX_SOURCES = 1\nMAX_HOURS = 4.0\nPREVIOUS_RUNTIME_STOPPED = False\nSOURCE_DIRECTORY = None  # 可选Colab内已有可编辑源码目录\n")
-    note('每源一次attempt，科学调用开始即消费。历史无checkpoint包只读；新包复用已保存真实返回继续未启动调用，每次默认1源、软4小时，最后一个已存在目录的暂停源也可继续。已启动但返回未知的调用不补跑；已消费后评不补跑。结果永久保存到 Video-WM_Result/main_method/paper_cohort_v1；本次自有缓存保存在独立Drive目录，暂停保留、完整成功后释放；恢复加载额外成本单列。不要与main/FPR/完整入口争用同源。详见 docs/paper_execution_v1.md。每源1114方法操作、60声明（最多1920比较），不是1114模型调用。solver保持原7200s/4000iter/16GiB工作数组估算；hard与relative共享9450s，identity18900s/8GiB。生成/capture/replay无新增整阶段时限，实际成本记录。\n')
+    code("BATCH = 'TEST-A'  # 固定另批为 TEST-B，无自由挑源列表\nSOURCE_REF = 'main'\nMAX_SOURCES = None\nMAX_HOURS = None\nPREVIOUS_RUNTIME_STOPPED = False\nSOURCE_DIRECTORY = None  # 可选Colab内已有可编辑源码目录\n")
+    note('每源保留原固定结果包。历史终态包只读；新阶段完整返回立即保存，默认连续完成本批，不按源数或时长自动暂停。中断后跳过已完成阶段，从保存输入重做当前未完成阶段；每源最多两次单列基础设施恢复，旧尝试/部分输出/未知调用和额外成本保留。算法失败不自动重试。正式结果永久保存在 Video-WM_Result/main_method/paper_cohort_v1，缓存位于独立Drive目录，本轮不清除中断缓存或旧结果。不要与main/FPR/完整入口争用同源。详见 docs/paper_execution_v1.md。每源1114方法操作、60声明（最多1920比较），固定分母不因重算增加；各次物理尝试与耗时另列。solver保持原算法4000iter/7200s/16GiB估算，接收和身份的原单次资源上限保留。\n')
     code("""from pathlib import Path
 import json
 OUTPUT_ROOT = Path('/content/drive/MyDrive/Video-WM_Result/main_method/paper_cohort_v1')

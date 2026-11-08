@@ -54,6 +54,12 @@ def _run_source(sid,cohort_root=p.COHORT_ROOT,output_root=p.WAN_ROOT,vendor=None
     from .b_paper_cohort_runner_v1 import scratch_allowed
     scratch_allowed(cache,output)
     journal=DurableJournal(output,output/'operations.json',cache,Boundary(seconds=seconds))
+    source_control=rec.optional(source/'checkpoint_control.json',{}) or {}
+    shared=Path(source_control.get('recovery_budget') or
+        (Path('/content/drive/MyDrive/Video-WM_Result/paper_execution_v1/owners/recovery')/sid if str(cohort_root)==p.COHORT_ROOT
+         else Path(cohort_root).parent/'source-recovery'/sid))
+    journal.recovery_budget=shared;journal.allow_infrastructure_retry=True
+    control=rec.read(output/'checkpoint_control.json');control['recovery_budget']=str(shared);rec.write(output/'checkpoint_control.json',control)
     started=time.monotonic();failure=None;interrupted=False;paused=False
     if (output/'queries.json').is_file():queries=rec.read(output/'queries.json')
     else:
@@ -149,6 +155,7 @@ def _run_source(sid,cohort_root=p.COHORT_ROOT,output_root=p.WAN_ROOT,vendor=None
     except BoundaryPause:paused=True
     except BaseException as error:
         failure=f'{type(error).__name__}: {error}';interrupted=isinstance(error,(KeyboardInterrupt,InterruptedError))
+        if interrupted:paused=True
     finally:
         if adapter is not None:
             try:adapter.close()

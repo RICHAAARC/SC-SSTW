@@ -29,18 +29,18 @@ def prepare_vendor():
     return vendor
 
 
-def run(stage,previous_runtime_stopped=False,max_items=1,max_hours=4,cohort_only=False):
+def run(stage,previous_runtime_stopped=False,max_items=None,max_hours=None,cohort_only=False):
     if stage.startswith('main') and stage[-1:] in ('0','1'):
         from .paper_execution_v1 import main_worker,OUTPUT
         from .b_paper_cohort_colab_v1 import prepare_source
         import uuid
-        return main_worker(int(stage[-1]),max_sources=max_items,seconds=max_hours*3600,
+        return main_worker(int(stage[-1]),max_sources=max_items,seconds=None if max_hours is None else max_hours*3600,
             previous_runtime_stopped=previous_runtime_stopped,cohort_only=cohort_only,
             vendor_factory=prepare_vendor,
             cohort_prepare=lambda:prepare_source(ROOT,'main',OUTPUT/'preparations'/uuid.uuid4().hex))
     if stage.startswith('public') and stage[-1:] in ('0','1','2','3'):
         from .native_baseline_compact_shards_v1 import run_shard
-        return run_shard(int(stage[-1]),vendor_factory=prepare_vendor,max_packs=max_items,seconds=max_hours*3600,
+        return run_shard(int(stage[-1]),vendor_factory=prepare_vendor,max_packs=max_items,seconds=None if max_hours is None else max_hours*3600,
             previous_runtime_stopped=previous_runtime_stopped)
     if stage=='finalize':
         from .paper_execution_v1 import finalize
@@ -82,15 +82,16 @@ def main(argv=None):
     parser.add_argument('--stage',required=True,choices=['cohort','wan','queries','public','public_compact','tables','main0','main1','public0','public1','public2','public3','finalize'])
     parser.add_argument('--previous-runtime-stopped',action='store_true')
     parser.add_argument('--receipt',type=Path,required=True)
-    parser.add_argument('--max-items',type=int,default=1)
-    parser.add_argument('--max-hours',type=float,default=4.)
+    parser.add_argument('--max-items',type=int,default=0,help='0 disables item scheduling pause')
+    parser.add_argument('--max-hours',type=float,default=0.,help='0 disables scheduling time pause; scientific limits remain')
     parser.add_argument('--cohort-only',action='store_true')
     args=parser.parse_args(argv)
     def stop(signum,frame):raise KeyboardInterrupt('user runtime stopped')
     signal.signal(signal.SIGTERM,stop)
     started=time.monotonic()
     try:
-        result=run(args.stage,args.previous_runtime_stopped,args.max_items,args.max_hours,args.cohort_only)
+        if args.max_items<0 or args.max_hours<0:raise ValueError('nonnegative scheduling parameters required')
+        result=run(args.stage,args.previous_runtime_stopped,args.max_items or None,args.max_hours or None,args.cohort_only)
         rec.write(args.receipt,dict(result,wall_seconds=time.monotonic()-started))
         print(json.dumps(result,ensure_ascii=False),flush=True)
         return 130 if result.get('status') in ('BATCH_INTERRUPTED','INTERRUPTED') else 0

@@ -48,29 +48,30 @@ FULL_STAGES=('main0','main1','public0','public1','public2','public3','finalize')
 FPR_STAGES=('main0','main1','finalize')
 
 
-def run_colab(source_directory=None,source_ref='main',previous_runtime_stopped=False,max_items=1,max_hours=4):
+def run_colab(source_directory=None,source_ref='main',previous_runtime_stopped=False,max_items=None,max_hours=None):
     return _run_sequence(FULL_STAGES,'FULL_PAPER_SUITE',source_directory,source_ref,previous_runtime_stopped,max_items,max_hours)
 
 
-def run_fpr_colab(source_directory=None,source_ref='main',previous_runtime_stopped=False,max_items=1,max_hours=4):
+def run_fpr_colab(source_directory=None,source_ref='main',previous_runtime_stopped=False,max_items=None,max_hours=None):
     return _run_sequence(FPR_STAGES,'FINITE_FPR_VALIDATION',source_directory,source_ref,previous_runtime_stopped,max_items,max_hours,cohort_only=True)
 
 
-def run_public_compact_colab(source_directory=None,source_ref='main',previous_runtime_stopped=False,max_items=1,max_hours=4):
+def run_public_compact_colab(source_directory=None,source_ref='main',previous_runtime_stopped=False,max_items=None,max_hours=None):
     return _run_sequence(('public0','public1','public2','public3'),'COMPACT_PUBLIC',source_directory,source_ref,previous_runtime_stopped,max_items,max_hours)
 
 
-def run_parallel_colab(role='main',shard=0,source_directory=None,source_ref='main',previous_runtime_stopped=False,max_items=1,max_hours=4):
+def run_parallel_colab(role='main',shard=0,source_directory=None,source_ref='main',previous_runtime_stopped=False,max_items=None,max_hours=None):
     if role not in ('main','public') or type(shard) is not int or not 0<=shard<(2 if role=='main' else 4):raise ValueError('fixed main0..1 or public0..3 worker required')
     return _run_sequence((role+str(shard),),'PARALLEL_WORKER',source_directory,source_ref,previous_runtime_stopped,max_items,max_hours)
 
 
 def run_finalize_colab(source_directory=None,source_ref='main',previous_runtime_stopped=False):
-    return _run_sequence(('finalize',),'CPU_FINALIZER',source_directory,source_ref,previous_runtime_stopped,1,4)
+    return _run_sequence(('finalize',),'CPU_FINALIZER',source_directory,source_ref,previous_runtime_stopped,None,None)
 
 
-def _run_sequence(stages,workflow,source_directory,source_ref,previous_runtime_stopped,max_items=1,max_hours=4,cohort_only=False):
-    if type(max_items) is not int or max_items<1 or not max_hours>0:raise ValueError('positive item/time planning limits required')
+def _run_sequence(stages,workflow,source_directory,source_ref,previous_runtime_stopped,max_items=None,max_hours=None,cohort_only=False):
+    if max_items is not None and (type(max_items) is not int or max_items<1):raise ValueError('items must be None or a positive integer')
+    if max_hours is not None and (not isinstance(max_hours,(int,float)) or not 0<max_hours<float('inf')):raise ValueError('hours must be None or positive finite')
     import uuid
     OUTPUT.mkdir(parents=True,exist_ok=True)
     invocation=OUTPUT/'invocations'/uuid.uuid4().hex;invocation.mkdir(parents=True)
@@ -101,12 +102,12 @@ def _dispatch(stages,workflow,source,environment,invocation,previous_runtime_sto
     if workflow!='PARALLEL_WORKER' and cursor_path.is_file() and computation:
         start_index=json.loads(cursor_path.read_text()).get('next_slot',0)%len(computation)
     ordered=computation[start_index:]+computation[:start_index]
-    rows=[];deadline=time.monotonic()+max_hours*3600
+    rows=[];deadline=None if max_hours is None else time.monotonic()+max_hours*3600
     for ordinal,stage in enumerate(ordered+(['finalize'] if 'finalize' in stages else [])):
-        if stage!='finalize' and time.monotonic()>=deadline:break
+        if stage!='finalize' and deadline is not None and time.monotonic()>=deadline:break
         worker=None;path=invocation/(str(ordinal)+'-'+stage+'.json');logpath=invocation/(str(ordinal)+'-'+stage+'.log');tick=time.monotonic()
         args=[sys.executable,'-u','-m','runtime.wan.paper_suite_worker_v1','--stage',stage,'--receipt',str(path),
-              '--max-items',str(max_items),'--max-hours',str(max(.001,(deadline-time.monotonic())/3600))]
+              '--max-items',str(0 if max_items is None else max_items),'--max-hours',str(0 if deadline is None else max(.001,(deadline-time.monotonic())/3600))]
         if previous_runtime_stopped:args.append('--previous-runtime-stopped')
         if cohort_only:args.append('--cohort-only')
         print('开始:',stage,'日志:',logpath,flush=True)

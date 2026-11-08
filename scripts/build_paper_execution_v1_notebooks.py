@@ -5,9 +5,9 @@ from pathlib import Path
 ROOT=Path(__file__).resolve().parents[1]
 
 ENTRIES={
- 'paper_suite_v1':('完整论文分批入口','run_colab','GPU'),
- 'paper_fpr_validation_v1':('有限 FPR 分批入口','run_fpr_colab','GPU'),
- 'native_baselines_public_compact12_v1':('公开 Baseline 十二视图分批入口','run_public_compact_colab','GPU'),
+ 'paper_suite_v1':('完整论文连续入口','run_colab','GPU'),
+ 'paper_fpr_validation_v1':('有限 FPR 连续入口','run_fpr_colab','GPU'),
+ 'native_baselines_public_compact12_v1':('公开 Baseline 十二视图连续入口','run_public_compact_colab','GPU'),
  'paper_parallel_worker_v1':('论文实验独立分片','run_parallel_colab','GPU'),
  'paper_finalize_v1':('唯一 CPU 汇总入口','run_finalize_colab',None),
 }
@@ -30,7 +30,7 @@ def build(stem,root=ROOT):
         cells.append(cell)
     add('code',"from google.colab import drive\ndrive.mount('/content/drive')\n")
     descriptions={
-      'paper_suite_v1':'单运行时顺序处理固定六片，主方法与同 Wan 对照、公开 Baseline 和最终 CPU 汇总都在 Colab。与任何子入口互斥。再次 Run all 轮转到下一固定片，复用真实 checkpoint；不是一次会话跑完全部。',
+      'paper_suite_v1':'单运行时顺序处理固定六片，主方法与同 Wan 对照、公开 Baseline 和最终 CPU 汇总都在 Colab。与任何子入口互斥。默认连续处理所有固定片；中断后再次 Run all 复用真实 checkpoint。',
       'paper_fpr_validation_v1':'包含主方法 GPU 工作：两片 C4 后执行原定随机查询和有限 FPR 汇总。与 main 分片和完整入口互斥；不跑同 Wan 对照。可与 public 分片同时跑计算，最终统计需等所有 worker 停止。',
       'native_baselines_public_compact12_v1':'一个 GPU 运行时顺序处理四片公开 Baseline；CAL32/TEST500、四配置、十二视图。不能与 public 分片或完整入口同时运行；可与两个 main 分片并行。最终用 CPU 汇总入口收集全表。',
       'paper_parallel_worker_v1':'最多六个独立 GPU runtime：main/0、main/1、public/0、public/1、public/2、public/3。每个组合只启动一次。main 每源先 C4 再同 Wan 对照；public 按完整 pack 分片，PixelSeal/FrameIndex 共享物理计算不拆开。',
@@ -39,14 +39,14 @@ def build(stem,root=ROOT):
     if stem in PRESET_WORKERS:
         _,role,shard=PRESET_WORKERS[stem]
         work='本片固定来源的 C4 和同 Wan 四方法对照' if role=='main' else '本片完整 pack 的公开 Baseline；PixelSeal/FrameIndex 共享计算保留在同片'
-        descriptions[stem]=f"本入口已预填 `ROLE = '{role}'`、`SHARD = {shard}`，无需修改分工参数。选择独立 GPU runtime，挂载原 Google Drive 后 Run all，执行{work}。可与另外五个不同分片入口并行；相同分片只能运行一份，不与完整串行入口或重叠子入口同时运行。默认每次最多 1 个源/pack、软限额 4 小时；安全暂停后在本入口再次 Run all。所有计算 worker 停止或暂停后，单独运行[唯一 CPU 汇总](https://colab.research.google.com/github/RICHAAARC/SC-SSTW/blob/main/notebooks/paper_finalize_v1.ipynb)。"
+        descriptions[stem]=f"本入口已预填 `ROLE = '{role}'`、`SHARD = {shard}`，无需修改分工参数。选择独立 GPU runtime，挂载原 Google Drive 后 Run all，执行{work}。可与另外五个不同分片入口并行；相同分片只能运行一份，不与完整串行入口或重叠子入口同时运行。默认持续推进本片固定队列，不按时间或数量自动暂停。中断后在本入口再次 Run all，跳过已完成阶段，从当前未完成阶段的保存输入重新执行；前次中断记录和重算成本保留。所有计算 worker 停止或暂停后，单独运行[唯一 CPU 汇总](https://colab.research.google.com/github/RICHAAARC/SC-SSTW/blob/main/notebooks/paper_finalize_v1.ipynb)。"
     add('markdown','# '+title+'\n\n'+descriptions[stem]+'\n\n[运行顺序、分片、恢复和时长说明](https://github.com/RICHAAARC/SC-SSTW/blob/main/docs/paper_execution_v1.md)\n')
     params="SOURCE_REF = 'main'\nSOURCE_DIRECTORY = None  # 可选可读源码，不要求版本摘要一致\nPREVIOUS_RUNTIME_STOPPED = False  # 前一个占用本片的 runtime 已实际停止且换机时才填 True\n"
-    if accelerator:params+="MAX_ITEMS = 1  # main:完整源；public:完整 pack；完整入口:每片限额\nMAX_HOURS = 4.0  # 软时间边界；当前已启动调用不强杀，可能超过该时长\n"
+    if accelerator:params+="MAX_ITEMS = None  # 默认持续运行，不按源/pack数量自动暂停\nMAX_HOURS = None  # 默认持续运行，不设置人为时长暂停；原科学资源上限保留\n"
     if stem=='paper_parallel_worker_v1':params+="ROLE = 'main'  # main 或 public\nSHARD = 0  # main 为 0/1；public 为 0/1/2/3\n"
     elif stem in PRESET_WORKERS:params+=f"ROLE = {role!r}  # 本入口已预填，无需修改\nSHARD = {shard}  # 本入口已预填，无需修改\n"
     add('code',params)
-    add('markdown','安全暂停后保持 ROLE/SHARD、目录与方法不变，再次 Run all；换 runtime 前先实际停止旧 worker。已完成调用读取保存输出；调用已启动但完整返回不可读时保留不确定/失败，不从头补跑。旧失败不被新入口重置。\n\n模型恢复加载及保存开销单列；不算成原方法预算内的免费调用。完整入口与其子入口互斥，最终汇总只有一个写入者。旧40视图 v4 本轮不必跑。\n')
+    add('markdown','中断后保持 ROLE/SHARD、目录和方法不变，再次 Run all。先实际停止旧 worker；完整阶段直接复用，未完成阶段从保存输入重做。主方法与同 Wan 每源共享最多两次基础设施恢复，额外调用与耗时单列；原算法失败和旧终态失败不重试。公开 Baseline 沿用原恢复预算。\n\n这是阶段/任务级续跑，不承诺生成步、求解迭代或 VAE 内部任意位置无损恢复。最终汇总只有一个写入者。\n')
     call="source_directory=SOURCE_DIRECTORY, source_ref=SOURCE_REF, previous_runtime_stopped=PREVIOUS_RUNTIME_STOPPED"
     if accelerator:call+=", max_items=MAX_ITEMS, max_hours=MAX_HOURS"
     if function=='run_parallel_colab':call+=", role=ROLE, shard=SHARD"

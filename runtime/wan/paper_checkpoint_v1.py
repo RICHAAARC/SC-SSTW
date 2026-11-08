@@ -100,14 +100,22 @@ class DurableJournal:
                 write(previous,dict(value=saved['rng'],operation=key,returned_at=saved['returned_at'],commit_index=index))
             if row['status']!='RETURNED':row.update(status='RETURNED',started=1,returned=1,commit_index=index,recovered_saved_return=True);write(self.path,self.rows)
             return value
-        if row['status']!='NOT_STARTED':raise UnrecoverableOperation('consumed call has no completed checkpoint; no repeat: '+key)
         self.boundary.before()
+        recovery=None;token=None;original_attempt=None
+        if row['status']!='NOT_STARTED':
+            if row['status'] not in ('STARTED','INTERRUPTED_CONSUMED') or not getattr(self,'allow_infrastructure_retry',False):
+                raise UnrecoverableOperation('consumed call has no completed checkpoint; no repeat: '+key)
+            original_attempt=dict(row)
         if not self.rng_restored:
             previous=self.output/'checkpoints/last_rng.json'
             if previous.is_file():restore_rng(load_value(read(previous)['value']))
             self.rng_restored=True
         row.update(status='STARTED',started=1,started_at=time.time());write(self.path,self.rows);tick=time.monotonic();self.current=key
         try:
+            if original_attempt is not None:
+                from .paper_recovery_v1 import reserve,ACTIVE
+                recovery=reserve(self.recovery_budget,self.output,key,original_attempt)
+                token=ACTIVE.set(recovery[1])
             value=function()
             encoded=save_value(value,self.cache/'returns'/key)
             rng=save_value(rng_state(),self.cache/'rng'/uuid.uuid4().hex)
@@ -119,7 +127,13 @@ class DurableJournal:
             row.update(status='INTERRUPTED_CONSUMED' if isinstance(error,(KeyboardInterrupt,InterruptedError)) else 'FAILED',
                 error=f'{type(error).__name__}: {error}')
             raise
-        finally:row['seconds']=time.monotonic()-tick;write(self.path,self.rows);self.current=None
+        finally:
+            duration=time.monotonic()-tick
+            row['seconds']=row.get('seconds',0.)+duration;write(self.path,self.rows);self.current=None
+            if recovery is not None:
+                path,saved=recovery;saved.update(status=row['status'],seconds=duration);write(path,saved)
+                from .paper_recovery_v1 import ACTIVE
+                if token is not None:ACTIVE.reset(token)
         self.boundary.returned();return value
 
     def load_context(self,key,function,needed=True):

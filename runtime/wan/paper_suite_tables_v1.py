@@ -24,6 +24,11 @@ def build(cohort_root=p.COHORT_ROOT,wan_root=p.WAN_ROOT,query_root=p.QUERY_ROOT,
             returned=sum(v.get('status')=='RETURNED' for v in rows),
             seconds=sum(v.get('seconds',0) for v in rows if v.get('status') in ('RETURNED','FAILED')),
             scope='additional restoration loads; excluded from original method-call totals, included in actual cost')
+    def recovery(root):
+        control=read(root/'checkpoint_control.json');path=control.get('recovery_budget')
+        if not path:return dict(status='NOT_RECORDED')
+        return dict(shared_budget_path=path,attempts=[read(f) for f in sorted(Path(path).glob('attempt-*.json'))],
+            scope='source-shared extra attempts; deduplicate by shared_budget_path/id; do not add to fixed scientific denominator')
     def process_history(root):
         files=sorted(root.glob('resource_history/**/*.json'))+sorted(root.glob('stages/*/resource_history/**/*.json'))
         return [dict(path=str(path),value=read(path)) for path in files]
@@ -79,7 +84,7 @@ def build(cohort_root=p.COHORT_ROOT,wan_root=p.WAN_ROOT,query_root=p.QUERY_ROOT,
             for view in p.VIEWS:
                 qualities.append(dict(source=sid,method='main',pair=pair,view=view,
                     value=quality.get(pair+'/'+view) if isinstance(quality,dict) else None))
-        costs.append(dict(source=sid,method='main',process_resource_history=process_history(source),restore_overhead=overhead(source),value=read(source/'chain_resources.json'),
+        costs.append(dict(source=sid,method='main',infrastructure_recovery=recovery(source),stage_attempts=read(source/'stage_checkpoint.json'),process_resource_history=process_history(source),restore_overhead=overhead(source),value=read(source/'chain_resources.json'),
             generation=read(source/'generation_resources.json'),identity=read(source/'identity_backend_resources.json'),
             stages={stage:{name:read(source/'stages'/stage/(name+'.json')) for name in ('resources','backend_resources','io_counts','result')}
                 for stage in p.cohort.STAGES},scratch_release=read(source/'scratch_release.json'),
@@ -101,7 +106,7 @@ def build(cohort_root=p.COHORT_ROOT,wan_root=p.WAN_ROOT,query_root=p.QUERY_ROOT,
             for view in p.VIEWS:
                 matched=[row for row in qrows if row.get('method')==method and row.get('view')==view] if isinstance(qrows,list) else []
                 qualities.append(dict(source=sid,method=method,view=view,pair='WM_OFF',value=matched[0] if len(matched)==1 else None))
-        costs.append(dict(source=sid,method='wan_baselines',restore_overhead=overhead(base),value=result,
+        costs.append(dict(source=sid,method='wan_baselines',infrastructure_recovery=recovery(base),restore_overhead=overhead(base),value=result,
             actual_network_hooks=read(base/'resources.json',list),operation_rows=read(base/'operations.json')))
     fixed_stats=[];fixed_panels=[]
     for panel,sids in [('ALL',p.SOURCES),('TEST-A',p.SOURCES[:4]),('TEST-B',p.SOURCES[4:])]:
