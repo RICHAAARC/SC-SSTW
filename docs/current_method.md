@@ -1,5 +1,7 @@
 # Current mechanisms and evidence limits
 
+2026-11-08 更新：已采纳的 [C4 时间与条件载荷](b_paper_cohort_v1.md) 已选择性进入 main。下文较早的“盲时间恢复未进入main／尚未准备论文入口”描述仅对应当时范围；C4沿用既有TEST-A证据，仍不主张完整时间认证或总体FPR，TEST-B未运行。
+
 Updated 2026-10-24. Public segmented payload is selectively integrated; see [fixed mechanism and conditional-read limits](segmented_payload_v1.md). A/B synchronization research is not part of this integration.
 
 Historical 2026-10-09 status:  The research position is **基于轨迹采样嵌入思想的视频水印方法**. GROW remains a concrete implementation source rather than the umbrella method name: the [author repository](https://github.com/luopengchen/GROW), retained implementation commit `6aa69a9c5d4a9e75df457fcca8dfc71b64a6b870`, and the [CVPR 2026 paper](https://openaccess.thecvf.com/content/CVPR2026/papers/Luo_GROW_Watermark_Generation_with_Progressive_Guidance_for_Diffusion_Models_CVPR_2026_paper.pdf) remain attributed. The executable FFT-real construction and its distinction from the paper's DCT setup stay documented in [the fixed GROW reference](grow_video_reference_v1.md). Main contains a bounded hybrid: generation-trajectory frequency payload, terminal framewise-VAE tubelet synchronization, blind offset/phase reception, and a fixed single-jump receiver diagnostic. Main retains GROW's complete original native sampler/decoder/media path unchanged.

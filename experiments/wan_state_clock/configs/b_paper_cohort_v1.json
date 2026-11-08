@@ -1,0 +1,6 @@
+{
+  "experiment": "paper-cohort-v1",
+  "batch": "TEST-A",
+  "output_root": "/content/drive/MyDrive/Video-WM_Result/main_method/paper_cohort_v1",
+  "scratch_root": "/content/video-wm-paper-cohort-v1/work"
+}

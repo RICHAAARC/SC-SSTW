@@ -1,5 +1,7 @@
 # SC-SSTW trajectory-sampling video watermark mechanisms
 
+> 2026-11-08：main 已选择性整合 [C4 正式时间与条件载荷入口](docs/b_paper_cohort_v1.md)。保留 DCT2＋CDC32、Joint-A/F42/relative、QMatch 和旧 H/L；默认 TEST-A 四源，已消费结果只读，TEST-B 不自动启动。核心、runtime、实验编排、薄 notebook 分层独立。
+
 保存证据的独立只读入口见[报告协议](docs/paper_results_v1/evaluation_protocol.md)、[完整结果索引](docs/paper_results_v1/results_index.md)和[被动 native 接口状态](docs/paper_results_v1/baseline_status.md)。`python -m experiments.paper_results_v1.cli --help` 仅依赖 Python 标准库；原36/P2196账及失败完整保留，不新增模型执行或公平 baseline 结论。
 
 > 2026-10-24：已精选整合[公共多步分段载荷](docs/segmented_payload_v1.md)：50步中25..49控制，四段各8位，净32位；只提供给定时间映射及完整支撑下的读取，不包含A/B盲同步研究。已有真实结果沿用原实验分母，本次整合未重跑模型。分支用途见[入口索引](docs/branch_guide.md)。

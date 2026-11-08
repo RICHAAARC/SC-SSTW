@@ -3,7 +3,8 @@
 Read .codex/project_contract.md before changing main. Main contains confirmed
 public mechanisms. Selectively integrate adopted scope; do not merge whole
 research trees. Keep existing GROW/receiver mathematics and public multistep
-segmented payload semantics intact. A/B synchronization research stays on dev.
+segmented payload semantics intact. Adopted C4/B-line conditional time/payload cohort is selectively integrated;
+unadopted A/B synchronization research stays on dev.
 
 main/tube_state must not import runtime, experiments or governance. Runtime must
 not import experiments/governance. Preserve vote ordering, strict zero and

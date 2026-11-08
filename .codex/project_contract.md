@@ -2,8 +2,12 @@
 
 Main is the public release branch. Retain the existing complete GROW chain,
 adopted M05/global alignment/fixed single-deletion/conditional joint V1, and the
-confirmed public multistep segmented payload. Keep historical and ongoing A/B
-synchronization methods on their development branches; no full dev-tree merge.
+confirmed public multistep segmented payload. The adopted C4/B-line cohort now
+includes DCT2+CDC32, Joint-A/F42/relative and conditional QMatch, with its frozen
+roster/budgets and old H/L semantics preserved. Historical and unadopted A/B
+methods stay on dev; no full dev-tree merge or A/B algorithm fusion.
+C4 TEST-A evidence remains attributed to its original run; integration does
+not reset it, establish time authentication, or authorize TEST-B execution.
 
 Public segmented payload: native 50 steps, control indices25..49, effective
 latent times1..44 in four11-time segments, eight bits/segment, net32. Physical
