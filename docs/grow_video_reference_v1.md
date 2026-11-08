@@ -161,17 +161,17 @@ No real-model
 or GPU evidence is produced by these tests.
 
 The notebook starts with the exact2-line Drive mount. It uses the current
-Python,probes Torch/Torchvision together and repairs them only if that import
-fails; a small candidate dependency-range file inherits the successful image
-reference API ranges and adds Wan's ftfy/sentencepiece. Metadata pip-check
-conflicts are recorded,while actual imports determine availability. There is
-no venv,ensurepip,exact-version gate or hardware-name gate. Its first working
-cell creates full3/24/48 setup rows before source/environment work. Run all
+Python and probes torch/numpy/sentencepiece/ftfy plus the required diffusers
+APIs. Only an actual import failure triggers repair by package name, followed
+by the same import probe. A pip-freeze environment note is optional; a failed
+note does not block execution. There is
+no venv,ensurepip,exact-version gate or hardware-name gate. Its setup
+receipt retains the fixed denominator before source/environment work. Run all
 executes only this fixed case. Failed setup keeps receipts and the denominator.
 
-The builder supports an explicit unpublished draft with SOURCE_SHA=None.
-The committed notebook is bound to published immutable source. New bindings
-are created only after publishing source; historical SHA links remain valid.
+The builder accepts SOURCE_SHA=None or any optional location note.
+Set SOURCE_DIR to available source and CONFIG_PATH to the fixed GROW JSON.
+No Git checkout, clean-state or published-SHA requirement applies; historical links remain valid.
 This integration does not run Colab, load weights or alter historical results.
 
 ## Retained real run and evidence boundary
@@ -214,12 +214,11 @@ The current main executable tree contains only this reference flow and required
 shared components. Historical terminal/44-46 combinations are indexed in
 [historical entries](historical_entries.md), not imported at runtime.
 
-Source ZIPs include release_manifest.json. The runner records actual source
-hashes and its content identity; without .git, source_sha is null and
-source_provenance reports the manifest match. A parent repository is never used
-as the package identity. Modified or absent manifests are explicitly recorded,
-not silently attributed to a released Git commit. Detection semantics and fixed
-scientific parameters are unchanged by this metadata repair.
+An unpacked source directory needs neither `.git` nor a manifest. Source and
+config notes are optional and recording failures do not stop Store creation.
+All arms receive copies of the same initial noise and pristine scheduler;
+terminal, RGB and media checks inspect actual geometry, values and I/O status.
+Source hashes do not control result reading.
 
 The release profile creates a genuine detached directory, initializes all
 3/3/24/48 slots there and runs native-scheduler, local-write, fixture-VAE,

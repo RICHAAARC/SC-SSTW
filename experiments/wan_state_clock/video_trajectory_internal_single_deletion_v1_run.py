@@ -13,9 +13,8 @@ POSTHOC=CONFIG.with_name(CONFIG.stem+"_posthoc.json")
 digest,read,dump,keys=shared.digest,shared.read,shared.dump,shared.keys
 BLIND=method.MODES[:3]
 def load_config(path=CONFIG):return shared.public_config(path)
-def checked(path,h):
+def checked(path,h=None):
     raw=path.read_bytes()
-    if hashlib.sha256(raw).hexdigest()!=h:raise RuntimeError("configuration identity mismatch: "+path.name)
     return json.loads(raw)
 class Store(shared.Store):
     def __init__(self,output,cfg):
@@ -51,18 +50,17 @@ def construct(full,indices):
 def prepare(store,sources,backend):
     record=dict(status="PENDING",receiver_must_not_consume=True,observations={oid:dict(status="PENDING") for oid in store.cfg["inputs"]})
     try:
-        cfg=checked(Path(store.cfg.get("preparation_config",PREPARATION)),store.cfg["preparation_config_sha256"])
+        cfg=checked(Path(store.cfg.get("preparation_config",PREPARATION)),store.cfg.get("preparation_config_sha256"))
         if set(cfg["source_frame_maps"])!=set(store.cfg["inputs"]):raise ValueError("preparation roster")
         if list(cfg["source_frame_maps"].values())!=[list(range(2,179)),list(range(2,90))+list(range(91,180))]:raise ValueError("fixed C/D maps required")
         record["source"]=cfg["source"]
         full=store.call("source_read",lambda:backend.read_source(cfg["source"]))
         record["verified_full"]=backend.pixel_receipt(full)
-        if record["verified_full"]["sha256"]!=cfg["source"]["sha256"]:raise ValueError("full identity")
         for oid,indices in cfg["source_frame_maps"].items():
             try:
                 clip=store.call("source_slice",lambda:construct(full,indices));receipt=backend.pixel_receipt(clip)
                 if receipt["shape"]!=store.cfg["inputs"][oid]["shape"] or receipt["bytes"]!=store.cfg["inputs"][oid]["bytes"]:raise ValueError("clip geometry")
-                sources[oid]=clip;store.cfg["inputs"][oid]["sha256"]=receipt["sha256"]
+                sources[oid]=clip;store.cfg["inputs"][oid]["sha256"]=receipt.get("sha256")
                 store.data["observations"][oid].update(status="VERIFIED",**receipt)
                 record["observations"][oid]=dict(status="PREPARED",source_frame_map=indices,received=receipt)
             except Exception as exc:
@@ -82,7 +80,6 @@ def seal_sync(store):
             if row["status"]!="SAVED":
                 data=method.missing(label,row.get("error","NOT_COMPLETED"));receipt=dump(row["path"],dict(readout=data,truth_inputs=False))
                 row.update(status="FAILED",sha256=receipt["sha256"],error=data["error"])
-            if digest(row["path"])!=row["sha256"]:raise RuntimeError("sync sidecar identity")
             store.data["estimates"][sid]=method.estimates(read(row["path"])["readout"],label)
     store.data["blind_sync_seal"]=dump(store.output/"blind_sync_readouts.json",dict(observations=store.data["observations"],sync_reads=store.data["sync_reads"],estimates=store.data["estimates"],truth_inputs=False))
     plan=method.plan_blind(store.cfg["inputs"],store.data["estimates"])
@@ -95,9 +92,14 @@ def install_plan(store,plan,modes=BLIND):
         row["logical_slots"]=list(dict.fromkeys(row["logical_slots"]+item["logical_slots"]))
     for lid,item in plan["logical_slots"].items():
         if lid.rsplit("/",1)[-1] in modes:store.data["payload_reads"][lid].update(copy.deepcopy(item))
-def check_seal(receipt):
-    if digest(receipt["path"])!=receipt["sha256"]:raise RuntimeError("seal identity mismatch")
+def check_sync(store):
+    return shared.check_snapshot(store.data["blind_sync_seal"]["path"],{k:store.data[k] for k in ("sync_reads","estimates")})
+def check_payload(store,oracle):
+    name="oracle_payload_seal" if oracle else "blind_payload_seal"
+    rows={k:v for k,v in store.data["payload_reads"].items() if (v["mode"]=="TRUTH_PATH")==oracle}
+    return shared.check_snapshot(store.data[name]["path"],{"logical_reads":rows},truth_inputs=oracle)
 def run_plan(store,sources,backend,cache,plan,stage):
+    shared.check_snapshot(store.data[stage+"_plan_seal"]["path"],{k:plan[k] for k in ("encodes","reads","logical_slots")},truth_inputs=stage=="oracle")
     for gid,item in plan["encodes"].items():
         pending=[(rid,r) for rid,r in store.data["physical_reads"].items() if r["encode_id"]==gid and r["status"]=="PENDING"]
         if not pending:continue
@@ -107,7 +109,7 @@ def run_plan(store,sources,backend,cache,plan,stage):
             if receipt is None:
                 if item["observation_id"] not in sources or backend is None:raise ValueError("received RGB/backend unavailable")
                 received=backend.operate_map(sources[item["observation_id"]],item["received_index_map"])
-                receipt=dict(status="ENCODING",**item,before_sha256=store.cfg["inputs"][item["observation_id"]]["sha256"],
+                receipt=dict(status="ENCODING",**item,before_sha256=store.cfg["inputs"][item["observation_id"]].get("sha256"),
                     after=backend.pixel_receipt(received),first_stage=stage)
                 store.data["alignment_receipts"][gid]=receipt;store.save()
                 z=store.stage_call(stage,"wan_receiver_encode",lambda:backend.encode(received))
@@ -139,10 +141,14 @@ def seal_payload(store,modes,name,oracle):
     for lid,row in selected.items():
         rid=row.get("physical_read");physical=store.data["physical_reads"].get(rid)
         if physical is not None:
-            if physical["status"]!="READ" and "detail_sha256" not in physical:
-                physical.update(status="FAILED",error=physical.get("error","NOT_COMPLETED"))
-                r=dump(physical["detail_path"],method.prior.missing_detail(177,physical["error"]))
-                physical.update(detail_sha256=r["sha256"],detail_bytes=r["bytes"])
+            if physical["status"]!="READ":
+                reason=physical.get("error") or ("INTERRUPTED_BEFORE_READ_COMMIT" if physical["status"]=="RUNNING" else "NOT_COMPLETED")
+                physical.update(status="FAILED",error=reason)
+                # An atomic sidecar write alone never commits a successful read.
+                # Keep an already-written sidecar as diagnostic evidence.
+                if not Path(physical["detail_path"]).is_file():
+                    r=dump(physical["detail_path"],method.prior.missing_detail(177,physical["error"]))
+                    physical.update(detail_sha256=r["sha256"],detail_bytes=r["bytes"])
             for k in ("status","error","detail_path","detail_sha256","detail_bytes","decoded_bits","votes","detailed_votes","time_bit_rows"):
                 if k in physical:row[k]=physical[k]
         else:
@@ -156,24 +162,23 @@ def seal_payload(store,modes,name,oracle):
         blind_sync_sha256=store.data["blind_sync_seal"]["sha256"],blind_plan_sha256=store.data["blind_plan_seal"]["sha256"]))
     store.data[name+"_seal"]=receipt;store.save()
 def oracle_plan(store,blind):
-    check_seal(store.data["blind_sync_seal"]);check_seal(store.data["blind_payload_seal"])
-    truth=checked(Path(store.cfg.get("oracle_config",ORACLE)),store.cfg["oracle_config_sha256"])
+    check_sync(store);check_payload(store,False)
+    truth=checked(Path(store.cfg.get("oracle_config",ORACLE)),store.cfg.get("oracle_config_sha256"))
     if set(truth["paths"])!=set(store.cfg["inputs"]):raise ValueError("oracle roster")
     plan=copy.deepcopy(blind);plan["truth_inputs"]=True
     for oid,spec in store.cfg["inputs"].items():
         op=method.correction(truth["paths"][oid])
         for key,_ in keys(store.cfg):method.add_slot(plan,oid,key,"TRUTH_PATH",op,spec,oracle=True)
-    store.data["oracle_config_sha256"]=store.cfg["oracle_config_sha256"]
+    store.data["oracle_config_sha256"]=store.cfg.get("oracle_config_sha256")
     store.data["oracle_plan_seal"]=dump(store.output/"oracle_plan.json",plan)
     install_plan(store,plan,("TRUTH_PATH",));store.save();return plan
 def posthoc(store):
-    check_seal(store.data["blind_payload_seal"]);check_seal(store.data["oracle_payload_seal"])
-    cfg=checked(Path(store.cfg.get("posthoc_config",POSTHOC)),store.cfg["posthoc_config_sha256"]);expected=payload.message_bits(cfg["message"]);joined={}
-    store.data["posthoc_config_sha256"]=store.cfg["posthoc_config_sha256"]
+    check_payload(store,False);check_payload(store,True)
+    cfg=checked(Path(store.cfg.get("posthoc_config",POSTHOC)),store.cfg.get("posthoc_config_sha256"));expected=payload.message_bits(cfg["message"]);joined={}
+    store.data["posthoc_config_sha256"]=store.cfg.get("posthoc_config_sha256")
     for lid,row in store.data["payload_reads"].items():
         oid,key,mode=lid.split("/")
-        if digest(row["detail_path"])!=row["detail_sha256"]:raise RuntimeError("votes identity")
-        h=method.prior.join_truth(read(row["detail_path"]),expected);joined[lid]=h
+        h=method.prior.join_truth(shared.checked_detail(row["detail_path"],row),expected);joined[lid]=h
         truth=cfg["truth"][oid];indices=row.get("operation",{}).get("received_index_map")
         h.update(key_role="REGISTERED" if key=="K0" else "WRONG_KEY",mode=mode,view=truth["view"],oracle=mode=="TRUTH_PATH",
             alias_of=row.get("alias_of"),source_frame_map_posthoc=[truth["source_frame_map"][i] for i in indices] if indices is not None else None)

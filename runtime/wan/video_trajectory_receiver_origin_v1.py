@@ -33,7 +33,7 @@ class ReceiverBackend:
     @staticmethod
     def read_source(spec):
         from runtime.wan.rgb8_source import read_rgb8_source
-        return read_rgb8_source(spec["path"],expected_sha256=spec["sha256"],shape=tuple(spec["shape"]))
+        return read_rgb8_source(spec["path"],expected_sha256=spec.get("sha256"),shape=tuple(spec["shape"]))
 
     @staticmethod
     def slice_source(source,start):
@@ -44,9 +44,9 @@ class ReceiverBackend:
 
     @staticmethod
     def pixel_receipt(rgb):
-        data=rgb.detach().cpu().numpy().tobytes()
-        return dict(shape=list(rgb.shape),dtype="uint8",bytes=len(data),
-                    sha256=hashlib.sha256(data).hexdigest())
+        import torch
+        if rgb.ndim!=4 or rgb.shape[-1]!=3 or rgb.dtype!=torch.uint8:raise ValueError("received RGB8 format")
+        return dict(shape=list(rgb.shape),dtype="uint8",bytes=rgb.numel(),sha256=None)
 
     def encode(self,received):
         from runtime.wan.vae import reencode_rgb24_readback

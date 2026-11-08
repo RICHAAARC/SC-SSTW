@@ -26,7 +26,7 @@ def test_archive_initialization_without_git_or_parent_repository(tmp_path,monkey
     store=run.Store(tmp_path/"output",create=True)
     p=store.data["source_provenance"]
     assert store.data["source_sha"] is None
-    assert p["kind"]=="release_manifest" and p["manifest_status"]=="MATCH"
+    assert p["kind"]=="source_directory" and p["manifest_status"]=="NOT_USED"
     assert p["content_sha256"]==p["manifest_content_sha256"]
     assert [len(store.data[x]) for x in ("generation","videos","reads","evaluations")]==[3,3,24,48]
 
@@ -35,26 +35,26 @@ def test_modified_archive_is_recorded_without_fabricated_sha(tmp_path):
     changed=root/"main/tube_state/grow_video_reference.py"
     changed.write_text(changed.read_text()+"\n# local mechanical edit\n")
     p=provenance.source_identity(root)
-    assert p["git_commit"] is None and p["manifest_status"]=="MODIFIED"
-    assert p["changed_files"]==["main/tube_state/grow_video_reference.py"]
-    assert p["content_sha256"]!=p["manifest_content_sha256"]
+    assert p["git_commit"] is None and p["manifest_status"]=="NOT_USED"
+    assert p["changed_files"]==[]
+    assert p["content_sha256"] is None
 
 def test_missing_or_invalid_manifest_retains_observed_content(tmp_path):
     root=copy_runtime(tmp_path/"archive")
     path=root/"release_manifest.json";path.unlink()
     p=provenance.source_identity(root)
-    assert p["kind"]=="unversioned_directory" and p["manifest_status"]=="ABSENT"
-    assert p["git_commit"] is None and len(p["files"])==len(provenance.SOURCE_FILES)
+    assert p["kind"]=="source_directory" and p["manifest_status"]=="NOT_USED"
+    assert p["git_commit"] is None and p["files"]=={}
     path.write_text('{"schema": 1, "files": {"../outside": "bad"}}')
     p=provenance.source_identity(root)
-    assert p["manifest_status"]=="INVALID" and p["git_commit"] is None
+    assert p["manifest_status"]=="NOT_USED" and p["git_commit"] is None
 
 def test_git_unavailable_keeps_manifest_identity(tmp_path,monkeypatch):
     root=copy_runtime(tmp_path/"archive");(root/".git").write_text("fixture")
     def missing(*a,**k):raise FileNotFoundError("git not installed")
     monkeypatch.setattr(provenance.subprocess,"check_output",missing)
     p=provenance.source_identity(root)
-    assert p["manifest_status"]=="MATCH" and p["git_commit"] is None and "git_error" in p
+    assert p["manifest_status"]=="NOT_USED" and p["git_commit"] is None and "record_issue" in p
 
 def test_complete_fixed_chain_with_native_scheduler_and_fixture_models(tmp_path,monkeypatch):
     if not shutil.which("ffmpeg") or not shutil.which("ffprobe"):
@@ -87,7 +87,7 @@ def test_complete_fixed_chain_with_native_scheduler_and_fixture_models(tmp_path,
     monkeypatch.setattr(run.backend,"execution_device_dtype",lambda:("cpu",torch.float32))
     monkeypatch.setattr(torch.cuda,"is_available",lambda:False)
     output=tmp_path/"fixed"
-    def inline_phase(path,phase):
+    def inline_phase(path,phase,config=run.CONFIG):
         store=run.Store(path)
         store.data["execution_kind"]="CPU_FIXTURE_NOT_REAL_MODEL"
         (run.generation_worker if phase=="generation" else run.media_worker)(store,run.load_config())

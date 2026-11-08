@@ -89,7 +89,7 @@ def run(output,*,cfg=None,writer_type=M05Backend,wan_type=WanBackend):
     store.data["blind_seal"]=seal
     try:
         path=Path(cfg["posthoc_config"])
-        if records.digest(path)!=cfg["posthoc_config_sha256"]:raise ValueError("posthoc identity mismatch")
+        records.check_snapshot(seal["path"],{k:store.data[k] for k in ("sync_reads","payload_reads")})
         expected=payload.message_bits(records.read(path)["message"])
         if len(expected)!=32:raise ValueError("posthoc message must encode exactly32 bits")
         # Validate the entire fixed read set before writing any evaluation row.
@@ -104,7 +104,7 @@ def run(output,*,cfg=None,writer_type=M05Backend,wan_type=WanBackend):
         if abort is None and not isinstance(exc,Exception):abort=exc
         for row in store.data["posthoc"].values():
             if row["status"]=="PENDING":row.update(status="FAILED",error=str(exc),bit_rows=[dict(bit_index=i,status="FAILED") for i in range(32)])
-    if records.digest(seal["path"])!=seal["sha256"]:raise RuntimeError("blind seal modified")
+    records.check_snapshot(seal["path"],{k:store.data[k] for k in ("sync_reads","payload_reads")})
     store.data["call_integrity"]={k:dict(expected=n,actual=store.data["calls"][k],match=store.data["calls"][k]==dict(attempted=n,completed=n)) for k,n in cfg["planned_calls"].items()}
     store.data.update(status="COMPLETE" if not store.data["failures"] and all(x["match"] for x in store.data["call_integrity"].values()) else "INCOMPLETE",stage="FINISHED",scientific_pass=False,evidence_ceiling="Explicit-input engineering entry; original-version fixed M05 evidence only. No new joint real run, threshold/FPR/generalization.")
     store.save()

@@ -75,7 +75,7 @@ def physical_plan(inputs,estimates):
                         frames=n,R=support(n),planned_votes=32*30*support(n),planned_time_bit_rows=32*support(n),planned_final_bits=32)
                     continue
                 gid=oid+"/phase"+str(p);rid=gid+"/"+key
-                encodes.setdefault(gid,dict(observation_id=oid,phase=p,frames=n,received_sha256=spec["sha256"],
+                encodes.setdefault(gid,dict(observation_id=oid,phase=p,frames=n,received_sha256=spec.get("sha256"),
                     received_index_map=phase_map(n,p),synthetic_output_indices=list(range(p)),
                     dropped_received_indices=list(range(n-p,n)) if p else []))
                 row=reads.setdefault(rid,dict(encode_id=gid,key_label=key,frames=n,R=support(n),logical_slots=[]))

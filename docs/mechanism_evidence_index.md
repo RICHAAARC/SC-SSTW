@@ -16,7 +16,7 @@ These records retain their original source and run scope. The local audit paths 
 | fixed_single_deletion | [33f1671f41](https://github.com/RICHAAARC/SC-SSTW/tree/33f1671f417069c791db5d6e3366f2fc497fe09d) | `/home/richar/projects/Video-WM/diagnostics/trajectory-internal-single-deletion-real-run-audit-20261006/audit.json` |
 | conditional_joint_v1 | [ac111d0fed](https://github.com/RICHAAARC/SC-SSTW/tree/ac111d0fed253767651929d115c343fe1636c525) | `/home/richar/projects/Video-WM/diagnostics/trajectory-conditional-joint-real-run-audit-20261008/report.md` |
 
-See [machine-readable identities](evidence/temporal_mechanisms.json), [original GROW evidence](grow_video_reference_v1.md), and [current scope](current_method.md). Historical JSON snapshots under configs/historical are unchanged provenance inputs; exact original runners stay at their source commits. Main portable templates require explicit input paths/SHA and hash-bound companion configs.
+See [machine-readable identities](evidence/temporal_mechanisms.json), [original GROW evidence](grow_video_reference_v1.md), and [current scope](current_method.md). Historical JSON snapshots under configs/historical are unchanged provenance inputs; exact original runners stay at their source commits. Main portable templates require explicit readable input paths and companion configs. Hash/version notes are optional; historical evidence records are unchanged.
 
 The fixed deletion audit recomputed 2836 candidates and 512 final-bit rows, with 20 source hashes matching S. It supports the fixed C/D path correspondence and weakest-margin comparison, not BER correction, detection/FPR, broad dynamic robustness or population generalization.
 

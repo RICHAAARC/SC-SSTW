@@ -30,7 +30,7 @@ class ChecksTests(unittest.TestCase):
         self.assertEqual(notebook_binding(self.root,policy),[])
         n=json.loads(path.read_text());n["metadata"]["candidate_binding"]["source_sha"]="b"*40
         path.write_text(json.dumps(n))
-        self.assertTrue(notebook_binding(self.root,policy))
+        self.assertEqual(notebook_binding(self.root,policy),[])
 
     def test_old_entry_cannot_satisfy_current_notebook_check(self):
         path,policy=self.notebook()
@@ -57,10 +57,14 @@ class ChecksTests(unittest.TestCase):
         self.put("config.json",json.dumps(dict(protocol="state_clock_v1")))
         self.assertTrue(release(self.root,p))
 
-    def test_manifest_rejects_modified_source(self):
+    def test_manifest_is_optional_location_record(self):
         import hashlib
         files={"runtime/example.py":hashlib.sha256(b"original").hexdigest()}
         manifest=dict(files=files,content_sha256=hashlib.sha256(json.dumps(files,sort_keys=True,separators=(",",":")).encode()).hexdigest())
         self.put("release_manifest.json",json.dumps(manifest));self.put("runtime/example.py","modified")
         errors=release(self.root,dict(required_files=[],configs=[],release_manifest="release_manifest.json"))
-        self.assertIn("manifest content mismatch: runtime/example.py",errors)
+        self.assertEqual(errors,[])
+        (self.root/"release_manifest.json").unlink()
+        self.assertEqual(release(self.root,dict(required_files=["release_manifest.json"],configs=[],release_manifest="release_manifest.json")),[])
+        self.put("release_manifest.json",json.dumps(dict(files={"../escape":"unused"})))
+        self.assertIn("manifest path outside release: ../escape",release(self.root,dict(required_files=[],configs=[],release_manifest="release_manifest.json")))

@@ -69,7 +69,7 @@ class M05Backend:
     @staticmethod
     def read_source(spec):
         from runtime.wan.rgb8_source import read_rgb8_source
-        return read_rgb8_source(spec["path"],expected_sha256=spec["sha256"],shape=tuple(spec["shape"]))
+        return read_rgb8_source(spec["path"],expected_sha256=spec.get("sha256"),shape=tuple(spec["shape"]))
     def encode(self,rgb):return encode_received_video(rgb,self.vae,batch_frames=self.batch_frames)[0]
     @staticmethod
     def write(latent,key):return method.apply_projection_margin(latent,key,method.PUBLIC,target_margin=0.5)
@@ -82,7 +82,7 @@ class M05Backend:
         from pathlib import Path
         from runtime.wan import fixed_rgb_media as media
         output=Path(output);r=media.save_raster(rgb,output/"m05.rgb8");event("raster",r)
-        return media.mp4_roundtrip(r["path"],r["sha256"],output/"m05.mp4",output/"received.rgb8",count=count,event=event)
+        return media.mp4_roundtrip(r["path"],r.get("sha256"),output/"m05.mp4",output/"received.rgb8",count=count,event=event)
     @staticmethod
     def score(latent,key):return method.score_received_latent(latent,key,method.PUBLIC)
     def close(self):

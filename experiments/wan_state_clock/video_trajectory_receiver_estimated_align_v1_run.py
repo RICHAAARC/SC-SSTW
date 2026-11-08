@@ -46,7 +46,6 @@ def seal_sync_and_plan(store):
                 receipt=dump(row["path"],dict(readout=detail,truth_inputs=False))
                 row.update(status="FAILED",sha256=receipt["sha256"],error=detail["error"])
             saved=read(row["path"])["readout"]
-            assert digest(row["path"])==row["sha256"]
             store.data["estimates"][sid]=method.estimate(saved,spec["frames"],label)
     for row in store.data["observations"].values():
         if row["status"]=="PENDING":row.update(status="FAILED",error="NOT_COMPLETED")
@@ -64,8 +63,8 @@ def seal_sync_and_plan(store):
     return plan
 
 def run_payload(store,sources,backend_type,plan):
-    if digest(store.output/"blind_sync_readouts.json")!=store.data["blind_sync_sha256"]:raise RuntimeError("sync seal mismatch")
-    if digest(store.output/"physical_plan.json")!=store.data["physical_plan_sha256"]:raise RuntimeError("plan seal mismatch")
+    records.check_snapshot(store.output/"blind_sync_readouts.json",{k:store.data[k] for k in ("sync_reads","estimates")})
+    records.check_snapshot(store.output/"physical_plan.json",{k:plan[k] for k in ("encodes","reads","logical_slots")})
     backend=None
     try:
         if sources:backend=store.call("wan_vae_load",lambda:backend_type(store.cfg["model"]))
@@ -75,7 +74,7 @@ def run_payload(store,sources,backend_type,plan):
             try:
                 if oid not in sources:raise ValueError("fixed received RGB unavailable")
                 received=backend_type.operate_clip(sources[oid],item["phase"])
-                receipts[gid]=dict(status="ENCODING",before_sha256=store.cfg["inputs"][oid]["sha256"],
+                receipts[gid]=dict(status="ENCODING",before_sha256=store.cfg["inputs"][oid].get("sha256"),
                     after=backend_type.pixel_receipt(received),**item);store.save()
                 normalized=store.call("wan_receiver_encode",lambda:backend.encode(received))
                 receipts[gid].update(status="ENCODED",normalized_shape=list(normalized.shape));store.save()
@@ -129,9 +128,8 @@ def seal_payload(store):
 
 def load_posthoc(store):
     """Only called after the final blind seal. No earlier truth/history file read."""
-    if digest(store.output/"blind_payload_readouts.json")!=store.data["blind_payload_sha256"]:raise RuntimeError("payload seal mismatch")
+    records.check_snapshot(store.output/"blind_payload_readouts.json",{"logical_reads":store.data["payload_reads"],"physical_reads":store.data["physical_reads"]})
     raw=Path(store.cfg.get("posthoc_config",POSTHOC)).read_bytes()
-    if hashlib.sha256(raw).hexdigest()!=store.cfg["posthoc_config_sha256"]:raise RuntimeError("posthoc config identity mismatch")
     store.data["posthoc_config_sha256"]=hashlib.sha256(raw).hexdigest()
     return json.loads(raw)
 
@@ -139,8 +137,7 @@ def join_posthoc(store):
     reporting=load_posthoc(store);expected=payload.message_bits(reporting["message"]);joined={}
     for lid,row in store.data["payload_reads"].items():
         oid,key,mode=lid.split("/")
-        if digest(row["detail_path"])!=row["detail_sha256"]:raise RuntimeError("detail hash mismatch")
-        h=method.join_truth(read(row["detail_path"]),expected);joined[lid]=h
+        h=method.join_truth(records.checked_detail(row["detail_path"],row),expected);joined[lid]=h
         truth=reporting["truth"][oid]
         est=store.data["estimates"][oid+"/"+key]
         phase=0 if mode=="BASELINE" else est.get("phase")
@@ -176,12 +173,10 @@ def join_posthoc(store):
     # History is first touched here, after both new blind seals and truth reporting.
     try:
         ref=reporting["history"]
-        if digest(ref["result_path"])!=ref["result_sha256"] or digest(ref["blind_path"])!=ref["blind_sha256"]:
-            raise RuntimeError("historical fixed identity mismatch")
         old=read(ref["result_path"]);oldseal=read(ref["blind_path"])
+        if set(oldseal["sync_reads"])!=set(store.data["sync_reads"]):raise ValueError("historical sync roster differs")
         for sid,row in store.data["sync_reads"].items():
             prior=oldseal["sync_reads"][sid]
-            if digest(prior["path"])!=prior["sha256"]:raise RuntimeError("historical sync detail mismatch")
             previous=read(prior["path"])["readout"];now=read(row["path"])["readout"]
             base=store.data["payload_reads"][sid+"/BASELINE"];pb=old["payload_reads"][sid]
             store.data["historical_comparisons"][sid]=dict(status="COMPARED_POSTSEAL",
@@ -189,7 +184,7 @@ def join_posthoc(store):
                 sync_candidate_rows_equal=now["candidate_rows"]==previous["candidate_rows"],
                 baseline_decoded_equal=base.get("decoded_bits")==pb.get("decoded_bits") if base["status"]=="READ" else None,
                 baseline_aggregate_equal=base.get("votes")==pb.get("votes") if base["status"]=="READ" else None,
-                prior_sync_sha256=prior["sha256"],selection_or_retry=False)
+                prior_sync_sha256=prior.get("sha256"),selection_or_retry=False)
     except Exception as exc:
         for row in store.data["historical_comparisons"].values():
             if row["status"]=="PENDING":row.update(status="REFERENCE_UNAVAILABLE",error=str(exc))

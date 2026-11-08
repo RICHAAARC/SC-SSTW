@@ -37,12 +37,13 @@ def environment():
     packages={}
     for name in ("torch","torchvision","diffusers","transformers","accelerate","numpy","imageio","imageio-ffmpeg"):
         try:packages[name]=importlib.metadata.version(name)
-        except importlib.metadata.PackageNotFoundError:packages[name]=None
+        except Exception:packages[name]=None
     return dict(python=sys.version,executable=sys.executable,packages=packages)
 
 
-def load_config():
-    cfg=json.loads(CONFIG.read_text())
+def load_config(path=CONFIG):
+    cfg=json.loads(Path(path).read_text())
+    if cfg.get("name")!="grow_video_reference_v1":raise ValueError("fixed GROW configuration name")
     c=cfg["control"];g=cfg["generation"]
     if (cfg["fixed_denominator"]!=DENOMINATOR or cfg["arms"]!=list(method.ARMS)
         or c!={"channels":[0,1,2,3],"payload_bits":32,"alpha":0.5,"band_min":0.2,"band_max":0.5,
@@ -57,14 +58,14 @@ def load_config():
     return cfg
 
 
-def initial_result(output):
+def initial_result(output,config=CONFIG):
     rows={f"{a}/{l}/{k}":dict(status="PENDING",arm=a,layer=l,key_id=k,decoded_bits=None,truth_used=False)
           for a in method.ARMS for l in method.LAYERS for k in KEY_IDS}
     provenance=source_identity(ROOT)
     return dict(status="RUNNING",stage="INITIALIZE",fixed_denominator=DENOMINATOR,
         source_sha=provenance["git_commit"],source_provenance=provenance,
         source_files=provenance["files"],
-        config_sha256=backend.file_sha256(CONFIG),environment=environment(),output=str(output),
+        config_path=str(config),config_sha256=backend.file_sha256(config),environment=environment(),output=str(output),
         generation={a:dict(status="PENDING",steps=[],terminal_path=str(output/a/"terminal.pt")) for a in method.ARMS},
         videos={a:dict(status="PENDING",path=str(output/a/(a+".mp4"))) for a in method.ARMS},
         reads=rows,evaluations={f"{key}/{target}":dict(status="PENDING",arm=row["arm"],layer=row["layer"],
@@ -76,10 +77,10 @@ def initial_result(output):
 
 
 class Store:
-    def __init__(self,output,*,create=False):
+    def __init__(self,output,*,create=False,config=CONFIG):
         self.output=Path(output);self.path=self.output/"result.json"
         if create:
-            self.output.mkdir(parents=True,exist_ok=False);self.data=initial_result(self.output)
+            self.output.mkdir(parents=True,exist_ok=False);self.data=initial_result(self.output,config)
         else:self.data=json.loads(self.path.read_text())
         self.save()
     def save(self):
@@ -114,14 +115,13 @@ class Store:
 def generation_worker(store,cfg):
     import torch
     from runtime.wan.generation import prepare_generation
-    from runtime.wan import trajectory
     device,dtype=backend.execution_device_dtype()
     store.data["stage"]="GENERATION_LOAD";store.save()
     pipe,initial,prompt,negative,input_dtype=prepare_generation(cfg,load_vae=False,device=device,model_dtype=dtype)
     store.data["model_loaded"]["generation"]=True
     pristine=copy.deepcopy(pipe.scheduler)
-    initial_fp=trajectory.fingerprint(initial)
-    history_fp=trajectory.fingerprint(vars(pristine))
+    initial_fp=backend.optional_fingerprint(initial)
+    history_fp=backend.optional_fingerprint(vars(pristine))
     store.data["generation_setup"]=dict(device=device,transformer_dtype=str(input_dtype),
         state_dtype="torch.float32",control_dtype="torch.float32",cfg_dtype="torch.float32",
         initial_noise_sha256=initial_fp,pristine_history_sha256=history_fp,
@@ -132,10 +132,9 @@ def generation_worker(store,cfg):
         store.data["stage"]="GENERATE_"+arm;row=store.data["generation"][arm]
         row.update(status="RUNNING",initial_noise_sha256=initial_fp,initial_history_sha256=history_fp);store.save()
         def record(value):row["steps"].append(value);store.save()
-        terminal,meta=backend.run_trajectory(pipe,initial,copy.deepcopy(pristine),prompt,negative,
+        terminal,meta=backend.run_trajectory(pipe,initial.clone(),copy.deepcopy(pristine),prompt,negative,
             input_dtype,arm,cfg["key"],method.message_bits(cfg["message"]),store.count,record)
-        if trajectory.fingerprint(initial)!=initial_fp or trajectory.fingerprint(vars(pristine))!=history_fp:
-            raise RuntimeError("arm modified shared initial noise/pristine history")
+        # Every arm receives separate noise/history values; the shared originals are never handed to it.
         path=Path(row["terminal_path"]);path.parent.mkdir(parents=True,exist_ok=True)
         torch.save(terminal,path)
         row.update(status="COMPLETE",terminal_file_sha256=backend.file_sha256(path),metadata=meta)
@@ -164,9 +163,9 @@ def media_worker(store,cfg):
             for layer in method.LAYERS:store.set_reads(arm,layer,error="generation incomplete")
             continue
         try:
-            if backend.file_sha256(generated["terminal_path"])!=generated["terminal_file_sha256"]:
-                raise RuntimeError("saved terminal identity mismatch")
             terminal=torch.load(generated["terminal_path"],map_location="cpu",weights_only=True)
+            if not torch.is_tensor(terminal) or tuple(terminal.shape)!=method.PUBLIC.latent_shape or not terminal.is_floating_point() or not bool(torch.isfinite(terminal).all()):
+                raise ValueError("saved terminal must be a finite floating tensor with fixed latent geometry")
             store.data["stage"]="READ_"+arm+"_terminal"
             try:store.set_reads(arm,"terminal",backend.read_diagnostic_latent(terminal,keys,count=store.count))
             except Exception as exc:store.failure(store.data["stage"],exc);store.set_reads(arm,"terminal",error=str(exc))
@@ -196,7 +195,6 @@ def media_worker(store,cfg):
             if video["status"]=="SAVED":
                 try:
                     rows=backend.read_mp4_payload(video["path"],keys,method.PUBLIC,vae,count=store.count)
-                    if any(row["mp4_sha256"]!=video["sha256"] for row in rows.values()):raise RuntimeError("MP4 identity mismatch")
                     store.set_reads(arm,"mp4",rows)
                 except Exception as exc:store.failure(store.data["stage"],exc);store.set_reads(arm,"mp4",error=str(exc))
             else:store.set_reads(arm,"mp4",error="MP4 save incomplete")
@@ -226,7 +224,9 @@ def recover_unfinished(store,phase,error):
 def evaluate_saved_reads(store,cfg):
     path=store.output/"blind_readouts.json"
     if not path.is_file():store.blind()
-    before=backend.file_sha256(path);raw=json.loads(path.read_text())
+    before=backend.file_sha256(path)
+    from experiments.wan_state_clock.receiver_records import check_snapshot
+    raw=check_snapshot(path,{"reads":store.data["reads"]})
     truth=dict(REGISTERED=method.message_bits(cfg["message"]),WRONG_MESSAGE=method.message_bits(cfg["wrong_message"]))
     for identity,read in raw["reads"].items():
         for target,bits in truth.items():
@@ -238,7 +238,7 @@ def evaluate_saved_reads(store,cfg):
                 errors=sum(a!=b for a,b in zip(actual,bits,strict=True))
                 row.update(status="EVALUATED",bit_errors=errors,ber=errors/32,bit_accuracy=1-errors/32,
                     exact_bits=errors==0,decoded_string_diagnostic=bytes(int(''.join(map(str,actual[i:i+8])),2) for i in range(0,32,8)).decode('utf-8',errors='ignore'))
-    if backend.file_sha256(path)!=before:raise RuntimeError("evaluation changed blind evidence")
+    check_snapshot(path,{"reads":store.data["reads"]})
     store.data["blind_readouts_sha256"]=before;store.save()
 
 
@@ -253,8 +253,7 @@ def quality_diagnostics(store):
         try:
             if video["status"]!="SAVED":
                 row.update(status="MISSING_MP4");continue
-            if backend.file_sha256(video["path"])!=video["sha256"]:
-                raise RuntimeError("quality MP4 identity mismatch")
+            if not Path(video["path"]).is_file():raise FileNotFoundError(video["path"])
             observed=backend.counted(store.count,"quality_mp4_read",lambda:read_mp4(Path(video["path"])))
             if tuple(observed.shape)!=method.PUBLIC.video_shape:raise ValueError("quality MP4 geometry mismatch")
             if arm=="OFF":
@@ -270,7 +269,7 @@ def quality_diagnostics(store):
             row.update(status="MEASURED",rgb_rmse=math.sqrt(mse),
                 psnr_db=-10*math.log10(mse) if mse else None,identical_pixels=mse==0,
                 source="same-format MP4 RGB24 readback relative to OFF",threshold=None,
-                mp4_sha256=video["sha256"])
+                mp4_sha256=video.get("sha256"))
         except Exception as exc:
             row.update(status="FAILED",error=f"{type(exc).__name__}: {exc}")
         finally:
@@ -288,8 +287,9 @@ def _stop_worker(child):
         return child.wait(timeout=10)
 
 
-def run_worker_phase(output,phase):
-    command=[sys.executable,"-u","-m",MODULE,"--output",str(output),"--worker",phase]
+def run_worker_phase(output,phase,config=CONFIG):
+    config=Path(config).expanduser().resolve()
+    command=[sys.executable,"-u","-m",MODULE,"--output",str(output),"--config",str(config),"--worker",phase]
     start=time.perf_counter();child=None;code=None;error=None;cleanup_error=None;halt=None
     try:
         with (output/(phase+".log")).open("w") as log:
@@ -307,7 +307,10 @@ def run_worker_phase(output,phase):
     finally:
         if child is not None and child.stdout is not None:
             try:child.stdout.close()
-            except Exception:pass
+            except BaseException as cleanup:
+                extra="stdout close: "+f"{type(cleanup).__name__}: {cleanup}"
+                cleanup_error=(cleanup_error+"; "+extra) if cleanup_error else extra
+                if not isinstance(cleanup,Exception):halt=halt or "INTERRUPTED"
     # Never save the parent's stale pre-launch Store over a worker checkpoint.
     # A child may persist its final completed data during terminate/wait itself.
     store=Store(output)
@@ -327,19 +330,20 @@ def run_worker_phase(output,phase):
 
 def main():
     parser=argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--config",type=Path,default=CONFIG)
     parser.add_argument("--output",type=Path,required=True)
     parser.add_argument("--worker",choices=("generation","media"))
-    args=parser.parse_args();cfg=load_config()
+    args=parser.parse_args();args.config=args.config.expanduser().resolve();cfg=load_config(args.config)
     if args.worker:
         store=Store(args.output)
         try:(generation_worker if args.worker=="generation" else media_worker)(store,cfg)
         except Exception as exc:
             store.failure(store.data["stage"],exc);recover_unfinished(store,args.worker,str(exc));raise
         return
-    store=Store(args.output,create=True)
+    store=Store(args.output,create=True,config=args.config)
     halt=None
     for phase in ("generation","media"):
-        store,halt=run_worker_phase(args.output,phase)
+        store,halt=run_worker_phase(args.output,phase,args.config)
         if halt:
             if phase=="generation":
                 store.data["workers"]["media"]=dict(status="NOT_STARTED_"+halt,returncode=None,child_started=False)

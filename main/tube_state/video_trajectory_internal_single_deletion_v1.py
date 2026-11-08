@@ -100,7 +100,7 @@ def add_slot(plan,oid,key,mode,operation,spec,*,error=None,oracle=False):
     mapping=operation["received_index_map"]
     map_id=hashlib.sha256(bytes(mapping)).hexdigest()
     gid=oid+"/map_"+map_id;rid=gid+"/"+key
-    plan["encodes"].setdefault(gid,dict(observation_id=oid,frames=N,received_sha256=spec["sha256"],received_index_map=mapping))
+    plan["encodes"].setdefault(gid,dict(observation_id=oid,frames=N,received_sha256=spec.get("sha256"),received_index_map=mapping))
     read=plan["reads"].setdefault(rid,dict(encode_id=gid,key_label=key,frames=N,R=44,logical_slots=[]))
     alias=read["logical_slots"][0] if read["logical_slots"] else None
     read["logical_slots"].append(lid)

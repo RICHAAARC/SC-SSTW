@@ -6,6 +6,7 @@ from main.tube_state import video_trajectory_receiver_origin_v1 as origin
 from runtime.wan import video_trajectory_conditional_joint_v1 as runtime
 from runtime.wan.provenance import source_identity
 from experiments.wan_state_clock import video_trajectory_conditional_joint_v1_prepare as prepare
+from experiments.wan_state_clock import receiver_records as records
 ROOT=Path(__file__).resolve().parents[2]
 ENTRY="experiments.wan_state_clock.video_trajectory_conditional_joint_v1_run"
 CONFIG=ROOT/"experiments/wan_state_clock/configs/video_trajectory_conditional_joint_v1.json"
@@ -17,18 +18,35 @@ def read(p):
 def keys(cfg):return dict(K0=cfg["key"],K1=cfg["wrong_key"])
 def load_config(path=CONFIG):
     path=Path(path).resolve();cfg=read(path);fixed=read(CONFIG)
-    if cfg!=fixed or cfg["fixed_denominator"]!=method.FIXED or cfg["physical_upper_bounds"]!=method.UPPER or cfg["views"]!=method.VIEWS:raise ValueError("fixed joint public config required")
+    for field in ("name","key","wrong_key","planned_calls"):
+        if cfg.get(field)!=fixed[field]:raise ValueError("fixed joint public field: "+field)
+    if cfg.get("fixed_denominator")!=method.FIXED:raise ValueError("fixed joint denominator")
+    if cfg.get("physical_upper_bounds")!=method.UPPER:raise ValueError("fixed joint physical upper bounds")
+    if set(cfg.get("views",{}))!=set(method.VIEWS):raise ValueError("fixed joint view roster")
+    for view,expected in method.VIEWS.items():
+        for field,value in expected.items():
+            if cfg["views"][view].get(field)!=value:raise ValueError("fixed joint view: "+view+"/"+field)
+    if set(cfg.get("inputs",{}))!=set(method.INPUT_FRAMES):raise ValueError("fixed joint input roster")
+    for oid,frames in method.INPUT_FRAMES.items():
+        spec=cfg["inputs"][oid]
+        if spec.get("frames")!=frames or spec.get("shape")!=[frames,320,512,3]:raise ValueError("fixed input geometry: "+oid)
+    if cfg.get("model",{}).get("id")!=fixed["model"]["id"]:raise ValueError("fixed joint Wan receiver model id required")
     cfg["_config_path"]=str(path)
     for name in ("preparation","oracle","posthoc"):cfg[name+"_config"]=str(path.parent/cfg[name+"_config"])
     return cfg
 
 def companion(cfg,name):
     p=Path(cfg[name+"_config"])
-    if digest(p)!=cfg[name+"_config_sha256"]:raise ValueError(name+" config SHA mismatch")
-    return read(p) # semantic parse; identity-only reads can precede the appropriate seal
+    value=read(p)  # Called only in the appropriate preparation/oracle/posthoc phase.
+    if name=="preparation":prepare.validate_config(value)
+    return value
 
-def check_seal(row):
-    if digest(row["path"])!=row["sha256"]:raise ValueError("sealed bytes changed")
+def check_sync(store):
+    return records.check_snapshot(store.data["blind_sync_seal"]["path"],{k:store.data[k] for k in ("sync_reads","estimates")})
+def check_payload(store,oracle):
+    name="oracle_payload_seal" if oracle else "blind_payload_seal"
+    rows={k:v for k,v in store.data["payload_reads"].items() if v["oracle"]==oracle}
+    return records.check_snapshot(store.data[name]["path"],{"logical_reads":rows},truth_inputs=oracle)
 
 class Store:
     def __init__(self,output,cfg):
@@ -38,16 +56,12 @@ class Store:
             source_sha=ident["git_commit"],
             source_clean=(not ident["git_status"]) if ident["git_status"] is not None else None,
             source_files=ident["files"],
-            config_files={
-                str(Path(path).resolve()): digest(path)
-                for path in [cfg["_config_path"]]
-                + [cfg[name + "_config"] for name in ("preparation", "oracle", "posthoc")]
-            },
+            config_files={str(cfg["_config_path"]): None},
         )
         env={}
-        for k in cfg["environment_pins"]:
+        for k in (cfg.get("environment_pins") or {}):
             try:env[k]=importlib.metadata.version(k)
-            except importlib.metadata.PackageNotFoundError:env[k]=None
+            except Exception:env[k]=None
         self.data=dict(status="RUNNING",stage="INITIALIZED",**ident,config_sha256=digest(cfg["_config_path"]),fixed_denominator=cfg["fixed_denominator"],physical_upper_bounds=cfg["physical_upper_bounds"],environment=env,calls={},workers={},inputs={k:dict(v,status="PENDING",sha256=None) for k,v in cfg["inputs"].items()},sync_reads={v+"/"+k:dict(view_id=v,input_id=x["input_id"],protocol=x["protocol"],frames=method.INPUT_FRAMES[x["input_id"]],key_label=k,status="PENDING") for v,x in method.VIEWS.items() for k in method.KEY_LABELS},estimates={},payload_reads=method.logical_slots(),physical_reads={},alignment_receipts={},posthoc={},quality={k:dict(status="PENDING") for k in QUALITY},failures=[],actual_generation_calls=False,evidence_ceiling=cfg["evidence_ceiling"],receiver_scope="Conditional blind recovery within preregistered public protocol families; not arbitrary-attack routing or presence detection.")
         self.save()
     def save(self):dump(self.output/"result.json",self.data)
@@ -150,7 +164,7 @@ def install_plan(store,plan,modes):
     store.save()
 
 def make_blind_plan(store):
-    check_seal(store.data["blind_sync_seal"]);plan=method.empty_plan()
+    check_sync(store);plan=method.empty_plan()
     for lid,row in store.data["payload_reads"].items():
         if row["oracle"]:continue
         op=method.blind_operation(row,store.data["estimates"][row["view_id"]+"/"+row["key_label"]])
@@ -159,7 +173,7 @@ def make_blind_plan(store):
     store.data["blind_plan_seal"]=dump(store.output/"blind_plan.json",plan);install_plan(store,plan,{"BASELINE","EST_ALIGN","RAW","GLOBAL_ALIGN","PATH_ALIGN"});return plan
 
 def make_oracle_plan(store,blind):
-    check_seal(store.data["blind_payload_seal"]);check_seal(store.data["blind_sync_seal"])
+    check_payload(store,False);check_sync(store)
     oracle=companion(store.cfg,"oracle");plan=copy.deepcopy(blind);plan["truth_inputs"]=True
     for lid,row in store.data["payload_reads"].items():
         if row["oracle"]:method.add_slot(plan,lid,row,method.deletion.correction(oracle["paths"][row["view_id"]]),store.data["inputs"][row["input_id"]],keys(store.cfg)[row["key_label"]])
@@ -167,6 +181,7 @@ def make_oracle_plan(store,blind):
     store.data["oracle_plan_seal"]=dump(store.output/"oracle_plan.json",plan);install_plan(store,plan,{"TRUTH_PATH"});return plan
 
 def run_plan(store,sources,model,cache,plan,stage):
+    records.check_snapshot(store.data[stage+"_plan_seal"]["path"],{k:plan[k] for k in ("encodes","reads","logical_slots")},truth_inputs=stage=="oracle")
     for gid,item in plan["encodes"].items():
         pending=[(rid,row) for rid,row in store.data["physical_reads"].items() if row["encode_id"]==gid and row["status"]=="PENDING"]
         if not pending:continue
@@ -184,7 +199,7 @@ def run_plan(store,sources,model,cache,plan,stage):
                 try:
                     row["status"]="RUNNING";store.save()
                     detail=store.call(stage+"/payload_read",lambda:model.read(z,keys(store.cfg)[row["key_label"]],row["frames"]))
-                    row.update(status="READ",detail=dump(store.output/"payload"/(rid+".votes.json.gz"),detail),first_stage=stage);store.save()
+                    row.update(status="READ",decoded_bits=detail["original_readout"]["decoded_bits"],votes=detail["original_readout"]["votes"],detail=dump(store.output/"payload"/(rid+".votes.json.gz"),detail),first_stage=stage);store.save()
                 except Exception as exc:row.update(status="FAILED",error=str(exc));store.failure(rid+"/READ",exc)
         except Exception as exc:
             if receipt is None:store.data["alignment_receipts"][gid]=dict(item,status="FAILED",error=str(exc),first_stage=stage)
@@ -204,7 +219,7 @@ def seal_payload(store,oracle):
             if physical["status"]!="READ":
                 physical.update(status="FAILED",error=physical.get("error","NOT_COMPLETED"))
                 if "detail" not in physical:physical["detail"]=dump(store.output/"payload"/(row["physical_read"]+".votes.json.gz"),method.missing_final(row["frames"],physical["error"]))
-            for k in ("status","detail","error"):
+            for k in ("status","detail","error","decoded_bits","votes"):
                 if k in physical:row[k]=physical[k]
         else:
             row.update(status="UNRESOLVED" if row["status"]=="UNRESOLVED" else "FAILED",error=row.get("error","NOT_COMPLETED"))
@@ -226,12 +241,11 @@ def quality_rows(store,prepared,input_type):
             store.save()
 
 def posthoc(store):
-    check_seal(store.data["oracle_payload_seal"]);check_seal(store.data["blind_payload_seal"])
+    check_payload(store,True);check_payload(store,False)
     cfg=companion(store.cfg,"posthoc");expected=method.payload.message_bits(cfg["message"])
     if len(expected)!=32:raise ValueError("posthoc exactly32 bits required")
     for lid,row in store.data["payload_reads"].items():
-        detail=read(row["detail"]["path"])
-        if digest(row["detail"]["path"])!=row["detail"]["sha256"]:raise ValueError("payload detail changed")
+        detail=records.checked_detail(row["detail"]["path"],row)
         if detail["status"]=="READ" and (len(detail["bit_rows"])!=32 or len(detail["time_bit_rows"])!=32*row["R"]):raise ValueError("fixed payload support")
         joined=origin.join_truth(detail,expected);truth=cfg["true_paths"][row["view_id"]];e=store.data["estimates"][row["view_id"]+"/"+row["key_label"]]
         estimate=e.get("global" if row["protocol"]=="GLOBAL" else "global_" if row["mode"]=="GLOBAL_ALIGN" else "joint",{})

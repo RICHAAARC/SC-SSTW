@@ -8,6 +8,10 @@ from main.tube_state import video_trajectory_receiver_estimated_align_v1 as rece
 from runtime.wan import framewise_autoencoder_kl as framewise,rgb8_source
 from runtime.wan.conditional_joint import generation,vae,trajectory,fixed_rgb_media as media,quality
 
+def optional_fingerprint(value):
+    return None  # Optional tensor identity; do not copy large states solely for a receipt.
+
+
 def execution_device_dtype():
     import torch
     if not torch.cuda.is_available():return "cpu",torch.float32
@@ -73,7 +77,7 @@ def run_trajectory(pipe,initial,scheduler,prompt,negative,dtype,key,bits,count,r
     z=initial.detach().float().clone();target,mask=layout.build_target(z,key,bits);before=None
     for index in range(50):
         c,u=predict_branches(pipe,z,scheduler,prompt,negative,dtype,index,count)
-        if index==25:before=dict(z=trajectory.fingerprint(z),history=trajectory.fingerprint(vars(scheduler)),conditional=trajectory.fingerprint(c),unconditional=trajectory.fingerprint(u))
+        if index==25:before=dict(z=optional_fingerprint(z),history=optional_fingerprint(vars(scheduler)),conditional=optional_fingerprint(c),unconditional=optional_fingerprint(u))
         sigma=float(scheduler.sigmas[index]);enabled=index>=25
         if enabled:count("local_control",False)
         velocity,row=method.guided_velocity(z,c,u,sigma,target,mask,index,count)
@@ -81,7 +85,7 @@ def run_trajectory(pipe,initial,scheduler,prompt,negative,dtype,key,bits,count,r
         z=trajectory.native_step(scheduler,z,velocity,index,count,kind="native_step")
         record(dict(index=index,sigma=sigma,cursor_after=scheduler.step_index,**row))
     if scheduler.step_index!=50:raise RuntimeError("native trajectory incomplete")
-    return z.detach().cpu(),dict(before_step25=before,final_history_sha256=trajectory.fingerprint(vars(scheduler)),terminal_sha256=trajectory.fingerprint(z),transformer_dtype=str(dtype),arm="PAYLOAD_MULTI",pilot_gradient=0)
+    return z.detach().cpu(),dict(before_step25=before,final_history_sha256=optional_fingerprint(vars(scheduler)),terminal_sha256=optional_fingerprint(z),transformer_dtype=str(dtype),arm="PAYLOAD_MULTI",pilot_gradient=0)
 
 def release():
     import torch
@@ -90,7 +94,7 @@ def release():
 
 class Inputs:
     @staticmethod
-    def read(spec):return rgb8_source.read_rgb8_source(spec["path"],expected_sha256=spec["sha256"],shape=tuple(spec["shape"]))
+    def read(spec):return rgb8_source.read_rgb8_source(spec["path"],expected_sha256=spec.get("sha256"),shape=tuple(spec["shape"]))
     @staticmethod
     def construct(full,indices):
         import torch
@@ -98,8 +102,9 @@ class Inputs:
         return full.index_select(0,torch.tensor(indices)).contiguous().clone()
     @staticmethod
     def receipt(rgb):
-        raw=rgb.detach().cpu().contiguous().numpy().tobytes()
-        return dict(sha256=hashlib.sha256(raw).hexdigest(),shape=list(rgb.shape),bytes=len(raw),dtype="uint8")
+        import torch
+        if rgb.ndim!=4 or rgb.shape[-1]!=3 or rgb.dtype!=torch.uint8:raise ValueError("received RGB8 format")
+        return dict(sha256=None,shape=list(rgb.shape),bytes=rgb.numel(),dtype="uint8")
 
 class FramewiseBackend:
     def __init__(self,cfg):

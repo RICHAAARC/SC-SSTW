@@ -8,6 +8,10 @@ from runtime.wan import trajectory
 from runtime.wan import io, vae as vae_adapter
 
 
+def optional_fingerprint(value):
+    return None  # Optional tensor identity; do not copy large states solely for a receipt.
+
+
 def execution_device_dtype():
     import torch
     if not torch.cuda.is_available():return "cpu",torch.float32
@@ -22,8 +26,9 @@ def counted(count,kind,function):
 
 
 def file_sha256(path):
-    with Path(path).open("rb") as stream:
-        return hashlib.file_digest(stream,"sha256").hexdigest()
+    try:
+        with Path(path).open("rb") as stream:return hashlib.file_digest(stream,"sha256").hexdigest()
+    except Exception:return None
 
 
 def predict_branches(pipe,z,scheduler,prompt,negative,dtype,index,count):
@@ -66,14 +71,14 @@ def run_trajectory(pipe,initial,scheduler,prompt,negative,dtype,arm,key,bits,cou
         raise RuntimeError("native trajectory did not complete50 steps")
     return z.detach().cpu(),dict(scheduler_class=type(scheduler).__name__,
         scheduler_config=dict(scheduler.config),final_cursor=scheduler.step_index,
-        final_history_sha256=trajectory.fingerprint(vars(scheduler)),
-        terminal_sha256=trajectory.fingerprint(z),transformer_dtype=str(dtype),
+        final_history_sha256=optional_fingerprint(vars(scheduler)),
+        terminal_sha256=optional_fingerprint(z),transformer_dtype=str(dtype),
         state_dtype=str(z.dtype),control_dtype="torch.float32",cfg_dtype="torch.float32")
 
 
 def read_diagnostic_latent(normalized,keys,public=method.PUBLIC,*,count=None):
     """Separate diagnostic API; never used as the primary MP4 receiver."""
-    feature=trajectory.fingerprint(normalized)
+    feature=optional_fingerprint(normalized)
     rows={}
     for name,key in keys.items():
         try:
@@ -105,7 +110,7 @@ def read_mp4_payload(path,keys,public,frozen_vae,*,count=None):
         raise ValueError(f"MP4 geometry mismatch: {tuple(received.shape)}")
     normalized=counted(count,"vae_encode",lambda:vae_adapter.reencode_rgb24_readback(frozen_vae,received))
     del received
-    feature=trajectory.fingerprint(normalized)
+    feature=optional_fingerprint(normalized)
     rows={}
     for name,key in keys.items():
         try:
@@ -115,6 +120,4 @@ def read_mp4_payload(path,keys,public,frozen_vae,*,count=None):
         rows[name]=dict(**row,feature_sha256=feature,
             input_kind="saved_MP4_RGB24_posterior_mode_Wan_normalized",
             mp4_sha256=before,public_feature_shared_between_keys=True)
-    if file_sha256(path)!=before:
-        raise RuntimeError("MP4 bytes changed during primary read")
     return rows

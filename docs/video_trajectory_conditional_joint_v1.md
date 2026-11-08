@@ -2,7 +2,7 @@
 
 > 2026-10-09 导航：下文保留条件联合恢复原版本的协议、发布阶段和结果范围。后续研究分支归属及不确定审计见[当前状态](research_status_2026-10-09.md)，不改变本实验的原结论或 main 实现范围。
 
-固定入口：`python -B -m experiments.wan_state_clock.video_trajectory_conditional_joint_v1_run --config experiments/wan_state_clock/configs/video_trajectory_conditional_joint_v1.json --output <新的输出目录>`。用户 Run-all Notebook 为 `notebooks/video_trajectory_conditional_joint_v1_colab.ipynb`。源码 S 候选阶段全部正式 Notebook 保持 `SOURCE_SHA=None` 并在输出目录创建前拒绝运行；发布 S 后，交付 N 将全部正式 Notebook 绑定到该 S。main 发布已完成 CPU/fake/schema/portability 验证，其中包含 synthetic CPU FFmpeg fixture；未运行新的真实模型、GPU、Colab 或 Drive 实验，已有固定真实证据仍绑定原源码 `ac111d0fed253767651929d115c343fe1636c525`。
+固定入口：`python -B -m experiments.wan_state_clock.video_trajectory_conditional_joint_v1_run --config experiments/wan_state_clock/configs/video_trajectory_conditional_joint_v1.json --output <新的输出目录>`。用户 Run-all Notebook 为 `notebooks/video_trajectory_conditional_joint_v1_colab.ipynb`。当前 Notebook 直接使用 `SOURCE_DIR` 的可用源码，并要求显式 `CONFIG_PATH`；`SOURCE_SHA`、精确版本和 manifest 仅作可选定位。此本地改动未自动发布到远端 Colab。main 发布已完成 CPU/fake/schema/portability 验证，其中包含 synthetic CPU FFmpeg fixture；未运行新的真实模型、GPU、Colab 或 Drive 实验，已有固定真实证据仍绑定原源码 `ac111d0fed253767651929d115c343fe1636c525`。
 
 命题是预声明协议内的条件盲恢复：收到视频假定已含 trajectory payload 与 M05 terminal sync，接收器只用 RGB、当前 key、公开长度与协议族。它不知道真实 offset、删除位置、消息，也不通过真攻击类别选择算法。不是任意视频存在检测或自动攻击路由；不调用 Stage1 的阈值、m 或 ACCEPT_ACTION 门。
 
@@ -20,7 +20,7 @@ GLOBAL 保留原 tubelet→patch 累加；single-jump 保留原 frame 顺序与 
 
 接收投票用稳定 R44（181/177）与 R22（89），latent1…R，4ch / 32bits / keyed240 coords / 每bit30频率；FFT2 ortho real、strict >0（exact0 为负）、time-major bit::8、Counter 首遇平票全部保持。保留 signed votes、zero mask、全部 final/time/channel 记录；跨长度只比较归一余量，名义 receiver time 不是匹配同源感受野。
 
-顺序为 sync seal → blind plan → 40 blind payload seal → oracle 配置语义解析/4 oracle → oracle seal → message/真实 map posthoc。准备层合法提前知道 writer message 和裁剪构造；配置字节提前 hash 仅用于身份，不进入 selector。实际依赖闭包与四份实际 config 单独记录 SHA；无自身 `.git` 不读取外部父仓库身份。中断后保留全部失败槽；Notebook 的父进程 SIGTERM 会触发 runner 回收独立 worker 整组（含 codec 子进程），不留下后台模型占用。
+顺序为 sync seal → blind plan → 40 blind payload seal → oracle 配置语义解析/4 oracle → oracle seal → message/真实 map posthoc。准备层合法提前知道 writer message 和裁剪构造；oracle/posthoc 文件在对应封存前不打开、不提前 hash。封存核对实际槽位与路径/解码决策，定位字段不参与比较；无自身 `.git` 不读取外部父仓库身份。中断后保留全部失败槽；Notebook 的父进程 SIGTERM 会触发 runner 回收独立 worker 整组（含 codec 子进程），不留下后台模型占用。
 
 六行质量为 PRE(P1/P0、M05/P1、M05/P0) 和 POST(P1_received/P0_native、M05_received/P1_received、M05_received/P0_native)。P0 已有 payload、未压缩，非无水印或 matched-codec 基准。报告原 RGB MSE/PSNR、clip 自身时差比；M05/P1 另报 residual L2、Dt、45 跨界/135 内部能量、归一粗糙度及 lag1。六行只加 CPU 统计/IO，无新增 codec 或感知模型；不把像素比值称感知闪烁，不设质量 PASS 阈值。每模式记录完整 map、合成/重复/丢弃/占位/裁尾成本；全 44 槽及 RAW/GLOBAL/PATH/oracle 的归一余量差分均封后展示。
 

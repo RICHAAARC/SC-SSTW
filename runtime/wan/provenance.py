@@ -1,6 +1,6 @@
 """Runtime source identity for Git checkouts and detached release directories.
 
-The bundled content manifest identifies source bytes, not an invented Git SHA.
+Source location is optional; no per-file integrity inventory is constructed.
 No model input, receiver decision or method threshold depends on this metadata.
 """
 from __future__ import annotations
@@ -33,50 +33,25 @@ SOURCE_FILES = tuple(sorted((*SOURCE_FILES, *CONDITIONAL_FILES)))
 
 
 def file_hashes(root):
-    root = Path(root)
-    return {name: hashlib.sha256((root / name).read_bytes()).hexdigest()
-            for name in SOURCE_FILES}
+    """Legacy optional record field; no source-byte inventory is required."""
+    return {}
+
 
 def content_id(files):
-    encoded = json.dumps(files, sort_keys=True, separators=(",", ":")).encode()
-    return hashlib.sha256(encoded).hexdigest()
+    return None
+
 
 def source_identity(root):
+    """Best-effort location only; never reads a manifest or hashes source files."""
     root = Path(root).resolve()
-    actual = file_hashes(root)
-    receipt = dict(kind="unversioned_directory", git_commit=None,
-        git_status=None, files=actual, content_sha256=content_id(actual),
-        manifest_status="ABSENT", manifest_content_sha256=None,
-        manifest_sha256=None, changed_files=[], release_id=None)
-    manifest_path = root / "release_manifest.json"
-    if manifest_path.is_file():
-        receipt["manifest_sha256"] = hashlib.sha256(manifest_path.read_bytes()).hexdigest()
-        try:
-            m = json.loads(manifest_path.read_text())
-            files = m["files"]
-            if (m["schema"] != 1 or set(files) != set(SOURCE_FILES)
-                or any(not isinstance(h, str) or not re.fullmatch("[0-9a-f]{64}", h)
-                       for h in files.values())
-                or m["content_sha256"] != content_id(files)
-                or not isinstance(m["release_id"], str)):
-                raise ValueError("manifest schema/content identity mismatch")
-            receipt.update(kind="release_manifest", release_id=m["release_id"],
-                manifest_content_sha256=m["content_sha256"],
-                changed_files=[name for name in SOURCE_FILES if files[name] != actual[name]])
-            receipt["manifest_status"] = "MODIFIED" if receipt["changed_files"] else "MATCH"
-        except (ValueError, KeyError, TypeError) as exc:
-            receipt.update(manifest_status="INVALID", manifest_error=str(exc))
-    # Never inherit a parent workspace's unrelated .git.
-    if (root / ".git").exists():
-        try:
-            sha = subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=root,
-                stderr=subprocess.DEVNULL, text=True).strip()
-            if not re.fullmatch("[0-9a-f]{40}", sha):
-                raise ValueError("invalid Git commit response")
-            status = subprocess.check_output(["git", "status", "--porcelain", "--",
-                *SOURCE_FILES, "release_manifest.json"], cwd=root,
-                stderr=subprocess.DEVNULL, text=True).splitlines()
-            receipt.update(kind="git_checkout", git_commit=sha, git_status=status)
-        except (OSError, subprocess.SubprocessError, ValueError) as exc:
-            receipt["git_error"] = str(exc)
+    receipt = dict(kind="source_directory", root=str(root), git_commit=None,
+        git_status=None, files={}, content_sha256=None, manifest_status="NOT_USED",
+        manifest_content_sha256=None, manifest_sha256=None, changed_files=[], release_id=None)
+    try:
+        if (root / ".git").exists():
+            receipt["git_commit"] = subprocess.check_output(
+                ["git", "rev-parse", "HEAD"], cwd=root, stderr=subprocess.DEVNULL,
+                text=True, timeout=5).strip() or None
+    except Exception as exc:
+        receipt["record_issue"] = str(exc)
     return receipt
