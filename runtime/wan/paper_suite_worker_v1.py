@@ -47,6 +47,9 @@ def run(stage,previous_runtime_stopped=False):
     if stage=='queries':
         from .paper_query_statistics_v1 import run
         return run()
+    if stage=='public_compact':
+        from .native_baseline_compact_colab_v1 import run_colab
+        return run_colab(source_directory=ROOT,source_ref='main',previous_runtime_stopped=previous_runtime_stopped)
     if stage=='public':
         from .native_baseline_colab_v4 import check_previous_worker,run_colab
         # Check before the old bootstrap can write a setup failure into an active package.
@@ -61,7 +64,7 @@ def run(stage,previous_runtime_stopped=False):
 
 def main(argv=None):
     parser=argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('--stage',required=True,choices=['cohort','wan','queries','public','tables'])
+    parser.add_argument('--stage',required=True,choices=['cohort','wan','queries','public','public_compact','tables'])
     parser.add_argument('--previous-runtime-stopped',action='store_true')
     parser.add_argument('--receipt',type=Path,required=True)
     args=parser.parse_args(argv)

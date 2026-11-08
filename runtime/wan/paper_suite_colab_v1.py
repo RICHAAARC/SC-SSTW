@@ -44,7 +44,23 @@ def stop(worker):
         worker.wait()
 
 
+FULL_STAGES=('cohort','tables','wan','tables','queries','tables','public_compact','tables')
+FPR_STAGES=('cohort','tables','queries','tables')
+
+
 def run_colab(source_directory=None,source_ref='main',previous_runtime_stopped=False):
+    return _run_sequence(FULL_STAGES,'FULL_PAPER_SUITE',source_directory,source_ref,previous_runtime_stopped)
+
+
+def run_public_compact_colab(source_directory=None,source_ref='main',previous_runtime_stopped=False):
+    return _run_sequence(('public_compact','tables'),'COMPACT_PUBLIC',source_directory,source_ref,previous_runtime_stopped)
+
+
+def run_fpr_colab(source_directory=None,source_ref='main'):
+    return _run_sequence(FPR_STAGES,'FINITE_FPR_VALIDATION',source_directory,source_ref,False)
+
+
+def _run_sequence(stages,workflow,source_directory,source_ref,previous_runtime_stopped):
     OUTPUT.mkdir(parents=True,exist_ok=True)
     invocation=OUTPUT/'invocations'/datetime.now(timezone.utc).strftime('%Y%m%dT%H%M%S%fZ');invocation.mkdir(parents=True)
     source=available_source(source_directory,source_ref)
@@ -55,7 +71,6 @@ def run_colab(source_directory=None,source_ref='main',previous_runtime_stopped=F
         probe=subprocess.run([sys.executable,'-c','import '+module],capture_output=True,env=environment)
         if probe.returncode:subprocess.run([sys.executable,'-m','pip','install',package],check=True)
     rows=[]
-    stages=('cohort','tables','wan','tables','queries','tables','public','tables')
     for ordinal,stage in enumerate(stages):
         worker=None;path=invocation/(str(ordinal)+'-'+stage+'.json');logpath=invocation/(str(ordinal)+'-'+stage+'.log');tick=time.monotonic()
         args=[sys.executable,'-u','-m','runtime.wan.paper_suite_worker_v1','--stage',stage,'--receipt',str(path)]
@@ -72,7 +87,7 @@ def run_colab(source_directory=None,source_ref='main',previous_runtime_stopped=F
             print(stage,value.get('status'),flush=True)
             if worker.returncode==130:break
         finally:stop(worker)
-    result=dict(status='RUN_ALL_RETURNED' if len(rows)==len(stages) else 'INTERRUPTED_RETAINED',stages=rows,output=str(OUTPUT),invocation=str(invocation))
+    result=dict(status={'FULL_PAPER_SUITE':'RUN_ALL_RETURNED','FINITE_FPR_VALIDATION':'FINITE_FPR_RETURNED','COMPACT_PUBLIC':'COMPACT_PUBLIC_RETURNED'}[workflow] if len(rows)==len(stages) else 'INTERRUPTED_RETAINED',workflow=workflow,stages=rows,output=str(OUTPUT),invocation=str(invocation))
     (invocation/'result.json').write_text(json.dumps(result,ensure_ascii=False,indent=1))
     show_results();return result
 

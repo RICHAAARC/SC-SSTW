@@ -7,7 +7,7 @@
 |部分|固定范围|预算与既有结果处理|
 |---|---|---|
 |主方法|C4十二源、三臂、五视图、双key双q|每源1114操作、全12源13368；已完成TEST-A读取、未启动TEST-B执行；不重跑消费源|
-|公开自然视频|原v4 DEV64/CAL500/TEST500，四配置40视图|完整继承原budget/checkpoint及恢复额度；不重建已完成媒体/推理；详见独立v4文档|
+|公开自然视频|精简CAL32/TEST500，四配置12视图；旧DEV只读附录|独立固定预算与checkpoint；已保存raw/media按需引用；[精简协议](public_compact12_v1.md)|
 |Wan同域外部对照|同一十二源、四配置、OFF/WM、五视图|每源534外层操作；model load3、writer49、reader350、encode20、probe26、decode26、quality20、post40。全12源6408操作；writer588、reader4200、codec encode240/probe312/decode312|
 |主QMatch统计|十二源×OFF/P0/NEW，各一个uniform32查询，五视图×两key|36随机抽取、360声明、最多11520位比较；额外计算36个接受词集合的精确概率/未知界；无新model/codec/读位|
 |贡献与表格|原B/U、P_PAIRED、OFF/P0/NEW及F42/relative保存输出|只读保存后评进行分栏汇总，不重跑旧后评、不新增身份分支、不重复已失败构造|
@@ -33,20 +33,24 @@ QMatch四态算法不改：有合法矛盾MISMATCH，32有效位全等MATCH，�
 ## 结果和恢复
 
 - 原主方法：`Video-WM_Result/main_method/paper_cohort_v1`，旧包保留。
-- 原公开Baseline：`Video-WM_Result/baselines/public-native-and-frameindex-fpr001-v4/attempt01`，原checkpoint优先；已有独立runtime ACTIVE时不抢占，不改其包。
+- 精简公开Baseline：`Video-WM_Result/baselines/public-native-frameindex-compact12-v1/attempt01`，默认新入口。
+- 原公开Baseline（独立入口保留，不由完整suite续接）：`Video-WM_Result/baselines/public-native-and-frameindex-fpr001-v4/attempt01`，原checkpoint优先；已有独立runtime ACTIVE时不抢占，不改其包。
 - 新Wan：`Video-WM_Result/baselines/wan-cohort-five-view-v1/<source>/attempt01`。
 - 新查询：`Video-WM_Result/main_method/random-query-family-v1/attempt01`。
 - 统一表格与阶段日志：`Video-WM_Result/paper_suite_v1`，每阶段新快照，latest_report.json仅索引最新快照。
 
 新的Wan/query开始或失败消耗，重入只读；尚无上游终态的Wan源保持DEPENDENCY_PENDING，不提前消耗。C4任一源尚未明确终态时，查询统计保持DEPENDENCY_PENDING且不消耗attempt。旧C4已消费但缺文件不会被重新生成/补post。显式中断停止后续阶段；普通失败保留固定分母，独立工作可继续。
 
-公开v4仍用原计算游标和原有限基础设施恢复预算。若其它runtime仍活动，统一流程报告EXTERNAL_RUNTIME_ACTIVE并保留其运行；实际停止后才允许用户设置PREVIOUS_RUNTIME_STOPPED。每阶段子进程隔离依赖和GPU资源。源码/权重在`/content/video-wm-paper-suite-v1`及原缓存区，均在结果树之外；本入口不清理正式包。
+精简公开线使用独立计算游标、固定预算；原v4入口及全部记录保留，不由本流程接管。用户自行停止旧任务后切换；PREVIOUS_RUNTIME_STOPPED仅适用于精简包自身的跨runtime续接。每阶段子进程隔离依赖和GPU资源。源码/权重在`/content/video-wm-paper-suite-v1`及原缓存区，均在结果树之外；本入口不清理正式包。
 
 ## 自动表格
 
-每次表格快照含JSON+CSV：main_time、main_payload_contributions、main_fixed_claims、main_fixed_source_statistics、main_random_family/claims/source_statistics、wan_native_comparison、wan_source_statistics、quality、costs、components和public_baseline_summary。另含十二源汇总和公开Baseline原四张完整表的定位索引。缺失行保持TECHNICAL_UNKNOWN，不由报告层重新计算科学读出。报告不是“全部正结果”判定器。
+每次表格快照含JSON+CSV：main_time、main_payload_contributions、main_fixed_claims、main_fixed_source_statistics、main_random_family/claims/source_statistics、wan_native_comparison、wan_source_statistics、quality、costs、components和public_baseline_summary。另含十二源汇总和精简公开Baseline四表和原v4历史包的分别索引。缺失行保持TECHNICAL_UNKNOWN，不由报告层重新计算科学读出。报告不是“全部正结果”判定器。
 
 纯方法只依赖main；runtime只依赖方法/共享适配，公开v4默认协议放在main/baselines/protocols，所有子进程入口在runtime；实验CLI与薄notebook可拆卸。没有SHA/manifest/Git-clean/精确版本准入门禁。
 
 
 来源接受事件明确标为 `ANY5`，随机查询族为 `ANY10_VIEWS_KEYS`，不能误读为全部视图通过。正确消息碰撞保留 N/A，分列计划、eligible、技术未知，不重抽、不计错误接受。另分 ALL、TEST-A、TEST-B 来源汇总。查询失败或缺失时仍展开360声明和36族，已返回逐条声明直接读取，不重跑匹配。贡献表包含B/U/P_PAIRED绝对支撑、完整字面/归属消息、启动区和真实事件分层；成本连接已保存阶段资源、I/O、scratch记录。格式异常逐项列出并保持未知，其它来源仍可读。
+
+
+低FPR增量见 [概率空间与有限验证协议](paper_fpr_claims_v1.md)。新增48项确定性保存记录报表，零新增物理/query预算；原TEST-B八源承担有限未见验证，A仍为原正式证据。可单独运行 `notebooks/paper_fpr_validation_v1.ipynb` 复用同runtime的cohort→原queries→tables，不启动外部模型。原主方法、同Wan、查询预算保持；公开线采用独立精简协议，原v4预算与记录不变。

@@ -50,3 +50,12 @@ natural-population 0.1% certification or native time-localization superiority.
 Existing results are retained; real new execution belongs to user-run Colab.
 Default baseline protocol data is a passive main/baselines resource, and all
 worker entrypoints stay in runtime, independent of experiment/notebook layers.
+
+Adopted FPR reporting increment: unchanged strict32 QMatch and existing budgets;
+TEST-B8 is the predeclared finite validation panel, TEST-A retains formal status.
+Independent uniform32 query counting bounds and fixed-identity empirical FPR
+remain distinct. No output-bit iid or random-registration execution is assumed.
+The 48 derived summaries and finite Colab entry reuse old scientific packages.
+
+
+2026-11-08 adopted compact public increment: default paper_suite uses public_compact12_v1 CAL32/TEST500 and12 fixed views, independent result/cache/cursor; DEV saved appendix only. Original fullv4 protocol, notebook, budgets and all records remain unchanged. Same-Wan12x4x5 and main QMatch/DCT2/CDC32/H/L unchanged. No real replay/GPU during engineering delivery. See docs/public_compact12_v1.md.

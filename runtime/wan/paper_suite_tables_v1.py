@@ -3,6 +3,7 @@ from collections import Counter
 from datetime import datetime,timezone
 from pathlib import Path
 from main.tube_state import paper_suite_v1 as p
+from main.baselines.public_compact12_v1 import OUTPUT as COMPACT_PUBLIC_ROOT
 from . import paper_suite_records_v1 as rec
 
 
@@ -10,7 +11,7 @@ from .paper_suite_reporting_v1 import SavedReader,unique,fixed_positions,counts_
 
 
 def build(cohort_root=p.COHORT_ROOT,wan_root=p.WAN_ROOT,query_root=p.QUERY_ROOT,
-          public_root=p.PUBLIC_ROOT,report_root=p.REPORT_ROOT):
+          public_root=COMPACT_PUBLIC_ROOT,report_root=p.REPORT_ROOT):
     from .b_paper_cohort_evaluation_v1 import cohort_summary
     folder=Path(report_root)/'reports'/datetime.now(timezone.utc).strftime('%Y%m%dT%H%M%S%fZ')
     folder.mkdir(parents=True,exist_ok=False)
@@ -125,9 +126,12 @@ def build(cohort_root=p.COHORT_ROOT,wan_root=p.WAN_ROOT,query_root=p.QUERY_ROOT,
         'main_fixed_source_statistics':fixed_stats,'main_fixed_panel_statistics':fixed_panels,'main_time_strata':strata,'wan_native_comparison':wan,'wan_source_statistics':wan_stats,
         'quality':qualities,'costs':costs,'components':component}
     tables.update(query_tables(query_root,reader))
+    from main.tube_state.paper_fpr_claims_v1 import measurement_rows,protocol_rows
+    tables['fpr_measurements']=measurement_rows(controls,tables['main_random_family'])
+    tables['fpr_probability_models']=protocol_rows()
     public=read(Path(public_root)/'result.json')
     pb=read(Path(public_root)/'tables/B_ownership.json',list)
-    tables['public_baseline_summary']=[r for r in pb if r.get('split')=='TEST' and r.get('channel') in ('FAMILY40','ALL40_ROBUST')]
+    tables['public_baseline_summary']=[r for r in pb if r.get('split')=='TEST' and r.get('channel') in ('FAMILY12','ALL12_ROBUST')]
     if not tables['public_baseline_summary']:tables['public_baseline_summary']=[dict(status='PENDING_OR_UNAVAILABLE',output=str(public_root))]
     query_status=read(Path(query_root)/'result.json')
     tables['read_errors']=reader.errors
@@ -137,15 +141,19 @@ def build(cohort_root=p.COHORT_ROOT,wan_root=p.WAN_ROOT,query_root=p.QUERY_ROOT,
         ('A_payload','.csv'),('B_ownership','.csv'),('C_time','.csv'),('D_quality','.csv'),('D_resources','.json'))}
     state=dict(status='SAVED_REPORT_SNAPSHOT',report=str(folder),source_denominator=12,
         public_baseline_status=public.get('status','PENDING'),public_tables=public_refs,
+        old_public_v4_reference=p.PUBLIC_ROOT,old_public_v4_status_untouched=True,
         query_status=query_status,components=component,read_error_count=len(reader.errors),
-        no_scientific_success_assumed=True,population_fpr_certified=False)
+        no_scientific_success_assumed=True,population_fpr_certified=False,
+        fpr_increment=dict(derived_measurement_rows=48,added_scientific_calls=0,validation_sources=8,
+            models_table=str(folder/'fpr_probability_models.csv'),measurements_table=str(folder/'fpr_measurements.csv')))
     rec.write(folder/'index.json',state);rec.write(Path(report_root)/'latest_report.json',state)
     text='# Formal paper measurement package\n\n'+p.COMPARISON_SCOPE+'\n\n'
     text+='Twelve fixed Wan sources. Existing C4/TEST-A evidence is retained; TEST-B is formal measurement. All failures, unresolved and missing rows remain.\n\n'
     text+='QMatch accepts only all32 matching valid bits; analytic random-query family risk and fixed-panel empirical rates are separate. No natural-population 0.1% certification. OFF/P0 empty paths are unresolved, not contradiction rejection.\n\n'
+    text+='FPR increment:48 deterministic summaries, zero new scientific calls. TEST-B8 is the predeclared unobserved finite validation panel at increment design; TEST-A remains prior formal evidence. Random-query bounds do not certify fixed-identity population FPR. See fpr_probability_models and fpr_measurements.\n\n'
     text+='Public natural-video results remain a separate domain table. FrameIndex is ADAPTED, other native time columns are N/A. No equal-capacity, temporal-localization literature superiority, or perceptual superiority claim is added.\n\n'
     for name in tables:text+=f'- [{name}]({name}.csv)\n'
-    text+='\nExisting public full tables (not recopied or recomputed):\n'
+    text+='\nCompact public saved tables (old v4 remains a separate reference):\n'
     for name,path in public_refs.items():text+=f'- {name}: `{path}`\n'
     (folder/'REPORT.md').write_text(text)
     return state

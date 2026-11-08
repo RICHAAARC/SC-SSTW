@@ -1,3 +1,7 @@
+精简公开 Baseline：[`native_baselines_public_compact12_v1.ipynb`](notebooks/native_baselines_public_compact12_v1.ipynb)，CAL32＋TEST500、四配置×12视图；[范围与预算](docs/public_compact12_v1.md)。完整论文入口已默认此流程，原v4独立保留。
+
+有限独立低FPR确认入口：[Colab Run-all](https://colab.research.google.com/github/RICHAAARC/SC-SSTW/blob/main/notebooks/paper_fpr_validation_v1.ipynb)，复用原TEST-B八源与原查询包，零新增源/推理预算；[概率口径](docs/paper_fpr_claims_v1.md)。
+
 # SC-SSTW trajectory-sampling video watermark mechanisms
 
 > 完整论文实验入口：[paper_suite_v1.ipynb](notebooks/paper_suite_v1.ipynb)（GPU Run all）。接齐十二源C4、原公开Baseline续接、十二源同域五视图对照、QMatch正式统计与论文表格；[范围与固定预算](docs/paper_suite_v1.md)。已有TEST-A与旧失败保留，不用单个TEST-B入口冒充整套实验交付。
