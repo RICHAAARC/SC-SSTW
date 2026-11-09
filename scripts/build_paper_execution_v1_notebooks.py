@@ -24,6 +24,7 @@ ENTRIES.update({stem:(title,'run_parallel_colab','GPU') for stem,(title,role,sha
 
 def build(stem,root=ROOT):
     title,function,accelerator=ENTRIES[stem];cells=[]
+    public_resume=stem in PRESET_WORKERS and PRESET_WORKERS[stem][1]=='public'
     def add(kind,text):
         cell=dict(cell_type=kind,id=stem.replace('_','-')+'-'+str(len(cells)),metadata={},source=text.splitlines(keepends=True))
         if kind=='code':ast.parse(text);cell.update(execution_count=None,outputs=[])
@@ -40,13 +41,19 @@ def build(stem,root=ROOT):
         _,role,shard=PRESET_WORKERS[stem]
         work='本片固定来源的 C4 和同 Wan 四方法对照' if role=='main' else '本片完整 pack 的公开 Baseline；PixelSeal/FrameIndex 共享计算保留在同片'
         descriptions[stem]=f"本入口已预填 `ROLE = '{role}'`、`SHARD = {shard}`，无需修改分工参数。选择独立 GPU runtime，挂载原 Google Drive 后 Run all，执行{work}。可与另外五个不同分片入口并行；相同分片只能运行一份，不与完整串行入口或重叠子入口同时运行。默认持续推进本片固定队列，不按时间或数量自动暂停。中断后在本入口再次 Run all，跳过已完成阶段，从当前未完成阶段的保存输入重新执行；前次中断记录和重算成本保留。所有计算 worker 停止或暂停后，单独运行[唯一 CPU 汇总](https://colab.research.google.com/github/RICHAAARC/SC-SSTW/blob/main/notebooks/paper_finalize_v1.ipynb)。"
+        if public_resume:
+            descriptions[stem]=f"本入口已预填 `ROLE = 'public'`、`SHARD = {shard}` 和 `PREVIOUS_RUNTIME_STOPPED = True`。本次用户已确认四个旧 public runtime 全部终止断开；选择独立 GPU runtime，挂载原 Google Drive 后直接 Run all，继续原 `attempt01/shards/part{shard}`。读取保存的 checkpoint、批次结果和调用记录，复用已完成计算，继续未完成工作，不新建结果轮次。PixelSeal/FrameIndex 共享计算保留在同片。不同 public 分片可并行；相同分片只运行一份。所有计算 worker 停止或暂停后，单独运行[唯一 CPU 汇总](https://colab.research.google.com/github/RICHAAARC/SC-SSTW/blob/main/notebooks/paper_finalize_v1.ipynb)。"
     add('markdown','# '+title+'\n\n'+descriptions[stem]+'\n\n[运行顺序、分片、恢复和时长说明](https://github.com/RICHAAARC/SC-SSTW/blob/main/docs/paper_execution_v1.md)\n')
-    params="SOURCE_REF = 'main'\nSOURCE_DIRECTORY = None  # 可选可读源码，不要求版本摘要一致\nPREVIOUS_RUNTIME_STOPPED = False  # 前一个占用本片的 runtime 已实际停止且换机时才填 True\n"
+    params="SOURCE_REF = 'main'\nSOURCE_DIRECTORY = None  # 可选可读源码，不要求版本摘要一致\n"
+    params+=("PREVIOUS_RUNTIME_STOPPED = True  # 本次已确认旧 public runtime 全部终止断开\n" if public_resume else "PREVIOUS_RUNTIME_STOPPED = False  # 前一个占用本片的 runtime 已实际停止且换机时才填 True\n")
     if accelerator:params+="MAX_ITEMS = None  # 默认持续运行，不按源/pack数量自动暂停\nMAX_HOURS = None  # 默认持续运行，不设置人为时长暂停；原科学资源上限保留\n"
     if stem=='paper_parallel_worker_v1':params+="ROLE = 'main'  # main 或 public\nSHARD = 0  # main 为 0/1；public 为 0/1/2/3\n"
     elif stem in PRESET_WORKERS:params+=f"ROLE = {role!r}  # 本入口已预填，无需修改\nSHARD = {shard}  # 本入口已预填，无需修改\n"
     add('code',params)
-    add('markdown','中断后保持 ROLE/SHARD、目录和方法不变，再次 Run all。先实际停止旧 worker；完整阶段直接复用，未完成阶段从保存输入重做。主方法与同 Wan 每源共享最多两次基础设施恢复，额外调用与耗时单列；原算法失败和旧终态失败不重试。公开 Baseline 沿用原恢复预算。\n\n这是阶段/任务级续跑，不承诺生成步、求解迭代或 VAE 内部任意位置无损恢复。最终汇总只有一个写入者。\n')
+    if public_resume:
+        add('markdown',f"续跑原目录：`MyDrive/Video-WM_Result/baselines/public-native-frameindex-compact12-v1/attempt01/shards/part{shard}`。保留原 checkpoint、已提交批次、旧失败和调用记录；只补未完成工作及已修复的基础设施额度故障，不重置科学分母或原始调用账。完整 CPU 画质记录直接复用，不追加 LPIPS。\n\n源码默认加载当前 `main`，已包含模型重新加载和基础设施续跑修复：不再按模型加载次数或恢复次数人为停止；`MAX_ITEMS`、`MAX_HOURS` 均为 `None`。实际文件、数值或模型错误仍记录。旧 ACTIVE 占用记录可按已确认停止恢复，不覆盖仍在本机运行的同片进程。不承诺模型内部任意位置无损恢复；未保存的物理调用及额外恢复成本保留记录。\n")
+    else:
+        add('markdown','中断后保持 ROLE/SHARD、目录和方法不变，再次 Run all。先实际停止旧 worker；完整阶段直接复用，未完成阶段从保存输入重做。主方法与同 Wan 每源共享最多两次基础设施恢复，额外调用与耗时单列；原算法失败和旧终态失败不重试。公开 Baseline 沿用原恢复预算。\n\n这是阶段/任务级续跑，不承诺生成步、求解迭代或 VAE 内部任意位置无损恢复。最终汇总只有一个写入者。\n')
     call="source_directory=SOURCE_DIRECTORY, source_ref=SOURCE_REF, previous_runtime_stopped=PREVIOUS_RUNTIME_STOPPED"
     if accelerator:call+=", max_items=MAX_ITEMS, max_hours=MAX_HOURS"
     if function=='run_parallel_colab':call+=", role=ROLE, shard=SHARD"
