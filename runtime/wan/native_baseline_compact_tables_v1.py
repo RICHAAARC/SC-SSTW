@@ -117,11 +117,12 @@ def build_tables(output,sources,roster,queries,budget,old,source_roots=None):
         imported_work_is_not_new_inference=True,model_resources=list(events(output/'model_resources.jsonl')),
         quality_resources=list(events(output/'quality_resources.jsonl')),model_loads=list(events(output/'model_loads.jsonl')))
     write_json(directory/'D_resources.json',resources)
-    complete_quality=sum(r['observed_frames']==181 and r['lpips_observed_frames']==181 for r in quality)
+    complete_quality=sum(r['observed_frames']==181 and r['observed_edges']==180 for r in quality)
     bounds=p.nominal_bounds()
     result=dict(status='COMPACT_MEASUREMENT_RETURNED' if not incomplete and complete_quality==len(quality) else 'INCOMPLETE_RETAINED',
         experiment=p.EXPERIMENT,logical_views=len(payload),execution_incomplete_views=int(incomplete),
         quality_planned_pairs=len(quality)*181,quality_complete_stages=complete_quality,
+        lpips_policy='not requested; historical observations and missingness retained, not a completion requirement',
         nominal_random_query_bounds=bounds,four_method_per_source_random_query_union_upper=sum(v['upper'] for v in bounds.values()),
         union_scope='one OFF source, four random method queries, twelve views; not the 500-source package or fixed-message population',
         old_v4=str(old),old_v4_completion_assessed=False,old_v4_status_untouched=True,dev_reference_only=True,

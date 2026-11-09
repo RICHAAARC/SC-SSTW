@@ -208,9 +208,10 @@ def build_tables(output,sources,queries,plans,budget):
     write_json(directory/'D_resources.json',resources)
     result=dict(status='ALL_NATIVE_OBSERVED' if incomplete==0 else 'INCOMPLETE_RETAINED',
         logical_views=logical_views,execution_incomplete_views=incomplete,nominal_random_query_bounds=nominal_bounds(),
-        quality_planned_pairs=len(quality)*181,quality_complete_stages=sum(q['observed_frames']==181 and q['lpips_observed_frames']==181 for q in quality),
+        quality_planned_pairs=len(quality)*181,quality_complete_stages=sum(q['observed_frames']==181 and q['observed_edges']==180 for q in quality),
+        lpips_policy='not requested; historical observations and missingness retained, not a completion requirement',
         scientific_success='NOT_ADJUDICATED',tables=['A_payload','B_ownership','C_time','D_quality','D_resources'],
-        next_run='resume uncommitted infrastructure work within fixed budgets; no threshold or method changes')
+        next_run='resume uncommitted work from checkpoint; infrastructure costs recorded without quota; fixed scientific tasks and thresholds unchanged')
     write_json(output/'result.json',result)
     (output/'REPORT.md').write_text('# Public native and FrameIndex v4\n\n'+
         f"Native logical views: {logical_views}; execution incomplete: {incomplete}.\n\n"+

@@ -31,8 +31,7 @@ def writer_batches(method): return batches(181,8) if method in ('wam','frameinde
 def validate_config(c):
     expected = dict(experiment=EXPERIMENT,shape=SHAPE,fps=25,methods=list(METHODS),dev_sources=64,
         cal_sources=500,test_sources=500,pack_size=16,edit_seed=SEED,alpha=.001,
-        thresholds=THRESHOLDS,bootstrap_replicates=2000,recovery_per_unit=2,recovery_fraction=.02,
-        extra_runtimes=64,extra_watermark_loads_per_runtime=3,extra_lpips_loads_per_runtime=1)
+        thresholds=THRESHOLDS,bootstrap_replicates=2000)
     for key,value in expected.items():
         if c.get(key)!=value:raise ValueError(f'fixed v4 method setting {key} requires {value!r}')
     return c

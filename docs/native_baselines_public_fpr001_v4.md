@@ -42,7 +42,7 @@ Pixel OFF实际B32原始输出同时供Pixel与FrameIndex逻辑行；不得重�
 
 `tables/C_time.{json,csv}`保留三原生方法N/A；FI报告target exact/±1/±4、合法错误index、foreign错误target归属、synthetic虚假精确时间、擦除与未执行。query通过且index精确，与全部ownerbits正确且index精确分列。完整节点/邻边数组附于post容器；不从真值生成foreign/synthetic预测，也不把擦除当正确识别编辑。只恢复对应，不恢复删除图像。
 
-`tables/D_quality.{json,csv}`和`D_resources.json`：仅precodec、G1、G2-identity，181帧RGB MSE/PSNR、Gaussian11/sigma1.5 SSIM、FP32 LPIPS Alex B16尾批5；180邻边水印残差差分RMS不是运动补偿tLPIPS。逐帧质量保留在`units/quality/`。实际forward hooks、峰值、调用秒数、下载/codec/存储日志分别保存；原成本记录保留；不为成本预测预扫历史调用目录。
+`tables/D_quality.{json,csv}`和`D_resources.json`：仅precodec、G1、G2-identity，181帧RGB MSE/PSNR、Gaussian11/sigma1.5 SSIM；180邻边水印残差差分RMS不是运动补偿tLPIPS。2026-11-09按用户决定不再执行LPIPS或要求其完成，历史FP32 LPIPS数值和缺失记录保留。CPU质量完整即完成阶段，不为补LPIPS重做writer或媒体。逐帧质量保留在`units/quality/`。实际forward hooks、峰值、调用秒数、下载/codec/存储日志分别保存；原成本记录保留；不为成本预测预扫历史调用目录。
 
 正式目录固定为`/content/drive/MyDrive/Video-WM_Result/baselines/public-native-and-frameindex-fpr001-v4/attempt01`，保留canonical、G1媒体、protocol/queries/editor、native批次、post/tables、resources与failures。正式目录及失败包不清理。临时源码、权重、writer块、JPEG和衍生媒体位于`/content/drive/MyDrive/Video-WM_Cache/baseline-v4`，仅对应读者和质量完成后清除。失败接收输入转存正式failures，并可从该实际输入继续。
 
@@ -50,7 +50,7 @@ Pixel OFF实际B32原始输出同时供Pixel与FrameIndex逻辑行；不得重�
 
 先准备DEV OFF和各方法WM供体库，再读DEV；之后CAL/TEST按16来源pack、三个backend顺序复用。DEV库同backend跨四个16来源子包共享一次loader，基础最多195次，低于协议204上限。无额外科学样本。供体解码缓存约28.5GB，以避免为每次T12增加解码；这比原20GB临时空间情景更大。总新增200–260GB仍仅规划，媒体实际字节、已有Drive占用未知，不保证400GB必够。
 
-固定基础预算detector2273296 forwards、36305472帧；编码/探测各83000，decode上限144032，JPEG编码/解码各600920，normalize1064；LPIPS81216 pair-batches。每实际物理单位至多两次额外基础设施重算，各类累计最多ceil(基础上限×2%)。最多64个额外runtime，每个额外watermark loader≤3、LPIPS loader≤1。实际失败、已开始但未保存的未知成本都计账；方法失败/非有限/非法shape不自动重跑或改参数。预算用尽相关单位UNKNOWN，继续独立工作。
+固定科学基础预算detector2273296 forwards、36305472帧；编码/探测各83000，decode上限144032，JPEG编码/解码各600920，normalize1064。旧LPIPS81216 pair-batches及恢复次数规划保留为历史记录。2026-11-09按用户授权取消2次/2%/64runtime/3loader等纯基础设施门槛；正常恢复、成功卸载后再加载及换pack不因这些次数终止。全部实际加载、失败、已开始但未保存的未知成本和额外恢复仍计账；固定科学任务、首调用预算和分母不变。方法失败/非有限/非法shape不自动重跑或改参数，COMMITTED结果不重做。
 
 批次返回立即保存实际数组。native Pixel writer整181帧，VideoSeal128＋53，WAM/FI B8、reader B8/B32；不合并尾批、不pad。codec按完整clip恢复。相同输入缓存尚在则只补未提交批次；丢失可能改变RGB时保留旧partial，新epoch重建全view，全部批次计恢复预算，不混epochs或挑分数。首次完整有效返回采用。已存raw而post中断时只补CPU后评。
 
@@ -73,7 +73,7 @@ Pixel OFF实际B32原始输出同时供Pixel与FrameIndex逻辑行；不得重�
 
 已提交批次按记录直接复用，不预读它们确认完成。新批次记录数组文件与字节位置；真正使用时只读对应数据。老格式无字节位置时仅在当前所需的记录文件中定位该批次，不遍历历史目录。需要的数据若实际读取失败，直接报告具体文件与操作，不通过隐式重算或全量核验掩盖。
 
-计算游标与显示进度分离；恢复/心跳不更新计算游标。游标附带固定预算的累计计数及账本偏移，之后只恢复更新的尾段；旧包首次仍需读取现有物理预算账本恢复已消费计数，这是同一预算记录，不扫描旧结果。当前任务完成后保存下一任务，明确缺失视图单列后续续接。历史query/plan按实际使用加载，原四配置、40视图、来源名单、固定分母与基础设施恢复上限保持。
+计算游标与显示进度分离；恢复/心跳不更新计算游标。游标附带累计计数及账本偏移，之后只恢复更新的尾段；旧包首次仍需读取现有物理账本恢复已消费计数，这是同一成本记录，不扫描旧结果。当前任务完成后保存下一任务，明确缺失视图单列后续续接。历史query/plan按实际使用加载，原四配置、40视图、来源名单、固定分母保持；旧基础设施配额字段兼容读取且不再作为运行门槛。
 
 最终表格直接汇总已保存的后评记录；默认不重评历史原始数组。尚未产出的跨源比较仍读取对应供体数据完成原计划的计算。历史缺失不伪造为成功结果，实际使用遇到不可读数据明确报错。
 

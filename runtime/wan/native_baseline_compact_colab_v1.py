@@ -17,11 +17,12 @@ def run_colab(source_directory=None,source_ref='main',previous_runtime_stopped=F
     # Checks only ownership of the NEW package. Original v4 is never taken over.
     check_previous_worker(output,previous_runtime_stopped)
     checkpoint=read_json(output/'compute_checkpoint.json') if (output/'compute_checkpoint.json').is_file() else {}
-    if checkpoint.get('status')=='DONE':
+    from .native_baselines_compact_v1 import unresolved_gate_slots
+    if checkpoint.get('status')=='DONE' and not unresolved_gate_slots(checkpoint):
         return dict(status='READ_ONLY_COMPLETED',output=str(output),result=read_json(output/'result.json'))
     source=available_source(source_directory,source_ref);vendor=prepare_vendor();worker=None
     environment=dict(os.environ,PYTHONPATH=str(source))
-    for module,package in [('numpy','numpy'),('scipy','scipy'),('torch','torch'),('skimage','scikit-image'),('lpips','lpips'),('PIL','pillow')]:
+    for module,package in [('numpy','numpy'),('scipy','scipy'),('torch','torch'),('skimage','scikit-image'),('PIL','pillow')]:
         probe=subprocess.run([sys.executable,'-c','import '+module],capture_output=True,env=environment)
         if probe.returncode:subprocess.run([sys.executable,'-m','pip','install',package],check=True)
     args=[sys.executable,'-u','-m','runtime.wan.native_baseline_compact_entry_v1','--vendor',str(vendor)]

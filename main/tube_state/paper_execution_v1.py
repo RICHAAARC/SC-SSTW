@@ -55,11 +55,10 @@ def shard_budget(sources,shard,spent=None,parent_runtimes=0):
     recovery={}
     for key,total in global_limits['recovery'].items():
         used=sum(s['recovery'].get(key,0) for s in spent)
-        if used>total:raise ValueError('existing global recovery budget exhausted: '+key)
-        recovery[key]=spent[shard]['recovery'].get(key,0)+share(total-used,shard)
-    if parent_runtimes>65:raise ValueError('existing global runtime allowance exhausted')
-    return dict(base=base,recovery=recovery,extra_per_unit=2,runtime_limit=share(65-parent_runtimes,shard),
+        recovery[key]=spent[shard]['recovery'].get(key,0)+share(max(0,total-used),shard)
+    return dict(base=base,recovery=recovery,extra_per_unit=2,runtime_limit=share(max(0,65-parent_runtimes),shard),
         source_ids=[s['id'] for s in selected],pack_ids=[p['id'] for p in packs],
         inherited=dict(base=dict(spent[shard]['base']),recovery=dict(spent[shard]['recovery'])),
         global_method_limits=global_limits,shard=shard,shards=4,
-        scope='disjoint full packs; all shard base/recovery limits sum to the original global budget')
+        infrastructure_limits_enforced=False,
+        scope='disjoint fixed packs; base scientific calls unchanged; legacy recovery allowances are locating metadata')

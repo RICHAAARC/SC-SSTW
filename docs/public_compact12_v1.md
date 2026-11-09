@@ -26,7 +26,13 @@
 
 只在当前任务需要时读旧记录，避免启动前全盘扫描。旧native按最后已保存epoch和原batch地址引用，不按分数选，不混epoch；完整raw无需模型/原媒体。旧partial只有原epoch输入仍可读且该batch从未启动时才可补未启动部分；旧已启动失败不因新目录恢复额度，丢失旧输入保留UNKNOWN。旧writer/已完成LPIPS不重算；旧partial质量只读保留，缺少旧precodec不会触发重写旧视频。canonical/G1可读则引用；新增decode按实际收费。进口记录独立列出旧STARTED，不充当新独立推理。
 
-预算（有效旧记录复用前的最大新工作）：532次download/source_probe/normalize；30384次video_encode/probe；42088次decode；WAM/Pixel/Video reader243552/98048/66048，共407648调用、6609448帧；writer11500/500/1000/11500；模型load102；LPIPS72000pair调用（Alex144000forward）、6000阶段1086000帧对；物理43152视图、逻辑49536视图。JPEG/DiT/Wan/VAE/训练均0。基础设施恢复沿原规则：每单元最多2次额外，类别额外ceil(2%)，额外64 runtime/192 watermark loads/64 LPIPS loads；不能调阈值或换source。导入的旧失败不会获得新重试。
+固定科学任务规划（有效旧记录复用前）：532次download/source_probe/normalize；30384次video_encode/probe；42088次decode；WAM/Pixel/Video reader243552/98048/66048，共407648调用、6609448帧；writer11500/500/1000/11500；物理43152视图、逻辑49536视图。JPEG/DiT/Wan/VAE/训练均0。原协议中的load102、LPIPS72000pair以及2次/2%/64runtime/3loader等数字保留作历史成本规划，2026-11-09按用户授权取消基础设施恢复和加载的次数门槛；实际基础与额外调用继续累计，不清零。原科学首调用预算、固定任务/样本/阈值/分母不变，不按检测分数重试。其它实验导入的旧失败仍不因此获得新尝试。
+
+2026-11-09续跑修复：正常换pack、成功卸载后的重新加载、换进程及丢失未提交缓存的恢复不再受累计恢复配额限制。保留所有旧失败；同实验旧`BUDGET_EXHAUSTED`和明确加载配额错误可从原槽续接。此前因这些错误移入`retained_unknown_views/tasks`的未完成槽，按保存的失败位置重新加入pending并记录`checkpoint_repairs.jsonl`，不扫描成功历史或重做COMMITTED数组。真正方法/格式/非有限返回仍保留失败，不在同一runtime自动循环重试。
+
+LPIPS按用户决定不再作为本轮指标：历史数值/缺失记录保留，不下载LPIPS权重、不补做已完成科学计算。CPU质量181帧和180邻边均有有效保存值即可完成质量阶段；PSNR/SSIM/残差差分继续按原定义测量。已有完整CPU质量不为LPIPS加载writer或重建媒体。旧协议字段缺失/不同的基础设施配额不阻断续跑；方法字段仍按实际语义检查。
+
+`paper_parallel_public0_v1.ipynb`原入口、结果目录和checkpoint不变。public0旧worker已停止后，打开main入口Run all，默认`SOURCE_DIRECTORY=None`下载本次源码并从保存断点继续。正在运行的其它分片不需要为本修复停止；它们继续使用已下载的旧源码，下次启动才采用修订版。同一分片仍只允许一个活动worker。
 
 表格保留payload、ownership、time、quality/resources；FAMILY12表示任一接受，ALL12_ROBUST表示所有12视图接受且完整。错误query碰巧等于正确query时保留N/A而非假阳性。所有来源和缺失位置保留；DEV附录不参与新CAL/TEST完成判定，原生方法时间N/A。本包只汇总query/wrong_query与旧DEV saved参考，不新增旧v4 cross_source/DEV-donor重验证；旧表保留原包。
 

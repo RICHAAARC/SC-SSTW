@@ -1,4 +1,4 @@
-"""Actual array checkpoints, bounded infrastructure recovery and single-runtime records."""
+"""Actual array checkpoints, recorded infrastructure recovery and runtime ownership."""
 from contextlib import contextmanager
 from collections import Counter, OrderedDict
 from collections.abc import MutableMapping
@@ -48,6 +48,28 @@ def infrastructure(error):
     return type(error).__name__=='OutOfMemoryError'
 
 
+def retired_recovery_gate(row):
+    """Recognize only the former infrastructure stops, not real method failures."""
+    if row.get('status') not in (None,'BUDGET_EXHAUSTED','FAILED_PERMANENT','INFRA_FAILED'):return False
+    error=str(row.get('error',''))+' '+str(row.get('reason',''))
+    loader=row.get('category') in ('model_load','lpips_load') or any(
+        name+' base budget exhausted' in error for name in ('model_load','lpips_load'))
+    if ' base budget exhausted' in error and not loader:return False
+    return (row.get('status')=='BUDGET_EXHAUSTED' or any(text in error for text in (
+        'three additional watermark loads used in this runtime',
+        'model_load base budget exhausted','lpips_load base budget exhausted',
+        'no same-runtime model-load retry:',
+        'two extra infrastructure calls exhausted', 'fixed runtime allowance exhausted',
+        'whole-view recovery needs all batches:', ' recovery budget exhausted',
+        ': BUDGET_EXHAUSTED')))
+
+
+def recovery_pending(row):
+    return (not row.get('imported_from') or row.get('same_experiment')) and (
+        row.get('status') in ('NOT_STARTED','INFRA_FAILED','STARTED','RETURNED_NOT_COMMITTED')
+        or retired_recovery_gate(row))
+
+
 class Budget:
     def __init__(self, output, runtime_id, limits=None, progress=None, saved=None):
         self.output=Path(output);self.runtime_id=runtime_id;self.limits=limits or physical_budget()
@@ -64,6 +86,9 @@ class Budget:
             raise Unavailable('physical cost ledger has unreadable records; preserve it and repair actual records before more calls')
 
     def capacity(self, category, count=1, *, recovery=False):
+        # Fixed scientific tasks still bound first calls. Restoring their execution
+        # and loading backends are infrastructure costs, recorded without a quota.
+        if recovery or category in ('model_load','lpips_load'):return True
         used=self.extra if recovery else self.base
         limit=self.limits['recovery' if recovery else 'base'][category]
         return used[category]+count<=limit
@@ -81,6 +106,7 @@ class Budget:
 
     def snapshot(self):
         result=dict(**self.resume_state(),limits=self.limits,
+                    infrastructure_limits_enforced=False,
                     semantics='started physical calls include unknown return/write outcomes; not only successful calls')
         write_json(self.output/'physical_counts.json',result);return result
 
@@ -241,16 +267,13 @@ class UnitStore:
             value=row.get('value')
             if output_available is None or output_available(value):return value
             recovery=True  # actual needed output missing, never a provenance/hash mismatch
-        if row['status'] in ('INVALID_RETURN','FAILED_PERMANENT','BUDGET_EXHAUSTED'):
+        if row['status'] in ('INVALID_RETURN','FAILED_PERMANENT','BUDGET_EXHAUSTED') and not retired_recovery_gate(row):
             raise Unavailable(f'{key}: {row["status"]}')
         if row.get('runtime_id')==self.budget.runtime_id and row['status'] in ('STARTED','RETURNED_NOT_COMMITTED','INFRA_FAILED'):
             raise Unavailable('no hidden retry within this runtime: '+key)
         physical_key=physical_key or key
         attempt=self.attempts[physical_key]+1
         recovery=recovery or attempt>1
-        if attempt>3:
-            self.event(key,'BUDGET_EXHAUSTED',reason='two extra infrastructure calls exhausted')
-            raise RecoveryExhausted(key)
         # Start the unit receipt first, then physical cost, then actual call.
         self.event(key,'STARTED',attempt=attempt,category=category,recovery=recovery,count=count,physical_key=physical_key)
         self.attempts[physical_key]+=1
@@ -297,17 +320,16 @@ class ViewEpochs:
         if self.rows:
             current=self.rows[-1];prefix=self.view+'/'+current['id']
             if all(self.store.reusable(prefix+f'/batch{start}') for start,n in starts):return current,False
-            if current.get('status')=='BUDGET_EXHAUSTED':raise RecoveryExhausted(self.view)
+            if current.get('status')=='BUDGET_EXHAUSTED':
+                append_json(self.path.with_name('recovery.jsonl'),dict(
+                    previous_epoch=dict(current),reason='retired infrastructure quota',runtime_id=self.store.budget.runtime_id))
             if Path(current['input']).is_file():return current,False
-            if any(self.store.row(prefix+f'/batch{s}')['status'] in ('INVALID_RETURN','FAILED_PERMANENT') for s,n in starts):
+            if any(self.store.row(prefix+f'/batch{s}')['status'] in ('INVALID_RETURN','FAILED_PERMANENT')
+                   and not retired_recovery_gate(self.store.row(prefix+f'/batch{s}')) for s,n in starts):
                 raise Unavailable('method/format failure is not eligible for infrastructure retry: '+self.view)
             # If no physical reader ever started, rebuilding pixels does not rerun a reader.
             consumed=any(self.store.row(prefix+f'/batch{s}')['status']!='NOT_STARTED' for s,n in starts)
             if consumed:
-                if (len(self.rows)>=3 or any(self.store.attempts[self.view+f'/batch{s}']>=3 for s,n in starts)
-                        or not self.store.budget.capacity(category,len(starts),recovery=True)):
-                    current['status']='BUDGET_EXHAUSTED';write_json(self.path,self.rows)
-                    raise RecoveryExhausted('whole-view recovery needs all batches: '+self.view)
                 current['status']='SUPERSEDED_INPUT_LOST'
             else:return current,False
         else:consumed=False
@@ -317,7 +339,7 @@ class ViewEpochs:
 
 
 @contextmanager
-def runtime_session(output,*,previous_runtime_stopped=False,runtime_limit=65):
+def runtime_session(output,*,previous_runtime_stopped=False,runtime_limit=None):
     """Local flock plus explicit cross-runtime handoff. Heartbeat is not a distributed lock."""
     import fcntl
     output=Path(output);output.mkdir(parents=True,exist_ok=True)
@@ -333,7 +355,7 @@ def runtime_session(output,*,previous_runtime_stopped=False,runtime_limit=65):
                 raise Unavailable('prior runtime may still be active; stop it before confirming continuation; heartbeat age cannot authorize takeover')
         runtime_id=uuid.uuid4().hex
         history=list(events(output/'runtimes.jsonl'))
-        if len(history)>=runtime_limit:raise RecoveryExhausted('fixed runtime allowance exhausted')
+        # runtime_limit is accepted for old callers/checkpoints, as locating metadata only.
         record=dict(id=runtime_id,pid=os.getpid(),host=host,status='ACTIVE',started_at=time.time(),
                     ordinal=len(history),cross_vm_atomic_lock=False)
         append_json(output/'runtimes.jsonl',record);write_json(owner_path,record)

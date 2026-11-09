@@ -25,8 +25,6 @@ def validate_config(value):
     fixed=dict(experiment=EXPERIMENT,shape=SHAPE,fps=25,methods=list(METHODS),
         cal_sources=32,test_sources=500,dev_execution_sources=0,dev_reference_sources=64,
         view_ids=list(VIEW_IDS),edit_seed=SEED,pack_size=16,thresholds=THRESHOLDS,
-        recovery_per_unit=2,recovery_fraction=.02,extra_runtimes=64,
-        extra_watermark_loads_per_runtime=3,extra_lpips_loads_per_runtime=1,
         bootstrap_replicates=2000,calibration='independent null sanity; no fitted thresholds')
     for key,expected in fixed.items():
         if value.get(key)!=expected:raise ValueError('fixed compact method setting '+key+' requires '+repr(expected))

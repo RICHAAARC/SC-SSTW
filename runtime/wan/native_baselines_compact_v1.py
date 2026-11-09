@@ -8,7 +8,8 @@ from main.baselines import public_compact12_v1 as p
 from main.baselines.public_fpr001_v4 import allocate_queries,batches,read_batch,backend
 from .native_baselines_public_v4 import SavedQueries,SourcePlans,Loaders,Runner,quality_complete
 from .native_baseline_storage_v1 import read_json,write_json
-from .native_baseline_storage_v4 import Budget,Unavailable,runtime_session,append_json
+from .native_baseline_storage_v4 import (Budget,Unavailable,runtime_session,append_json,
+    events,retired_recovery_gate,recovery_pending)
 from .native_baseline_checkpoint_v4 import ComputationCursor,tasks_for
 from .native_baseline_io_v4 import extract_view,saved_raw,empty_raw,load_rgb,validate_native,remove_cache,SpaceUnavailable
 from .native_baseline_evaluation_v4 import write_post
@@ -60,6 +61,46 @@ class CompactCursor(ComputationCursor):
         self.state['protocol']=p.EXPERIMENT
 
 
+def unresolved_gate_slots(state):
+    repaired=set(state.get('requeued_infrastructure_slots',[]))
+    slots={'task:'+str(i) for i in state.get('retained_unknown_tasks',{})}
+    slots.update('view:'+str(i)+':'+str(v) for i,rows in state.get('retained_unknown_views',{}).items() for v in rows)
+    return slots-repaired
+
+
+def restore_recovery_pending(output,cursor):
+    """Requeue only unfinished slots tied to an obsolete quota error; retain evidence."""
+    state=cursor.state;eligible=unresolved_gate_slots(state)
+    if not eligible:return []
+    stopped={row.get('where') for row in events(Path(output)/'failures.jsonl') if retired_recovery_gate(row)}
+    pending=state.setdefault('pending',{});restored=[]
+    for key,rows in state.get('retained_unknown_views',{}).items():
+        task=cursor.tasks[int(key)]
+        for index,row in rows.items():
+            slot='view:'+str(key)+':'+str(index);view=row['view']
+            batch_prefix='/'.join(('native',task['source'],task['backend'],task['arm'],view))+'/'
+            locations={'read/'+task['source']+'/'+view,
+                '/'.join(('native',task['source'],task['backend'],task['arm'],view))}
+            if slot in eligible and (stopped.intersection(locations) or any(
+                    isinstance(where,str) and where.startswith(batch_prefix) for where in stopped)):
+                selected=list(pending.get(str(key),[]))
+                if int(index) not in selected:selected.append(int(index))
+                pending[str(key)]=sorted(selected);restored.append(slot)
+    for key,task in state.get('retained_unknown_tasks',{}).items():
+        slot='task:'+str(key)
+        quality_prefix='quality/'+task['source']+'/'+task['arm']+'/' if task['kind']=='quality' else None
+        stage_stopped=quality_prefix and any(isinstance(where,str) and where.startswith(quality_prefix) for where in stopped)
+        if slot in eligible and (task['id'] in stopped or stage_stopped):
+            pending[str(key)]=[0];restored.append(slot)
+    if restored:
+        # Original failure log and retained-unknown records are deliberately untouched.
+        state.setdefault('requeued_infrastructure_slots',[]).extend(restored)
+        state['status']='PENDING';cursor.save()
+        append_json(Path(output)/'checkpoint_repairs.jsonl',dict(
+            reason='retired infrastructure quota blocked unfinished work',slots=restored,at=time.time()))
+    return restored
+
+
 class CompactRunner(Runner):
     def __init__(self,*args,roster,**kwargs):
         super().__init__(*args,**kwargs);self.roster=roster;self.adapter=None;self.loaded=None
@@ -88,8 +129,7 @@ class CompactRunner(Runner):
         for row in getattr(self.loaders,'rows',[]):
             if row.get('key')==pack+'/'+b:latest[row['key']]=row
         rows+=list(latest.values())
-        return any(row.get('status') in ('INFRA_FAILED','STARTED','RETURNED_NOT_COMMITTED')
-            and (not row.get('imported_from') or row.get('same_experiment')) and row.get('attempt',0)<3 for row in rows)
+        return any(recovery_pending(row) for row in rows)
 
     def read_arm_compact(self,source,b,arm,pack,selection):
         available=p.views();remaining=list(selection) if isinstance(selection,list) else list(range(selection,len(available)))
@@ -137,8 +177,7 @@ class CompactRunner(Runner):
             if not raw['observed'].all() and getattr(self,'bounded_schedule',False):
                 prefix=view['id']+'/'+epoch['id'] if epoch else ''
                 rows=[store.row(prefix+'/batch'+str(start)) for start,n in batches(view['frames'],read_batch(b))]
-                retryable=not store.record_errors and any(row.get('status') in ('INFRA_FAILED','STARTED','RETURNED_NOT_COMMITTED')
-                    and (not row.get('imported_from') or row.get('same_experiment')) and row.get('attempt',0)<3 for row in rows)
+                retryable=not store.record_errors and any(recovery_pending(row) for row in rows)
                 retryable=retryable or self.dependency_retryable(source,arm,pack,b)
                 if not retryable:
                     if index in failed:failed.remove(index)
@@ -166,6 +205,7 @@ class CompactRunner(Runner):
     def run(self):
         from .native_baseline_compact_tables_v1 import build_tables
         result=None
+        restore_recovery_pending(self.ops.output,self.cursor)
         try:
             for index,selection in self.cursor.queue():
                 task=self.cursor.tasks[index]
@@ -199,7 +239,7 @@ class CompactRunner(Runner):
                     result=build_tables(self.ops.output,self.sources,self.roster,self.queries,self.ops.budget,self.ops.reuse.roots[-1][0])
                 if failed and getattr(self,'bounded_schedule',False) and kind in ('quality','media'):
                     store=self.ops.store(('quality' if kind=='quality' else 'media')+'/'+source['id']+'/'+task['arm'])
-                    retryable=not store.record_errors and any(r.get('status') in ('INFRA_FAILED','STARTED','RETURNED_NOT_COMMITTED') and (not r.get('imported_from') or r.get('same_experiment')) and r.get('attempt',0)<3 for r in store.rows.values())
+                    retryable=not store.record_errors and any(recovery_pending(r) for r in store.rows.values())
                     retryable=retryable or self.dependency_retryable(source,task['arm'],task['pack'],task['backend'] or '')
                     if not retryable:self.cursor.state.setdefault('retained_unknown_tasks',{})[str(index)]=task;failed=[]
                 self.cursor.finish(index,failed)

@@ -56,7 +56,9 @@ def run_shard(shard,vendor=None,max_packs=None,seconds=None,previous_runtime_sto
     if 'Video-WM_Result' in cache.resolve().parts:raise ValueError('cache cannot be inside protected results')
     checkpoint=output/'compute_checkpoint.json'
     if checkpoint.is_file() and read_json(checkpoint).get('status')=='DONE':
-        return dict(status='READ_ONLY_COMPLETED',shard=shard,output=str(output))
+        state=read_json(checkpoint)
+        if not base.unresolved_gate_slots(state) or not any(base.retired_recovery_gate(r) for r in events(output/'failures.jsonl')):
+            return dict(status='READ_ONLY_COMPLETED',shard=shard,output=str(output))
     # Same experiment's unsharded runner must be stopped before redistributing its unfinished work.
     check_previous_worker(parent,previous_runtime_stopped)
     if (parent/'physical_calls.jsonl').exists() and not (parent/'queries.json').is_file():
@@ -78,9 +80,11 @@ def run_shard(shard,vendor=None,max_packs=None,seconds=None,previous_runtime_sto
         with runtime_session(output,previous_runtime_stopped=previous_runtime_stopped,runtime_limit=preview['runtime_limit']) as runtime:
             own=schedule.owned_packs(sources,shard);selected=[s for pack in own for s in pack['sources']]
             sources,roster,queries,plans=base.inputs(output,old_inputs,query_sources=selected)
-            if vendor_factory is not None:vendor=vendor_factory()
             frozen=inherited(output,parent,sources,shard);limits=frozen['limits']
             cursor=ShardCursor(output,sources,shard)
+            base.restore_recovery_pending(output,cursor)
+            if not cursor.queue():return dict(status='READ_ONLY_COMPLETED',shard=shard,output=str(output))
+            if vendor_factory is not None:vendor=vendor_factory()
             saved=cursor.state.get('budget') or dict(limits['inherited'],ledger_offset=0)
             budget=Budget(output,runtime['id'],limits=limits,saved=saved);cursor.budget=budget;cursor.save()
             reuse=Reuse(output,parent,cache_root,fallback=old,fallback_cache=old_cache,same_experiment=True)

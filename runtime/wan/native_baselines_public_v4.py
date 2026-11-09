@@ -11,7 +11,7 @@ from main.baselines.public_fpr001_v4 import (BACKENDS, METHODS, OUTPUT, CACHE, v
     validate_config, validate_sources, allocate_queries, source_plan, physical_budget)
 from .native_baseline_storage_v1 import read_json, write_json
 from .native_baseline_storage_v4 import (Budget, UnitStore, Unavailable, RecoveryExhausted, runtime_session,
-    events, append_json, infrastructure)
+    events, append_json, infrastructure, retired_recovery_gate)
 from .native_baseline_io_v4 import (MediaOperations, SpaceUnavailable, check_space, extract_view,
     remove_cache, load_rgb, saved_raw)
 from .native_baseline_evaluation_v4 import write_post, build_tables
@@ -73,7 +73,7 @@ class SourcePlans(dict):
 
 
 class Loaders:
-    """Actual model loads, including bounded new-runtime reloads; no automatic retry loops."""
+    """Record every actual load; successful reloads need no recovery quota."""
     def __init__(self,ops,vendor,adapter_factory,quality_factory):
         self.ops=ops;self.vendor=vendor;self.adapter_factory=adapter_factory;self.quality_factory=quality_factory
         self.path=ops.output/'model_loads.jsonl';self.rows=list(events(self.path));self.extra_watermark=0;self.lpips=None
@@ -81,10 +81,10 @@ class Loaders:
     def perform(self,key,category,model):
         previous=[r for r in self.rows if r.get('key')==key and r.get('status')=='STARTED']
         last=[r for r in self.rows if r.get('key')==key]
-        if last and last[-1]['status']=='FAILED_PERMANENT':raise Unavailable('model load method/config failure retained: '+key)
-        if any(r.get('runtime_id')==self.ops.budget.runtime_id for r in previous):raise Unavailable('no same-runtime model-load retry: '+key)
+        if last and last[-1]['status']=='FAILED_PERMANENT' and not retired_recovery_gate(last[-1]):raise Unavailable('model load method/config failure retained: '+key)
+        if last and last[-1].get('runtime_id')==self.ops.budget.runtime_id and last[-1]['status']!='RETURNED' and not retired_recovery_gate(last[-1]):
+            raise Unavailable('no same-runtime failed model-load retry: '+key)
         recovery=bool(previous) or category=='lpips_load' and (getattr(self,'initial_lpips_recovery',False) or bool([r for r in self.rows if r.get('category')=='lpips_load']))
-        if recovery and category=='model_load' and self.extra_watermark>=3:raise RecoveryExhausted('three additional watermark loads used in this runtime')
         self.ops.budget.charge(category,'loaders',key,recovery=recovery)
         if recovery and category=='model_load':self.extra_watermark+=1
         record=dict(key=key,category=category,recovery=recovery,runtime_id=self.ops.budget.runtime_id,status='STARTED',at=time.time())
@@ -136,8 +136,19 @@ def quality_complete(output,source,method):
         path=folder/(stage+'.json')
         if not path.is_file():return False
         value=read_json(path)
-        if len(value.get('frames',[]))!=181 or value.get('lpips_observed_frames')!=181:return False
+        if not quality_stage_complete(value):return False
     return True
+
+
+def quality_stage_complete(value):
+    # LPIPS is no longer a requested metric. Its missing rows stay missing.
+    import math
+    frames=value.get('frames',[]);edges=value.get('edges',[])
+    if not isinstance(frames,list) or not isinstance(edges,list) or len(frames)!=181 or len(edges)!=180:return False
+    def finite(x):return type(x) in (int,float) and math.isfinite(x)
+    return all(isinstance(r,dict) and finite(r.get('mse')) and finite(r.get('ssim'))
+        and (r.get('psnr_db') is None or finite(r['psnr_db'])) for r in frames) and all(
+        isinstance(r,dict) and finite(r.get('residual_difference_rms')) for r in edges)
 
 
 class Runner:
@@ -214,10 +225,10 @@ class Runner:
         from main.baselines.public_fpr001_v4 import backend
         self.progress(stage='QUALITY_MISSING',source=source['id'],method=method)
         canonical=self.ops.source(source);store=self.ops.store('quality/'+source['id']+'/'+method)
-        model=self.guard('load/LPIPS',self.loaders.quality)
+        model=None  # User accepted absent LPIPS; do not load or rerun it.
         for stage in ('precodec','G1','G2-identity'):
             path=store.folder/'quality'/(stage+'.json')
-            if path.is_file() and read_json(path).get('lpips_observed_frames')==181:continue
+            if path.is_file() and quality_stage_complete(read_json(path)):continue
             def run_stage():
                 if stage=='precodec':
                     left=canonical
@@ -319,7 +330,7 @@ def run(output=OUTPUT,cache=CACHE,vendor=None,config=DEFAULT_CONFIG,previous_run
             try:return runner.run()
             except BaseException as error:
                 write_json(output/'interruption.json',dict(status='PAUSED_SPACE' if isinstance(error,SpaceUnavailable) else 'INTERRUPTED_RETAINED',
-                    error=f'{type(error).__name__}: {error}',runtime_id=runtime['id'],at=time.time(),resume='same Drive package within fixed infrastructure budgets'))
+                    error=f'{type(error).__name__}: {error}',runtime_id=runtime['id'],at=time.time(),resume='same Drive checkpoint; infrastructure costs recorded without recovery quota'))
                 raise
             finally:loaders.close();budget.snapshot()
     finally:
