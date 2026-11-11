@@ -56,7 +56,8 @@ codec encode 5、probe 8、decode 8。后续 Colab 从这些已完成记录继�
 - `physical_plan.json`：实际补算前的缺失批次候选地址及完整臂重建范围。
 - `physical_recovery.json`：各项返回、失败和未决，不把候选数当实际模型次数。
 - `shards/partN/physical_calls.jsonl`：新增物理成本；`physical_counts.json` 包含继承成本。
-- `global/tables/`：复用原 `build_tables` 按固定槽全局汇总，不平均分片率或区间。
+- `aggregation_runs/<本轮目录>/global_results.zip`：在 Colab 本地复用原 `build_tables` 按固定槽全局汇总，再打包保存；包含 `global/tables/`、结果说明和本次读取的输入记录快照。不平均分片率或区间。
+- `aggregation_latest.json`：最后一次成功上传的 ZIP 位置及测量状态。旧 `global/` 目录保持原样。
 - `result.json`：工程恢复状态；科学解释仍需独立核验。
 
 仅 CPU、部分本地镜像不生成全局表：
@@ -70,3 +71,23 @@ python -m runtime.wan.native_baseline_compact_recovery_run_v1 \
 ```
 
 该 CPU 入口不加载模型。真实新物理调用只由用户运行的 Colab 完成。
+
+## 已完成补算后的 CPU 汇总
+
+`notebooks/native_baseline_compact_recovery_tables_v1.ipynb` 是独立薄入口。
+先停止旧汇总单元，再 Run all，保留现有运行时及 `/content` 即可；不需要 GPU。
+此入口不导入 CPU 恢复包、不运行 `cpu_recover`，也不重建媒体或加载模型。
+它只把固定统计需要的 post、quality、queries 和费用记录并发复制到
+`/content/video-wm-compact-aggregation/`，随后全部在本地统计。
+较新的失败/未知记录始终优先于旧成功，首次复制仍有 Drive I/O 成本。
+阶段和已复制数量打印在 notebook 与日志中，避免只显示进程存活。
+
+完成后先关闭本地 ZIP，再以 `.partial` 上传至独立正式子目录；上传结束才发布
+`global_results.zip` 和完成回执。失败时保留本地工作目录与不完整上传，旧包不覆盖。
+ZIP 包含本次所需输入记录，媒体/原始数组/权重不打包；原始结果仍留在原目录。
+这次改动覆盖恢复后的汇总路径，GPU 补算阶段的逐批持久化机制继续保留。
+
+```bash
+python -m runtime.wan.native_baseline_compact_recovery_run_v1 \
+  --tables-only --previous-runtime-stopped
+```

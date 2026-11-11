@@ -254,7 +254,7 @@ def cpu_recover(ctx):
     write_json(previous,result);return result
 
 
-def collect(ctx):
+def collect(ctx, progress=None):
     """Merge source-level fixed slots, never averaged shard rates or intervals."""
     from .native_baseline_compact_tables_v1 import build_tables
     from .paper_execution_v1 import PublicCost
@@ -283,7 +283,8 @@ def collect(ctx):
                     for row in extra:total.update(row[field])
                     value[field]=dict(total)
             value['old_packages_unchanged']=True;return value
-    result=build_tables(ctx.output/'global',ctx.sources,ctx.roster,queries,Cost(),ctx.old,source_roots)
+    options=dict(progress=progress) if progress is not None else {}
+    result=build_tables(ctx.output/'global',ctx.sources,ctx.roster,queries,Cost(),ctx.old,source_roots,**options)
     resource_path=ctx.output/'global/tables/D_resources.json';resources=read_json(resource_path)
     roots=[ctx.parent,*[ctx.parent/'shards'/f'part{i}' for i in range(4)],ctx.output,*[ctx.part(i) for i in range(4)]]
     for field,filename in [('model_resources','model_resources.jsonl'),('quality_resources','quality_resources.jsonl'),

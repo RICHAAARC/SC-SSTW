@@ -93,7 +93,7 @@ def execute(config,source=None,ref='main',previous_runtime_stopped=True):
     root=source_directory(source,ref);print('使用源码:',root,flush=True)
     output=Path(config['output'])
     sys.path.insert(0,str(root))
-    try:imported=import_cpu_package(output,config['parent'],previous_runtime_stopped)
+    try:imported=dict(status='SAVED_TABLES_ONLY') if config.get('tables_only') else import_cpu_package(output,config['parent'],previous_runtime_stopped)
     finally:sys.path.pop(0)
     output.mkdir(parents=True,exist_ok=True)
     print('本地 CPU 恢复包:',{k:v for k,v in imported.items() if k not in ('copied','existing_paths_preserved','excluded','new_cost_events')},flush=True)
@@ -103,7 +103,10 @@ def execute(config,source=None,ref='main',previous_runtime_stopped=True):
         probe=subprocess.run([sys.executable,'-c','import '+module],capture_output=True,env=environment)
         if probe.returncode:subprocess.run([sys.executable,'-m','pip','install',package],check=True)
     args=[sys.executable,'-u','-m','runtime.wan.native_baseline_compact_recovery_run_v1']
-    for key,value in config.items():args.extend(['--'+key.replace('_','-'),str(value)])
+    for key,value in config.items():
+        if isinstance(value,bool):
+            if value:args.append('--'+key.replace('_','-'))
+        else:args.extend(['--'+key.replace('_','-'),str(value)])
     if previous_runtime_stopped:args.append('--previous-runtime-stopped')
     worker=None
     try:
@@ -112,9 +115,13 @@ def execute(config,source=None,ref='main',previous_runtime_stopped=True):
             worker=subprocess.Popen(args,cwd=root,env=environment,stdout=log,stderr=subprocess.STDOUT,start_new_session=True)
             while worker.poll() is None:
                 try:worker.wait(timeout=25)
-                except subprocess.TimeoutExpired:print('定向恢复运行中；日志:',logpath,flush=True)
+                except subprocess.TimeoutExpired:
+                    with logpath.open() as current:
+                        lines=current.readlines()
+                    latest=next((line.strip() for line in reversed(lines) if line.startswith('[local tables] ')),None)
+                    print(latest or ('定向恢复运行中；日志: '+str(logpath)),flush=True)
         print('worker returncode',worker.returncode,'日志',logpath,flush=True)
-        for name in ('result.json','cpu_recovery.json'):
+        for name in (('aggregation_latest.json',) if config.get('tables_only') else ('result.json','cpu_recovery.json','aggregation_latest.json')):
             path=output/name
             if path.is_file():
                 value=json.loads(path.read_text())

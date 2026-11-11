@@ -14,11 +14,26 @@ def build(root=Path(__file__).resolve().parents[1]):
     add('code',"SOURCE_REF = 'main'\nSOURCE_DIRECTORY = None\nPREVIOUS_RUNTIME_STOPPED = True  # 已确认原四片 runtime 均 CLOSED\nCONFIG = dict(\n    parent='/content/drive/MyDrive/Video-WM_Result/baselines/public-native-frameindex-compact12-v1/attempt01',\n    output='/content/drive/MyDrive/Video-WM_Result/baselines/public-native-frameindex-compact12-v1/attempt01/recovery/repair01',\n    cache='/content/drive/MyDrive/Video-WM_Cache/baseline-compact12-v1',\n    old='/content/drive/MyDrive/Video-WM_Result/baselines/public-native-and-frameindex-fpr001-v4/attempt01',\n    old_cache='/content/drive/MyDrive/Video-WM_Cache/baseline-v4')\n")
     add('markdown','自动导入同目录的 `local_cpu_recovery.zip`，仅补缺失文件并将本地 CPU 成本计入一次；写入前检查原分片和修复目录的运行状态，采用完整临时写入后原子发布，已有 Colab 记录不覆盖，不需要手工上传。已恢复的 3 视图和 5 质量阶段直接跳过。PixelSeal 与 FrameIndex 的 OFF 原始读取共享，分别执行原逻辑后评。缺 epoch 时仅在回执能唯一关联时恢复，绝不混 epoch 或按分数择优。ucf-0642 的两个正例臂各 12 视图全缺，按原查询整臂重建；ucf-0643 PixelSeal 按原方法/消息完整重建 12 视图和配套 3 质量，新臂每槽均只认新结果，失败槽保持未知，绝不回填旧 9 个成功视图。旧臂仍保留，替代关系记录在 `shards/part2/replacements/`。其余部分 epoch 输入丢失、已提交数组不可读、关联不清等单列未决。质量必要 codec 成本独立记录；LPIPS 不补算。\n')
     add('code',"from pathlib import Path\nimport urllib.request, importlib.util\nname = 'native_baseline_compact_recovery_v1_entry.py'\nif SOURCE_DIRECTORY:\n    path = Path(SOURCE_DIRECTORY)/'scripts'/name\nelse:\n    path = Path('/content')/name\n    urllib.request.urlretrieve(f'https://raw.githubusercontent.com/RICHAAARC/SC-SSTW/{SOURCE_REF}/scripts/{name}', path)\nspec = importlib.util.spec_from_file_location('compact_repair_entry', path)\nentry = importlib.util.module_from_spec(spec)\nspec.loader.exec_module(entry)\nRUN = entry.execute(CONFIG, SOURCE_DIRECTORY, SOURCE_REF, PREVIOUS_RUNTIME_STOPPED)\n")
-    add('markdown','新恢复包位于正式结果的 `recovery/repair01`，旧分片仍只读。`cpu_recovery.json` 保存逐槽恢复/剩余清单，`physical_recovery.json` 保存补算返回与失败，`global/tables` 保存全局 A/B/C/D 表。运行完成、测量完整和科学结论分别报告；保留原阈值、CAL32/TEST500、12 视图、DCT2＋CDC32 和旧 H/L。\n')
-    add('code',"print('返回:', RUN)\nprint('全局表目录:', CONFIG['output']+'/global/tables')\n")
+    add('markdown','新恢复包位于正式结果的 `recovery/repair01`，旧分片仍只读。`cpu_recovery.json` 保存逐槽恢复/剩余清单，`physical_recovery.json` 保存补算返回与失败。汇总所需记录并发复制到 `/content`，在本地执行原统计，再将输入记录和全局 A/B/C/D 表打包为 `aggregation_runs/<本轮目录>/global_results.zip` 保存到 Drive。进度显示复制数量、统计阶段、打包与上传；旧 `global` 目录保持原样。运行完成、测量完整和科学结论分别报告；保留原阈值、CAL32/TEST500、12 视图、DCT2＋CDC32 和旧 H/L。\n')
+    add('code',"print('返回:', RUN)\nprint('汇总 ZIP 索引:', CONFIG['output']+'/aggregation_latest.json')\n")
     value=dict(nbformat=4,nbformat_minor=5,metadata=dict(accelerator='GPU',kernelspec=dict(name='python3',display_name='Python 3',language='python')),cells=cells)
     path=Path(root)/'notebooks/native_baseline_compact_recovery_v1.ipynb';path.parent.mkdir(parents=True,exist_ok=True)
     path.write_text(json.dumps(value,ensure_ascii=False,indent=1)+'\n');return path
 
 
-if __name__=='__main__':print(build())
+def build_tables_only(root=Path(__file__).resolve().parents[1]):
+    """CPU continuation for the already completed repair; no recovery replay."""
+    base=json.loads(build(root).read_text())
+    base['metadata'].pop('accelerator',None)
+    base['cells'][1]['source']=['# Compact12 已保存结果：本地汇总与 ZIP 归档\n',
+        '\n先停止旧汇总单元，保留运行时及 /content，然后直接 Run all；无需 GPU。只读取原四片和 repair01 已保存的后评、质量与成本记录，不执行模型、codec、原始数组回放或缺口补算。首次将所需小文件并发复制到本地，统计完成后将完整 ZIP 保存到正式结果目录，旧结果保留。\n']
+    base['cells'][2]['source'].append("CONFIG['tables_only'] = True\n")
+    base['cells'][3]['source']=['运行阶段：STAGING（复制数/计划数）→ AGGREGATING（方法/分组）→ QUALITY_TABLES → WRITING_TABLES → PACKING → UPLOADING → SAVED。首次仍需读取 Drive 中已有记录；模型权重和媒体缓存不复制。未知/缺失结果与原分母保持。完成后的 ZIP 包含局部输入快照、全局表和结果说明；中断上传只留下 .partial，不冒充完成包。\n']
+    path=Path(root)/'notebooks/native_baseline_compact_recovery_tables_v1.ipynb'
+    path.write_text(json.dumps(base,ensure_ascii=False,indent=1)+'\n')
+    return path
+
+
+if __name__=='__main__':
+    print(build())
+    print(build_tables_only())

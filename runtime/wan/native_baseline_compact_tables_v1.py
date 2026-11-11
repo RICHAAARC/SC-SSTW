@@ -68,13 +68,14 @@ def quality_rows(root,sources,source_roots=None):
     return rows
 
 
-def build_tables(output,sources,roster,queries,budget,old,source_roots=None):
+def build_tables(output,sources,roster,queries,budget,old,source_roots=None,progress=None):
     output=Path(output);directory=output/'tables';directory.mkdir(parents=True,exist_ok=True)
     payload=[];ownership=[];time_rows=[];incomplete=0
     for method in p.METHODS:
         for split in ('CAL','TEST'):
             selected=[s for s in sources if s['split']==split]
             for arm in ('OFF',) if split=='CAL' else ('OFF',method):
+                if progress:progress('AGGREGATING',method=method,split=split,arm=arm,source_count=len(selected))
                 groups=[rows_for(output,s,method,arm,source_roots) for s in selected]
                 for rows in groups:
                     for row in rows:
@@ -104,12 +105,14 @@ def build_tables(output,sources,roster,queries,budget,old,source_roots=None):
                             interval_assumption='source iid reference only; action bootstrap is sensitivity')
                         if split=='TEST':row['action_cluster_bootstrap']=action_sensitivity([decisions[i] for i in eligible],[selected[i]['action'] for i in eligible]) if eligible else None
                         ownership.append(row)
+    if progress:progress('QUALITY_TABLES',sources=len(sources))
     quality=quality_rows(output,sources,source_roots)
     dev=[s for s in roster if s['split']=='DEV'];devrows=[]
     for source in dev:
         for method in p.METHODS:
             for arm in ('OFF',method):
                 for row in rows_for(old,source,method,arm):devrows.append(dict(row,reference_only=True,new_physical_calls=0))
+    if progress:progress('WRITING_TABLES',logical_views=len(payload),quality_stages=len(quality))
     for name,rows in [('A_payload',payload),('B_ownership',ownership),('C_time',time_rows),('D_quality',quality),
                       ('DEV_saved_reference',devrows),('DEV_quality_reference',quality_rows(old,dev))]:
         write_json(directory/(name+'.json'),rows);csv_rows(directory/(name+'.csv'),rows)
