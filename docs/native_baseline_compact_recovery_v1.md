@@ -75,7 +75,7 @@ python -m runtime.wan.native_baseline_compact_recovery_run_v1 \
 ## 已完成补算后的 CPU 汇总
 
 `notebooks/native_baseline_compact_recovery_tables_v1.ipynb` 是独立薄入口。
-先停止旧汇总单元，再 Run all，保留现有运行时及 `/content` 即可；不需要 GPU。
+先停止旧汇总单元，再 Run all；可使用新建的 CPU 运行时，不依赖旧 `/content`，不需要 GPU。
 此入口不导入 CPU 恢复包、不运行 `cpu_recover`，也不重建媒体或加载模型。
 它只把固定统计需要的 post、quality、queries 和费用记录并发复制到
 `/content/video-wm-compact-aggregation/`，随后全部在本地统计。

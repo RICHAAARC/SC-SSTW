@@ -26,7 +26,7 @@ def build_tables_only(root=Path(__file__).resolve().parents[1]):
     base=json.loads(build(root).read_text())
     base['metadata'].pop('accelerator',None)
     base['cells'][1]['source']=['# Compact12 已保存结果：本地汇总与 ZIP 归档\n',
-        '\n先停止旧汇总单元，保留运行时及 /content，然后直接 Run all；无需 GPU。只读取原四片和 repair01 已保存的后评、质量与成本记录，不执行模型、codec、原始数组回放或缺口补算。首次将所需小文件并发复制到本地，统计完成后将完整 ZIP 保存到正式结果目录，旧结果保留。\n']
+        '\n确认旧汇总已停止后，可在新建的 CPU 运行时直接 Run all；不依赖旧运行时或旧 /content，无需 GPU。只读取 Drive 中原四片和 repair01 已保存的后评、质量与成本记录，不执行模型、codec、原始数组回放或缺口补算。首次将所需小文件并发复制到本地，统计完成后将完整 ZIP 保存到正式结果目录，旧结果保留。\n']
     base['cells'][2]['source'].append("CONFIG['tables_only'] = True\n")
     base['cells'][3]['source']=['运行阶段：STAGING（复制数/计划数）→ AGGREGATING（方法/分组）→ QUALITY_TABLES → WRITING_TABLES → PACKING → UPLOADING → SAVED。首次仍需读取 Drive 中已有记录；模型权重和媒体缓存不复制。未知/缺失结果与原分母保持。完成后的 ZIP 包含局部输入快照、全局表和结果说明；中断上传只留下 .partial，不冒充完成包。\n']
     path=Path(root)/'notebooks/native_baseline_compact_recovery_tables_v1.ipynb'
